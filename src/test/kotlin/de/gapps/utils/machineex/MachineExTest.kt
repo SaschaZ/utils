@@ -1,9 +1,10 @@
 @file:Suppress("unused")
 
-package de.gapps.utils.machineex
+package de.gapps.utils.machineex.machineex
 
-import de.gapps.utils.machineex.MachineExTest.Event.*
-import de.gapps.utils.machineex.MachineExTest.State.*
+import de.gapps.utils.machineex.*
+import de.gapps.utils.machineex.machineex.MachineExTest.Event.*
+import de.gapps.utils.machineex.machineex.MachineExTest.State.*
 import io.kotlintest.specs.AnnotationSpec
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -28,7 +29,9 @@ class MachineExTest : AnnotationSpec() {
     @Test
     fun testIt() {
         var executed = false
-        machineEx<Event, State>(INITIAL) {
+        machineEx<Event, State>(
+            INITIAL
+        ) {
             on event FIRST with INITIAL changeTo A
             on eventOf listOf(SECOND, FIRST) withOneOf listOf(A, B) changeTo C
             on event THIRD with C run { D }
@@ -59,7 +62,9 @@ class MachineExTest : AnnotationSpec() {
 
     @Test
     fun testCtor() {
-        MachineEx<Event, State>(INITIAL) { e ->
+        MachineEx<Event, State>(
+            INITIAL
+        ) { e ->
             when (e to state) {
                 FIRST to INITIAL -> {
                     A

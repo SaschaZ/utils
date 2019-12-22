@@ -6,7 +6,7 @@ val test by tasks.getting(Test::class) {
     useJUnitPlatform { }
 }
 
-group = "de.gapps"
+group = "de.gapps.utils"
 version = "1.0-SNAPSHOT"
 
 repositories {

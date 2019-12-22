@@ -5,6 +5,43 @@ package de.gapps.utils.misc
 import de.gapps.utils.time.duration.milliseconds
 import kotlin.math.pow
 
+interface INumber {
+    /**
+     * Returns the value of this number as a [Double], which may involve rounding.
+     */
+    fun toDouble(): Double
+
+    /**
+     * Returns the value of this number as a [Float], which may involve rounding.
+     */
+    fun toFloat(): Float
+
+    /**
+     * Returns the value of this number as a [Long], which may involve rounding or truncation.
+     */
+    fun toLong(): Long
+
+    /**
+     * Returns the value of this number as an [Int], which may involve rounding or truncation.
+     */
+    fun toInt(): Int
+
+    /**
+     * Returns the [Char] with the numeric value equal to this number, truncated to 16 bits if appropriate.
+     */
+    fun toChar(): Char
+
+    /**
+     * Returns the value of this number as a [Short], which may involve rounding or truncation.
+     */
+    fun toShort(): Short
+
+    /**
+     * Returns the value of this number as a [Byte], which may involve rounding or truncation.
+     */
+    fun toByte(): Byte
+}
+
 open class NumberEx(internal val internal: Number) : Number(), Comparable<NumberEx> {
 
     constructor(value: Double) : this(value as Number)
