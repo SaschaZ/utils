@@ -1,7 +1,6 @@
-package de.gapps.utils.machineex.misc
+package de.gapps.utils.misc
 
 import de.gapps.utils.delegates.OnChanged
-import de.gapps.utils.misc.asUnit
 import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.runBlocking
 

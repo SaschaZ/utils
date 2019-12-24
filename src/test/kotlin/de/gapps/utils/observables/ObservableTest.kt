@@ -1,11 +1,11 @@
 @file:Suppress("unused")
 
-package de.gapps.utils.machineex.observables
+package de.gapps.utils.observables
 
+import de.gapps.utils.TestCoroutineScope
+import de.gapps.utils.TestScopeTest
 import de.gapps.utils.coroutines.builder.launchEx
-import de.gapps.utils.machineex.TestCoroutineScope
-import de.gapps.utils.machineex.TestScopeTest
-import de.gapps.utils.machineex.equals
+import de.gapps.utils.equals
 import de.gapps.utils.misc.asUnit
 import de.gapps.utils.observable.Observable
 import de.gapps.utils.observable.ObserverDelegate

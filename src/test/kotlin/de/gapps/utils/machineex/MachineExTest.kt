@@ -1,10 +1,10 @@
 @file:Suppress("unused")
 
-package de.gapps.utils.machineex.machineex
+package de.gapps.utils.machineex
 
-import de.gapps.utils.machineex.*
-import de.gapps.utils.machineex.machineex.MachineExTest.Event.*
-import de.gapps.utils.machineex.machineex.MachineExTest.State.*
+import de.gapps.utils.equals
+import de.gapps.utils.machineex.MachineExTest.Event.*
+import de.gapps.utils.machineex.MachineExTest.State.*
 import io.kotlintest.specs.AnnotationSpec
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

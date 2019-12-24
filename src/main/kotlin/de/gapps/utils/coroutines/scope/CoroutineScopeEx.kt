@@ -19,8 +19,6 @@ abstract class CoroutineScopeEx(
     private val newCoroutineContext: CoroutineContext
         get() = Job() + dispatcher + CoroutineName(scopeName)
 
-//    override fun cancel() = job.cancel()
-
     override suspend fun cancelAndJoin() = job.cancelAndJoin()
 
     override suspend fun join() = job.join()

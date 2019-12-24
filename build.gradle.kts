@@ -1,21 +1,28 @@
 plugins {
     kotlin("jvm") version "1.3.61"
+    id("maven-publish")
 }
 
 val test by tasks.getting(Test::class) {
-    useJUnitPlatform { }
+    useJUnitPlatform {}
 }
 
 group = "de.gapps.utils"
 version = "1.0-SNAPSHOT"
 
 repositories {
+    mavenLocal()
     mavenCentral()
+    jcenter()
+    maven { url = uri("https://kotlin.bintray.com/ktor") }
+    maven { url = uri("https://kotlin.bintray.com/kotlinx") }
 }
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.2")
+
+    implementation("org.koin:koin-core:2.0.1")
 
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.10.1")
 
@@ -27,13 +34,33 @@ dependencies {
 
 tasks {
     compileKotlin {
-        sourceCompatibility = "11"
-        targetCompatibility = "11"
-        kotlinOptions.jvmTarget = "11"
+        sourceCompatibility = "1.8"
+        targetCompatibility = "1.8"
+        kotlinOptions.jvmTarget = "1.8"
     }
     compileTestKotlin {
-        sourceCompatibility = "11"
-        targetCompatibility = "11"
-        kotlinOptions.jvmTarget = "11"
+        sourceCompatibility = "1.8"
+        targetCompatibility = "1.8"
+        kotlinOptions.jvmTarget = "1.8"
+    }
+}
+
+val sourcesJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("sources")
+    from(sourceSets.main.get().allSource)
+}
+
+publishing {
+    repositories {
+        maven {
+            // change to point to your repo, e.g. http://my.org/repo
+            url = uri("$buildDir/repo")
+        }
+    }
+    publications {
+        register("mavenJava", MavenPublication::class) {
+            from(components["java"])
+            artifact(sourcesJar.get())
+        }
     }
 }

@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package de.gapps.utils.machineex
+package de.gapps.utils
 
 import de.gapps.utils.coroutines.scope.ICoroutineScopeEx
 import kotlinx.coroutines.CoroutineDispatcher

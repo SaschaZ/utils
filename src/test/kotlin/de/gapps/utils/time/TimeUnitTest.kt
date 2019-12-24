@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package de.gapps.utils.machineex.time
+package de.gapps.utils.time
 
 import de.gapps.utils.time.base.TimeUnit
 import de.gapps.utils.time.base.convert

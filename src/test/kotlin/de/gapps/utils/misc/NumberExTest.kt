@@ -1,7 +1,5 @@
-package de.gapps.utils.machineex.misc
+package de.gapps.utils.misc
 
-import de.gapps.utils.misc.ex
-import de.gapps.utils.misc.times
 import io.kotlintest.specs.AnnotationSpec
 
 class NumberExTest : AnnotationSpec() {

@@ -8,7 +8,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.sync.Mutex
 
-interface IProducer<T> : IProcessor<Any?, T> {
+interface IProducer<out T> : IProcessor<Any?, T> {
 
     fun produce(): ReceiveChannel<T>
 

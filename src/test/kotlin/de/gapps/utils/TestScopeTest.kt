@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package de.gapps.utils.machineex
+package de.gapps.utils
 
 import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.CoroutineScope

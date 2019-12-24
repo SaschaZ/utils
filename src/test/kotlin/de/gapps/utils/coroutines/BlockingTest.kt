@@ -1,7 +1,6 @@
-package de.gapps.utils.machineex.coroutines
+package de.gapps.utils.coroutines
 
 
-import de.gapps.utils.coroutines.executeNativeBlocking
 import de.gapps.utils.misc.asUnit
 import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.runBlocking

@@ -7,11 +7,11 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.sync.Mutex
 
-interface IConsumer<T> : IProcessor<T, Any?> {
+interface IConsumer<out T> : IProcessor<T, Any> {
 
-    fun ReceiveChannel<T>.consume()
+    fun ReceiveChannel<@UnsafeVariance T>.consume()
 
-    override fun ReceiveChannel<T>.process(): ReceiveChannel<Any?> {
+    override fun ReceiveChannel<@UnsafeVariance T>.process(): ReceiveChannel<Any> {
         consume()
         return Channel()
     }
@@ -20,11 +20,11 @@ interface IConsumer<T> : IProcessor<T, Any?> {
 fun <T> consumer(
     scope: CoroutineScope = DefaultCoroutineScope(),
     mutex: Mutex? = null,
-    listenValue: suspend ReceiveChannel<T>.() -> Unit
+    listenValue: suspend (T) -> Unit
 ) = object : IConsumer<T> {
     override fun ReceiveChannel<T>.consume() {
         scope.launchEx(mutex = mutex) {
-            listenValue()
+            for (r in this@consume) listenValue(r)
         }
     }
 }

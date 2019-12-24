@@ -1,10 +1,8 @@
-package de.gapps.utils.machineex.time
+package de.gapps.utils.time
 
 import de.gapps.utils.misc.Log
-import de.gapps.utils.time.TimeEx
 import de.gapps.utils.time.duration.minutes
 import de.gapps.utils.time.duration.weeks
-import de.gapps.utils.time.step
 import io.kotlintest.specs.AnnotationSpec
 
 class TimeProgressionTest : AnnotationSpec() {

@@ -1,4 +1,4 @@
-package de.gapps.utils.machineex.coroutines
+package de.gapps.utils.coroutines
 
 import de.gapps.utils.coroutines.builder.asyncEx
 import de.gapps.utils.coroutines.builder.launchEx

@@ -9,7 +9,6 @@ interface ICoroutineScopeEx : CoroutineScope {
         internal const val DEFAULT_NAME = "UNNAMED SCOPE"
     }
 
-    //    fun cancel()
     suspend fun cancelAndJoin()
 
     suspend fun join()
