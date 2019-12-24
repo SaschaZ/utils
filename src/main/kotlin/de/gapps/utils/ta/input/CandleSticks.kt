@@ -3,7 +3,7 @@ package de.gapps.utils.ta.input
 import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.channel.IProcessor
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
-import de.gapps.utils.misc.Log
+import de.gapps.utils.log.Log
 import de.gapps.utils.misc.Vec2d
 import de.gapps.utils.misc.whenNotNull
 import de.gapps.utils.ta.input.config.IPlotConfig

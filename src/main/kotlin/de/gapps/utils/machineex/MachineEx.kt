@@ -1,7 +1,7 @@
 package de.gapps.utils.machineex
 
+import de.gapps.utils.log.Log
 import de.gapps.utils.machineex.scopes.*
-import de.gapps.utils.misc.Log
 import de.gapps.utils.misc.ifN
 import de.gapps.utils.misc.lastOrNull
 import de.gapps.utils.observable.ChangeObserver

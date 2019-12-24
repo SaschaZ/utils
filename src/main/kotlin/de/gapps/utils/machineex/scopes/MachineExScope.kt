@@ -1,8 +1,8 @@
 package de.gapps.utils.machineex.scopes
 
+import de.gapps.utils.log.Log
 import de.gapps.utils.machineex.IEvent
 import de.gapps.utils.machineex.IState
-import de.gapps.utils.misc.Log
 
 open class MachineExScope<out E : IEvent, out S : IState> : IMachineExScope<E, S> {
 

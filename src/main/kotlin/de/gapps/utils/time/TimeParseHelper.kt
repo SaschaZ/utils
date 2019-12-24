@@ -1,6 +1,6 @@
 package de.gapps.utils.time
 
-import de.gapps.utils.misc.Log
+import de.gapps.utils.log.Log
 import java.text.SimpleDateFormat
 import java.time.ZonedDateTime
 
