@@ -9,5 +9,6 @@ interface IOhclVal : IMillisecondHolder {
     val close: Double
     val low: Double
     val volume: Long
+    val partial: Boolean
 }
 

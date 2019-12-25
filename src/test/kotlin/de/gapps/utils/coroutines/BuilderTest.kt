@@ -10,7 +10,7 @@ import de.gapps.utils.time.duration.seconds
 import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.runBlocking
 
-class ExecuteTest : AnnotationSpec() {
+class BuilderTest : AnnotationSpec() {
 
     @Test
     fun testLaunchEx() = runBlocking {

@@ -8,19 +8,22 @@ import kotlin.test.assertEquals
 
 class ProcessorTest : AnnotationSpec() {
 
-    private val testProducer = producer<Int> {
-        repeat(5) { send(it) }
-        close()
+    private val testProducer = Producer<Int> {
+        repeat(5) { send(it, isLastSend = it == 4) }
     }
 
     @Test
     fun testProcessor() = runBlocking {
-        val processorResult = processor<Int, Int> { send(it) }.run {
+        val processorResult = Processor<Int, Int> {
+            send(
+                it
+            )
+        }.run {
             testProducer.produce().process().toList()
         }
         assertEquals(5, processorResult.size)
         processorResult.forEachIndexed { index, i ->
-            assertEquals(index, i)
+            assertEquals(index, i.value)
         }
     }.asUnit()
 }

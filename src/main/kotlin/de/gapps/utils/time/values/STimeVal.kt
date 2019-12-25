@@ -13,6 +13,8 @@ sealed class STimeVal<out T> : ITimeVal<T>, IMillisecondHolder {
 
     override fun hashCode() = value.hashCode() + time.hashCode()
 
+    override fun toString() = "TimeVal(time: $time; value: $value)"
+
     class TimeVal<out T>(
         override val value: T,
         ts: IMillisecondHolder

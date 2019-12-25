@@ -20,3 +20,6 @@ interface IDurationEx : IMillisecondArithmetic<IDurationEx, DurationEx> {
     }
 }
 
+fun min(a: IDurationEx, b: IDurationEx): IDurationEx = if (a < b) a else b
+fun max(a: IDurationEx, b: IDurationEx): IDurationEx = if (a > b) a else b
+

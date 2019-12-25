@@ -47,3 +47,4 @@ fun <T> ReceiveChannel<T>.clone(
             o.second.close()
         }
     }
+
