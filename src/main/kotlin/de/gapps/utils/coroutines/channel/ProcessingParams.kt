@@ -1,6 +1,7 @@
 package de.gapps.utils.coroutines.channel
 
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
+import de.gapps.utils.coroutines.scope.IoCoroutineScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
@@ -31,7 +32,7 @@ interface IParallelProcessingParams : IProcessingParams {
 data class ParallelProcessingParams(
     override val type: ParallelProcessingTypes,
     override val numParallel: Int = 8,
-    override val scope: CoroutineScope = DefaultCoroutineScope(),
+    override val scope: CoroutineScope = IoCoroutineScope(),
     override val mutex: Mutex? = null,
     override val channelCapacity: Int = Channel.BUFFERED
 ) : IParallelProcessingParams

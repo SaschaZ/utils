@@ -3,6 +3,7 @@ package de.gapps.utils.coroutines.channel.pipeline
 import de.gapps.utils.coroutines.channel.IConsumer
 import de.gapps.utils.coroutines.channel.IProcessor
 import de.gapps.utils.coroutines.channel.IProducer
+import de.gapps.utils.log.Log
 
 data class PipelineBuilderScope<I>(
     val producer: IProducer<I>,
@@ -31,7 +32,7 @@ suspend inline operator fun <I, O> IProducer<I>.plus(consumer: IConsumer<O>) =
         pipeline = this
         consumer.pipeline = this
         consumer.run {
-            produce().process().consume().join()
+            produce().process().consume().run { Log.v("before pipe join"); join(); Log.v("after pipe join") }
         }
     }
 

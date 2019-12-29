@@ -17,7 +17,7 @@ interface IProcessor<out I, out O> : IPipelineElement<I, O> {
 
     fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.process(): ReceiveChannel<IProcessValue<O>>
 
-    fun onProcessingFinished() = Unit
+    suspend fun IProcessingScope<@UnsafeVariance O>.onProcessingFinished() = Unit
 }
 
 open class Processor<out I, out O>(
@@ -34,6 +34,7 @@ open class Processor<out I, out O>(
     private val output = Channel<IProcessValue<O>>(params.channelCapacity)
 
     override fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.process() = scope.launchEx {
+        lateinit var prevValue: IProcessValue<I>
         for (value in this@process) {
             val b = block ?: throw IllegalStateException("Can not process without callback")
             ProcessingScope<O>(
@@ -42,11 +43,21 @@ open class Processor<out I, out O>(
             ) { result, time, idx ->
                 output.send(ProcessValue(value.outIdx, idx, result, time))
             }.b(value.value)
+            prevValue = value
         }
-        output.close()
+        ProcessingScope<O>(
+            prevValue,
+            pipeline
+        ) { result, time, idx ->
+            output.send(ProcessValue(prevValue.outIdx, idx, result, time))
+        }.closeOutput()
+    }.let { output as ReceiveChannel<IProcessValue<O>> }
+
+    private suspend fun IProcessingScope<@UnsafeVariance O>.closeOutput() {
         Log.v("processing finished")
         onProcessingFinished()
-    }.let { output as ReceiveChannel<IProcessValue<O>> }
+        output.close()
+    }
 }
 
 interface IProcessingScope<out O> {

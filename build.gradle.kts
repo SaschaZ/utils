@@ -29,6 +29,8 @@ dependencies {
 
     implementation("org.slf4j:slf4j-simple:1.7.29")
 
+    implementation("com.github.ajalt:mordant:1.2.1")
+
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.3.61")
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
     testImplementation("io.mockk:mockk:1.9.3")

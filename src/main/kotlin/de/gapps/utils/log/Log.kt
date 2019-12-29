@@ -2,12 +2,12 @@
 
 package de.gapps.utils.log
 
+import com.github.ajalt.mordant.TermColors
 import de.gapps.utils.UtilsSettings
 import kotlinx.coroutines.CoroutineScope
 
 object Log {
 
-    //    private val output = LogOut
     private val builder = MessageBuilder
 
     fun CoroutineScope.v(msg: String) = out(
@@ -70,7 +70,20 @@ object Log {
         (builder.wrapMessage(null, "E" to "$t $msg"))
     )
 
-    private fun out(level: LogLevel, msg: String) =
-        if (level.ordinal >= UtilsSettings.LOG_LEVEL.ordinal) println(msg) else Unit
+    private fun out(level: LogLevel, msg: String) {
+        if (level.ordinal < UtilsSettings.LOG_LEVEL.ordinal) return
+
+        with(TermColors()) {
+            println(
+                when (level) {
+                    LogLevel.VERBOSE -> white(msg)
+                    LogLevel.DEBUG -> brightBlue(msg)
+                    LogLevel.INFO -> brightCyan(msg)
+                    LogLevel.WARNING -> brightYellow(msg)
+                    LogLevel.EXCEPTION -> brightRed(msg)
+                }
+            )
+        }
+    }
 }
 

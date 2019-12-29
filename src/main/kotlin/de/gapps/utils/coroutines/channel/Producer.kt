@@ -9,6 +9,8 @@ import de.gapps.utils.coroutines.channel.pipeline.IPipelineStorage
 import de.gapps.utils.log.Log
 import de.gapps.utils.time.ITimeEx
 import de.gapps.utils.time.TimeEx
+import de.gapps.utils.time.delay
+import de.gapps.utils.time.duration.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -36,15 +38,18 @@ open class Producer<out T>(
 
     override fun produce() = scope.launchEx {
         val b = block ?: throw IllegalStateException("Can not produce without callback set")
-        ProducerScope<T>(pipeline, { output.close(); onProducingFinished() }) { result, time, idx, isLastSend ->
+        ProducerScope<T>(pipeline, { closeOutput() }) { result, time, idx, isLastSend ->
             output.send(ProcessValue(NO_IDX, idx, result, time))
-            if (isLastSend) {
-                output.close()
-                Log.v("producing finished")
-                onProducingFinished()
-            }
+            if (isLastSend) closeOutput()
         }.b()
     }.let { output as ReceiveChannel<IProcessValue<T>> }
+
+    private suspend fun closeOutput() {
+        delay(1.seconds)
+        Log.v("producing finished")
+        onProducingFinished()
+        output.close()
+    }
 }
 
 interface IProducerScope<out T> {
@@ -59,12 +64,12 @@ interface IProducerScope<out T> {
         isLastSend: Boolean = false
     )
 
-    fun close()
+    suspend fun close()
 }
 
 open class ProducerScope<out T>(
     override val storage: IPipelineStorage,
-    private val closer: () -> Unit,
+    private val closer: suspend () -> Unit,
     private val sender: suspend (value: T, time: ITimeEx, outIdx: Int, isLastSend: Boolean) -> Unit
 ) : IProducerScope<T> {
 
@@ -77,7 +82,7 @@ open class ProducerScope<out T>(
         isLastSend: Boolean
     ) = sender(value, time, outIdx, isLastSend)
 
-    override fun close() {
+    override suspend fun close() {
         Log.v("producing finished")
         closer()
     }

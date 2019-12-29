@@ -32,11 +32,10 @@ class PipelineTest : AnnotationSpec() {
     @Test
     fun testPipeline() = runBlocking {
         val consumerResult = ArrayList<Int>()
-        val testConsumer =
-            Consumer<Int> { consumerResult.add(it) }
-        testProducer + testProcessor1 + testProcessor2 + testProcessor3 + testConsumer
+        val testConsumer = Consumer<Int> { consumerResult.add(it); Log.v("consume: $it") }
+        testProducer + testProcessor1 + parallelTestProcessor + testProcessor3 + testConsumer
         assertEquals(5, consumerResult.size)
-        consumerResult.forEachIndexed { index, i ->
+        consumerResult.sorted().forEachIndexed { index, i ->
             assertEquals(index, i)
         }
     }.asUnit()

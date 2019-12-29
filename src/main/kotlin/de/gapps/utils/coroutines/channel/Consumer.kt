@@ -20,11 +20,12 @@ interface IConsumer<out I> : IPipelineElement<I, Any?> {
     }
 
     fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.consume(): Job
+
+    suspend fun IConsumerScope.onConsumingFinished() = Unit
 }
 
 open class Consumer<out I>(
     override val params: IProcessingParams = ProcessingParams(),
-    open var onConsumingFinished: () -> Unit,
     protected open val block: (suspend IConsumerScope.(value: @UnsafeVariance I) -> Unit)? = null
 ) : IConsumer<I> {
 
@@ -35,11 +36,13 @@ open class Consumer<out I>(
 
     override fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.consume() = scope.launchEx {
         val b = block ?: throw IllegalStateException("Can not process without callback set")
+        lateinit var prevValue: IProcessValue<I>
         for (value in this@consume) {
             ConsumerScope(value, pipeline).b(value.value)
+            prevValue = value
         }
         Log.v("consuming finished")
-        onConsumingFinished()
+        ConsumerScope(prevValue, pipeline).onConsumingFinished()
     }
 }
 
