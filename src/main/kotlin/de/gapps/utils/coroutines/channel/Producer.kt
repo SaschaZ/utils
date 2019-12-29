@@ -6,16 +6,14 @@ import de.gapps.utils.coroutines.channel.pipeline.DummyPipeline
 import de.gapps.utils.coroutines.channel.pipeline.IPipeline
 import de.gapps.utils.coroutines.channel.pipeline.IPipelineElement
 import de.gapps.utils.coroutines.channel.pipeline.IPipelineStorage
+import de.gapps.utils.log.Log
 import de.gapps.utils.time.ITimeEx
 import de.gapps.utils.time.TimeEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlin.reflect.KClass
 
-interface IProducer<out T : Any> : IPipelineElement<Any?, T> {
-
-    val outputType: KClass<@UnsafeVariance T>
+interface IProducer<out T> : IPipelineElement<Any?, T> {
 
     override fun ReceiveChannel<IProcessValue<Any?>>.pipe(): ReceiveChannel<IProcessValue<T>> = produce()
 
@@ -24,9 +22,8 @@ interface IProducer<out T : Any> : IPipelineElement<Any?, T> {
     fun onProducingFinished() = Unit
 }
 
-open class Producer<out T : Any>(
+open class Producer<out T>(
     override val params: IProcessingParams = ProcessingParams(),
-    override val outputType: KClass<@UnsafeVariance T>,
     protected open var block: (suspend IProducerScope<@UnsafeVariance T>.() -> Unit)? = null
 ) : IProducer<T> {
 
@@ -39,10 +36,11 @@ open class Producer<out T : Any>(
 
     override fun produce() = scope.launchEx {
         val b = block ?: throw IllegalStateException("Can not produce without callback set")
-        ProducerScope<T>(pipeline, { output.close() }) { result, time, idx, isLastSend ->
+        ProducerScope<T>(pipeline, { output.close(); onProducingFinished() }) { result, time, idx, isLastSend ->
             output.send(ProcessValue(NO_IDX, idx, result, time))
             if (isLastSend) {
                 output.close()
+                Log.v("producing finished")
                 onProducingFinished()
             }
         }.b()
@@ -79,14 +77,8 @@ open class ProducerScope<out T>(
         isLastSend: Boolean
     ) = sender(value, time, outIdx, isLastSend)
 
-    override fun close() = closer()
+    override fun close() {
+        Log.v("producing finished")
+        closer()
+    }
 }
-
-inline fun <reified T : Any> producer(
-    params: IProcessingParams = ProcessingParams(),
-    noinline block: suspend IProducerScope<T>.() -> Unit
-) = Producer(
-    params,
-    T::class,
-    block
-)

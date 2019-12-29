@@ -9,5 +9,5 @@ object UtilsSettings {
 
     var PRINT_EXCEPTIONS = true
     var LOG_EXCEPTIONS = true
-    var ERROR_LOG_FILE: () -> File? = { File("errorLog.txt") }
+    var ERROR_LOG_FILE: () -> File? = { File("error.log") }
 }

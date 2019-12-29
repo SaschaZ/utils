@@ -5,15 +5,15 @@ import de.gapps.utils.coroutines.channel.ParallelProcessingTypes.EQUAL
 import de.gapps.utils.coroutines.channel.ParallelProcessingTypes.UNIQUE
 import de.gapps.utils.coroutines.channel.pipeline.DummyPipeline
 import de.gapps.utils.coroutines.channel.pipeline.IPipeline
+import de.gapps.utils.log.Log
 import de.gapps.utils.time.ITimeEx
 import de.gapps.utils.time.base.IMillisecondHolder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
-import kotlin.reflect.KClass
 
-interface IParallelProcessor<out I : Any, out O : Any> : IProcessor<I, O> {
+interface IParallelProcessor<out I, out O> : IProcessor<I, O> {
 
     override val params: IParallelProcessingParams
     val scope: CoroutineScope
@@ -35,13 +35,14 @@ interface IParallelProcessor<out I : Any, out O : Any> : IProcessor<I, O> {
         output: SendChannel<IParallelProcessValue<@UnsafeVariance O>>,
         processors: List<IProcessor<@UnsafeVariance I, @UnsafeVariance O>>
     ) {
-        val internalIo = processors.runEach {
-            Channel<IProcessValue<I>>(params.channelCapacity).run { this to process() }
+        val internalInputs = processors.runEach {
+            Channel<IProcessValue<I>>(params.channelCapacity)
         }
-        val internalJobs = internalIo.runEachIndexed { idx ->
+        val internalOutputs = processors.runEachIndexed { internalInputs[it].process() }
+        val internalJobs = internalOutputs.runEachIndexed { idx ->
             scope.launchEx {
-                second.runEach {
-                    output.send(ParallelProcessValue(inIdx, outIdx, value, time, idx))
+                for (value in this@runEachIndexed) {
+                    output.send(ParallelProcessValue(value.inIdx, value.outIdx, value.value, value.time, idx))
                 }
             }
         }
@@ -49,36 +50,36 @@ interface IParallelProcessor<out I : Any, out O : Any> : IProcessor<I, O> {
         var uniqueIdx = 0
         for (value in input) {
             when (params.type) {
-                UNIQUE -> internalIo[uniqueIdx++ % params.numParallel].run { first.send(value) }
-                EQUAL -> internalIo.runEach { first.send(value) }
+                UNIQUE -> internalInputs[uniqueIdx++ % params.numParallel].run { send(value) }
+                EQUAL -> internalInputs.runEach { send(value) }
             }
         }
         when (params.type) {
-            UNIQUE -> internalIo.runEach { first.close() }
-            EQUAL -> internalIo.runEach { first.close() }
+            UNIQUE -> internalInputs.runEach { close() }
+            EQUAL -> internalInputs.runEach { close() }
         }
+        Log.d("parallel processing finished -> channels closed -> waiting for jobs to join")
         internalJobs.runEach { join() }
+        Log.d("jobs joined")
     }
 }
 
-open class ParallelProcessor<out I : Any, out O : Any>(
+open class ParallelProcessor<out I, out O>(
     override val params: IParallelProcessingParams,
-    override val inputType: KClass<@UnsafeVariance I>,
-    override val outputType: KClass<@UnsafeVariance O>,
     override val processorFactory: (idx: Int) -> IProcessor<I, O>
 ) : IParallelProcessor<I, O> {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
 }
 
-interface IParallelProcessValue<out O : Any> : IProcessValue<O> {
+interface IParallelProcessValue<out O> : IProcessValue<O> {
 
     val parallelIdx: Int
 
     operator fun component5(): Int = parallelIdx
 }
 
-data class ParallelProcessValue<out O : Any>(
+data class ParallelProcessValue<out O>(
     override val inIdx: Int,
     override val outIdx: Int,
     override val value: O,
@@ -95,8 +96,3 @@ inline fun <T, R> Collection<T>.runEach(block: T.() -> R): List<R> = map { it.ru
 suspend inline fun <T> ReceiveChannel<T>.runEach(block: T.() -> Unit) {
     for (value in this) value.run { block() }
 }
-
-inline fun <reified I : Any, reified O : Any> parallel(
-    params: IParallelProcessingParams,
-    noinline processorFactory: (Int) -> IProcessor<I, O>
-) = ParallelProcessor(params, I::class, O::class, processorFactory)

@@ -4,7 +4,7 @@ import de.gapps.utils.coroutines.channel.IConsumer
 import de.gapps.utils.coroutines.channel.IProcessor
 import de.gapps.utils.coroutines.channel.IProducer
 
-data class PipelineBuilderScope<I : Any>(
+data class PipelineBuilderScope<I>(
     val producer: IProducer<I>,
     val processors: List<IProcessor<*, *>>
 ) {
@@ -13,14 +13,21 @@ data class PipelineBuilderScope<I : Any>(
         processor: IProcessor<*, *>
     ) : this(producer, listOf(processor))
 
-    init {
-        producer.outputType == processors.firstOrNull()?.inputType
-    }
+//    init {
+//        assertTypes(producer.outputType, processors.firstOrNull()?.inputType, 0)
+//        if (processors.size > 1) processors.mapPrevIndexed { index, cur, prev -> if (cur != prev) assertTypes(cur.inputType, prev.outputType, index) }
+//    }
 }
 
-operator fun <I : Any> IProducer<I>.plus(processor: IProcessor<*, *>) = PipelineBuilderScope(this, processor)
-suspend inline operator fun <reified I : Any, reified O : Any> IProducer<I>.plus(consumer: IConsumer<O>) =
-    Pipeline(params, I::class, O::class, emptyList()).run {
+//fun assertTypes(clazz0: KClass<*>, clazz1: KClass<*>?, idx: Int) {
+//    if (clazz0 != clazz1) throw IllegalArgumentException("types do not match. $clazz0 and $clazz1 (idx: $idx)")
+//}
+
+operator fun <I> IProducer<I>.plus(processor: IProcessor<*, *>) = PipelineBuilderScope(this, processor)
+
+suspend inline operator fun <I, O> IProducer<I>.plus(consumer: IConsumer<O>) =
+    Pipeline<I, O>(params, emptyList()).run {
+        //        assertTypes(outputType, consumer.inputType, 1)
         pipeline = this
         consumer.pipeline = this
         consumer.run {
@@ -28,11 +35,12 @@ suspend inline operator fun <reified I : Any, reified O : Any> IProducer<I>.plus
         }
     }
 
-operator fun <I : Any> PipelineBuilderScope<I>.plus(processor: IProcessor<*, *>) =
+operator fun <I> PipelineBuilderScope<I>.plus(processor: IProcessor<*, *>) =
     PipelineBuilderScope(producer, listOf(*this@plus.processors.toTypedArray(), processor))
 
-suspend inline operator fun <reified I : Any, reified O : Any> PipelineBuilderScope<I>.plus(consumer: IConsumer<O>) =
-    Pipeline(producer.params, I::class, O::class, processors).run {
+suspend operator fun <I, O> PipelineBuilderScope<I>.plus(consumer: IConsumer<O>) =
+    Pipeline<I, O>(producer.params, processors).run {
+        //        assertTypes(processors.last().outputType, consumer.inputType, processors.size)
         producer.pipeline = this
         consumer.pipeline = this
         consumer.run {

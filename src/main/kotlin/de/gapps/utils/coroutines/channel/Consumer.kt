@@ -5,31 +5,27 @@ import de.gapps.utils.coroutines.channel.pipeline.DummyPipeline
 import de.gapps.utils.coroutines.channel.pipeline.IPipeline
 import de.gapps.utils.coroutines.channel.pipeline.IPipelineElement
 import de.gapps.utils.coroutines.channel.pipeline.IPipelineStorage
+import de.gapps.utils.log.Log
 import de.gapps.utils.time.ITimeEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlin.reflect.KClass
 
-interface IConsumer<I : Any> : IPipelineElement<I, Any?> {
+interface IConsumer<out I> : IPipelineElement<I, Any?> {
 
-    val inputType: KClass<@UnsafeVariance I>
-
-    override fun ReceiveChannel<IProcessValue<I>>.pipe(): ReceiveChannel<IProcessValue<Any?>> {
+    override fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.pipe(): ReceiveChannel<IProcessValue<Any?>> {
         consume()
         return Channel()
     }
 
-    fun ReceiveChannel<IProcessValue<I>>.consume(): Job
-
-    fun onConsumingFinished() = Unit
+    fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.consume(): Job
 }
 
-open class Consumer<I : Any>(
+open class Consumer<out I>(
     override val params: IProcessingParams = ProcessingParams(),
-    override val inputType: KClass<I>,
-    protected open var block: (suspend IConsumerScope.(value: I) -> Unit)? = null
+    open var onConsumingFinished: () -> Unit,
+    protected open val block: (suspend IConsumerScope.(value: @UnsafeVariance I) -> Unit)? = null
 ) : IConsumer<I> {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
@@ -37,11 +33,12 @@ open class Consumer<I : Any>(
     @Suppress("LeakingThis")
     protected val scope: CoroutineScope = params.scope
 
-    override fun ReceiveChannel<IProcessValue<I>>.consume() = scope.launchEx {
+    override fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.consume() = scope.launchEx {
         val b = block ?: throw IllegalStateException("Can not process without callback set")
         for (value in this@consume) {
             ConsumerScope(value, pipeline).b(value.value)
         }
+        Log.v("consuming finished")
         onConsumingFinished()
     }
 }
@@ -63,8 +60,3 @@ open class ConsumerScope(
     override val outIdx: Int = value.outIdx
     override val time: ITimeEx = value.time
 }
-
-inline fun <reified I : Any> consumer(
-    params: IProcessingParams = ProcessingParams(),
-    noinline block: suspend IConsumerScope.(I) -> Unit
-) = Consumer(params, I::class, block)

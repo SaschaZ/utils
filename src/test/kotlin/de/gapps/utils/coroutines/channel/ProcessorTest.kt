@@ -8,16 +8,14 @@ import kotlin.test.assertEquals
 
 class ProcessorTest : AnnotationSpec() {
 
-    private val testProducer = producer<Int> {
+    private val testProducer = Producer<Int> {
         repeat(5) { send(it, isLastSend = it == 4) }
     }
 
     @Test
     fun testProcessor() = runBlocking {
-        val processorResult = processor<Int, Int> {
-            send(
-                it
-            )
+        val processorResult = Processor<Int, Int> {
+            send(it)
         }.run {
             testProducer.produce().process().toList()
         }

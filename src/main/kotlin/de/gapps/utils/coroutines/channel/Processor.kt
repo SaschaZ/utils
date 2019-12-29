@@ -5,17 +5,13 @@ import de.gapps.utils.coroutines.channel.pipeline.DummyPipeline
 import de.gapps.utils.coroutines.channel.pipeline.IPipeline
 import de.gapps.utils.coroutines.channel.pipeline.IPipelineElement
 import de.gapps.utils.coroutines.channel.pipeline.IPipelineStorage
+import de.gapps.utils.log.Log
 import de.gapps.utils.time.ITimeEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlin.reflect.KClass
 
-interface IProcessor<out I : Any, out O : Any> :
-    IPipelineElement<I, O> {
-
-    val inputType: KClass<@UnsafeVariance I>
-    val outputType: KClass<@UnsafeVariance O>
+interface IProcessor<out I, out O> : IPipelineElement<I, O> {
 
     override fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.pipe(): ReceiveChannel<IProcessValue<O>> = process()
 
@@ -24,10 +20,8 @@ interface IProcessor<out I : Any, out O : Any> :
     fun onProcessingFinished() = Unit
 }
 
-open class Processor<out I : Any, out O : Any>(
+open class Processor<out I, out O>(
     override val params: IProcessingParams = ProcessingParams(),
-    override val inputType: KClass<@UnsafeVariance I>,
-    override val outputType: KClass<@UnsafeVariance O>,
     protected open var block: (suspend IProcessingScope<@UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit)? = null
 ) : IProcessor<I, O> {
 
@@ -50,6 +44,7 @@ open class Processor<out I : Any, out O : Any>(
             }.b(value.value)
         }
         output.close()
+        Log.v("processing finished")
         onProcessingFinished()
     }.let { output as ReceiveChannel<IProcessValue<O>> }
 }
@@ -88,8 +83,3 @@ open class ProcessingScope<out O>(
         outIdx: Int
     ) = sender(value, time, outIdx)
 }
-
-inline fun <reified I : Any, reified O : Any> processor(
-    params: IProcessingParams = ProcessingParams(),
-    noinline block: suspend IProcessingScope<@UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit
-) = Processor(params, I::class, O::class, block)

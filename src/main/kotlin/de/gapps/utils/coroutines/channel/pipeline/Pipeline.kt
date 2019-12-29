@@ -7,7 +7,6 @@ import de.gapps.utils.coroutines.channel.ProcessingParams
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.reflect.KClass
 
 interface IPipelineStorage {
 
@@ -15,9 +14,9 @@ interface IPipelineStorage {
     fun <T> read(key: String): T
 }
 
-interface IPipeline<out I : Any, out O : Any> : IProcessor<I, O>, IPipelineStorage
+interface IPipeline<out I, out O> : IProcessor<I, O>, IPipelineStorage
 
-abstract class AbsPipeline<out I : Any, out O : Any>(
+abstract class AbsPipeline<out I, out O>(
     override val params: IProcessingParams,
     private val pipes: List<IPipelineElement<*, *>>
 ) : IPipeline<I, O> {
@@ -39,10 +38,8 @@ abstract class AbsPipeline<out I : Any, out O : Any>(
     }
 }
 
-class Pipeline<out I : Any, out O : Any>(
+class Pipeline<out I, out O>(
     params: IProcessingParams,
-    override val inputType: KClass<@UnsafeVariance I>,
-    override val outputType: KClass<@UnsafeVariance O>,
     pipes: List<IPipelineElement<*, *>>
 ) : AbsPipeline<I, O>(params, pipes) {
 
@@ -51,15 +48,7 @@ class Pipeline<out I : Any, out O : Any>(
     }
 }
 
-inline fun <reified I : Any, reified O : Any> pipeline(
-    params: IProcessingParams,
-    pipes: List<IPipelineElement<*, *>>
-) = Pipeline(params, I::class, O::class, pipes)
-
 class DummyPipeline : IPipeline<Any, Any> {
-
-    override val inputType: KClass<Any> = Any::class
-    override val outputType: KClass<Any> = Any::class
 
     override fun ReceiveChannel<IProcessValue<Any>>.process(): ReceiveChannel<IProcessValue<Any>> = Channel()
 
