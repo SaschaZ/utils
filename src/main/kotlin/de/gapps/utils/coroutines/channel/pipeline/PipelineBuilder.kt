@@ -4,36 +4,35 @@ import de.gapps.utils.coroutines.channel.IConsumer
 import de.gapps.utils.coroutines.channel.IProcessor
 import de.gapps.utils.coroutines.channel.IProducer
 
-data class ProducerProcessorScope<I>(
+data class PipelineBuilderScope<I : Any>(
     val producer: IProducer<I>,
-    val processor: IProcessor<*, *>
-)
+    val processors: List<IProcessor<*, *>>
+) {
+    constructor(
+        producer: IProducer<I>,
+        processor: IProcessor<*, *>
+    ) : this(producer, listOf(processor))
 
-operator fun <I> IProducer<I>.plus(processor: IProcessor<*, *>) = ProducerProcessorScope(this, processor)
-suspend operator fun <I, O> IProducer<I>.plus(consumer: IConsumer<O>) = Pipeline<I, O>(params, emptyList()).run {
-    pipeline = this
-    consumer.pipeline = this
-    consumer.run {
-        produce().process().consume().join()
+    init {
+        producer.outputType == processors.firstOrNull()?.inputType
     }
 }
 
-data class ProcessorScope<I>(
-    val producer: IProducer<I>,
-    val processors: List<IProcessor<*, *>>
-)
+operator fun <I : Any> IProducer<I>.plus(processor: IProcessor<*, *>) = PipelineBuilderScope(this, processor)
+suspend inline operator fun <reified I : Any, reified O : Any> IProducer<I>.plus(consumer: IConsumer<O>) =
+    Pipeline(params, I::class, O::class, emptyList()).run {
+        pipeline = this
+        consumer.pipeline = this
+        consumer.run {
+            produce().process().consume().join()
+        }
+    }
 
-operator fun <I> ProducerProcessorScope<I>.plus(processor: IProcessor<*, *>) =
-    ProcessorScope(producer, listOf(this@plus.processor, processor))
+operator fun <I : Any> PipelineBuilderScope<I>.plus(processor: IProcessor<*, *>) =
+    PipelineBuilderScope(producer, listOf(*this@plus.processors.toTypedArray(), processor))
 
-operator fun <I> ProcessorScope<I>.plus(processor: IProcessor<*, *>) =
-    ProcessorScope(producer, listOf(*this@plus.processors.toTypedArray(), processor))
-
-suspend operator fun <I, O> ProducerProcessorScope<I>.plus(consumer: IConsumer<O>) =
-    producer + consumer
-
-suspend operator fun <I, O> ProcessorScope<I>.plus(consumer: IConsumer<O>) =
-    Pipeline<I, O>(producer.params, processors).run {
+suspend inline operator fun <reified I : Any, reified O : Any> PipelineBuilderScope<I>.plus(consumer: IConsumer<O>) =
+    Pipeline(producer.params, I::class, O::class, processors).run {
         producer.pipeline = this
         consumer.pipeline = this
         consumer.run {

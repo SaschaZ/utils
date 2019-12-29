@@ -9,9 +9,13 @@ import de.gapps.utils.time.ITimeEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlin.reflect.KClass
 
-interface IProcessor<out I, out O> :
+interface IProcessor<out I : Any, out O : Any> :
     IPipelineElement<I, O> {
+
+    val inputType: KClass<@UnsafeVariance I>
+    val outputType: KClass<@UnsafeVariance O>
 
     override fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.pipe(): ReceiveChannel<IProcessValue<O>> = process()
 
@@ -20,8 +24,10 @@ interface IProcessor<out I, out O> :
     fun onProcessingFinished() = Unit
 }
 
-open class Processor<out I, out O>(
+open class Processor<out I : Any, out O : Any>(
     override val params: IProcessingParams = ProcessingParams(),
+    override val inputType: KClass<@UnsafeVariance I>,
+    override val outputType: KClass<@UnsafeVariance O>,
     protected open var block: (suspend IProcessingScope<@UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit)? = null
 ) : IProcessor<I, O> {
 
@@ -83,7 +89,7 @@ open class ProcessingScope<out O>(
     ) = sender(value, time, outIdx)
 }
 
-fun <I, O> ReceiveChannel<IProcessValue<I>>.processor(
+inline fun <reified I : Any, reified O : Any> processor(
     params: IProcessingParams = ProcessingParams(),
-    block: suspend IProcessingScope<@UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit
-) = Processor(params, block).run { process() }
+    noinline block: suspend IProcessingScope<@UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit
+) = Processor(params, I::class, O::class, block)

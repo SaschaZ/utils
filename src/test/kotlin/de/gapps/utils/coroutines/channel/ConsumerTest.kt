@@ -7,14 +7,14 @@ import kotlin.test.assertEquals
 
 class ConsumerTest : AnnotationSpec() {
 
-    private val testProducer = Producer<Int> {
+    private val testProducer = producer<Int> {
         repeat(5) { send(it, isLastSend = it == 4) }
     }
 
     @Test
     fun testConsumer() = runBlocking {
         val consumerResult = ArrayList<Int>()
-        Consumer<Int> { consumerResult.add(it) }.run {
+        consumer<Int> { consumerResult.add(it) }.run {
             testProducer.produce().consume().join()
         }
         assertEquals(5, consumerResult.size)

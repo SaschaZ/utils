@@ -11,8 +11,11 @@ import de.gapps.utils.time.TimeEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlin.reflect.KClass
 
-interface IProducer<out T> : IPipelineElement<Any?, T> {
+interface IProducer<out T : Any> : IPipelineElement<Any?, T> {
+
+    val outputType: KClass<@UnsafeVariance T>
 
     override fun ReceiveChannel<IProcessValue<Any?>>.pipe(): ReceiveChannel<IProcessValue<T>> = produce()
 
@@ -21,11 +24,11 @@ interface IProducer<out T> : IPipelineElement<Any?, T> {
     fun onProducingFinished() = Unit
 }
 
-open class Producer<out T>(
+open class Producer<out T : Any>(
     override val params: IProcessingParams = ProcessingParams(),
+    override val outputType: KClass<@UnsafeVariance T>,
     protected open var block: (suspend IProducerScope<@UnsafeVariance T>.() -> Unit)? = null
-) :
-    IProducer<T> {
+) : IProducer<T> {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
 
@@ -79,10 +82,11 @@ open class ProducerScope<out T>(
     override fun close() = closer()
 }
 
-fun <T> producer(
+inline fun <reified T : Any> producer(
     params: IProcessingParams = ProcessingParams(),
-    block: suspend IProducerScope<T>.() -> Unit
+    noinline block: suspend IProducerScope<T>.() -> Unit
 ) = Producer(
     params,
+    T::class,
     block
-).run { produce() }
+)

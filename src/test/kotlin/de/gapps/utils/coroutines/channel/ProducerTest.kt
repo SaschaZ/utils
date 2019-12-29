@@ -12,7 +12,7 @@ class ProducerTest : AnnotationSpec() {
 
     @Test
     fun testProducer() = runBlocking {
-        val producer = Producer<Int> {
+        val producer = producer<Int> {
             repeat(5) { send(it, isLastSend = it == 4) }
         }
         producer.pipeline = mockk<IPipeline<Int, Int>>()

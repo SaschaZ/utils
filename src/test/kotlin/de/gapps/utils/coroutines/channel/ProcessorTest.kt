@@ -8,13 +8,13 @@ import kotlin.test.assertEquals
 
 class ProcessorTest : AnnotationSpec() {
 
-    private val testProducer = Producer<Int> {
+    private val testProducer = producer<Int> {
         repeat(5) { send(it, isLastSend = it == 4) }
     }
 
     @Test
     fun testProcessor() = runBlocking {
-        val processorResult = Processor<Int, Int> {
+        val processorResult = processor<Int, Int> {
             send(
                 it
             )

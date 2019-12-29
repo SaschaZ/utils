@@ -10,8 +10,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlin.reflect.KClass
 
-interface IConsumer<I> : IPipelineElement<I, Any?> {
+interface IConsumer<I : Any> : IPipelineElement<I, Any?> {
+
+    val inputType: KClass<@UnsafeVariance I>
 
     override fun ReceiveChannel<IProcessValue<I>>.pipe(): ReceiveChannel<IProcessValue<Any?>> {
         consume()
@@ -23,8 +26,9 @@ interface IConsumer<I> : IPipelineElement<I, Any?> {
     fun onConsumingFinished() = Unit
 }
 
-open class Consumer<I>(
+open class Consumer<I : Any>(
     override val params: IProcessingParams = ProcessingParams(),
+    override val inputType: KClass<I>,
     protected open var block: (suspend IConsumerScope.(value: I) -> Unit)? = null
 ) : IConsumer<I> {
 
@@ -60,7 +64,7 @@ open class ConsumerScope(
     override val time: ITimeEx = value.time
 }
 
-fun <I> ReceiveChannel<IProcessValue<I>>.consumer(
+inline fun <reified I : Any> consumer(
     params: IProcessingParams = ProcessingParams(),
-    block: suspend IConsumerScope.(I) -> Unit
-) = Consumer(params, block).run { consume() }
+    noinline block: suspend IConsumerScope.(I) -> Unit
+) = Consumer(params, I::class, block)
