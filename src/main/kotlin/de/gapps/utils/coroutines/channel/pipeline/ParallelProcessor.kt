@@ -80,7 +80,7 @@ open class ParallelProcessor<out I : Any, out O : Any>(
 ) : IParallelProcessor<I, O> {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
-    override var onProcessingFinished: suspend IProcessingScope<@UnsafeVariance O>.() -> Unit = {}
+    override var onProcessingFinished: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.() -> Unit = {}
 }
 
 interface IParallelNodeValue<out O : Any> : INodeValue<O> {

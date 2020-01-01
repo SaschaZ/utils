@@ -59,7 +59,7 @@ class DummyPipeline : IPipeline<Any, Any> {
     override val params: IProcessingParams =
         ProcessingParams()
     override var pipeline: IPipeline<*, *> = this
-    override var onProcessingFinished: suspend IProcessingScope<Any>.() -> Unit = {}
+    override var onProcessingFinished: suspend IProcessingScope<Any, Any>.() -> Unit = {}
 
     override fun store(key: String, value: Any) = Unit
 
