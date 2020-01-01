@@ -10,6 +10,7 @@ import de.gapps.utils.time.base.IMillisecondHolder
 import de.gapps.utils.time.base.latest
 import de.gapps.utils.time.toTime
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import java.io.File
@@ -265,3 +266,13 @@ suspend inline fun <reified T : IMillisecondHolder> processTimeHolderListProduce
 }.await()
 
 fun String.nullWhenBlank() = if (isBlank()) null else this
+
+
+inline fun <T, R> Collection<T>.runEachIndexed(block: T.(index: Int) -> R): List<R> =
+    mapIndexed { idx, value -> value.run { block(idx) } }
+
+inline fun <T, R> Collection<T>.runEach(block: T.() -> R): List<R> = map { it.run(block) }
+
+suspend inline fun <T> ReceiveChannel<T>.runEach(block: T.() -> Unit) {
+    for (value in this) value.run { block() }
+}

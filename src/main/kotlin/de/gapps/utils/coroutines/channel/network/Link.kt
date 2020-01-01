@@ -1,9 +1,9 @@
 package de.gapps.utils.coroutines.channel.network
 
 import de.gapps.utils.coroutines.builder.launchEx
-import de.gapps.utils.coroutines.channel.runEach
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import de.gapps.utils.log.Log
+import de.gapps.utils.misc.runEach
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 

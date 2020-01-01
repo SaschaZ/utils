@@ -1,10 +1,9 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.coroutines.channel.IProcessingParams
 import de.gapps.utils.coroutines.channel.network.INodeValue
 import kotlinx.coroutines.channels.ReceiveChannel
 
-interface IPipelineElement<I, O> {
+interface IPipelineElement<out I : Any?, out O : Any?> {
 
     val params: IProcessingParams
 

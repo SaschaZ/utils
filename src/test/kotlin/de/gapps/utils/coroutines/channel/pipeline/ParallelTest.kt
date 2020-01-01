@@ -1,11 +1,9 @@
-package de.gapps.utils.coroutines.channel
+package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.coroutines.channel.pipeline.plus
 import de.gapps.utils.log.Log
 import de.gapps.utils.misc.asUnit
 import de.gapps.utils.time.ITimeEx
 import de.gapps.utils.time.TimeEx
-import de.gapps.utils.time.delay
 import de.gapps.utils.time.duration.seconds
 import de.gapps.utils.time.duration.years
 import io.kotlintest.specs.AnnotationSpec
@@ -16,7 +14,7 @@ import kotlin.test.assertEquals
 
 class ParallelTest : AnnotationSpec() {
 
-    private val testProducerAmount = 9
+    private val testProducerAmount = 30
     private lateinit var testProducer: IProducer<Int>
 
     private var lastTimeValTime0: ITimeEx = TimeEx(20.years.millis)
@@ -58,6 +56,8 @@ class ParallelTest : AnnotationSpec() {
             ParallelProcessingTypes.UNIQUE,
             numParallel
         )
+
+        val result = ArrayList<IParallelNodeValue<String>>()
         testProducer + ParallelProcessor(params) {
             when (it) {
                 0 -> testProcessor0
@@ -65,8 +65,22 @@ class ParallelTest : AnnotationSpec() {
                 else -> testProcessor2
             }
         } + Consumer<String>(params) {
-            it.split(": ").run { assertEquals(first().toInt(), get(1).toInt() % numParallel) }
+            it.split(": ").run {
+                result.add(
+                    ParallelNodeValue(
+                        get(1), time, inIdx, outIdx,
+                        (value as IParallelNodeValue<String>).parallelIdx
+                    )
+                )
+            }
             Log.d("result: $it")
+        }
+
+        assertEquals(result.size, testProducerAmount)
+        val idxGroups = result.groupBy { it.parallelIdx }
+        assertEquals(idxGroups.keys.size, numParallel)
+        idxGroups.values.forEach { list ->
+            assertEquals(list.size, testProducerAmount / numParallel)
         }
     }.asUnit()
 
@@ -88,7 +102,7 @@ class ParallelTest : AnnotationSpec() {
             it.split(": ").run { resultBuffer.getOrPut(first().toInt()) { ArrayList() }.add(get(1).toInt()) }
             Log.d("result: $it")
         }
-        delay(1.seconds)
+//        delay(1.seconds)
         assertEquals(resultBuffer.keys.size, numParallel)
         resultBuffer.values.map { assertEquals(it.size, testProducerAmount); it.sorted() }.forEach {
             assertEquals(it.first(), 0)
@@ -115,10 +129,33 @@ class ParallelTest : AnnotationSpec() {
         assertEquals(result.size, testProducerAmount)
         val idxGroups = result.groupBy { it.parallelIdx }
         assertEquals(idxGroups.keys.size, numParallel)
-        idxGroups.keys.forEach { idx ->
-            idxGroups[idx]?.also { list ->
-                assertEquals(list.size, testProducerAmount / numParallel)
-            }
+        idxGroups.values.forEach { list ->
+            assertEquals(list.size, testProducerAmount / numParallel)
+        }
+    }.asUnit()
+
+    @Test
+    fun testEqualStandalone() = runBlocking {
+        val numParallel = 3
+        val params = ParallelProcessingParams(
+            ParallelProcessingTypes.EQUAL,
+            numParallel
+        )
+        val result = testProducer.produce().let { producerChan ->
+            ParallelProcessor(params) {
+                when (it) {
+                    0 -> testProcessor0
+                    1 -> testProcessor1
+                    else -> testProcessor2
+                }
+            }.run { producerChan.process() }.toList()
+        }
+        assertEquals(result.size, testProducerAmount * numParallel)
+        val idxGroups =
+            result.groupBy { it.parallelIdx }.map { it.key to it.value.sorted() }.toMap()
+        assertEquals(idxGroups.keys.size, numParallel)
+        idxGroups.values.forEach { list ->
+            assertEquals(list.size, testProducerAmount)
         }
     }.asUnit()
 }

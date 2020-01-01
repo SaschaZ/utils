@@ -1,30 +1,31 @@
-package de.gapps.utils.coroutines.channel
+package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.coroutines.builder.launchEx
-import de.gapps.utils.coroutines.channel.ParallelProcessingTypes.EQUAL
-import de.gapps.utils.coroutines.channel.ParallelProcessingTypes.UNIQUE
 import de.gapps.utils.coroutines.channel.network.INodeValue
-import de.gapps.utils.coroutines.channel.pipeline.DummyPipeline
-import de.gapps.utils.coroutines.channel.pipeline.IPipeline
+import de.gapps.utils.coroutines.channel.pipeline.ParallelProcessingTypes.EQUAL
+import de.gapps.utils.coroutines.channel.pipeline.ParallelProcessingTypes.UNIQUE
 import de.gapps.utils.log.Log
+import de.gapps.utils.misc.runEach
+import de.gapps.utils.misc.runEachIndexed
 import de.gapps.utils.time.ITimeEx
 import de.gapps.utils.time.base.IMillisecondHolder
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 
-interface IParallelProcessor<I, O> : IProcessor<I, O> {
+interface IParallelProcessor<out I : Any, out O : Any> : IProcessor<I, O> {
 
     override val params: IParallelProcessingParams
     val scope: CoroutineScope
         get() = params.scope
     val processorFactory: (idx: Int) -> IProcessor<I, O>
 
-    override fun ReceiveChannel<INodeValue<I>>.process(): ReceiveChannel<IParallelNodeValue<O>> =
+    override fun ReceiveChannel<INodeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IParallelNodeValue<O>> =
         Channel<IParallelNodeValue<O>>(params.channelCapacity).also { output ->
-            scope.launchEx {
+            scope.launch {
                 (0 until params.numParallel).map { processorFactory(it) }.also { processors ->
                     processInternal(this@process, output, processors)
                     output.close()
@@ -33,22 +34,28 @@ interface IParallelProcessor<I, O> : IProcessor<I, O> {
         }
 
     suspend fun processInternal(
-        input: ReceiveChannel<INodeValue<I>>,
-        output: SendChannel<IParallelNodeValue<O>>,
-        processors: List<IProcessor<I, O>>
+        input: ReceiveChannel<INodeValue<@UnsafeVariance I>>,
+        output: SendChannel<IParallelNodeValue<@UnsafeVariance O>>,
+        processors: List<IProcessor<@UnsafeVariance I, @UnsafeVariance O>>
     ) {
-        val internalInputs = processors.map {
-            Channel<INodeValue<I>>(params.channelCapacity)
-        }
+        val internalInputs: List<Channel<INodeValue<I>>> =
+            processors.map { Channel<INodeValue<I>>(params.channelCapacity) }
 
-        val internalOutputs = processors.mapIndexed { index, iProcessor ->
-            iProcessor.run { internalInputs[index].process() }
-        }
+        val internalOutputs: List<ReceiveChannel<INodeValue<O>>> =
+            processors.runEachIndexed { index -> internalInputs[index].process() }
 
-        val internalJobs = internalOutputs.mapIndexed { idx, receiveChannel ->
-            scope.launchEx {
+        val internalJobs: List<Job> = internalOutputs.mapIndexed { idx, receiveChannel ->
+            scope.launch {
                 for (value in receiveChannel)
-                    output.send(ParallelNodeValue(value.inIdx, value.outIdx, value.value, value.time, idx))
+                    output.send(
+                        ParallelNodeValue(
+                            value.inIdx,
+                            value.outIdx,
+                            value.value,
+                            value.time,
+                            idx
+                        )
+                    )
             }
         }
 
@@ -60,28 +67,28 @@ interface IParallelProcessor<I, O> : IProcessor<I, O> {
             }
         }
 
-        internalInputs.forEach { it.close() }
+        internalInputs.runEach { close() }
         Log.d("parallel processing finished -> channels closed -> waiting for jobs to join")
         internalJobs.joinAll()
         Log.d("jobs joined")
     }
 }
 
-open class ParallelProcessor<I, O>(
+open class ParallelProcessor<out I : Any, out O : Any>(
     override val params: IParallelProcessingParams,
     override val processorFactory: (idx: Int) -> IProcessor<I, O>
 ) : IParallelProcessor<I, O> {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
-    override var onProcessingFinished: suspend IProcessingScope<O>.() -> Unit = {}
+    override var onProcessingFinished: suspend IProcessingScope<@UnsafeVariance O>.() -> Unit = {}
 }
 
-interface IParallelNodeValue<O> : INodeValue<O> {
+interface IParallelNodeValue<out O : Any> : INodeValue<O> {
 
     val parallelIdx: Int
 }
 
-data class ParallelNodeValue<O>(
+data class ParallelNodeValue<out O : Any>(
     override val value: O,
     override val time: ITimeEx,
     override val inIdx: Int,
@@ -90,14 +97,4 @@ data class ParallelNodeValue<O>(
 ) : IParallelNodeValue<O>, IMillisecondHolder by time {
     constructor(inIdx: Int, outIdx: Int, value: O, time: ITimeEx, parallelIdx: Int) :
             this(value, time, inIdx, outIdx, parallelIdx)
-}
-
-
-inline fun <T, R> Collection<T>.runEachIndexed(block: T.(index: Int) -> R): List<R> =
-    mapIndexed { idx, value -> value.run { block(idx) } }
-
-inline fun <T, R> Collection<T>.runEach(block: T.() -> R): List<R> = map { it.run(block) }
-
-suspend inline fun <T> ReceiveChannel<T>.runEach(block: T.() -> Unit) {
-    for (value in this) value.run { block() }
 }

@@ -1,6 +1,5 @@
-package de.gapps.utils.coroutines.channel
+package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.coroutines.channel.pipeline.IPipeline
 import de.gapps.utils.misc.asUnit
 import io.kotlintest.specs.AnnotationSpec
 import io.mockk.mockk
@@ -13,7 +12,8 @@ class ProducerTest : AnnotationSpec() {
     @Test
     fun testProducer() = runBlocking {
         val producer = Producer<Int> {
-            repeat(5) { send(it) }
+
+        repeat(5) { send(it) }
             close()
         }
         producer.pipeline = mockk<IPipeline<Int, Int>>()

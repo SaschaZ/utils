@@ -1,6 +1,5 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.coroutines.channel.*
 import de.gapps.utils.coroutines.channel.network.INodeValue
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -12,9 +11,9 @@ interface IPipelineStorage {
     fun <T> read(key: String): T
 }
 
-interface IPipeline<I, O> : IProcessor<I, O>, IPipelineStorage
+interface IPipeline<out I : Any, out O : Any> : IProcessor<I, O>, IPipelineStorage
 
-abstract class AbsPipeline<I, O>(
+abstract class AbsPipeline<out I : Any, out O : Any>(
     override val params: IProcessingParams,
     private val processors: List<IProcessor<*, *>>
 ) : IPipeline<I, O>, Processor<I, O>() {
@@ -35,15 +34,15 @@ abstract class AbsPipeline<I, O>(
     @Suppress("UNCHECKED_CAST")
     override fun <T> read(key: String) = storage[key] as T
 
-    override fun ReceiveChannel<INodeValue<I>>.process(): ReceiveChannel<INodeValue<O>> {
-        var prevChannel: ReceiveChannel<INodeValue<Any?>> = this
-//        processors.map { cur -> prevChannel = (cur as ReceiveChannel<IProcessValue<Any?>>).run { prevChannel.process() } }
+    override fun ReceiveChannel<INodeValue<@UnsafeVariance I>>.process(): ReceiveChannel<INodeValue<O>> {
+        var prevChannel: ReceiveChannel<INodeValue<Any>> = this
+        processors.forEach { cur -> prevChannel = cur.run { prevChannel.process() } }
         @Suppress("UNCHECKED_CAST")
         return prevChannel as ReceiveChannel<INodeValue<O>>
     }
 }
 
-class Pipeline<I, O>(
+class Pipeline<out I : Any, out O : Any>(
     params: IProcessingParams,
     pipes: List<IProcessor<*, *>>
 ) : AbsPipeline<I, O>(params, pipes) {

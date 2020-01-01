@@ -1,4 +1,4 @@
-package de.gapps.utils.coroutines.channel
+package de.gapps.utils.coroutines.channel.pipeline
 
 import de.gapps.utils.misc.asUnit
 import io.kotlintest.specs.AnnotationSpec

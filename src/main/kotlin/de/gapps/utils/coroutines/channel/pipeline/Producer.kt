@@ -1,13 +1,8 @@
-package de.gapps.utils.coroutines.channel
+package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.channel.network.INodeValue
 import de.gapps.utils.coroutines.channel.network.INodeValue.Companion.NO_IDX
 import de.gapps.utils.coroutines.channel.network.NodeValue
-import de.gapps.utils.coroutines.channel.pipeline.DummyPipeline
-import de.gapps.utils.coroutines.channel.pipeline.IPipeline
-import de.gapps.utils.coroutines.channel.pipeline.IPipelineElement
-import de.gapps.utils.coroutines.channel.pipeline.IPipelineStorage
 import de.gapps.utils.log.Log
 import de.gapps.utils.time.ITimeEx
 import de.gapps.utils.time.TimeEx
@@ -16,6 +11,7 @@ import de.gapps.utils.time.duration.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.launch
 
 interface IProducer<T> : IPipelineElement<Any?, T> {
 
@@ -40,8 +36,10 @@ open class Producer<T>(
     @Suppress("LeakingThis")
     private val output = Channel<INodeValue<T>>(params.channelCapacity)
 
-    override fun produce() = scope.launchEx {
-        ProducerScope<T>(pipeline, { closeOutput() }) { result, time, idx ->
+    override fun produce() = scope.launch {
+        ProducerScope<T>(
+            pipeline,
+            { closeOutput() }) { result, time, idx ->
             output.send(
                 NodeValue(
                     NO_IDX,
