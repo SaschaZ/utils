@@ -13,21 +13,43 @@ class DelegatePatternTest : AnnotationSpec() {
     }
 
     class TestDelegate1 : TestInterface {
-        override fun foo() = super.foo() + "foo"
-        override fun boo() = "boo"
+        override fun foo() = super.foo() + "2"
+        override fun boo() = "1"
     }
 
     class TestParent1 : TestInterface by TestDelegate1() {
-        override fun foo() = super.foo() + "hoo"
+        override fun foo() = super.foo() + "3"
     }
 
     class TestParent2(private val delegate: TestInterface = TestDelegate1()) : TestInterface by delegate {
-        override fun foo() = delegate.foo() + "doo"
+        override fun foo() = delegate.foo() + "3"
     }
 
     @Test
     fun testParentOverwrite() {
-        assertEquals("boohoo", TestParent1().foo())
-        assertEquals("boofoodoo", TestParent2().foo())
+        assertEquals("13", TestParent1().foo())
+        assertEquals("123", TestParent2().foo())
+    }
+
+    interface IParent {
+        fun foo() = 1
+    }
+
+    open class Parent : IParent {
+        override fun foo() = 2
+    }
+
+    class Child : Parent() {
+        override fun foo() = 3
+    }
+
+    @Test
+    fun testExtend() {
+        val child = Child()
+        val parent = child as Parent
+        val iParent = child as IParent
+        assertEquals(3, iParent.foo())
+        assertEquals(3, parent.foo())
+        assertEquals(3, child.foo())
     }
 }

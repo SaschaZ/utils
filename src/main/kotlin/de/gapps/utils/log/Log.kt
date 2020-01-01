@@ -4,6 +4,8 @@ package de.gapps.utils.log
 
 import com.github.ajalt.mordant.TermColors
 import de.gapps.utils.UtilsSettings
+import de.gapps.utils.coroutines.builder.launchEx
+import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import kotlinx.coroutines.CoroutineScope
 
 object Log {
@@ -70,8 +72,33 @@ object Log {
         (builder.wrapMessage(null, "E" to "$t $msg"))
     )
 
-    private fun out(level: LogLevel, msg: String) {
-        if (level.ordinal < UtilsSettings.LOG_LEVEL.ordinal) return
+    fun r(msg: String) = out(null, msg)
+
+    class LogTextProgressScope(private val receiver: suspend (value: String) -> Unit) {
+        suspend fun send(value: String) {
+            receiver(value)
+        }
+    }
+
+    fun p(
+        prefix: String = "",
+        scope: CoroutineScope = DefaultCoroutineScope(),
+        block: suspend ((String) -> Unit) -> Unit
+    ) = scope.launchEx {
+        Log.r("starting test")
+        var prevLength = 0
+        print(prefix)
+        block { v ->
+            with(TermColors()) {
+                if (prevLength > 0) print(cursorLeft(prevLength))
+                out(null, v)
+                prevLength = v.length
+            }
+        }
+    }
+
+    private fun out(level: LogLevel?, msg: String) {
+        if (level?.ordinal?.let { it < UtilsSettings.LOG_LEVEL.ordinal } == true) return
 
         with(TermColors()) {
             println(
@@ -81,6 +108,7 @@ object Log {
                     LogLevel.INFO -> brightCyan(msg)
                     LogLevel.WARNING -> brightYellow(msg)
                     LogLevel.EXCEPTION -> brightRed(msg)
+                    else -> brightMagenta(msg)
                 }
             )
         }

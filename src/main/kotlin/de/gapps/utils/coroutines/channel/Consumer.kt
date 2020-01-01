@@ -1,6 +1,7 @@
 package de.gapps.utils.coroutines.channel
 
 import de.gapps.utils.coroutines.builder.launchEx
+import de.gapps.utils.coroutines.channel.network.INodeValue
 import de.gapps.utils.coroutines.channel.pipeline.DummyPipeline
 import de.gapps.utils.coroutines.channel.pipeline.IPipeline
 import de.gapps.utils.coroutines.channel.pipeline.IPipelineElement
@@ -12,31 +13,32 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 
-interface IConsumer<out I> : IPipelineElement<I, Any?> {
+interface IConsumer<I> : IPipelineElement<I, Any?> {
 
-    override fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.pipe(): ReceiveChannel<IProcessValue<Any?>> {
+    override fun ReceiveChannel<INodeValue<I>>.pipe(): ReceiveChannel<INodeValue<Any?>> {
         consume()
         return Channel()
     }
 
-    fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.consume(): Job
+    fun ReceiveChannel<INodeValue<I>>.consume(): Job
 
-    suspend fun IConsumerScope.onConsumingFinished() = Unit
+    var onConsumingFinished: suspend IConsumerScope.() -> Unit
 }
 
-open class Consumer<out I>(
+open class Consumer<I>(
     override val params: IProcessingParams = ProcessingParams(),
-    protected open val block: (suspend IConsumerScope.(value: @UnsafeVariance I) -> Unit)? = null
+    protected open val block: (suspend IConsumerScope.(value: I) -> Unit)? = null
 ) : IConsumer<I> {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
+    override var onConsumingFinished: suspend IConsumerScope.() -> Unit = {}
 
     @Suppress("LeakingThis")
     protected val scope: CoroutineScope = params.scope
 
-    override fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.consume() = scope.launchEx {
+    override fun ReceiveChannel<INodeValue<I>>.consume() = scope.launchEx {
         val b = block ?: throw IllegalStateException("Can not process without callback set")
-        lateinit var prevValue: IProcessValue<I>
+        lateinit var prevValue: INodeValue<I>
         for (value in this@consume) {
             ConsumerScope(value, pipeline).b(value.value)
             prevValue = value
@@ -55,7 +57,7 @@ interface IConsumerScope {
 }
 
 open class ConsumerScope(
-    value: IProcessValue<*>,
+    value: INodeValue<*>,
     override val storage: IPipelineStorage
 ) : IConsumerScope {
 

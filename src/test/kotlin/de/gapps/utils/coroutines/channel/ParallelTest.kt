@@ -29,7 +29,8 @@ class ParallelTest : AnnotationSpec() {
     @Before
     fun before() {
         testProducer = Producer {
-            repeat(testProducerAmount) { send(it, isLastSend = it == testProducerAmount - 1) }
+            repeat(testProducerAmount) { send(it) }
+            close()
             Log.d("producing finished")
         }
 
@@ -53,7 +54,10 @@ class ParallelTest : AnnotationSpec() {
     @Test
     fun testUniquePiped() = runBlocking {
         val numParallel = 3
-        val params = ParallelProcessingParams(ParallelProcessingTypes.UNIQUE, numParallel)
+        val params = ParallelProcessingParams(
+            ParallelProcessingTypes.UNIQUE,
+            numParallel
+        )
         testProducer + ParallelProcessor(params) {
             when (it) {
                 0 -> testProcessor0
@@ -69,7 +73,10 @@ class ParallelTest : AnnotationSpec() {
     @Test
     fun testEqualPiped() = runBlocking {
         val numParallel = 3
-        val params = ParallelProcessingParams(ParallelProcessingTypes.EQUAL, numParallel)
+        val params = ParallelProcessingParams(
+            ParallelProcessingTypes.EQUAL,
+            numParallel
+        )
         val resultBuffer = ConcurrentHashMap<Int, ArrayList<Int>>()
         testProducer + ParallelProcessor(params) {
             when (it) {
@@ -92,7 +99,10 @@ class ParallelTest : AnnotationSpec() {
     @Test
     fun testUniqueStandalone() = runBlocking {
         val numParallel = 3
-        val params = ParallelProcessingParams(ParallelProcessingTypes.UNIQUE, numParallel)
+        val params = ParallelProcessingParams(
+            ParallelProcessingTypes.UNIQUE,
+            numParallel
+        )
         val result = testProducer.produce().let { producerChan ->
             ParallelProcessor(params) {
                 when (it) {

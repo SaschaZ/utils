@@ -1,6 +1,8 @@
 package de.gapps.utils.coroutines.channel
 
 import de.gapps.utils.coroutines.builder.launchEx
+import de.gapps.utils.coroutines.channel.network.INodeValue
+import de.gapps.utils.coroutines.channel.network.NodeValue
 import de.gapps.utils.coroutines.channel.pipeline.DummyPipeline
 import de.gapps.utils.coroutines.channel.pipeline.IPipeline
 import de.gapps.utils.coroutines.channel.pipeline.IPipelineElement
@@ -11,56 +13,60 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 
-interface IProcessor<out I, out O> : IPipelineElement<I, O> {
+interface IProcessor<I, O> : IPipelineElement<I, O> {
 
-    override fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.pipe(): ReceiveChannel<IProcessValue<O>> = process()
+    override fun ReceiveChannel<INodeValue<I>>.pipe(): ReceiveChannel<INodeValue<O>> = process()
 
-    fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.process(): ReceiveChannel<IProcessValue<O>>
+    fun ReceiveChannel<INodeValue<I>>.process(): ReceiveChannel<INodeValue<O>>
 
-    suspend fun IProcessingScope<@UnsafeVariance O>.onProcessingFinished() = Unit
+    var onProcessingFinished: suspend IProcessingScope<O>.() -> Unit
 }
 
-open class Processor<out I, out O>(
+open class Processor<I, O>(
     override val params: IProcessingParams = ProcessingParams(),
-    protected open var block: (suspend IProcessingScope<@UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit)? = null
+    protected open var block: suspend IProcessingScope<O>.(value: I) -> Unit = {}
 ) : IProcessor<I, O> {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
+    override var onProcessingFinished: suspend IProcessingScope<O>.() -> Unit = {}
+
+    protected val scope: CoroutineScope
+        get() = params.scope
 
     @Suppress("LeakingThis")
-    protected val scope: CoroutineScope = params.scope
+    private val output by lazy { Channel<INodeValue<O>>(params.channelCapacity) }
 
-    @Suppress("LeakingThis")
-    private val output = Channel<IProcessValue<O>>(params.channelCapacity)
-
-    override fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.process() = scope.launchEx {
-        lateinit var prevValue: IProcessValue<I>
+    override fun ReceiveChannel<INodeValue<I>>.process() = scope.launchEx {
+        var prevValue: INodeValue<I>? = null
         for (value in this@process) {
-            val b = block ?: throw IllegalStateException("Can not process without callback")
-            ProcessingScope<O>(
-                value,
-                pipeline
-            ) { result, time, idx ->
-                output.send(ProcessValue(value.outIdx, idx, result, time))
-            }.b(value.value)
+            buildScope(value).block(value.value)
             prevValue = value
         }
-        ProcessingScope<O>(
-            prevValue,
-            pipeline
-        ) { result, time, idx ->
-            output.send(ProcessValue(prevValue.outIdx, idx, result, time))
-        }.closeOutput()
-    }.let { output as ReceiveChannel<IProcessValue<O>> }
+        prevValue?.let { pv -> buildScope(pv).closeOutput() }
+    }.let { output as ReceiveChannel<INodeValue<O>> }
 
-    private suspend fun IProcessingScope<@UnsafeVariance O>.closeOutput() {
+    private fun buildScope(value: INodeValue<I>) = ProcessingScope<O>(
+        value,
+        pipeline
+    ) { result, time, idx ->
+        output.send(
+            NodeValue(
+                value.outIdx,
+                idx,
+                result,
+                time
+            )
+        )
+    }
+
+    private suspend fun IProcessingScope<O>.closeOutput() {
         Log.v("processing finished")
         onProcessingFinished()
         output.close()
     }
 }
 
-interface IProcessingScope<out O> {
+interface IProcessingScope<O> {
 
     val inIdx: Int
     var outIdx: Int
@@ -68,17 +74,17 @@ interface IProcessingScope<out O> {
     val storage: IPipelineStorage
 
     suspend fun send(
-        value: @UnsafeVariance O,
+        value: O,
         time: ITimeEx = this.time,
         outIdx: Int = this.outIdx++
     )
 }
 
-open class ProcessingScope<out O>(
-    inputValue: IProcessValue<*>,
+open class ProcessingScope<O>(
+    inputValue: INodeValue<*>,
     override val storage: IPipelineStorage,
     private val sender: suspend (
-        value: @UnsafeVariance O,
+        value: O,
         time: ITimeEx,
         outIdx: Int
     ) -> Unit
@@ -89,7 +95,7 @@ open class ProcessingScope<out O>(
     override val time: ITimeEx = inputValue.time
 
     override suspend fun send(
-        value: @UnsafeVariance O,
+        value: O,
         time: ITimeEx,
         outIdx: Int
     ) = sender(value, time, outIdx)

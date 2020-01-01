@@ -1,14 +1,14 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.coroutines.channel.IProcessValue
 import de.gapps.utils.coroutines.channel.IProcessingParams
+import de.gapps.utils.coroutines.channel.network.INodeValue
 import kotlinx.coroutines.channels.ReceiveChannel
 
-interface IPipelineElement<out I, out O> {
+interface IPipelineElement<I, O> {
 
     val params: IProcessingParams
 
     var pipeline: IPipeline<*, *>
 
-    fun ReceiveChannel<IProcessValue<@UnsafeVariance I>>.pipe(): ReceiveChannel<IProcessValue<O>>
+    fun ReceiveChannel<INodeValue<@UnsafeVariance I>>.pipe(): ReceiveChannel<INodeValue<O>>
 }

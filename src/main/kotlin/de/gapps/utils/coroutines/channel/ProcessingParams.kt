@@ -10,7 +10,6 @@ interface IProcessingParams {
     val scope: CoroutineScope
     val mutex: Mutex?
     val channelCapacity: Int
-
 }
 
 data class ProcessingParams(

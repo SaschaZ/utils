@@ -8,7 +8,8 @@ import kotlin.test.assertEquals
 class ConsumerTest : AnnotationSpec() {
 
     private val testProducer = Producer<Int> {
-        repeat(5) { send(it, isLastSend = it == 4) }
+        repeat(5) { send(it) }
+        close()
     }
 
     @Test
