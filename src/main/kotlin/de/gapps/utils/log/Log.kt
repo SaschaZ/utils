@@ -1,4 +1,4 @@
-@file:Suppress("unused")
+@file:Suppress("unused", "MemberVisibilityCanBePrivate")
 
 package de.gapps.utils.log
 
@@ -7,6 +7,7 @@ import de.gapps.utils.UtilsSettings
 import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import kotlinx.coroutines.CoroutineScope
+import me.tongfei.progressbar.ProgressBar
 
 object Log {
 
@@ -74,27 +75,13 @@ object Log {
 
     fun r(msg: String) = out(null, msg)
 
-    class LogTextProgressScope(private val receiver: suspend (value: String) -> Unit) {
-        suspend fun send(value: String) {
-            receiver(value)
-        }
-    }
-
     fun p(
-        prefix: String = "",
+        title: String = "",
         scope: CoroutineScope = DefaultCoroutineScope(),
-        block: suspend ((String) -> Unit) -> Unit
+        max: Long = 100L,
+        block: suspend ProgressBar.() -> Unit
     ) = scope.launchEx {
-        Log.r("starting test")
-        var prevLength = 0
-        print(prefix)
-        block { v ->
-            with(TermColors()) {
-                if (prevLength > 0) print(cursorLeft(prevLength))
-                out(null, v)
-                prevLength = v.length
-            }
-        }
+        ProgressBar(title, max).use { it.block() }
     }
 
     private fun out(level: LogLevel?, msg: String) {
@@ -103,7 +90,7 @@ object Log {
         with(TermColors()) {
             println(
                 when (level) {
-                    LogLevel.VERBOSE -> white(msg)
+                    LogLevel.VERBOSE -> brightWhite(msg)
                     LogLevel.DEBUG -> brightBlue(msg)
                     LogLevel.INFO -> brightCyan(msg)
                     LogLevel.WARNING -> brightYellow(msg)

@@ -31,6 +31,8 @@ dependencies {
 
     implementation("com.github.ajalt:mordant:1.2.1")
     implementation("me.tongfei:progressbar:0.8.0")
+    implementation("com.googlecode.lanterna:lanterna:3.0.1")
+
 
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.3.61")
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")

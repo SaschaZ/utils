@@ -18,7 +18,7 @@ interface IConsumer<out I : Any> : IPipelineElement<I, Any?> {
 
     fun ReceiveChannel<INodeValue<@UnsafeVariance I>>.consume(): Job
 
-    var onConsumingFinished: suspend IConsumerScope<@UnsafeVariance I>.() -> Unit
+    suspend fun IConsumerScope<@UnsafeVariance I>.onConsumingFinished() = Unit
 }
 
 open class Consumer<out I : Any>(
@@ -27,7 +27,6 @@ open class Consumer<out I : Any>(
 ) : IConsumer<I> {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
-    override var onConsumingFinished: suspend IConsumerScope<@UnsafeVariance I>.() -> Unit = {}
 
     @Suppress("LeakingThis")
     protected val scope: CoroutineScope = params.scope

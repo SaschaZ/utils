@@ -12,12 +12,15 @@ class ProducerTest : AnnotationSpec() {
 
     @Test
     fun testProducer() = runBlocking {
-        val producer = Producer<Int> {
+        var finished = false
+        val producer = object : Producer<Int>(ProcessingParams(), {
             repeat(5) { send(it) }
             close()
+        }) {
+            override suspend fun IProducerScope<Int>.onProducingFinished() {
+                finished = true
+            }
         }
-        var finished = false
-        producer.onProducingFinished = { finished = true }
         producer.pipeline = mockk<IPipeline<Int, Int>>()
         val producerResult = producer.produce().toList()
 

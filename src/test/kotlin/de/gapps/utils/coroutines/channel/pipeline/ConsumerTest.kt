@@ -17,10 +17,11 @@ class ConsumerTest : AnnotationSpec() {
     fun testConsumer() = runBlocking {
         val consumerResult = ArrayList<Int>()
         var finished = false
-        Consumer<Int> { consumerResult.add(it) }.run {
-            onConsumingFinished = { finished = true }
-            testProducer.produce().consume().join()
-        }
+        (object : Consumer<Int>(ProcessingParams(), { consumerResult.add(it) }) {
+            override suspend fun IConsumerScope<Int>.onConsumingFinished() {
+                finished = true
+            }
+        }).run { testProducer.produce().consume().join() }
         assertTrue(finished)
         assertEquals(5, consumerResult.size)
         consumerResult.forEachIndexed { index, i ->

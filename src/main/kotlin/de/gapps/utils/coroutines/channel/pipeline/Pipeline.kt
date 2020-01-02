@@ -20,13 +20,6 @@ abstract class AbsPipeline<out I : Any, out O : Any>(
 
     private val storage = ConcurrentHashMap<String, Any>()
 
-    init {
-        @Suppress("LeakingThis")
-        block = {
-
-        }
-    }
-
     override fun store(key: String, value: Any) {
         storage[key] = value
     }
@@ -56,10 +49,8 @@ class DummyPipeline : IPipeline<Any, Any> {
 
     override fun ReceiveChannel<INodeValue<Any>>.process(): ReceiveChannel<INodeValue<Any>> = Channel()
 
-    override val params: IProcessingParams =
-        ProcessingParams()
+    override val params: IProcessingParams = ProcessingParams()
     override var pipeline: IPipeline<*, *> = this
-    override var onProcessingFinished: suspend IProcessingScope<Any, Any>.() -> Unit = {}
 
     override fun store(key: String, value: Any) = Unit
 

@@ -8,6 +8,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 interface IProcessor<out I : Any, out O : Any> : IPipelineElement<I, O> {
 
@@ -15,16 +17,15 @@ interface IProcessor<out I : Any, out O : Any> : IPipelineElement<I, O> {
 
     fun ReceiveChannel<INodeValue<@UnsafeVariance I>>.process(): ReceiveChannel<INodeValue<O>>
 
-    var onProcessingFinished: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.() -> Unit
+    suspend fun IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.onProcessingFinished() = Unit
 }
 
 open class Processor<out I : Any, out O : Any>(
     override val params: IProcessingParams = ProcessingParams(),
-    protected open var block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit = {}
+    protected open val block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit = {}
 ) : IProcessor<I, O> {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
-    override var onProcessingFinished: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.() -> Unit = {}
 
     protected val scope: CoroutineScope
         get() = params.scope
@@ -91,10 +92,11 @@ open class ProcessingScope<out I : Any, out O : Any>(
     override val inIdx: Int = value.outIdx
     override var outIdx: Int = 0
     override val time: ITimeEx = value.time
+    private val mutex = Mutex()
 
     override suspend fun send(
         value: @UnsafeVariance O,
         time: ITimeEx,
         outIdx: Int
-    ) = sender(value, time, outIdx)
+    ) = mutex.withLock { sender(value, time, outIdx) }
 }

@@ -17,10 +17,13 @@ class ProcessorTest : AnnotationSpec() {
     @Test
     fun testProcessor() = runBlocking {
         var finished = false
-        val processorResult = Processor<Int, Int> {
+        val processorResult = object : Processor<Int, Int>(ProcessingParams(), {
             send(it)
+        }) {
+            override suspend fun IProcessingScope<Int, Int>.onProcessingFinished() {
+                finished = true
+            }
         }.run {
-            onProcessingFinished = { finished = true }
             testProducer.produce().process().toList()
         }
 
