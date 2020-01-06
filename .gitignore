@@ -3,3 +3,6 @@
 /out/artifacts/
 /build/
 /utils/build/
+/utils/build/
+/utils/error.log
+/channels/build/
