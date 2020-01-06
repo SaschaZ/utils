@@ -16,7 +16,7 @@ import kotlinx.coroutines.channels.SendChannel
  * @property scope [CoroutineScope] That is used to notify asynchronous observers. By default a scope with the
  * [Dispatchers.Default] Coroutine context is used.
  * @property onlyNotifyOnChanged Only notify observer when the internal value changes. Active by default.
- * @property storeRecentValues Stores all values and provide them in the onChanged callback. Active by default.
+ * @property storeRecentValues Stores all values and provide them in the onChanged callback. Inactive by default.
  * @property subscriberStateChanged Is invoked when an observer is added or removed.
  * @param onChanged Callback that is invoked when the internal values changes.
  */
