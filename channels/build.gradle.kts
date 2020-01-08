@@ -33,6 +33,7 @@ dependencies {
     implementation("me.tongfei:progressbar:0.8.0")
 
 
+    testImplementation(project(":console"))
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.3.61")
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
     testImplementation("io.mockk:mockk:1.9.3")

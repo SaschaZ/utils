@@ -1,6 +1,6 @@
 @file:Suppress("MemberVisibilityCanBePrivate", "unused")
 
-package de.gapps.utils.log
+package de.gapps.utils.log.console
 
 import de.gapps.utils.coroutines.executeNativeBlocking
 import de.gapps.utils.misc.asUnit

@@ -2,6 +2,6 @@ rootProject.name = "utils"
 
 include(
     "utils",
-    "channels"
+    "channels",
+    "console"
 )
-include("console")

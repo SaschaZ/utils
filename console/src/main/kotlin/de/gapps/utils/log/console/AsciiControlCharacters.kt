@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package de.gapps.utils.log
+package de.gapps.utils.log.console
 
 enum class AsciiControlCharacters(val character: Char) : (Int) -> Unit {
     NULL(0),

@@ -70,6 +70,7 @@ open class Observable<out T>(
 
     override fun observe(channel: SendChannel<T>) {
         asyncSubscribers.add(channel)
+        scope.launchEx { channel.send(value) }
         updateSubscriberState()
     }
 

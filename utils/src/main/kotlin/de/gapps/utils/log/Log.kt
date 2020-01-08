@@ -2,12 +2,7 @@
 
 package de.gapps.utils.log
 
-import com.github.ajalt.mordant.TermColors
-import de.gapps.utils.UtilsSettings
-import de.gapps.utils.coroutines.builder.launchEx
-import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import kotlinx.coroutines.CoroutineScope
-import me.tongfei.progressbar.ProgressBar
 
 object Log {
 
@@ -75,30 +70,6 @@ object Log {
 
     fun r(msg: String) = out(null, msg)
 
-    fun p(
-        title: String = "",
-        scope: CoroutineScope = DefaultCoroutineScope(),
-        max: Long = 100L,
-        block: suspend ProgressBar.() -> Unit
-    ) = scope.launchEx {
-        ProgressBar(title, max).use { it.block() }
-    }
-
-    private fun out(level: LogLevel?, msg: String) {
-        if (level?.ordinal?.let { it < UtilsSettings.LOG_LEVEL.ordinal } == true) return
-
-        with(TermColors()) {
-            println(
-                when (level) {
-                    LogLevel.VERBOSE -> brightWhite(msg)
-                    LogLevel.DEBUG -> brightBlue(msg)
-                    LogLevel.INFO -> brightCyan(msg)
-                    LogLevel.WARNING -> brightYellow(msg)
-                    LogLevel.EXCEPTION -> brightRed(msg)
-                    else -> brightMagenta(msg)
-                }
-            )
-        }
-    }
+    var out: (level: LogLevel?, msg: String) -> Unit = { _, msg -> println(msg) }
 }
 

@@ -1,7 +1,5 @@
 package de.gapps.utils.observable
 
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 
 interface IObservableValue<out T> {
@@ -37,9 +35,3 @@ interface IObservable<out T> : IObservableValue<T> {
      */
     override var value: @UnsafeVariance T
 }
-
-/**
- * Returns asynchronous observer.
- */
-val <T> IObservableValue<T>.observe: ReceiveChannel<T>
-    get() = Channel<T>().also { observe(it) }
