@@ -21,6 +21,7 @@ interface IObservableValue<out T> {
      */
     fun observe(channel: SendChannel<T>)
 
+    fun clearCache()
 }
 
 /**

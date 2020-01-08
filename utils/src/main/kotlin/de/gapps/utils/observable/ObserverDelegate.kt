@@ -49,4 +49,5 @@ class ObserverDelegate<T>(
 
     override fun observe(channel: SendChannel<T>) = internal.observe(channel)
 
+    override fun clearCache() = internal.clearCache()
 }

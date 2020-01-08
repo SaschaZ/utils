@@ -81,5 +81,7 @@ open class Observable<out T>(
     private var subscribersAvailable by OnChanged(false) { new ->
         subscriberStateChanged?.invoke(new)
     }
+
+    override fun clearCache() = recentValues.clear()
 }
 
