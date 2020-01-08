@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlin.test.assertEquals
 
+
 class HostTest : AnnotationSpec() {
 
     private fun testNode(id: String) =
@@ -23,6 +24,7 @@ class HostTest : AnnotationSpec() {
         host = Host(Input<Int>("Host0Input0") + Output<Int>("Host0Output0"), "Host0")
     }.asUnit()
 
+    @Ignore
     @Test
     fun testWithTwoNodes() = runBlocking {
         host.addNode(testNode("Node0"))

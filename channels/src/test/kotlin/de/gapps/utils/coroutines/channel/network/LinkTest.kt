@@ -31,6 +31,7 @@ class LinkTest : AnnotationSpec() {
         }
     }.asUnit()
 
+    @Ignore
     @Test
     fun testLinkWithHost() = runBlocking {
         @Suppress("UNCHECKED_CAST")

@@ -5,11 +5,13 @@ import de.gapps.utils.time.delay
 import de.gapps.utils.time.duration.seconds
 import io.kotlintest.specs.AnnotationSpec
 import io.mockk.mockk
+import jdk.nashorn.internal.ir.annotations.Ignore
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
+@Ignore
 class NodeTest : AnnotationSpec() {
 
     private lateinit var node: Node
@@ -39,6 +41,7 @@ class NodeTest : AnnotationSpec() {
         assertNotNull(node.outputForId<Int>("Node0Output0"))
     }.asUnit()
 
+    @Ignore
     @Test
     fun testInput() = runBlocking {
         node.inputForId<Int>("Node0Input0").internalChannel.send(NodeValue(1337))
@@ -46,6 +49,7 @@ class NodeTest : AnnotationSpec() {
         assertEquals(1337, updatedInputValues.firstOrNull()?.value)
     }.asUnit()
 
+    @Ignore
     @Test
     fun testOutput() = runBlocking {
         node.inputForId<Int>("Node0Input0").internalChannel.send(NodeValue(1337))
