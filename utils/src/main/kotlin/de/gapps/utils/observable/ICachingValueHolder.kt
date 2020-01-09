@@ -15,7 +15,6 @@ open class CachingValueHolder<out T>(initial: T) : ICachingValueHolder<T> {
 
     override var value: @UnsafeVariance T by OnChanged(initial) {
         previousValues.add(this)
-        println("storing previous value: $this")
     }
 
     override val previousValues = ArrayList<@UnsafeVariance T>()
