@@ -27,7 +27,7 @@ class Observable<T> private constructor(
     scope: CoroutineScope =
         DefaultCoroutineScope(Controllable::class.name),
     onlyNotifyOnChanged: Boolean = true,
-    notifyForExisting: Boolean = true,
+    notifyForExisting: Boolean = false,
     storeRecentValues: Boolean = false,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
     cacheHolder: CachingValueHolder<T>,
