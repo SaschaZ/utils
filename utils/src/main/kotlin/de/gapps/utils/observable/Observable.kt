@@ -27,6 +27,7 @@ class Observable<T> private constructor(
     scope: CoroutineScope =
         DefaultCoroutineScope(Controllable::class.name),
     onlyNotifyOnChanged: Boolean = true,
+    notifyForExisting: Boolean = true,
     storeRecentValues: Boolean = false,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
     cacheHolder: CachingValueHolder<T>,
@@ -38,17 +39,20 @@ class Observable<T> private constructor(
         scope: CoroutineScope =
             DefaultCoroutineScope(Controllable::class.name),
         onlyNotifyOnChanged: Boolean = true,
+        notifyForExisting: Boolean = true,
         storeRecentValues: Boolean = false,
         subscriberStateChanged: ((Boolean) -> Unit)? = null,
         onChanged: ChangeObserver<T> = {}
-    ) :
-            this(
-                initial, scope, onlyNotifyOnChanged, storeRecentValues, subscriberStateChanged,
-                CachingValueHolder(initial), onChanged
-            )
+    ) : this(
+        initial, scope, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, subscriberStateChanged,
+        CachingValueHolder(initial), onChanged
+    )
 
     private var internal =
-        Controllable(initial, scope, onlyNotifyOnChanged, storeRecentValues, subscriberStateChanged, onChanged)
+        Controllable(
+            initial, scope, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, subscriberStateChanged,
+            onChanged
+        )
 
     override fun getValue(thisRef: Any, property: KProperty<*>): T = internal.value
 
@@ -60,6 +64,4 @@ class Observable<T> private constructor(
         get() = internal.value
 
     override fun observe(listener: ChangeObserver<T>): () -> Unit = internal.control(listener)
-
-    override fun clearCache() = internal.clearCache()
 }

@@ -25,6 +25,7 @@ open class Controllable<out T>(
     private val scope: CoroutineScope =
         DefaultCoroutineScope(Controllable::class.name),
     private val onlyNotifyOnChanged: Boolean = true,
+    private val notifyForExisting: Boolean = true,
     private val storeRecentValues: Boolean = false,
     private val subscriberStateChanged: ((Boolean) -> Unit)? = null,
     onChanged: ControlObserver<T> = {}
@@ -68,7 +69,8 @@ open class Controllable<out T>(
 
     override fun control(listener: ControlObserver<T>): () -> Unit {
         subscribers.add(listener)
-        newControlledChangeScope(value, previousValues.lastOrNull(), previousValues).listener(value)
+        if (notifyForExisting)
+            newControlledChangeScope(value, previousValues.lastOrNull(), previousValues).listener(value)
         if (subscribers.size > 1) updateSubscriberState()
         return {
             subscribers.remove(listener)
