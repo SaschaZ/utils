@@ -5,7 +5,7 @@ import de.gapps.utils.machineex.scopes.*
 import de.gapps.utils.misc.ifN
 import de.gapps.utils.misc.lastOrNull
 import de.gapps.utils.observable.ChangeObserver
-import de.gapps.utils.observable.Observable
+import de.gapps.utils.observable.Controllable
 import de.gapps.utils.observable.ObservedChangedScope
 
 /**
@@ -21,7 +21,7 @@ open class MachineEx<out E : IEvent, out S : IState>(
 
     private val recentChanges = ArrayList<EventChangeScope<E, S>>()
 
-    private val eventHost = Observable<E?>(null) {
+    private val eventHost = Controllable<E?>(null) {
         it!!.processEvent().processState()
     }
     override var event: @UnsafeVariance E
@@ -33,16 +33,16 @@ open class MachineEx<out E : IEvent, out S : IState>(
     val set: ISetScope<@UnsafeVariance E, @UnsafeVariance S>
         get() = SetScope(eventHost)
 
-    private var stateHost = Observable(initialState)
+    private var stateHost = Controllable(initialState)
 
     override val state: S
         get() = stateHost.value
 
-    override fun observeEvent(observer: ChangeObserver<E>) = eventHost.observe {
+    override fun observeEvent(observer: ChangeObserver<E>) = eventHost.control {
         value?.let { ObservedChangedScope(it, previousValue, previousValues.filterNotNull()) }
     }
 
-    override fun observeState(observer: ChangeObserver<S>) = stateHost.observe(observer)
+    override fun observeState(observer: ChangeObserver<S>) = stateHost.control(observer)
 
     protected open fun @UnsafeVariance E.processEvent(): S =
         OnEventScope(this, state, recentChanges).run { eventActionMapping(this@processEvent) }

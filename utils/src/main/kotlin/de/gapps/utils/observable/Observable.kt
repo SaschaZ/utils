@@ -1,87 +1,65 @@
 package de.gapps.utils.observable
 
-import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
-import de.gapps.utils.delegates.OnChanged
 import de.gapps.utils.misc.name
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.SendChannel
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 
 /**
- * Container that provides observing of the internal variable of type [T].
+ * [ReadWriteProperty] that can be used to add a read only observer to another property with the delegate pattern.
  *
- * @param T Type of the internal value.
- * @param initial Initial value for the internal variable. Will not notify any observers.
- * @property scope [CoroutineScope] That is used to notify asynchronous observers. By default a scope with the
- * [Dispatchers.Default] Coroutine context is used.
- * @property onlyNotifyOnChanged Only notify observer when the internal value changes. Active by default.
- * @property storeRecentValues Stores all values and provide them in the onChanged callback. Inactive by default.
- * @property subscriberStateChanged Is invoked when an observer is added or removed.
- * @param onChanged Callback that is invoked when the internal values changes.
+ * Example:
+ * ```
+ *  class TestClass {
+ *      val observable = ObservableDelegate("foo")
+ *      private var internalVar by observable
+ *  }
+ *
+ *  fun testFun() {
+ *      val testClass = TestClass()
+ *      val testClass.observable.observe { }
+ *  }
+ * ```
  */
-open class Observable<out T>(
+class Observable<T> private constructor(
     initial: T,
-    private val scope: CoroutineScope =
-        DefaultCoroutineScope(Observable::class.name),
-    private val onlyNotifyOnChanged: Boolean = true,
-    private val storeRecentValues: Boolean = false,
-    private val subscriberStateChanged: ((Boolean) -> Unit)? = null,
+    scope: CoroutineScope =
+        DefaultCoroutineScope(Controllable::class.name),
+    onlyNotifyOnChanged: Boolean = true,
+    storeRecentValues: Boolean = false,
+    subscriberStateChanged: ((Boolean) -> Unit)? = null,
+    cacheHolder: CachingValueHolder<T>,
     onChanged: ChangeObserver<T> = {}
-) : IObservable<T> {
+) : ICachingValueHolder<T> by cacheHolder, IObservable<T> {
 
-    private val syncSubscribers = ArrayList<ChangeObserver<T>>()
-    private val asyncSubscribers = ArrayList<SendChannel<T>>()
+    constructor(
+        initial: T,
+        scope: CoroutineScope =
+            DefaultCoroutineScope(Controllable::class.name),
+        onlyNotifyOnChanged: Boolean = true,
+        storeRecentValues: Boolean = false,
+        subscriberStateChanged: ((Boolean) -> Unit)? = null,
+        onChanged: ChangeObserver<T> = {}
+    ) :
+            this(
+                initial, scope, onlyNotifyOnChanged, storeRecentValues, subscriberStateChanged,
+                CachingValueHolder(initial), onChanged
+            )
 
-    private val recentValues = ArrayList<T>()
+    private var internal =
+        Controllable(initial, scope, onlyNotifyOnChanged, storeRecentValues, subscriberStateChanged, onChanged)
 
-    override var value: @UnsafeVariance T = initial
-        set(newValue) {
-            if (newValue != field || !onlyNotifyOnChanged) {
-                val recentValue = field
-                if (storeRecentValues) recentValues.add(recentValue)
+    override fun getValue(thisRef: Any, property: KProperty<*>): T = internal.value
 
-                field = newValue
-
-                ArrayList(syncSubscribers).forEach {
-                    recentValue.run {
-                        ObservedChangedScope(newValue, recentValue, recentValues).it(newValue)
-                    }
-                }
-                ArrayList(asyncSubscribers).forEach { c ->
-                    scope.launchEx { c.send(newValue) }
-                }
-            }
-        }
-
-    init {
-        @Suppress("LeakingThis")
-        observe(onChanged)
+    override fun setValue(thisRef: Any, property: KProperty<*>, value: T) {
+        internal.value = value
     }
 
-    override fun observe(listener: ChangeObserver<T>): () -> Unit {
-        syncSubscribers.add(listener)
-        if (syncSubscribers.size > 1) updateSubscriberState()
-        return {
-            syncSubscribers.remove(listener)
-            updateSubscriberState()
-        }
-    }
+    override val value: T
+        get() = internal.value
 
-    override fun observe(channel: SendChannel<T>) {
-        asyncSubscribers.add(channel)
-        scope.launchEx { channel.send(value) }
-        updateSubscriberState()
-    }
+    override fun observe(listener: ChangeObserver<T>): () -> Unit = internal.control(listener)
 
-    private fun updateSubscriberState() {
-        subscribersAvailable = syncSubscribers.size > 1 || asyncSubscribers.isNotEmpty()
-    }
-
-    private var subscribersAvailable by OnChanged(false) { new ->
-        subscriberStateChanged?.invoke(new)
-    }
-
-    override fun clearCache() = recentValues.clear()
+    override fun clearCache() = internal.clearCache()
 }
-
