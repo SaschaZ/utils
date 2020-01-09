@@ -25,7 +25,7 @@ open class Controllable<out T>(
     private val scope: CoroutineScope =
         DefaultCoroutineScope(Controllable::class.name),
     private val onlyNotifyOnChanged: Boolean = true,
-    private val notifyForExisting: Boolean = true,
+    private val notifyForExisting: Boolean = false,
     private val storeRecentValues: Boolean = false,
     private val subscriberStateChanged: ((Boolean) -> Unit)? = null,
     onChanged: ControlObserver<T> = {}
