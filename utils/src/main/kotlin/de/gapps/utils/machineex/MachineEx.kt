@@ -22,7 +22,7 @@ open class MachineEx<out E : IEvent, out S : IState>(
     private val recentChanges = ArrayList<EventChangeScope<E, S>>()
 
     private val eventHost = Controllable<E?>(null) {
-        it!!.processEvent().processState()
+        it?.processEvent()?.processState()
     }
     override var event: @UnsafeVariance E
         get() = eventHost.value ?: throw IllegalStateException("Can not provide unset event")
