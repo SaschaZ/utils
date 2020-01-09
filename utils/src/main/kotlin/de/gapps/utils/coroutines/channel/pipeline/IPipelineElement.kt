@@ -1,6 +1,5 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.coroutines.channel.network.INodeValue
 import kotlinx.coroutines.channels.ReceiveChannel
 
 interface IPipelineElement<out I : Any?, out O : Any?> {
@@ -9,5 +8,5 @@ interface IPipelineElement<out I : Any?, out O : Any?> {
 
     var pipeline: IPipeline<*, *>
 
-    fun ReceiveChannel<INodeValue<@UnsafeVariance I>>.pipe(): ReceiveChannel<INodeValue<O>>
+    fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.pipe(): ReceiveChannel<IPipeValue<O>>
 }

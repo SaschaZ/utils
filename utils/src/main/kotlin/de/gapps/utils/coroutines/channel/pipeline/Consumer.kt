@@ -1,6 +1,5 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.coroutines.channel.network.INodeValue
 import de.gapps.utils.log.Log
 import de.gapps.utils.time.ITimeEx
 import kotlinx.coroutines.CoroutineScope
@@ -11,12 +10,12 @@ import kotlinx.coroutines.launch
 
 interface IConsumer<out I : Any> : IPipelineElement<I, Any?> {
 
-    override fun ReceiveChannel<INodeValue<@UnsafeVariance I>>.pipe(): ReceiveChannel<INodeValue<Any?>> {
+    override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.pipe(): ReceiveChannel<IPipeValue<Any?>> {
         consume()
         return Channel()
     }
 
-    fun ReceiveChannel<INodeValue<@UnsafeVariance I>>.consume(): Job
+    fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.consume(): Job
 
     suspend fun IConsumerScope<@UnsafeVariance I>.onConsumingFinished() = Unit
 }
@@ -31,9 +30,9 @@ open class Consumer<out I : Any>(
     @Suppress("LeakingThis")
     protected val scope: CoroutineScope = params.scope
 
-    override fun ReceiveChannel<INodeValue<@UnsafeVariance I>>.consume() = scope.launch {
+    override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.consume() = scope.launch {
         val b = block ?: throw IllegalStateException("Can not process without callback set")
-        lateinit var prevValue: INodeValue<I>
+        lateinit var prevValue: IPipeValue<I>
         for (value in this@consume) {
             ConsumerScope(value, pipeline).b(value.value)
             prevValue = value
@@ -45,7 +44,7 @@ open class Consumer<out I : Any>(
 
 interface IConsumerScope<out T : Any> {
 
-    val value: INodeValue<T>
+    val value: IPipeValue<T>
     val inIdx: Int
     val outIdx: Int
     val time: ITimeEx
@@ -53,7 +52,7 @@ interface IConsumerScope<out T : Any> {
 }
 
 open class ConsumerScope<out T : Any>(
-    override val value: INodeValue<T>,
+    override val value: IPipeValue<T>,
     override val storage: IPipelineStorage
 ) : IConsumerScope<T> {
 

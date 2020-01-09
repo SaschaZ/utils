@@ -1,6 +1,5 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.coroutines.channel.network.INodeValue
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import java.util.concurrent.ConcurrentHashMap
@@ -27,11 +26,11 @@ abstract class AbsPipeline<out I : Any, out O : Any>(
     @Suppress("UNCHECKED_CAST")
     override fun <T> read(key: String) = storage[key] as T
 
-    override fun ReceiveChannel<INodeValue<@UnsafeVariance I>>.process(): ReceiveChannel<INodeValue<O>> {
-        var prevChannel: ReceiveChannel<INodeValue<Any>> = this
+    override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IPipeValue<O>> {
+        var prevChannel: ReceiveChannel<IPipeValue<Any>> = this
         processors.forEach { cur -> prevChannel = cur.run { prevChannel.process() } }
         @Suppress("UNCHECKED_CAST")
-        return prevChannel as ReceiveChannel<INodeValue<O>>
+        return prevChannel as ReceiveChannel<IPipeValue<O>>
     }
 }
 
@@ -47,7 +46,7 @@ class Pipeline<out I : Any, out O : Any>(
 
 class DummyPipeline : IPipeline<Any, Any> {
 
-    override fun ReceiveChannel<INodeValue<Any>>.process(): ReceiveChannel<INodeValue<Any>> = Channel()
+    override fun ReceiveChannel<IPipeValue<Any>>.process(): ReceiveChannel<IPipeValue<Any>> = Channel()
 
     override val params: IProcessingParams = ProcessingParams()
     override var pipeline: IPipeline<*, *> = this

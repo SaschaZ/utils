@@ -1,6 +1,5 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.coroutines.channel.network.INodeValue
 import de.gapps.utils.coroutines.channel.pipeline.ParallelProcessingTypes.EQUAL
 import de.gapps.utils.coroutines.channel.pipeline.ParallelProcessingTypes.UNIQUE
 import de.gapps.utils.log.Log
@@ -23,8 +22,8 @@ interface IParallelProcessor<out I : Any, out O : Any> : IProcessor<I, O> {
         get() = params.scope
     val processorFactory: (idx: Int) -> IProcessor<I, O>
 
-    override fun ReceiveChannel<INodeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IParallelNodeValue<O>> =
-        Channel<IParallelNodeValue<O>>(params.channelCapacity).also { output ->
+    override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IParallelPipeValue<O>> =
+        Channel<IParallelPipeValue<O>>(params.channelCapacity).also { output ->
             scope.launch {
                 (0 until params.numParallel).map { processorFactory(it) }.also { processors ->
                     processInternal(this@process, output, processors)
@@ -34,21 +33,21 @@ interface IParallelProcessor<out I : Any, out O : Any> : IProcessor<I, O> {
         }
 
     suspend fun processInternal(
-        input: ReceiveChannel<INodeValue<@UnsafeVariance I>>,
-        output: SendChannel<IParallelNodeValue<@UnsafeVariance O>>,
+        input: ReceiveChannel<IPipeValue<@UnsafeVariance I>>,
+        output: SendChannel<IParallelPipeValue<@UnsafeVariance O>>,
         processors: List<IProcessor<@UnsafeVariance I, @UnsafeVariance O>>
     ) {
-        val internalInputs: List<Channel<INodeValue<I>>> =
-            processors.map { Channel<INodeValue<I>>(params.channelCapacity) }
+        val internalInputs: List<Channel<IPipeValue<I>>> =
+            processors.map { Channel<IPipeValue<I>>(params.channelCapacity) }
 
-        val internalOutputs: List<ReceiveChannel<INodeValue<O>>> =
+        val internalOutputs: List<ReceiveChannel<IPipeValue<O>>> =
             processors.runEachIndexed { index -> internalInputs[index].process() }
 
         val internalJobs: List<Job> = internalOutputs.mapIndexed { idx, receiveChannel ->
             scope.launch {
                 for (value in receiveChannel)
                     output.send(
-                        ParallelNodeValue(
+                        ParallelPipeValue(
                             value.inIdx,
                             value.outIdx,
                             value.value,
@@ -82,18 +81,18 @@ open class ParallelProcessor<out I : Any, out O : Any>(
     override var pipeline: IPipeline<*, *> = DummyPipeline()
 }
 
-interface IParallelNodeValue<out O : Any> : INodeValue<O> {
+interface IParallelPipeValue<out O : Any> : IPipeValue<O> {
 
     val parallelIdx: Int
 }
 
-data class ParallelNodeValue<out O : Any>(
+data class ParallelPipeValue<out O : Any>(
     override val value: O,
     override val time: ITimeEx,
     override val inIdx: Int,
     override val outIdx: Int,
     override val parallelIdx: Int
-) : IParallelNodeValue<O>, IMillisecondHolder by time {
+) : IParallelPipeValue<O>, IMillisecondHolder by time {
     constructor(inIdx: Int, outIdx: Int, value: O, time: ITimeEx, parallelIdx: Int) :
             this(value, time, inIdx, outIdx, parallelIdx)
 }

@@ -1,8 +1,6 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.coroutines.channel.network.INodeValue
-import de.gapps.utils.coroutines.channel.network.INodeValue.Companion.NO_IDX
-import de.gapps.utils.coroutines.channel.network.NodeValue
+import de.gapps.utils.coroutines.channel.pipeline.IPipeValue.Companion.NO_IDX
 import de.gapps.utils.log.Log
 import de.gapps.utils.time.ITimeEx
 import de.gapps.utils.time.TimeEx
@@ -17,9 +15,9 @@ import kotlinx.coroutines.sync.withLock
 
 interface IProducer<out T : Any> : IPipelineElement<Any?, T> {
 
-    override fun ReceiveChannel<INodeValue<Any?>>.pipe(): ReceiveChannel<INodeValue<T>> = produce()
+    override fun ReceiveChannel<IPipeValue<Any?>>.pipe(): ReceiveChannel<IPipeValue<T>> = produce()
 
-    fun produce(): ReceiveChannel<INodeValue<T>>
+    fun produce(): ReceiveChannel<IPipeValue<T>>
 
     suspend fun IProducerScope<@UnsafeVariance T>.onProducingFinished() = Unit
 }
@@ -35,14 +33,14 @@ open class Producer<out T : Any>(
     protected val scope: CoroutineScope = params.scope
 
     @Suppress("LeakingThis")
-    private val output = Channel<INodeValue<T>>(params.channelCapacity)
+    private val output = Channel<IPipeValue<T>>(params.channelCapacity)
 
     override fun produce() = scope.launch {
         ProducerScope<T>(
             pipeline,
             { closeOutput() }) { result, time, idx ->
             output.send(
-                NodeValue(
+                PipeValue(
                     NO_IDX,
                     idx,
                     result,
@@ -50,7 +48,7 @@ open class Producer<out T : Any>(
                 )
             )
         }.block()
-    }.let { output as ReceiveChannel<INodeValue<T>> }
+    }.let { output as ReceiveChannel<IPipeValue<T>> }
 
     private suspend fun IProducerScope<T>.closeOutput() {
         delay(1.seconds)

@@ -1,7 +1,5 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.coroutines.channel.network.INodeValue
-import de.gapps.utils.coroutines.channel.network.NodeValue
 import de.gapps.utils.log.Log
 import de.gapps.utils.time.ITimeEx
 import kotlinx.coroutines.CoroutineScope
@@ -13,9 +11,9 @@ import kotlinx.coroutines.sync.withLock
 
 interface IProcessor<out I : Any, out O : Any> : IPipelineElement<I, O> {
 
-    override fun ReceiveChannel<INodeValue<@UnsafeVariance I>>.pipe(): ReceiveChannel<INodeValue<O>> = process()
+    override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.pipe(): ReceiveChannel<IPipeValue<O>> = process()
 
-    fun ReceiveChannel<INodeValue<@UnsafeVariance I>>.process(): ReceiveChannel<INodeValue<O>>
+    fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IPipeValue<O>>
 
     suspend fun IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.onProcessingFinished() = Unit
 }
@@ -31,24 +29,24 @@ open class Processor<out I : Any, out O : Any>(
         get() = params.scope
 
     @Suppress("LeakingThis")
-    private val output by lazy { Channel<INodeValue<O>>(params.channelCapacity) }
+    private val output by lazy { Channel<IPipeValue<O>>(params.channelCapacity) }
 
-    override fun ReceiveChannel<INodeValue<@UnsafeVariance I>>.process() = scope.launch {
-        var prevValue: INodeValue<I>? = null
+    override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process() = scope.launch {
+        var prevValue: IPipeValue<I>? = null
         for (value in this@process) {
             buildScope(value).block(value.value)
             prevValue = value
         }
         prevValue?.let { pv -> buildScope(pv).closeOutput() }
-    }.let { output as ReceiveChannel<INodeValue<O>> }
+    }.let { output as ReceiveChannel<IPipeValue<O>> }
 
-    private fun buildScope(value: INodeValue<I>) =
+    private fun buildScope(value: IPipeValue<I>) =
         ProcessingScope<I, O>(
             value,
             pipeline
         ) { result, time, idx ->
             output.send(
-                NodeValue(
+                PipeValue(
                     value.outIdx,
                     idx,
                     result,
@@ -66,7 +64,7 @@ open class Processor<out I : Any, out O : Any>(
 
 interface IProcessingScope<out I : Any, out O : Any> {
 
-    val value: INodeValue<I>
+    val value: IPipeValue<I>
     val inIdx: Int
     var outIdx: Int
     val time: ITimeEx
@@ -80,7 +78,7 @@ interface IProcessingScope<out I : Any, out O : Any> {
 }
 
 open class ProcessingScope<out I : Any, out O : Any>(
-    override val value: INodeValue<I>,
+    override val value: IPipeValue<I>,
     override val storage: IPipelineStorage,
     private val sender: suspend (
         value: O,
