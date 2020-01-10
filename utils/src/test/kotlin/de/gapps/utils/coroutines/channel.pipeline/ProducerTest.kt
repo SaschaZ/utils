@@ -13,7 +13,7 @@ class ProducerTest : AnnotationSpec() {
     @Test
     fun testProducer() = runBlocking {
         var finished = false
-        val producer = object : Producer<Int>(ProcessingParams(), {
+        val producer = object : Producer<Int>(ProcessingParams(), block = {
             repeat(5) { send(it) }
             close()
         }) {
@@ -21,13 +21,14 @@ class ProducerTest : AnnotationSpec() {
                 finished = true
             }
         }
-        producer.pipeline = mockk<IPipeline<Int, Int>>()
+        producer.pipeline = mockk()
         val producerResult = producer.produce().toList()
 
         assertTrue(finished)
         assertEquals(5, producerResult.size)
         producerResult.forEachIndexed { index, i ->
             assertEquals(index, i.value)
+            assertEquals(index, i.outIdx)
         }
     }.asUnit()
 }

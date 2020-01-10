@@ -1,8 +1,5 @@
 package de.gapps.utils.observable
 
-import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
-import de.gapps.utils.misc.name
-import kotlinx.coroutines.CoroutineScope
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -24,8 +21,6 @@ import kotlin.reflect.KProperty
  */
 class Observable<T> private constructor(
     initial: T,
-    scope: CoroutineScope =
-        DefaultCoroutineScope(Controllable::class.name),
     onlyNotifyOnChanged: Boolean = true,
     notifyForExisting: Boolean = false,
     storeRecentValues: Boolean = false,
@@ -36,21 +31,19 @@ class Observable<T> private constructor(
 
     constructor(
         initial: T,
-        scope: CoroutineScope =
-            DefaultCoroutineScope(Controllable::class.name),
         onlyNotifyOnChanged: Boolean = true,
         notifyForExisting: Boolean = true,
         storeRecentValues: Boolean = false,
         subscriberStateChanged: ((Boolean) -> Unit)? = null,
         onChanged: ChangeObserver<T> = {}
     ) : this(
-        initial, scope, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, subscriberStateChanged,
+        initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, subscriberStateChanged,
         CachingValueHolder(initial), onChanged
     )
 
     private var internal =
         Controllable(
-            initial, scope, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, subscriberStateChanged,
+            initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, subscriberStateChanged,
             onChanged
         )
 

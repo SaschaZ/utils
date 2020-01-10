@@ -14,8 +14,10 @@ interface IPipeline<out I : Any, out O : Any> : IProcessor<I, O>, IPipelineStora
 
 abstract class AbsPipeline<out I : Any, out O : Any>(
     override val params: IProcessingParams,
+    override val inOutRelation: ProcessorValueRelation,
+    override var outputChannel: Channel<out IPipeValue<@UnsafeVariance O>>,
     private val processors: List<IProcessor<*, *>>
-) : IPipeline<I, O>, Processor<I, O>() {
+) : IPipeline<I, O>, IProcessor<I, O> {
 
     private val storage = ConcurrentHashMap<String, Any>()
 
@@ -35,20 +37,24 @@ abstract class AbsPipeline<out I : Any, out O : Any>(
 }
 
 class Pipeline<out I : Any, out O : Any>(
-    params: IProcessingParams,
+    params: IProcessingParams = ProcessingParams(),
+    inOutRelation: ProcessorValueRelation = ProcessorValueRelation.Unspecified,
+    outputChannel: Channel<out IPipeValue<O>> = Channel(params.channelCapacity),
     pipes: List<IProcessor<*, *>>
-) : AbsPipeline<I, O>(params, pipes) {
+) : AbsPipeline<I, O>(params, inOutRelation, outputChannel, pipes), Identity by NoId {
 
     override var pipeline: IPipeline<*, *> = this.apply {
         pipes.forEach { it.pipeline = this }
     }
 }
 
-class DummyPipeline : IPipeline<Any, Any> {
+class DummyPipeline : IPipeline<Any, Any>, Identity by NoId {
 
     override fun ReceiveChannel<IPipeValue<Any>>.process(): ReceiveChannel<IPipeValue<Any>> = Channel()
 
     override val params: IProcessingParams = ProcessingParams()
+    override val inOutRelation: ProcessorValueRelation = ProcessorValueRelation.Unspecified
+    override var outputChannel: Channel<out IPipeValue<Any>> = Channel()
     override var pipeline: IPipeline<*, *> = this
 
     override fun store(key: String, value: Any) = Unit

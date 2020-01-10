@@ -1,100 +1,67 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.log.Log
 import de.gapps.utils.time.ITimeEx
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 interface IProcessor<out I : Any, out O : Any> : IPipelineElement<I, O> {
+
+    val inOutRelation: ProcessorValueRelation
+    var outputChannel: Channel<out IPipeValue<@UnsafeVariance O>>
 
     override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.pipe(): ReceiveChannel<IPipeValue<O>> = process()
 
     fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IPipeValue<O>>
 
-    suspend fun IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.onProcessingFinished() = Unit
+    suspend fun IProducerScope<@UnsafeVariance O>.onProcessingFinished() = Unit
 }
 
 open class Processor<out I : Any, out O : Any>(
     override val params: IProcessingParams = ProcessingParams(),
-    protected open val block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit = {}
-) : IProcessor<I, O> {
+    override val inOutRelation: ProcessorValueRelation = ProcessorValueRelation.Unspecified,
+    override var outputChannel: Channel<out IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
+    protected open val block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit =
+        { throw IllegalArgumentException("No processor block defined") }
+) : IProcessor<I, O>, Identity by NoId {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
 
-    protected val scope: CoroutineScope
-        get() = params.scope
+    private var outIdx = 0
+    @Suppress("LeakingThis", "UNCHECKED_CAST")
+    private fun producerScope(inIdx: Int) =
+        ProducerScope<O>(inIdx, outIdx++, pipeline, { closeOutput() }) {
+            (outputChannel as SendChannel<IPipeValue<O>>).send(it)
+        }
 
-    @Suppress("LeakingThis")
-    private val output by lazy { Channel<IPipeValue<O>>(params.channelCapacity) }
+    private fun processingScope(rawValue: IPipeValue<I>) = ProcessingScope(rawValue, producerScope(rawValue.outIdx))
 
     override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process() = scope.launch {
         var prevValue: IPipeValue<I>? = null
         for (value in this@process) {
-            buildScope(value).block(value.value)
+            processingScope(value).block(value.value)
             prevValue = value
         }
-        prevValue?.let { pv -> buildScope(pv).closeOutput() }
-    }.let { output as ReceiveChannel<IPipeValue<O>> }
+        Log.v("processing finished")
+        prevValue?.let { pv -> processingScope(pv).closeOutput() }
+    }.let { outputChannel as ReceiveChannel<IPipeValue<O>> }
 
-    private fun buildScope(value: IPipeValue<I>) =
-        ProcessingScope<I, O>(
-            value,
-            pipeline
-        ) { result, time, idx ->
-            output.send(
-                PipeValue(
-                    value.outIdx,
-                    idx,
-                    result,
-                    time
-                )
-            )
-        }
-
-    private suspend fun IProcessingScope<I, O>.closeOutput() {
+    private suspend fun IProducerScope<O>.closeOutput() {
         Log.v("processing finished")
         onProcessingFinished()
-        output.close()
+        outputChannel.close()
     }
 }
 
-interface IProcessingScope<out I : Any, out O : Any> {
+interface IProcessingScope<out I : Any, out O : Any> : IConsumerScope<I>, IProducerScope<O>
 
-    val value: IPipeValue<I>
-    val inIdx: Int
-    var outIdx: Int
-    val time: ITimeEx
-    val storage: IPipelineStorage
-
-    suspend fun send(
-        value: @UnsafeVariance O,
-        time: ITimeEx = this.time,
-        outIdx: Int = this.outIdx++
-    )
-}
-
+@Suppress("LeakingThis")
 open class ProcessingScope<out I : Any, out O : Any>(
-    override val value: IPipeValue<I>,
-    override val storage: IPipelineStorage,
-    private val sender: suspend (
-        value: O,
-        time: ITimeEx,
-        outIdx: Int
-    ) -> Unit
-) : IProcessingScope<I, O> {
+    override val rawValue: IPipeValue<I>,
+    producerScope: ProducerScope<O>
+) : IProcessingScope<I, O>, IProducerScope<O> by producerScope {
 
-    override val inIdx: Int = value.outIdx
-    override var outIdx: Int = 0
-    override val time: ITimeEx = value.time
-    private val mutex = Mutex()
-
-    override suspend fun send(
-        value: @UnsafeVariance O,
-        time: ITimeEx,
-        outIdx: Int
-    ) = mutex.withLock { sender(value, time, outIdx) }
+    override val value: I = rawValue.value
+    override val time: ITimeEx = rawValue.time
 }

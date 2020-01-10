@@ -1,12 +1,10 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.log.Log
+import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.time.ITimeEx
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.launch
 
 interface IConsumer<out I : Any> : IPipelineElement<I, Any?> {
 
@@ -22,44 +20,41 @@ interface IConsumer<out I : Any> : IPipelineElement<I, Any?> {
 
 open class Consumer<out I : Any>(
     override val params: IProcessingParams = ProcessingParams(),
-    protected open val block: (suspend IConsumerScope<@UnsafeVariance I>.(value: @UnsafeVariance I) -> Unit)? = null
-) : IConsumer<I> {
+    protected open val block: (suspend IConsumerScope<@UnsafeVariance I>.(value: @UnsafeVariance I) -> Unit) =
+        { throw IllegalArgumentException("No consumer block defined") }
+) : IConsumer<I>, Identity by NoId {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
 
-    @Suppress("LeakingThis")
-    protected val scope: CoroutineScope = params.scope
-
-    override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.consume() = scope.launch {
-        val b = block ?: throw IllegalStateException("Can not process without callback set")
-        lateinit var prevValue: IPipeValue<I>
+    override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.consume() = scope.launchEx {
+        var prevValue: IPipeValue<I>? = null
         for (value in this@consume) {
-            ConsumerScope(value, pipeline).b(value.value)
+            ConsumerScope(value, pipeline).block(value.value)
             prevValue = value
         }
         Log.v("consuming finished")
-        ConsumerScope(prevValue, pipeline).onConsumingFinished()
+        prevValue?.let { pv -> ConsumerScope(pv, pipeline).onConsumingFinished() }
     }
 }
 
 interface IConsumerScope<out T : Any> {
 
-    val value: IPipeValue<T>
+    val rawValue: IPipeValue<T>
+    val value: T
     val inIdx: Int
     val outIdx: Int
     val time: ITimeEx
     val storage: IPipelineStorage
 }
 
+@Suppress("LeakingThis")
 open class ConsumerScope<out T : Any>(
-    override val value: IPipeValue<T>,
+    override val rawValue: IPipeValue<T>,
     override val storage: IPipelineStorage
 ) : IConsumerScope<T> {
 
-    @Suppress("LeakingThis")
-    override val inIdx: Int = value.inIdx
-    @Suppress("LeakingThis")
-    override val outIdx: Int = value.outIdx
-    @Suppress("LeakingThis")
-    override val time: ITimeEx = value.time
+    override val value: T = rawValue.value
+    override val inIdx: Int = rawValue.inIdx
+    override val outIdx: Int = rawValue.outIdx
+    override val time: ITimeEx = rawValue.time
 }

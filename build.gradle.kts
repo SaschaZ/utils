@@ -12,8 +12,8 @@ plugins {
     id("com.github.johnrengelman.shadow") version "5.2.0"
 }
 
-group = "de.gapps.ctt"
-version = "1.0-SNAPSHOT"
+group = "com.github.SaschaZ"
+version = "1.1.5"
 
 allprojects {
     repositories {

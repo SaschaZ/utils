@@ -1,4 +1,4 @@
-package de.gapps.utils.misc.koin
+package de.gapps.utils.koin
 
 import org.koin.core.definition.BeanDefinition
 import org.koin.core.definition.Definition
@@ -6,12 +6,7 @@ import org.koin.core.module.Module
 import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
-import org.koin.dsl.ScopeSet
 
-inline fun Module.scope(name: String, scopeSet: ScopeSet.() -> Unit) {
-    val scope: ScopeSet = ScopeSet(named(name)).apply(scopeSet)
-    declareScope(scope)
-}
 
 inline fun <reified T> Module.single(
     name: String? = null,

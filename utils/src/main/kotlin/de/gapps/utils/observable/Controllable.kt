@@ -1,11 +1,7 @@
 package de.gapps.utils.observable
 
-import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import de.gapps.utils.delegates.OnChanged
 import de.gapps.utils.misc.lastOrNull
-import de.gapps.utils.misc.name
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlin.reflect.KProperty
 
 /**
@@ -13,8 +9,6 @@ import kotlin.reflect.KProperty
  *
  * @param T Type of the internal value.
  * @param initial Initial value for the internal variable. Will not notify any observers.
- * @property scope [CoroutineScope] That is used to notify asynchronous observers. By default a scope with the
- * [Dispatchers.Default] Coroutine context is used.
  * @property onlyNotifyOnChanged Only notify observer when the internal value changes. Active by default.
  * @property storeRecentValues Stores all values and provide them in the onChanged callback. Inactive by default.
  * @property subscriberStateChanged Is invoked when an observer is added or removed.
@@ -22,8 +16,6 @@ import kotlin.reflect.KProperty
  */
 open class Controllable<out T>(
     initial: T,
-    private val scope: CoroutineScope =
-        DefaultCoroutineScope(Controllable::class.name),
     private val onlyNotifyOnChanged: Boolean = true,
     private val notifyForExisting: Boolean = false,
     private val storeRecentValues: Boolean = false,

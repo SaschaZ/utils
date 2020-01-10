@@ -1,37 +1,36 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
-import de.gapps.utils.coroutines.scope.IoCoroutineScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
 
 interface IProcessingParams {
-    val scope: CoroutineScope
-    val mutex: Mutex?
+    val type: ParallelProcessingTypes
     val channelCapacity: Int
+    val scope: CoroutineScope
+    val numParallel: Int
+    val mutex: Mutex?
+
+    operator fun component1() = type
+    operator fun component2() = channelCapacity
+    operator fun component3() = scope
+    operator fun component4() = numParallel
+    operator fun component5() = mutex
+
+    val parallelIndices
+        get() = (0 until numParallel)
 }
 
 data class ProcessingParams(
+    override val type: ParallelProcessingTypes = ParallelProcessingTypes.UNIQUE,
+    override val channelCapacity: Int = Channel.BUFFERED,
     override val scope: CoroutineScope = DefaultCoroutineScope(),
-    override val mutex: Mutex? = null,
-    override val channelCapacity: Int = Channel.BUFFERED
+    override val numParallel: Int = 8,
+    override val mutex: Mutex? = null
 ) : IProcessingParams
 
 enum class ParallelProcessingTypes {
     UNIQUE,
-    EQUAL
+    SAME
 }
-
-interface IParallelProcessingParams : IProcessingParams {
-    val type: ParallelProcessingTypes
-    val numParallel: Int
-}
-
-data class ParallelProcessingParams(
-    override val type: ParallelProcessingTypes,
-    override val numParallel: Int = 8,
-    override val scope: CoroutineScope = IoCoroutineScope(),
-    override val mutex: Mutex? = null,
-    override val channelCapacity: Int = Channel.BUFFERED
-) : IParallelProcessingParams

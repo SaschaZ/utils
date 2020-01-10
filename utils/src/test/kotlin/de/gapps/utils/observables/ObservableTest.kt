@@ -6,7 +6,6 @@ import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.equals
 import de.gapps.utils.observable.Observable
 import io.kotlintest.specs.AnnotationSpec
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 
@@ -14,7 +13,7 @@ class ObservableTest : AnnotationSpec() {
 
     @Test
     fun `test observable inside class`() = runBlocking {
-        val testClass = TestClass("foo", this)
+        val testClass = TestClass("foo")
         testClass.observable.value equals "foo"
         var latestObservedChanged: String = testClass.observable.value
         launchEx { testClass.observable.observe { latestObservedChanged = it } }
@@ -24,13 +23,18 @@ class ObservableTest : AnnotationSpec() {
 
         testClass.observable.value equals "boo"
         latestObservedChanged equals "boo"
+        testClass.success equals true
     }
 
     companion object {
 
-        class TestClass(value: String, scope: CoroutineScope) {
-            val observable = Observable(value, scope)
-            private var internal by observable
+        class TestClass(value: String) {
+            var success: Boolean = false
+                private set
+            val observable = Observable(value)
+            private var internal by observable.apply {
+                observe { success = true }
+            }
 
             fun triggerChange(value: String) {
                 internal = value

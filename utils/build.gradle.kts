@@ -7,8 +7,8 @@ val test by tasks.getting(Test::class) {
     useJUnitPlatform {}
 }
 
-group = "de.gapps.utils"
-version = "1.0-SNAPSHOT"
+group = "com.github.SaschaZ"
+version = "1.1.5"
 
 repositories {
     mavenLocal()
@@ -54,12 +54,6 @@ val sourcesJar by tasks.registering(Jar::class) {
 }
 
 publishing {
-    repositories {
-        maven {
-            // change to point to your repo, e.g. http://my.org/repo
-            url = uri("$buildDir/repo")
-        }
-    }
     publications {
         register("mavenJava", MavenPublication::class) {
             from(components["java"])
