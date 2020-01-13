@@ -1,7 +1,7 @@
 rootProject.name = "utils"
 
 include(
-    "utils",
+    "core",
     "channels",
     "console"
 )

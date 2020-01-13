@@ -10,13 +10,14 @@ import de.gapps.utils.time.duration.seconds
 import de.gapps.utils.time.duration.years
 import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.test.assertEquals
 
 abstract class ProcessorBaseTest(
-    numParallel: Int = 16,
-    private val testProducerAmount: Int = 1024 * numParallel
+    protected val numParallel: Int = 16,
+    protected val testProducerAmount: Int = 1024 * numParallel
 ) : AnnotationSpec() {
 
     protected open lateinit var params: ProcessingParams
@@ -27,7 +28,7 @@ abstract class ProcessorBaseTest(
         ArrayList(listOf(TimeEx(20.years.millis), TimeEx(25.years.millis), TimeEx(30.years.millis)))
 
     @Before
-    internal fun before() = runBlocking {
+    open fun before() = runBlocking {
         params = ProcessingParams(ParallelProcessingTypes.UNIQUE, Channel.RENDEZVOUS, DefaultCoroutineScope(), 8)
 
         testProducer = Producer {
@@ -37,38 +38,19 @@ abstract class ProcessorBaseTest(
             }
         }
 
-        testProcessors
-
         testConsumer = Consumer {
             Log.v("received $it")
         }
     }.asUnit()
 }
 
-class ParallelTest : AnnotationSpec() {
+class ParallelTest : ProcessorBaseTest() {
 
     @Before
-    fun before() {
-        testProducer = Producer<Int> {
-            repeat(testProducerAmount) { send(it) }
-            close()
-            Log.d("producing finished")
-        }
-
-        testProcessor0 = Processor {
-            //            Log.d("0: $it")
-            send("0: $it", time = lastTimeValTime0)
-            lastTimeValTime0 += 1.seconds
-        }
-        testProcessor1 = Processor {
-            //            Log.d("1: $it")
-            send("1: $it", time = lastTimeValTime1)
-            lastTimeValTime1 += 1.seconds
-        }
-        testProcessor2 = Processor {
-            //            Log.d("2: $it")
-            send("2: $it", time = lastTimeValTime2)
-            lastTimeValTime2 += 1.seconds
+    override fun before() {
+        super.before()
+        testProcessors = params.parallelIndices.map { idx ->
+            Processor<Int, String>(params) { send("$it") }
         }
     }
 
@@ -84,11 +66,7 @@ class ParallelTest : AnnotationSpec() {
 
         val result = ArrayList<IPipeValue<String>>()
         testProducer + ParallelProcessor(params) {
-            when (it) {
-                0 -> testProcessor0
-                1 -> testProcessor1
-                else -> testProcessor2
-            }
+            testProcessors[it]
         } + Consumer<String>(params) {
             it.split(": ").run {
                 result.add(rawValue)
@@ -115,11 +93,7 @@ class ParallelTest : AnnotationSpec() {
         )
         val resultBuffer = ConcurrentHashMap<Int, ArrayList<Int>>()
         testProducer + ParallelProcessor(params) {
-            when (it) {
-                0 -> testProcessor0
-                1 -> testProcessor1
-                else -> testProcessor2
-            }
+            testProcessors[it]
         } + Consumer<String>(params) {
             it.split(": ").run { resultBuffer.getOrPut(rawValue.parallelIdx) { ArrayList() }.add(get(1).toInt()) }
 //            Log.d("result: $it")
@@ -142,11 +116,7 @@ class ParallelTest : AnnotationSpec() {
         )
         val result = testProducer.produce().let { producerChan ->
             ParallelProcessor(params) {
-                when (it) {
-                    0 -> testProcessor0
-                    1 -> testProcessor1
-                    else -> testProcessor2
-                }
+                testProcessors[it]
             }.run { producerChan.process() }.toList()
         }
         assertEquals(result.size, testProducerAmount * 3)
@@ -168,11 +138,7 @@ class ParallelTest : AnnotationSpec() {
         )
         val result = testProducer.produce().let { producerChan ->
             ParallelProcessor(params) {
-                when (it) {
-                    0 -> testProcessor0
-                    1 -> testProcessor1
-                    else -> testProcessor2
-                }
+                testProcessors[it]
             }.run { producerChan.process() }.toList()
         }
         assertEquals(result.size, testProducerAmount * numParallel)
