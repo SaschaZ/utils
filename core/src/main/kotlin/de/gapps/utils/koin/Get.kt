@@ -7,6 +7,6 @@ import org.koin.core.qualifier.Qualifier
 inline fun <reified T> get(
     qualifier: Qualifier? = null,
     noinline parameters: ParametersDefinition? = null,
-    key: String = GlobalDiHolder.SINGLE_GLOBAL_DI
+    key: String = GlobalDiHolder.SINGLE_GLOBAL_DI_KEY
 ): T =
     GlobalDiHolder(key).kApp.koin.get(qualifier, parameters)

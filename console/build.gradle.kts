@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":utils"))
+    implementation(project(":core"))
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.2")
 

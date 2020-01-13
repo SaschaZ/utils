@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "com.github.SaschaZ"
-version = "1.1.5"
+version = "1.1.7"
 
 allprojects {
     repositories {
