@@ -3,15 +3,15 @@ plugins {
     id("maven-publish")
 }
 
-group = "de.gapps.ctt"
-version = "1.0-SNAPSHOT"
+group = "com.github.SaschaZ"
+version = "1.1.7"
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation(project(":utils"))
+    implementation(project(":core"))
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.2")
 

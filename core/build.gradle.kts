@@ -8,7 +8,7 @@ val test by tasks.getting(Test::class) {
 }
 
 group = "com.github.SaschaZ"
-version = "1.1.5"
+version = "1.1.7"
 
 repositories {
     mavenLocal()

@@ -2,7 +2,6 @@
 
 package de.gapps.utils.koin
 
-import de.gapps.utils.koin.GlobalDiHolder.SINGLE_GLOBAL_DI
 import org.koin.core.KoinApplication
 import org.koin.dsl.KoinAppDeclaration
 import java.util.concurrent.ConcurrentHashMap
@@ -28,18 +27,19 @@ internal class GlobalDi(private var internalKApp: KoinApplication? = null) : IGl
 
 object GlobalDiHolder : IGlobalDi by GlobalDi(), (String) -> IGlobalDi {
 
-    const val SINGLE_GLOBAL_DI = "SINGLE_GLOBAL_DI"
+    const val SINGLE_GLOBAL_DI_KEY = "SINGLE_GLOBAL_DI_KEY"
+    var defaultGlobalDiKey: String = SINGLE_GLOBAL_DI_KEY
 
     private val diMap = ConcurrentHashMap<String, IGlobalDi>()
 
     override fun invoke(key: String) =
-        if (key == SINGLE_GLOBAL_DI) this
+        if (key == SINGLE_GLOBAL_DI_KEY) this
         else diMap.getOrPut(key) { GlobalDi() }!!
 }
 
 fun startKoin(
-    key: String = SINGLE_GLOBAL_DI,
+    key: String = GlobalDiHolder.defaultGlobalDiKey,
     appDeclaration: KoinAppDeclaration
 ) = GlobalDiHolder(key).startKoin(appDeclaration)
 
-fun stopKoin(key: String = SINGLE_GLOBAL_DI) = GlobalDiHolder(key).stopKoin()
+fun stopKoin(key: String = GlobalDiHolder.defaultGlobalDiKey) = GlobalDiHolder(key).stopKoin()

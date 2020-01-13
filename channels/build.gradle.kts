@@ -7,8 +7,8 @@ val test by tasks.getting(Test::class) {
     useJUnitPlatform {}
 }
 
-group = "de.gapps.utils"
-version = "1.0-SNAPSHOT"
+group = "com.github.SaschaZ"
+version = "1.1.7"
 
 repositories {
     mavenLocal()
@@ -19,7 +19,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":utils"))
+    implementation(project(":core"))
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.3.2")
