@@ -2,13 +2,11 @@ package de.gapps.utils.coroutines.channel.network
 
 import de.gapps.utils.misc.asUnit
 import io.kotlintest.specs.AnnotationSpec
-import jdk.nashorn.internal.ir.annotations.Ignore
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlin.random.Random
 
-@Ignore
 class NetworkTest : AnnotationSpec() {
 
     @Before

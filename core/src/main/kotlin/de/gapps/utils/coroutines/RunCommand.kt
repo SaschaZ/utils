@@ -11,7 +11,8 @@ data class CommandOutput(
 )
 
 suspend fun String.runCommand(
-    workingDir: File = File(".")
+    workingDir: File = File("."),
+    block: () -> Unit = {}
 ): CommandOutput? {
     var instr: InputStream? = null
     var errStr: InputStream? = null
@@ -25,6 +26,7 @@ suspend fun String.runCommand(
                 .redirectError(ProcessBuilder.Redirect.PIPE)
                 .start()
 
+            block()
             process.waitFor()
             instr = process.inputStream
             errStr = process.errorStream

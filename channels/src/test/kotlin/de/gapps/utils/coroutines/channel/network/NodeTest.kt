@@ -5,13 +5,11 @@ import de.gapps.utils.time.delay
 import de.gapps.utils.time.duration.seconds
 import io.kotlintest.specs.AnnotationSpec
 import io.mockk.mockk
-import jdk.nashorn.internal.ir.annotations.Ignore
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-@Ignore
 class NodeTest : AnnotationSpec() {
 
     private lateinit var node: Node
