@@ -1,9 +1,10 @@
 plugins {
     kotlin("jvm")
+    id("maven-publish")
 }
 
-group = "de.gapps.utils.android"
-version = "1.1.7"
+group = "com.github.SaschaZ"
+version = "1.1.10"
 
 repositories {
     mavenCentral()
@@ -21,5 +22,19 @@ tasks {
     }
     compileTestKotlin {
         kotlinOptions.jvmTarget = "1.8"
+    }
+}
+
+val sourcesJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("sources")
+    from(sourceSets.main.get().allSource)
+}
+
+publishing {
+    publications {
+        register("mavenJava", MavenPublication::class) {
+            from(components["java"])
+            artifact(sourcesJar.get())
+        }
     }
 }
