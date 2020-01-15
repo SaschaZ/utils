@@ -3,19 +3,17 @@ Kotlin Jvm Utilities
 [![](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core)
 
 ##### Contains utilities for the following use cases
-- State Machine with DSL
-- Time and duration handling
-- Parallel and pipelined data processing
-- Coroutine handling
-- Delegates for observing and controlling properties
-- Dependency injection with Koin
-- Logging
-- Misc. Kotlin extensions
+- [Time and duration handling](#timeex-durationex)
+- [Delegates for observing and controlling properties](#observableex-controllableex)
+- [State Machine with DSL](#machineex)
+- [Coroutine handling](#coroutineex)
+- [Parallel and pipelined data processing](#pipelineex)
+- [Misc. Kotlin extensions](#misc-kotlin-extensions)
 
 <br>
 
 #### Get started
-`implementation "com.github.SaschaZ.utils:core:1.1.8"`
+`implementation "com.github.SaschaZ.utils:core:1.1.10"`
 [![](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core)
 
 <br>
@@ -24,6 +22,10 @@ Kotlin Jvm Utilities
 
 #### ObservableEx, ControllableEx
 
-#### launchEx, asyncEx, withContextEx
-
 #### MachineEx
+
+#### CoroutineEx
+
+#### PipelineEx
+
+#### Misc. Kotlin Extensions

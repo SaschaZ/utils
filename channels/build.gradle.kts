@@ -7,16 +7,8 @@ val test by tasks.getting(Test::class) {
     useJUnitPlatform {}
 }
 
-group = "com.github.SaschaZ"
+group = "com.github.SaschaZ.utils"
 version = "1.1.10"
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-    jcenter()
-    maven { url = uri("https://kotlin.bintray.com/ktor") }
-    maven { url = uri("https://kotlin.bintray.com/kotlinx") }
-}
 
 dependencies {
     implementation(project(":core"))

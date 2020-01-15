@@ -10,7 +10,7 @@ import kotlinx.coroutines.withTimeout
 
 
 inline fun runTest(
-    timeout: IDurationEx = 5.seconds,
+    timeout: IDurationEx = 30.seconds,
     crossinline block: suspend () -> Unit
 ) {
     runBlocking { withTimeout(timeout.millis) { block() } }.asUnit()

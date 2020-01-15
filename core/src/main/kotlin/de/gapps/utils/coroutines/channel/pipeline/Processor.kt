@@ -19,19 +19,19 @@ interface IProcessor<out I : Any, out O : Any> : IPipelineElement<I, O> {
 }
 
 open class Processor<out I : Any, out O : Any>(
-    override val params: IProcessingParams = ProcessingParams(),
+    override var params: IProcessingParams = ProcessingParams(),
     override val inOutRelation: ProcessorValueRelation = ProcessorValueRelation.Unspecified,
     override var outputChannel: Channel<out IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
     protected open val block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit =
         { throw IllegalArgumentException("No processor block defined") }
-) : IProcessor<I, O>, Identity by NoId {
+) : IProcessor<I, O>, Identity by Id("Processor") {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
 
     private var outIdx = 0
     @Suppress("LeakingThis", "UNCHECKED_CAST")
     private fun producerScope(inIdx: Int) =
-        ProducerScope<O>(inIdx, outIdx++, pipeline, { closeOutput() }) {
+        ProducerScope<O>(inIdx, outIdx++, params.parallelIdx, pipeline, { closeOutput() }) {
             (outputChannel as SendChannel<IPipeValue<O>>).send(it)
         }
 

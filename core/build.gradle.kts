@@ -7,16 +7,8 @@ val test by tasks.getting(Test::class) {
     useJUnitPlatform {}
 }
 
-group = "com.github.SaschaZ"
+group = "com.github.SaschaZ.utils"
 version = "1.1.10"
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-    jcenter()
-    maven { url = uri("https://kotlin.bintray.com/ktor") }
-    maven { url = uri("https://kotlin.bintray.com/kotlinx") }
-}
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
@@ -28,6 +20,9 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.10.1")
 
     implementation("org.slf4j:slf4j-simple:1.7.29")
+
+    implementation("com.squareup.okhttp3:mockwebserver:4.3.1")
+    implementation("org.bouncycastle:bcprov-jdk16:1.46")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.3.61")
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")

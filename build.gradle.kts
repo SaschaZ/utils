@@ -12,8 +12,8 @@ plugins {
     id("com.github.johnrengelman.shadow") version "5.2.0"
 }
 
-group = "com.github.SaschaZ"
-version = "1.1.7"
+group = "com.github.SaschaZ.utils"
+version = "1.1.10"
 
 allprojects {
     repositories {

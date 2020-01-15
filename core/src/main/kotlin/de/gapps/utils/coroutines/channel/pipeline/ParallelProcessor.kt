@@ -8,29 +8,25 @@ import de.gapps.utils.coroutines.channel.pipeline.ParallelProcessingTypes.UNIQUE
 import de.gapps.utils.misc.runEach
 import de.gapps.utils.misc.runEachIndexed
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
-import java.util.concurrent.atomic.AtomicInteger
 
 open class ParallelProcessor<out I : Any, out O : Any>(
     params: IProcessingParams,
     inOutRelation: ProcessorValueRelation = ProcessorValueRelation.Unspecified,
-    outputChannel: Channel<IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
+    override var outputChannel: Channel<out IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
     processorFactory: (idx: Int) -> IProcessor<I, O> = { throw IllegalArgumentException("No processor factory defined") }
-) : Processor<I, O>(params, inOutRelation, outputChannel) {
+) : Processor<I, O>(params, inOutRelation, outputChannel),
+    IParallelProcessedValueMerger<O> by ParallelProcessValueMerger(params) {
 
-    private val processors = params.parallelIndices.map { processorFactory(it) }
-    private val inputs = params.parallelIndices.map { Channel<IPipeValue<I>>() }
+    private val processors = params.parallelIndices.map { processorFactory(it).withParallelIdx(it) }
+
+    private val inputs = params.parallelIndices.map { Channel<IPipeValue<I>>(params.channelCapacity) }
     private val outputs = processors.runEachIndexed { idx -> inputs[idx].process() }
 
-    private val outIdx = AtomicInteger(0)
-    private val jobs by lazy {
-        outputs.mapIndexed { idx, output ->
-            scope.launchEx {
-                for (value in output) {
-                    while (value.outIdx > outIdx.get()) delay(1)
-                    outputChannel.send(PipeValue(value, idx))
-                    outIdx.incrementAndGet()
-                }
+    private val jobs = outputs.mapIndexed { idx, output ->
+        params.scope.launchEx {
+            for (value in output) {
+                @Suppress("UNCHECKED_CAST")
+                value.suspendUntilInPosition { (outputChannel as Channel<IPipeValue<O>>).send(PipeValue(value, idx)) }
             }
         }
     }

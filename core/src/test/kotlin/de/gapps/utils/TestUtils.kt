@@ -8,9 +8,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.Runnable
 import kotlin.coroutines.CoroutineContext
 
+infix fun <T> T.withText(text: String) = this to text
 
-infix fun <T> T.equals(expected: T) = kotlin.test.assertEquals(expected, this)
-infix fun <T> T.notEquals(expected: T) = kotlin.test.assertNotEquals(expected, this)
+infix fun <T> T.equals(expected: T) = equals(expected to null)
+infix fun <T> T.notEquals(expected: T) = notEquals(expected to null)
+infix fun <T> T.equals(expected: Pair<T, String?>) = kotlin.test.assertEquals(expected.first, this, expected.second)
+infix fun <T> T.notEquals(expected: Pair<T, String?>) =
+    kotlin.test.assertNotEquals(expected.first, this, expected.second)
 
 class TestCoroutineScope : ICoroutineScopeEx {
 

@@ -3,12 +3,8 @@ plugins {
     id("maven-publish")
 }
 
-group = "com.github.SaschaZ"
+group = "com.github.SaschaZ.utils"
 version = "1.1.10"
-
-repositories {
-    mavenCentral()
-}
 
 dependencies {
     implementation(project(":core"))

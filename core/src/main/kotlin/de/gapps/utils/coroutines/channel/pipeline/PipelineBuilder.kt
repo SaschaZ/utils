@@ -49,9 +49,9 @@ suspend operator fun <I : Any, O : Any> PipelineBuilderScope<I>.plus(consumer: I
         producer.pipeline = this
         consumer.pipeline = this
         consumer.run {
-            Log.v("waiting for jobs of pipe to join")
+            Log.v("waiting for consumer job to join")
             producer.produce().process().consume().join()
-            Log.v("pipe jobs joined")
+            Log.v("consumer job joined")
         }
     }
 }

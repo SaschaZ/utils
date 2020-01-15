@@ -1,6 +1,7 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
 import de.gapps.utils.coroutines.channel.pipeline.IPipeValue.Companion.NO_IDX
+import de.gapps.utils.coroutines.channel.pipeline.IPipeValue.Companion.NO_PARALLEL_EXECUTION
 import de.gapps.utils.log.Log
 import de.gapps.utils.time.ITimeEx
 import de.gapps.utils.time.TimeEx
@@ -20,18 +21,19 @@ interface IProducer<out T : Any> : IPipelineElement<Any?, T> {
 }
 
 open class Producer<out T : Any>(
-    override val params: IProcessingParams = ProcessingParams(),
+    override var params: IProcessingParams = ProcessingParams(),
     private val outputChannel: Channel<IPipeValue<T>> = Channel(params.channelCapacity),
     protected open val block: suspend IProducerScope<@UnsafeVariance T>.() -> Unit =
         { throw IllegalArgumentException("No producer block defined") }
-) : IProducer<T>, Identity by NoId {
+) : IProducer<T>, Identity by Id("Producer") {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
 
     @Suppress("LeakingThis")
-    private val producerScope = ProducerScope<T>(pipeline, { closeOutput() }) {
-        outputChannel.send(it)
-    }
+    private val producerScope
+        get() = ProducerScope<T>(pipeline, params.parallelIdx, { closeOutput() }) {
+            outputChannel.send(it)
+        }
 
     override fun produce() = scope.launch {
         producerScope.block()
@@ -48,15 +50,17 @@ interface IProducerScope<out T : Any> {
 
     val inIdx: Int
     var outIdx: Int
+    val parallelIdx: Int
     val storage: IPipelineStorage
 
     suspend fun send(
         value: @UnsafeVariance T,
         time: ITimeEx = TimeEx(),
-        outIdx: Int = this.outIdx++
-    ) = send(PipeValue(value, time, inIdx, outIdx))
+        outIdx: Int = this.outIdx++,
+        parallelIdx: Int = NO_PARALLEL_EXECUTION
+    ) = send(PipeValue(value, time, inIdx, outIdx, parallelIdx))
 
-    suspend fun send(rawValue: IPipeValue<@UnsafeVariance T>)
+    suspend fun send(rawValue: IPipeValue<@UnsafeVariance T>): IPipeValue<@UnsafeVariance T>
 
     suspend fun close()
 }
@@ -64,6 +68,7 @@ interface IProducerScope<out T : Any> {
 open class ProducerScope<out T : Any>(
     override val inIdx: Int,
     override var outIdx: Int,
+    override val parallelIdx: Int = NO_PARALLEL_EXECUTION,
     override val storage: IPipelineStorage,
     private val closer: suspend IProducerScope<T>.() -> Unit,
     private val sender: suspend (rawValue: IPipeValue<T>) -> Unit
@@ -71,15 +76,16 @@ open class ProducerScope<out T : Any>(
 
     constructor(
         storage: IPipelineStorage,
+        parallelIdx: Int = NO_PARALLEL_EXECUTION,
         closer: suspend IProducerScope<T>.() -> Unit,
         sender: suspend (rawValue: IPipeValue<T>) -> Unit
-    ) : this(NO_IDX, 0, storage, closer, sender)
+    ) : this(NO_IDX, 0, parallelIdx, storage, closer, sender)
 
     private val mutex: Mutex = Mutex()
 
     override suspend fun send(
         rawValue: IPipeValue<@UnsafeVariance T>
-    ) = mutex.withLock { sender(rawValue) }
+    ) = mutex.withLock { rawValue.withParallelIdx(parallelIdx).apply { sender(this) } }
 
     override suspend fun close() {
         Log.v("producing finished")

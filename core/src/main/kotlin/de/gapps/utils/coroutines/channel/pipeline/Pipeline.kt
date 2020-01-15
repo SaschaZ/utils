@@ -13,7 +13,7 @@ interface IPipelineStorage {
 interface IPipeline<out I : Any, out O : Any> : IProcessor<I, O>, IPipelineStorage
 
 abstract class AbsPipeline<out I : Any, out O : Any>(
-    override val params: IProcessingParams,
+    override var params: IProcessingParams,
     override val inOutRelation: ProcessorValueRelation,
     override var outputChannel: Channel<out IPipeValue<@UnsafeVariance O>>,
     private val processors: List<IProcessor<*, *>>
@@ -41,7 +41,7 @@ class Pipeline<out I : Any, out O : Any>(
     inOutRelation: ProcessorValueRelation = ProcessorValueRelation.Unspecified,
     outputChannel: Channel<out IPipeValue<O>> = Channel(params.channelCapacity),
     pipes: List<IProcessor<*, *>>
-) : AbsPipeline<I, O>(params, inOutRelation, outputChannel, pipes), Identity by NoId {
+) : AbsPipeline<I, O>(params, inOutRelation, outputChannel, pipes), Identity by Id("Pipeline") {
 
     override var pipeline: IPipeline<*, *> = this.apply {
         pipes.forEach { it.pipeline = this }
@@ -52,7 +52,7 @@ class DummyPipeline : IPipeline<Any, Any>, Identity by NoId {
 
     override fun ReceiveChannel<IPipeValue<Any>>.process(): ReceiveChannel<IPipeValue<Any>> = Channel()
 
-    override val params: IProcessingParams = ProcessingParams()
+    override var params: IProcessingParams = ProcessingParams()
     override val inOutRelation: ProcessorValueRelation = ProcessorValueRelation.Unspecified
     override var outputChannel: Channel<out IPipeValue<Any>> = Channel()
     override var pipeline: IPipeline<*, *> = this
