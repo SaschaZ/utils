@@ -19,7 +19,7 @@ interface IConsumer<out I : Any> : IPipelineElement<I, Any?> {
 }
 
 open class Consumer<out I : Any>(
-    override val params: IProcessingParams = ProcessingParams(),
+    override var params: IProcessingParams = ProcessingParams(),
     protected open val block: (suspend IConsumerScope<@UnsafeVariance I>.(value: @UnsafeVariance I) -> Unit) =
         { throw IllegalArgumentException("No consumer block defined") }
 ) : IConsumer<I>, Identity by NoId {

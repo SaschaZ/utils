@@ -46,3 +46,5 @@ data class PipeValue<T>(
         parallelIdx: Int = NO_PARALLEL_EXECUTION
     ) : this(rawValue.value, rawValue.time, rawValue.inIdx, rawValue.outIdx, parallelIdx)
 }
+
+fun <T : Any> IPipeValue<T>.withParallelIdx(idx: Int) = PipeValue(value, time, inIdx, outIdx, idx)

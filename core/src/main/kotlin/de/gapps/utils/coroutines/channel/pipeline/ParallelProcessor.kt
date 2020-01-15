@@ -18,19 +18,18 @@ open class ParallelProcessor<out I : Any, out O : Any>(
     processorFactory: (idx: Int) -> IProcessor<I, O> = { throw IllegalArgumentException("No processor factory defined") }
 ) : Processor<I, O>(params, inOutRelation, outputChannel) {
 
-    private val processors = params.parallelIndices.map { processorFactory(it) }
-    private val inputs = params.parallelIndices.map { Channel<IPipeValue<I>>() }
+    private val processors = params.parallelIndices.map { processorFactory(it).withParallelIdx(it) }
+
+    private val inputs = params.parallelIndices.map { Channel<IPipeValue<I>>(params.channelCapacity) }
     private val outputs = processors.runEachIndexed { idx -> inputs[idx].process() }
 
-    private val outIdx = AtomicInteger(0)
-    private val jobs by lazy {
-        outputs.mapIndexed { idx, output ->
-            scope.launchEx {
-                for (value in output) {
-                    while (value.outIdx > outIdx.get()) delay(1)
-                    outputChannel.send(PipeValue(value, idx))
-                    outIdx.incrementAndGet()
-                }
+    private val inIdx = AtomicInteger(0)
+    private val jobs = outputs.mapIndexed { idx, output ->
+        scope.launchEx {
+            for (value in output) {
+                while (value.inIdx > inIdx.get()) delay(1)
+                outputChannel.send(PipeValue(value, idx))
+                inIdx.incrementAndGet()
             }
         }
     }
