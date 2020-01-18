@@ -3,13 +3,13 @@ plugins {
     id("maven-publish")
 }
 
-group = "com.github.SaschaZ.utils"
-version = "1.1.20"
+group = "dev.zieger.utils"
+version = "1.1.21"
 
 dependencies {
     implementation(project(":core"))
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.3")
 
     implementation("com.github.ajalt:mordant:1.2.1")
     implementation("me.tongfei:progressbar:0.8.0")

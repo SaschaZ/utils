@@ -7,8 +7,8 @@ val test by tasks.getting(Test::class) {
     useJUnitPlatform {}
 }
 
-group = "com.github.SaschaZ.utils"
-version = "1.1.20"
+group = "dev.zieger.utils"
+version = "1.1.21"
 
 repositories {
     mavenCentral()
@@ -17,8 +17,11 @@ repositories {
 dependencies {
     implementation(project(":core"))
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.3")
     implementation("org.jetbrains.kotlin:kotlin-test:1.3.61")
+
+    implementation("com.squareup.okhttp3:mockwebserver:4.3.1")
+    implementation("org.bouncycastle:bcprov-jdk16:1.46")
 
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
 }
