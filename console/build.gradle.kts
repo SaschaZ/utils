@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.github.SaschaZ.utils"
-version = "1.1.19"
+version = "1.1.20"
 
 dependencies {
     implementation(project(":core"))

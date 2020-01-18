@@ -8,7 +8,7 @@ val test by tasks.getting(Test::class) {
 }
 
 group = "com.github.SaschaZ.utils"
-version = "1.1.19"
+version = "1.1.20"
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
