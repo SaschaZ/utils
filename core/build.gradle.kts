@@ -8,7 +8,7 @@ val test by tasks.getting(Test::class) {
 }
 
 group = "com.github.SaschaZ.utils"
-version = "1.1.10"
+version = "1.1.19"
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
@@ -24,6 +24,7 @@ dependencies {
     implementation("com.squareup.okhttp3:mockwebserver:4.3.1")
     implementation("org.bouncycastle:bcprov-jdk16:1.46")
 
+    testImplementation(project(":testing"))
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.3.61")
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
     testImplementation("io.mockk:mockk:1.9.3")

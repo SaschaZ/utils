@@ -1,7 +1,7 @@
 package de.gapps.utils.coroutines
 
-import de.gapps.utils.TestCoroutineScope
 import de.gapps.utils.misc.asUnit
+import de.gapps.utils.testing.TestCoroutineScope
 import de.gapps.utils.time.delay
 import de.gapps.utils.time.duration.milliseconds
 import io.kotlintest.specs.AnnotationSpec

@@ -3,27 +3,31 @@ plugins {
     id("maven-publish")
 }
 
+val test by tasks.getting(Test::class) {
+    useJUnitPlatform {}
+}
+
 group = "com.github.SaschaZ.utils"
 version = "1.1.19"
+
+repositories {
+    mavenCentral()
+}
 
 dependencies {
     implementation(project(":core"))
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.2")
+    implementation("org.jetbrains.kotlin:kotlin-test:1.3.61")
 
-    implementation("com.github.ajalt:mordant:1.2.1")
-    implementation("me.tongfei:progressbar:0.8.0")
+    testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
 }
 
 tasks {
     compileKotlin {
-        sourceCompatibility = "1.8"
-        targetCompatibility = "1.8"
         kotlinOptions.jvmTarget = "1.8"
     }
     compileTestKotlin {
-        sourceCompatibility = "1.8"
-        targetCompatibility = "1.8"
         kotlinOptions.jvmTarget = "1.8"
     }
 }

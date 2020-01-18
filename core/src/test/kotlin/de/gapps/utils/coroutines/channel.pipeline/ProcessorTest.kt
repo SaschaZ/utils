@@ -1,8 +1,8 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.equals
 import de.gapps.utils.misc.asUnit
 import de.gapps.utils.misc.runEachIndexed
+import de.gapps.utils.testing.assertion.assert
 import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.runBlocking
@@ -29,11 +29,11 @@ class ProcessorTest : AnnotationSpec() {
         }
 
         assertTrue(finished)
-        processorResult.size equals 5
+        processorResult.size assert 5
         processorResult.runEachIndexed { index ->
-            value equals index
-            inIdx equals index
-            outIdx equals index
+            value assert index
+            inIdx assert index
+            outIdx assert index
         }
     }.asUnit()
 }

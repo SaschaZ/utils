@@ -4,5 +4,6 @@ include(
     "android",
     "core",
     "channels",
-    "console"
+    "console",
+    "testing"
 )

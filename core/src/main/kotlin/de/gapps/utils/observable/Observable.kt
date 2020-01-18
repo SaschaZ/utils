@@ -41,7 +41,7 @@ class Observable<T> private constructor(
         CachingValueHolder(initial), onChanged
     )
 
-    internal var internal =
+    private var internal =
         Controllable(
             initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, subscriberStateChanged,
             onChanged

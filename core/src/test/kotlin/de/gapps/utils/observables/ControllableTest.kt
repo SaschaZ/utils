@@ -1,8 +1,8 @@
 package de.gapps.utils.observables
 
 import de.gapps.utils.coroutines.builder.launchEx
-import de.gapps.utils.equals
 import de.gapps.utils.observable.Controllable
+import de.gapps.utils.testing.assertion.assert
 import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -12,12 +12,12 @@ class ControllableTest : AnnotationSpec() {
     @Test
     fun `test controllable`() = runBlocking {
         val testObservable = Controllable("foo")
-        testObservable.value equals "foo"
+        testObservable.value assert "foo"
 
         launchEx { testObservable.value = "boo" }
         delay(100L)
 
-        testObservable.value equals "boo"
+        testObservable.value assert "boo"
     }
 
     @Test
@@ -26,13 +26,13 @@ class ControllableTest : AnnotationSpec() {
 
         testClass.controllable.control { if (value == "foo") value = "boo" }
         delay(100L)
-        testClass.internal equals "boo"
-        testClass.controllable.value equals "boo"
+        testClass.internal assert "boo"
+        testClass.controllable.value assert "boo"
 
         testClass.triggerChange("moo")
         delay(100L)
-        testClass.internal equals "moo"
-        testClass.controllable.value equals "moo"
+        testClass.internal assert "moo"
+        testClass.controllable.value assert "moo"
     }
 
     companion object {
