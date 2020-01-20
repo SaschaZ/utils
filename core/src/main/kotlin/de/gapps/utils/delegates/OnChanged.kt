@@ -2,7 +2,6 @@ package de.gapps.utils.delegates
 
 import de.gapps.utils.misc.asUnit
 import de.gapps.utils.observable.ChangeObserver
-import de.gapps.utils.observable.IOnChangedScope
 import de.gapps.utils.observable.OnChangedScope
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
@@ -11,7 +10,7 @@ import kotlin.reflect.KProperty
 open class OnChanged<P : Any, out T>(
     initial: T,
     private val storeRecentValues: Boolean = false,
-    private val notifyForExisting: Boolean = false,
+    notifyForExisting: Boolean = false,
     private val notifyOnChangedValueOnly: Boolean = true,
     private val onChange: ChangeObserver<T> = {}
 ) : ReadWriteProperty<P, @UnsafeVariance T> {
@@ -29,8 +28,10 @@ open class OnChanged<P : Any, out T>(
         }
 
     init {
-        OnChangedScope(initial, null, emptyList()) { clearRecentValues() }.apply {
-            onChange(initial)
+        if (notifyForExisting) {
+            OnChangedScope(initial, null, emptyList()) { clearRecentValues() }.apply {
+                onChange(initial)
+            }
         }
     }
 
