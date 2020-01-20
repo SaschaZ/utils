@@ -1,6 +1,6 @@
-package de.gapps.utils.misc
+package de.gapps.utils.delegates
 
-import de.gapps.utils.delegates.OnChanged
+import de.gapps.utils.misc.asUnit
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 

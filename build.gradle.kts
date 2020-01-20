@@ -24,7 +24,7 @@ plugins {
 }
 
 group = "dev.zieger.utils"
-version = "1.1.24"
+version = "1.1.25"
 
 allprojects {
     repositories {

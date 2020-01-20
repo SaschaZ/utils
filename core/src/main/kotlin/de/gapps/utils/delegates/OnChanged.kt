@@ -1,5 +1,6 @@
 package de.gapps.utils.delegates
 
+import de.gapps.utils.misc.asUnit
 import de.gapps.utils.observable.ChangeObserver
 import de.gapps.utils.observable.OnChangedScope
 import kotlin.properties.ReadWriteProperty
@@ -25,9 +26,11 @@ open class OnChanged<P : Any, out T>(
             }
         }
 
+    fun clearRecentValues() = recentValues.clear().asUnit()
+
     protected open fun P.onPropertyChanged(new: @UnsafeVariance T, old: @UnsafeVariance T) {
         if (storeRecentValues) recentValues.add(old)
-        OnChangedScope(new, old, recentValues) { recentValues.clear() }
+        OnChangedScope(new, old, recentValues) { clearRecentValues() }
     }
 
     override fun setValue(thisRef: P, property: KProperty<*>, value: @UnsafeVariance T) {
