@@ -8,7 +8,7 @@ val test by tasks.getting(Test::class) {
 }
 
 group = "dev.zieger.utils"
-version = "1.1.23"
+version = "1.1.24"
 
 repositories {
     google()

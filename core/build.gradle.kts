@@ -8,7 +8,7 @@ plugins {
 //}
 
 group = "dev.zieger.utils"
-version = "1.1.23"
+version = "1.1.24"
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
