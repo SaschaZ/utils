@@ -2,7 +2,6 @@ package de.gapps.utils.observable
 
 import de.gapps.utils.delegates.OnChanged
 import de.gapps.utils.misc.lastOrNull
-import kotlin.reflect.KProperty
 
 /**
  * Container that provides observing of the internal variable of type [T].
@@ -24,7 +23,6 @@ open class Controllable<out T>(
 ) : OnChanged<Any, T>(initial), IControllable<T> {
 
     private val subscribers = ArrayList<ControlObserver<T>>()
-    override val previousValues = ArrayList<@UnsafeVariance T>()
 
     override var value: @UnsafeVariance T
         get() = valueField
@@ -51,7 +49,7 @@ open class Controllable<out T>(
     override fun control(listener: ControlObserver<T>): () -> Unit {
         subscribers.add(listener)
         if (notifyForExisting)
-            newControlledChangeScope(value, previousValues.lastOrNull(), previousValues).listener(value)
+            newControlledChangeScope(value, recentValues.lastOrNull(), recentValues).listener(value)
         if (subscribers.size > 1) updateSubscriberState()
         return {
             subscribers.remove(listener)

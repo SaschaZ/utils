@@ -1,6 +1,5 @@
 package de.gapps.utils.observable
 
-import de.gapps.utils.delegates.OnChanged
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -45,4 +44,6 @@ class Observable<T>(
         get() = internal.value
 
     override fun observe(listener: ChangeObserver<T>): () -> Unit = internal.control(listener)
+
+    override fun clearRecentValues() = internal.clearRecentValues()
 }

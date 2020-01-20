@@ -8,7 +8,7 @@ val test by tasks.getting(Test::class) {
 }
 
 group = "dev.zieger.utils"
-version = "1.1.25"
+version = "1.1.26"
 
 dependencies {
     implementation(project(":core"))

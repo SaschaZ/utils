@@ -18,5 +18,7 @@ interface IObservable<out T> : ReadWriteProperty<Any, @UnsafeVariance T> {
      * Observe to changes on the internal [value]. Change is notified immediately.
      */
     fun observe(listener: ChangeObserver<T>): () -> Unit
+
+    fun clearRecentValues()
 }
 
