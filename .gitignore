@@ -7,3 +7,10 @@
 /*/build
 
 /artifacts/
+/android/android.iml
+/channels/channels.iml
+/console/console.iml
+/core/core.iml
+/core/error.log
+/local.properties
+/testing/testing.iml
