@@ -2,9 +2,9 @@ package de.gapps.utils.testing
 
 import de.gapps.utils.testing.assertion.assert
 import de.gapps.utils.testing.assertion.onFail
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.Test
 
-class TestExtensionsTest : AnnotationSpec() {
+class TestExtensionsTest {
 
     @Test
     fun testRunTest() = runTest {

@@ -3,11 +3,11 @@ package de.gapps.utils.observables
 import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.observable.Controllable
 import de.gapps.utils.testing.assertion.assert
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.junit.Test
 
-class ControllableTest : AnnotationSpec() {
+class ControllableTest {
 
     @Test
     fun `test controllable`() = runBlocking {

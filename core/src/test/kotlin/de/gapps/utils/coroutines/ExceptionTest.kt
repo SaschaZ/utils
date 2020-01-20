@@ -3,15 +3,14 @@ package de.gapps.utils.coroutines
 import de.gapps.utils.coroutines.builder.asyncEx
 import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.builder.withContextEx
-
 import de.gapps.utils.misc.asUnit
 import de.gapps.utils.time.duration.milliseconds
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
+import org.junit.Test
 
-class ExceptionTest : AnnotationSpec() {
+class ExceptionTest {
 
     @Test
     fun testLaunch() = runBlocking {

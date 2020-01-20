@@ -26,7 +26,7 @@ interface IWebMock {
 class SslWebMock(
     private val keyPath: InputStream,
     private val keyPass: String,
-    private val mockDispatcher: MockResponse.() -> Unit
+    private val mockDispatcher: MockResponse.(RecordedRequest) -> Unit
 ) : IWebMock {
 
     private val defScope = DefaultCoroutineScope()
@@ -59,7 +59,7 @@ class SslWebMock(
         mockWebServer.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 Log.v("path=${request.path}")
-                return MockResponse().apply { mockDispatcher() }
+                return MockResponse().apply { mockDispatcher(request) }
             }
         }
         executeNativeBlocking { mockWebServer.start(443) }

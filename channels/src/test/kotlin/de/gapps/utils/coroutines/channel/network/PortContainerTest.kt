@@ -1,10 +1,11 @@
 package de.gapps.utils.coroutines.channel.network
 
 import de.gapps.utils.misc.asUnit
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.runBlocking
+import org.junit.Before
+import org.junit.Test
 
-class PortContainerTest : AnnotationSpec() {
+class PortContainerTest {
 
     private lateinit var input0: Port.Input<Int>
     private lateinit var output0: Port.Output<Int>

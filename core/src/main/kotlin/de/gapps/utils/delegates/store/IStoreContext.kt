@@ -1,32 +1,43 @@
+@file:Suppress("unused")
+
 package de.gapps.utils.delegates.store
 
-import de.gapps.utils.json.DeSerializer
-import de.gapps.utils.misc.asUnit
 import java.io.File
-import kotlin.reflect.KClass
+
+@Suppress("FunctionName")
+inline fun <reified T : Any> StoreContext(clazz: Class<T>) = StoreContext(clazz.name)
 
 open class StoreContext(override val key: String) : IStoreContext
 
+/**
+ *
+ */
 interface IStoreContext {
 
     val key: String
 
-    fun <T : Any> storeValue(
+    fun storeValue(
         propertyName: String,
-        type: KClass<T>,
-        serializer: DeSerializer<T>,
-        v: T
-    ) =
-        serializer.serialize((v))?.let { key(key, propertyName).file.writeText(it) }.asUnit()
+        v: String
+    ) = key(key, propertyName).contentEntity.write(v)
 
-    fun <T : Any> readValue(
-        propertyName: String,
-        type: KClass<T>,
-        serializer: DeSerializer<T>
-    ) = serializer.deserialize(key(key, propertyName).file.readText())?.first()
+    fun readValue(
+        propertyName: String
+    ) = key(key, propertyName).contentEntity.read()
 
-    private fun key(contextKey: String, propertyKey: String) = "$contextKey$propertyKey"
+    fun key(contextKey: String, propertyKey: String) = "$contextKey$propertyKey"
 
-    private val String.file: File
-        get() = File(this)
+    val String.contentEntity: IContentEntity
+        get() = FileEntity(File(this))
+}
+
+interface IContentEntity {
+
+    fun write(text: String)
+    fun read(): String
+}
+
+class FileEntity(private val file: File) : IContentEntity {
+    override fun write(text: String) = file.writeText(text)
+    override fun read() = file.readText()
 }

@@ -3,12 +3,12 @@ package de.gapps.utils.coroutines.channel.pipeline
 import de.gapps.utils.misc.asUnit
 import de.gapps.utils.misc.runEachIndexed
 import de.gapps.utils.testing.assertion.assert
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.runBlocking
+import org.junit.Test
 import kotlin.test.assertTrue
 
-class ProcessorTest : AnnotationSpec() {
+class ProcessorTest {
 
     private val testProducer = Producer<Int> {
         repeat(5) { send(it) }

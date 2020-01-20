@@ -2,6 +2,7 @@ package de.gapps.utils.coroutines.channel.pipeline
 
 import de.gapps.utils.testing.assertion.assert
 import de.gapps.utils.testing.runTest
+import org.junit.Test
 import kotlin.test.assertTrue
 
 class ParallelSameMergingTest : ProcessorBaseTest(ParallelProcessingTypes.SAME) {

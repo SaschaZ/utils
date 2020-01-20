@@ -1,11 +1,11 @@
 @file:Suppress("unused")
 
-package de.gapps.utils
+package de.gapps.utils.delegates
 
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.Test
 import kotlin.test.assertEquals
 
-class DelegatePatternTest : AnnotationSpec() {
+class DelegatePatternTest {
 
     interface TestInterface {
         fun foo(): String = boo()
@@ -26,9 +26,13 @@ class DelegatePatternTest : AnnotationSpec() {
     }
 
     @Test
-    fun testParentOverwrite() {
-        assertEquals("13", TestParent1().foo())
-        assertEquals("123", TestParent2().foo())
+    fun testParent1() {
+        assertEquals("123", TestParent1().foo(), "TestParent1")
+    }
+
+    @Test
+    fun testParent2() {
+        assertEquals("123", TestParent2().foo(), "TestParent2")
     }
 
     interface IParent {

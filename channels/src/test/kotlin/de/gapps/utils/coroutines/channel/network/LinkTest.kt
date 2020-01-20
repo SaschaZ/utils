@@ -2,13 +2,16 @@ package de.gapps.utils.coroutines.channel.network
 
 import de.gapps.utils.log.Log
 import de.gapps.utils.misc.asUnit
-import io.kotlintest.specs.AnnotationSpec
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import org.junit.After
+import org.junit.Before
+import org.junit.Ignore
+import org.junit.Test
 import kotlin.test.assertEquals
 
-class LinkTest : AnnotationSpec() {
+class LinkTest {
 
     @Before
     fun before() = runBlocking {

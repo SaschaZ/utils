@@ -1,0 +1,59 @@
+@startuml
+skinparam backgroundColor #212121
+skinparam defaultFontColor #FFFFFF
+skinparam defaultFontSize 30
+skinparam note {
+    BackgroundColor #91BC16
+    Bordercolor #999999
+    FontColor #000000
+}
+skinparam class {
+    BackgroundColor #91BC16
+    FontColor #000000
+    FontSize 40
+    AttributeFontColor #000000
+    BorderColor #999999
+    ArrowColor #91BC16
+    ArrowThickness 3
+    StereotypeFontColor #FFFFFF
+}
+skinparam stereotypeCBackgroundColor #000099
+skinparam stereotypeIBackgroundColor #990000
+skinparam stereotypeABackgroundColor #009999
+
+
+hide StorageContext fields
+interface StorageContext {
+    +store(key: String, value: String)
+    +read(key: String): String
+}
+
+SharedPreferenceContext --|> StorageContext
+hide SharedPreferenceContext methods
+class SharedPreferenceContext {
+    -context: Context
+}
+
+
+hide ReadWriteProperty fields
+interface ReadWriteProperty<P, T> {
+    +getValue(thisRef: P, property: KProperty): T
+    +setValue(thisRef: P, property: KProperty, value: T)
+}
+
+StoredProperty --> StorageContext
+StoredProperty --|> ReadWriteProperty
+hide StoredProperty methods
+class StoredProperty<P: IStoreContext, T: SomeProperty> {
+    -key: String
+}
+
+SomeProperty <-- StoredProperty
+note on link: by
+hide SomeProperty members
+
+SomeClass --> SomeProperty
+SomeClass --|> SharedPreferenceContext
+hide SomeClass members
+
+@enduml

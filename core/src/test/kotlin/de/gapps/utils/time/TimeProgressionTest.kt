@@ -3,9 +3,9 @@ package de.gapps.utils.time
 import de.gapps.utils.log.Log
 import de.gapps.utils.time.duration.minutes
 import de.gapps.utils.time.duration.weeks
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.Test
 
-class TimeProgressionTest : AnnotationSpec() {
+class TimeProgressionTest {
 
     @Test
     fun testInit() {

@@ -2,13 +2,13 @@ plugins {
     kotlin("jvm")
     id("maven-publish")
 }
-
-val test by tasks.getting(Test::class) {
-    useJUnitPlatform {}
-}
+//
+//val test by tasks.getting(Test::class) {
+//    useJUnitPlatform {}
+//}
 
 group = "dev.zieger.utils"
-version = "1.1.21"
+version = "1.1.23"
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
@@ -24,8 +24,13 @@ dependencies {
     testImplementation(project(":testing"))
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.3.61")
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
+    testImplementation("org.koin:koin-test:2.0.1")
+    testImplementation("androidx.test:core:1.2.0")
+    testImplementation("androidx.test.ext:junit:1.1.1")
     testImplementation("io.mockk:mockk:1.9.3")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.5.2")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:1.3.61")
 }
 
 tasks {

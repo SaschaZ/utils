@@ -5,11 +5,11 @@ package de.gapps.utils.observables
 import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.observable.Observable
 import de.gapps.utils.testing.assertion.assert
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.junit.Test
 
-class ObservableTest : AnnotationSpec() {
+class ObservableTest {
 
     @Test
     fun `test observable inside class`() = runBlocking {

@@ -1,13 +1,13 @@
 package de.gapps.utils.misc
 
 import de.gapps.utils.delegates.OnChanged
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.runBlocking
+import org.junit.Test
 
-class OnChangedTest : AnnotationSpec() {
+class OnChangedTest {
 
     private var toTestVar: Int by OnChanged(0) { new ->
-        toTestOnChangeOldVar = this
+        toTestOnChangeOldVar = previousValue
         toTestOnChangeNewVar = new
     }
 

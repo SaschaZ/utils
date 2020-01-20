@@ -5,9 +5,9 @@ package de.gapps.utils.time
 import de.gapps.utils.time.base.TimeUnit
 import de.gapps.utils.time.base.convert
 import de.gapps.utils.time.duration.seconds
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.Test
 
-class TimeUnitTest : AnnotationSpec() {
+class TimeUnitTest {
 
     @Test
     fun testMillisToSeconds() {

@@ -2,10 +2,10 @@
 
 package de.gapps.utils.misc
 
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.Test
 import kotlin.test.assertTrue
 
-class CatchTest : AnnotationSpec() {
+class CatchTest {
 
     @Test
     fun testCatch() {

@@ -1,16 +1,21 @@
 package de.gapps.utils.delegates
 
+import de.gapps.utils.observable.ChangeObserver
+import de.gapps.utils.observable.OnChangedScope
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 
-open class OnChanged<P : Any, T>(
+open class OnChanged<P : Any, out T>(
     initial: T,
-    private val onChange: T.(T) -> Unit
-) : ReadWriteProperty<P, T> {
+    private val storeRecentValues: Boolean = false,
+    private val onChange: ChangeObserver<T>
+) : ReadWriteProperty<P, @UnsafeVariance T> {
 
     private var valueFieldInternal: T = initial
-    protected open var P.valueField: T
+    protected val recentValues = ArrayList<@UnsafeVariance T>()
+
+    protected open var P.valueField: @UnsafeVariance T
         get() = valueFieldInternal
         set(new) {
             if (new != valueFieldInternal) {
@@ -20,9 +25,12 @@ open class OnChanged<P : Any, T>(
             }
         }
 
-    protected open fun P.onPropertyChanged(new: T, old: T) = old.onChange(new)
+    protected open fun P.onPropertyChanged(new: @UnsafeVariance T, old: @UnsafeVariance T) {
+        if (storeRecentValues) recentValues.add(old)
+        OnChangedScope(new, old, recentValues) { recentValues.clear() }
+    }
 
-    override fun setValue(thisRef: P, property: KProperty<*>, value: T) {
+    override fun setValue(thisRef: P, property: KProperty<*>, value: @UnsafeVariance T) {
         thisRef.valueField = value
     }
 

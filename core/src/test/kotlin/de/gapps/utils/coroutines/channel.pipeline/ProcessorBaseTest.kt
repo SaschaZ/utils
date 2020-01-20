@@ -7,17 +7,19 @@ import de.gapps.utils.coroutines.scope.ICoroutineScopeEx
 import de.gapps.utils.misc.asUnit
 import de.gapps.utils.testing.assertion.assert
 import de.gapps.utils.testing.runTest
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
 
-open class ProcessorBaseTest(
+abstract class ProcessorBaseTest(
     protected val type: ParallelProcessingTypes = ParallelProcessingTypes.UNIQUE,
     protected val channelCapacity: Int = Channel.RENDEZVOUS,
     protected val numParallel: Int = 8,
     protected val testProducerAmount: Int = 32 * numParallel
-) : AnnotationSpec() {
+) {
 
     protected open lateinit var scope: ICoroutineScopeEx
     protected open lateinit var params: IProcessingParams

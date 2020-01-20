@@ -5,11 +5,12 @@ package de.gapps.utils.statemachine
 import de.gapps.utils.statemachine.MachineExTest.Event.*
 import de.gapps.utils.statemachine.MachineExTest.State.*
 import de.gapps.utils.testing.assertion.assert
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.Test
+
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class MachineExTest : AnnotationSpec() {
+class MachineExTest {
 
     enum class State : IState {
         INITIAL,

@@ -3,14 +3,16 @@ package de.gapps.utils.coroutines.channel.network
 import de.gapps.utils.misc.asUnit
 import de.gapps.utils.time.delay
 import de.gapps.utils.time.duration.seconds
-import io.kotlintest.specs.AnnotationSpec
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import org.junit.Before
+import org.junit.Ignore
+import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class NodeTest : AnnotationSpec() {
+class NodeTest {
 
     private lateinit var node: Node
     private val updatedInputValues = ArrayList<INodeValue<*>>()

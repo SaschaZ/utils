@@ -23,5 +23,6 @@ open class JsonConverter(val config: SimpleModule.() -> Unit = {}) {
 
     inline fun <reified T : Any> String.fromJson(): T? = catch(null) { mapper.readValue<T>(this) }
     fun <T : Any> String.fromJson(type: KClass<T>): T? = catch(null) { mapper.readValue<T>(this, type.java) }
+    inline fun <reified T : Any> String.fromJsonList(): List<T>? = catch(null) { mapper.readValue<List<T>>(this) }
 
 }

@@ -5,7 +5,7 @@ import de.gapps.utils.misc.ifN
 import de.gapps.utils.misc.lastOrNull
 import de.gapps.utils.observable.ChangeObserver
 import de.gapps.utils.observable.Controllable
-import de.gapps.utils.observable.ObservedChangedScope
+import de.gapps.utils.observable.OnChangedScope
 import de.gapps.utils.statemachine.scopes.*
 
 /**
@@ -39,7 +39,7 @@ open class MachineEx<out E : IEvent, out S : IState>(
         get() = stateHost.value
 
     override fun observeEvent(observer: ChangeObserver<E>) = eventHost.control {
-        value?.let { ObservedChangedScope(it, previousValue, previousValues.filterNotNull()) }
+        value?.let { OnChangedScope(it, previousValue, previousValues.filterNotNull(), {}) }
     }
 
     override fun observeState(observer: ChangeObserver<S>) = stateHost.control(observer)

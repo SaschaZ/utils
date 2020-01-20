@@ -7,17 +7,13 @@ interface ICachingValueHolder<out T> {
     val value: T
 
     val previousValues: List<T>
-
-    fun clearCache()
 }
 
 open class CachingValueHolder<out T>(initial: T) : ICachingValueHolder<T> {
 
-    override var value: @UnsafeVariance T by OnChanged(initial) {
-        previousValues.add(this)
+    override lateinit var previousValues: List<@UnsafeVariance T>
+
+    override var value: @UnsafeVariance T by OnChanged(initial, true) {
+        this@CachingValueHolder.previousValues = previousValues
     }
-
-    override val previousValues = ArrayList<@UnsafeVariance T>()
-
-    override fun clearCache() = previousValues.clear()
 }

@@ -2,9 +2,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
     repositories {
+        mavenCentral()
         google()
         jcenter()
-
     }
     dependencies {
         classpath("com.android.tools.build:gradle:3.5.3")
@@ -24,13 +24,13 @@ plugins {
 }
 
 group = "dev.zieger.utils"
-version = "1.1.21"
+version = "1.1.23"
 
 allprojects {
     repositories {
+        mavenCentral()
         google()
         mavenLocal()
-        mavenCentral()
         jcenter()
         maven { url = uri("https://kotlin.bintray.com/ktor") }
         maven { url = uri("https://kotlin.bintray.com/kotlinx") }
