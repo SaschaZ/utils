@@ -21,26 +21,15 @@ open class Controllable<out T>(
     private val storeRecentValues: Boolean = false,
     private val subscriberStateChanged: ((Boolean) -> Unit)? = null,
     onChanged: ControlObserver<T> = {}
-) : CachingValueHolder<T>(initial), IControllable<T> {
+) : OnChanged<Any, T>(initial), IControllable<T> {
 
     private val subscribers = ArrayList<ControlObserver<T>>()
+    override val previousValues = ArrayList<@UnsafeVariance T>()
 
-    override fun getValue(thisRef: Any, property: KProperty<*>): T = value
-
-    override fun setValue(thisRef: Any, property: KProperty<*>, value: @UnsafeVariance T) {
-        this.value = value
-    }
-
-    override var value: @UnsafeVariance T = initial
+    override var value: @UnsafeVariance T
+        get() = valueField
         set(newValue) {
-            if (newValue != field || !onlyNotifyOnChanged) {
-                super.value = newValue
-                field = newValue
-
-                ArrayList(subscribers).forEach {
-                    newControlledChangeScope(newValue, previousValues.lastOrNull(), previousValues).it(newValue)
-                }
-            }
+            valueField = newValue
         }
 
     init {

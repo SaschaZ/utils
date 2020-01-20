@@ -14,7 +14,8 @@ open class OnChangedS<P : Any, T>(
     private val scope: CoroutineScope? = null,
     private val mutex: Mutex? = null,
     private val onChange: suspend IOnChangedScope<T>.(T) -> Unit
-) : OnChanged<P, T>(initial, false, {}) {
+) : OnChanged<P, T>(initial, false, false, true,
+    { new -> scope?.launchEx { onChange(new) } }) {
 
     override fun setValue(thisRef: P, property: KProperty<*>, value: T) = (scope?.launchEx(mutex = mutex) {
         super.setValue(thisRef, property, value)

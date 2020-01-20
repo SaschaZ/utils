@@ -1,5 +1,6 @@
 package de.gapps.utils.observable
 
+import de.gapps.utils.delegates.OnChanged
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -19,27 +20,14 @@ import kotlin.reflect.KProperty
  *  }
  * ```
  */
-class Observable<T> private constructor(
+class Observable<T>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
     notifyForExisting: Boolean = false,
     storeRecentValues: Boolean = false,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
-    cacheHolder: CachingValueHolder<T>,
     onChanged: ChangeObserver<T> = {}
-) : ICachingValueHolder<T> by cacheHolder, IObservable<T> {
-
-    constructor(
-        initial: T,
-        onlyNotifyOnChanged: Boolean = true,
-        notifyForExisting: Boolean = true,
-        storeRecentValues: Boolean = false,
-        subscriberStateChanged: ((Boolean) -> Unit)? = null,
-        onChanged: ChangeObserver<T> = {}
-    ) : this(
-        initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, subscriberStateChanged,
-        CachingValueHolder(initial), onChanged
-    )
+) : ReadWriteProperty<Any, T>, IObservable<T> {
 
     private var internal =
         Controllable(

@@ -21,7 +21,7 @@ inline fun <reified P : IStoreContext, reified T : Any> StoredProperty(
         override fun deserialize(value: String) = value.fromJsonList<T>()
     },
     noinline onChange: ChangeObserver<T> = {}
-) = object : OnChanged<P, T>(initial, false, onChange) {
+) = object : OnChanged<P, T>(initial, onChange = onChange) {
 
     override fun getValue(thisRef: P, property: KProperty<*>) =
         serializer.deserialize(thisRef.readValue(property.name))?.first() ?: initial
