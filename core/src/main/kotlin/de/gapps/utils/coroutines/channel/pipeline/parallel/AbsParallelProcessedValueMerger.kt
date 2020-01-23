@@ -5,6 +5,8 @@ import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.channel.pipeline.IPipeValue
 import de.gapps.utils.coroutines.channel.pipeline.IProcessingParams
 import de.gapps.utils.coroutines.channel.pipeline.ParallelProcessingType
+import de.gapps.utils.log.Log
+import de.gapps.utils.log.logV
 import de.gapps.utils.misc.asUnit
 import kotlinx.coroutines.sync.Mutex
 
@@ -26,10 +28,10 @@ abstract class AbsParallelProcessedValueMerger<out T : Any>(protected open val p
     protected open val IPipeValue<@UnsafeVariance T>.previousOutIdx
         get() = (if (parallelIdx == IPipeValue.NO_PARALLEL_EXECUTION
             || params.type == ParallelProcessingType.SAME
-        ) outIdx - 1 else outIdx)
+        ) outIdx - 1 else outIdx) logV { "$this -> $it" }
 
     protected open val IPipeValue<@UnsafeVariance T>.previousParallelIdx
-        get() = ((parallelIdx + params.numParallel - 1) % params.numParallel)
+        get() = ((parallelIdx + params.numParallel - 1) % params.numParallel) logV { "$this -> $it" }
 
     protected abstract val IPipeValue<@UnsafeVariance T>.isNext: Boolean
 
@@ -43,9 +45,11 @@ abstract class AbsParallelProcessedValueMerger<out T : Any>(protected open val p
     }.asUnit()
 
     override suspend fun IPipeValue<@UnsafeVariance T>.suspendUntilInPosition(send: suspend () -> Unit) {
+        Log.v("continuation $this")
         val continuation = Continuation()
         valueSenderMap.addSync(ComparablePair(this, suspend {
             send()
+            Log.v("send $this")
             continuation.trigger()
             processNextValidValues()
         }))

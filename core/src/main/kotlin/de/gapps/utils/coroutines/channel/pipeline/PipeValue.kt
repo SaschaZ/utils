@@ -4,7 +4,7 @@ package de.gapps.utils.coroutines.channel.pipeline
 
 import de.gapps.utils.coroutines.channel.pipeline.IPipeValue.Companion.NO_IDX
 import de.gapps.utils.coroutines.channel.pipeline.IPipeValue.Companion.NO_PARALLEL_EXECUTION
-import de.gapps.utils.misc.nullWhen
+import de.gapps.utils.misc.nullWhenZero
 import de.gapps.utils.time.ITimeEx
 import de.gapps.utils.time.TimeEx
 
@@ -25,10 +25,21 @@ interface IPipeValue<out T> : Comparable<IPipeValue<@UnsafeVariance T>> {
     val parallelType: ParallelProcessingType
 
     override fun compareTo(other: IPipeValue<@UnsafeVariance T>): Int {
-        return inIdx.compareTo(other.inIdx).nullWhen { it == 0 }
-            ?: outIdx.compareTo(other.outIdx).nullWhen { it == 0 }
-            ?: parallelIdx.compareTo(other.parallelIdx).nullWhen { it == 0 }
-            ?: time.compareTo(other.time)
+        return when (parallelType) {
+            ParallelProcessingType.SAME -> {
+                inIdx.compareTo(other.inIdx).nullWhenZero()
+                    ?: outIdx.compareTo(other.outIdx).nullWhenZero()
+                    ?: parallelIdx.compareTo(other.parallelIdx).nullWhenZero()
+                    ?: time.compareTo(other.time)
+            }
+            ParallelProcessingType.UNIQUE -> {
+                outIdx.compareTo(other.outIdx).nullWhenZero()
+                    ?: parallelIdx.compareTo(other.parallelIdx).nullWhenZero()
+                    ?: inIdx.compareTo(other.inIdx).nullWhenZero()
+                    ?: time.compareTo(other.time)
+            }
+            ParallelProcessingType.NONE -> time.compareTo(other.time)
+        }
     }
 
     val wasProcessedParallel

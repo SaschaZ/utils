@@ -191,6 +191,8 @@ inline infix fun <K0, V0, K1, V1> ConcurrentHashMap<K0, V0>.mapToMap(
 
 fun Any?.nullToBlank() = this?.let { it } ?: ""
 
+fun <T : Any?> T?.nullWhenZero() = this?.let { if (it == 0) null else this }
+
 inline infix fun <T : Any?> T?.nullWhen(condition: (T) -> Boolean) = this?.let { if (condition(it)) null else this }
 
 fun <T : Number> T?.negativeToNull() = nullWhen { (it as Number).ex <= 0.ex }
