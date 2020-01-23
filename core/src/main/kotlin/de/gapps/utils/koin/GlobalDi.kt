@@ -37,9 +37,13 @@ object GlobalDiHolder : IGlobalDi by GlobalDi(), (String) -> IGlobalDi {
         else diMap.getOrPut(key) { GlobalDi() }!!
 }
 
+fun getKoinComponent(
+    key: String = GlobalDiHolder.defaultGlobalDiKey
+) = GlobalDiHolder(key)
+
 fun startKoin(
     key: String = GlobalDiHolder.defaultGlobalDiKey,
     appDeclaration: KoinAppDeclaration
-) = GlobalDiHolder(key).startKoin(appDeclaration)
+) = getKoinComponent(key).startKoin(appDeclaration)
 
-fun stopKoin(key: String = GlobalDiHolder.defaultGlobalDiKey) = GlobalDiHolder(key).stopKoin()
+fun stopKoin(key: String = GlobalDiHolder.defaultGlobalDiKey) = getKoinComponent(key).stopKoin()

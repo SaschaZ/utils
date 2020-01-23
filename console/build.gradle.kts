@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "dev.zieger.utils"
-version = "1.1.30"
+version = "1.1.33"
 
 dependencies {
     implementation(project(":core"))
