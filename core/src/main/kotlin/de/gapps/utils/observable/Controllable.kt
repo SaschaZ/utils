@@ -85,7 +85,6 @@ open class Controllable<out T : Any?> private constructor(
     }
 
     private fun IOnChangedScope<Any?, @UnsafeVariance T>.onPropertyChanged() {
-        Log.v("new=$value; old=$previousValue")
         subscribers.forEach { it.notify(thisRef, value, previousValue, previousValues) }
     }
 

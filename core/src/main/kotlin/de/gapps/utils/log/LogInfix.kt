@@ -24,10 +24,14 @@ inline infix fun <T : Any?> T.logW(block: (T) -> String) = apply {
     )
 }
 
-inline infix fun <T : Any?> T.logE(block: (T) -> String) = apply {
-    Log.e(
-        block(this)
-    )
+data class LogEScope(var message: String = "",
+                     var throwable: Throwable? = null)
+
+inline infix fun <T: Any?> T.logE(block: LogEScope.(T) -> String) = apply {
+    LogEScope().apply {
+        val msg = block(this@logE)
+        throwable?.also { Log.e(it, msg) } ?: Log.e(msg)
+    }
 }
 
 infix fun <T : Any?> T.logV(msg: String) = apply { Log.v(msg) }

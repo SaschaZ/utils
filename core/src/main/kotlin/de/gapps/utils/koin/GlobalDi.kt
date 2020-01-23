@@ -12,38 +12,44 @@ interface IGlobalDi : ILibComponent {
     fun stopKoin()
 }
 
-internal class GlobalDi(private var internalKApp: KoinApplication? = null) : IGlobalDi {
+internal class GlobalDi : IGlobalDi {
 
-    override val kApp: KoinApplication
-        get() = internalKApp ?: throw IllegalStateException("Koin was not initialized yet")
+    override lateinit var kApp: KoinApplication
 
-    override fun startKoin(appDeclaration: KoinAppDeclaration): KoinApplication {
-        if (internalKApp != null) throw IllegalStateException("Koin is already initialized")
-        return org.koin.core.context.startKoin(appDeclaration).also { internalKApp = it }
-    }
+    override fun startKoin(appDeclaration: KoinAppDeclaration) =
+        org.koin.core.context.startKoin(appDeclaration).also { kApp = it }
 
     override fun stopKoin() = kApp.koin.close()
 }
 
-object GlobalDiHolder : IGlobalDi by GlobalDi(), (String) -> IGlobalDi {
+object GlobalDiHolder : IGlobalDi by GlobalDi(), (String, Boolean) -> IGlobalDi? {
 
     const val SINGLE_GLOBAL_DI_KEY = "SINGLE_GLOBAL_DI_KEY"
     var defaultGlobalDiKey: String = SINGLE_GLOBAL_DI_KEY
 
     private val diMap = ConcurrentHashMap<String, IGlobalDi>()
 
-    override fun invoke(key: String) =
+    override fun invoke(key: String, getOnly: Boolean) =
         if (key == SINGLE_GLOBAL_DI_KEY) this
-        else diMap.getOrPut(key) { GlobalDi() }!!
+        else if (!getOnly) diMap.getOrPut(key) { GlobalDi() }!!
+        else diMap.getOrDefault(key, null)
+
+    fun getDiMapCopy() = HashMap(diMap)
 }
 
 fun getKoinComponent(
     key: String = GlobalDiHolder.defaultGlobalDiKey
-) = GlobalDiHolder(key)
+) = getKoinComponent(key, false)!!
+
+fun getKoinComponent(
+    key: String = GlobalDiHolder.defaultGlobalDiKey,
+    getOnly: Boolean
+) = GlobalDiHolder(key, getOnly)
 
 fun startKoin(
     key: String = GlobalDiHolder.defaultGlobalDiKey,
     appDeclaration: KoinAppDeclaration
 ) = getKoinComponent(key).startKoin(appDeclaration)
 
-fun stopKoin(key: String = GlobalDiHolder.defaultGlobalDiKey) = getKoinComponent(key).stopKoin()
+fun stopKoin(key: String = GlobalDiHolder.defaultGlobalDiKey) =
+    getKoinComponent(key, true)?.stopKoin()

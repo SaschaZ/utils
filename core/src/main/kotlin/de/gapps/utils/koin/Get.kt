@@ -8,5 +8,5 @@ inline fun <reified T> get(
     qualifier: Qualifier? = null,
     noinline parameters: ParametersDefinition? = null,
     key: String = GlobalDiHolder.SINGLE_GLOBAL_DI_KEY
-): T =
-    GlobalDiHolder(key).kApp.koin.get(qualifier, parameters)
+): T = getKoinComponent(key, false)!!.kApp.koin.get(qualifier, parameters)
+

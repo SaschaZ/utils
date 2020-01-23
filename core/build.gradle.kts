@@ -2,13 +2,9 @@ plugins {
     kotlin("jvm")
     id("maven-publish")
 }
-//
-//val test by tasks.getting(Test::class) {
-//    useJUnitPlatform {}
-//}
 
 group = "dev.zieger.utils"
-version = "1.1.33"
+version = "1.1.38"
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))

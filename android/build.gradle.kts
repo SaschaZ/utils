@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "dev.zieger.utils"
-version = "1.1.33"
+version = "1.1.38"
 
 android {
     compileSdkVersion(29)
@@ -81,14 +81,14 @@ dependencies {
     implementation("androidx.test:runner:1.2.0")
     implementation("androidx.test:core:1.2.0")
     implementation("androidx.test:rules:1.2.0")
-    implementation("androidx.test.ext:junit:1.1.1")
+//    implementation("androidx.test.ext:junit:1.1.1")
 
     androidTestImplementation(project(":testing"))
     androidTestImplementation("androidx.test.espresso:espresso-core:3.2.0")
     androidTestImplementation("androidx.test:runner:1.2.0")
     androidTestImplementation("androidx.test:core:1.2.0")
     androidTestImplementation("androidx.test:rules:1.2.0")
-    androidTestImplementation("androidx.test.ext:junit:1.1.1")
+//    androidTestImplementation("androidx.test.ext:junit:1.1.1")
     androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.3.1")
     androidTestImplementation("org.bouncycastle:bcprov-jdk16:1.46")
 }
