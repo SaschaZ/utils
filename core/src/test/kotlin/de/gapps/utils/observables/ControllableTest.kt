@@ -13,7 +13,7 @@ class ControllableTest {
 
     @Test
     fun `test controllable`() = runTest {
-        val testObservable = Controllable<Any, String>("foo")
+        val testObservable = Controllable("foo")
         testObservable.value onFail "1" assert "foo"
 
         launchEx { testObservable.value = "boo" }
@@ -40,7 +40,7 @@ class ControllableTest {
     companion object {
 
         class TestClass(value: String) {
-            val controllable = Controllable<TestClass, String>(value, notifyForExisting = true)
+            val controllable = Controllable(value, notifyForExisting = true)
             var internal by controllable
         }
     }

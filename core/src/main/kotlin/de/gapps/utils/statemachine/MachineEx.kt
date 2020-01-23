@@ -21,7 +21,7 @@ open class MachineEx<out E : IEvent, out S : IState>(
 
     private val recentChanges = ArrayList<EventChangeScope<E, S>>()
 
-    private val eventHost = Controllable<Any, E?>(null) {
+    private val eventHost = Controllable<E?>(null) {
         it?.processEvent()?.processState()
     }
     override var event: @UnsafeVariance E
@@ -33,16 +33,16 @@ open class MachineEx<out E : IEvent, out S : IState>(
     val set: ISetScope<@UnsafeVariance E, @UnsafeVariance S>
         get() = SetScope(eventHost)
 
-    private var stateHost = Controllable<Any, S>(initialState)
+    private var stateHost = Controllable(initialState)
 
     override val state: S
         get() = stateHost.value
 
-    override fun observeEvent(observer: IOnChangedScope<Any, E>.(E) -> Unit) = eventHost.control {
+    override fun observeEvent(observer: IOnChangedScope<Any?, E>.(E) -> Unit) = eventHost.control {
         value?.let { OnChangedScope(it, thisRef, previousValue, previousValues.filterNotNull(), { }) }
     }
 
-    override fun observeState(observer: IOnChangedScope<Any, S>.(S) -> Unit) = stateHost.control(observer)
+    override fun observeState(observer: IOnChangedScope<Any?, S>.(S) -> Unit) = stateHost.control(observer)
 
     protected open fun @UnsafeVariance E.processEvent(): S =
         OnEventScope(this, state, recentChanges).run { eventActionMapping(this@processEvent) }

@@ -10,7 +10,7 @@ import org.junit.Test
 class OnChangedTest {
 
     private var calledCnt: Int = 0
-    private lateinit var delegate: OnChanged<Nothing?, Int>
+    private lateinit var delegate: OnChanged<Any?, Int>
 
     private var toTestOnChangeOldVar: Int? = null
     private var toTestOnChangeNewVar: Int? = null

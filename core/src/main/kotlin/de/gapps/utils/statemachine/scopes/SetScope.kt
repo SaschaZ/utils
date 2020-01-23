@@ -9,7 +9,7 @@ interface ISetScope<E : IEvent, S : IState> {
     infix fun event(event: E)
 }
 
-class SetScope<E : IEvent, S : IState>(private val eventHost: IControllable<Any, E?>) :
+class SetScope<E : IEvent, S : IState>(private val eventHost: IControllable<E?>) :
     ISetScope<E, S> {
     override fun event(event: E) {
         eventHost.value = event

@@ -25,7 +25,7 @@ class Observable<T>(
     notifyForExisting: Boolean = false,
     storeRecentValues: Boolean = false,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
-    onChanged: IOnChangedScope<Any, T>.(T) -> Unit = {}
+    onChanged: IOnChangedScope<Any?, T>.(T) -> Unit = {}
 ) : ReadWriteProperty<Any, T>, IObservable<T> {
 
     private var internal =
@@ -43,7 +43,7 @@ class Observable<T>(
     override val value: T
         get() = internal.value
 
-    override fun observe(listener: IOnChangedScope<Any, T>.(T) -> Unit): () -> Unit = internal.control(listener)
+    override fun observe(listener: IOnChangedScope<Any?, T>.(T) -> Unit): () -> Unit = internal.control(listener)
 
     override fun clearRecentValues() = internal.clearRecentValues()
 }
