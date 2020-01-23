@@ -7,7 +7,7 @@ import de.gapps.utils.testing.runTest
 import org.junit.Test
 import kotlin.test.assertEquals
 
-class ParallelUniqueTest : ProcessorBaseTest(ParallelProcessingTypes.UNIQUE) {
+class ParallelUniqueTest : ProcessorBaseTest(ParallelProcessingType.UNIQUE) {
 
     @Test
     fun testUniquePiped() = runTest {

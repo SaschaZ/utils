@@ -2,6 +2,7 @@
 
 package de.gapps.utils.coroutines.channel.pipeline
 
+import de.gapps.utils.coroutines.channel.pipeline.parallel.ParallelProcessor
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import de.gapps.utils.coroutines.scope.ICoroutineScopeEx
 import de.gapps.utils.misc.asUnit
@@ -15,10 +16,10 @@ import org.junit.Before
 import org.junit.Test
 
 abstract class ProcessorBaseTest(
-    protected val type: ParallelProcessingTypes = ParallelProcessingTypes.UNIQUE,
+    protected val type: ParallelProcessingType = ParallelProcessingType.UNIQUE,
     protected val channelCapacity: Int = Channel.RENDEZVOUS,
-    protected val numParallel: Int = 8,
-    protected val testProducerAmount: Int = 32 * numParallel
+    protected val numParallel: Int = 4,
+    protected val testProducerAmount: Int = 4 * numParallel
 ) {
 
     protected open lateinit var scope: ICoroutineScopeEx

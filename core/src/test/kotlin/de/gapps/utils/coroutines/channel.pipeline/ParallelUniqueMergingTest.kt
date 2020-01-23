@@ -5,7 +5,7 @@ import de.gapps.utils.testing.runTest
 import org.junit.Test
 import kotlin.test.assertTrue
 
-class ParallelUniqueMergingTest : ProcessorBaseTest(ParallelProcessingTypes.UNIQUE) {
+class ParallelUniqueMergingTest : ProcessorBaseTest(ParallelProcessingType.UNIQUE) {
 
     @Test
     fun testParallelUniqueMerging() = runTest {

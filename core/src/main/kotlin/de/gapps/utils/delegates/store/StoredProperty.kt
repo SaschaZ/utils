@@ -6,7 +6,8 @@ import de.gapps.utils.delegates.OnChanged
 import de.gapps.utils.json.DeSerializer
 import de.gapps.utils.json.JsonConverter
 import de.gapps.utils.misc.asUnit
-import de.gapps.utils.observable.ChangeObserver
+import de.gapps.utils.observable.IOnChangedScope
+import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 /**
@@ -20,12 +21,15 @@ inline fun <reified P : IStoreContext, reified T : Any> StoredProperty(
         override fun serialize(value: List<T>) = value.toJson()
         override fun deserialize(value: String) = value.fromJsonList<T>()
     },
-    noinline onChange: ChangeObserver<T> = {}
-) = object : OnChanged<P, T>(initial, onChange = onChange) {
+    noinline onChange: IOnChangedScope<*, T>.(T) -> Unit = {}
+) = object : ReadWriteProperty<P, T> {
 
     override fun getValue(thisRef: P, property: KProperty<*>) =
         serializer.deserialize(thisRef.readValue(property.name))?.first() ?: initial
 
-    override fun setValue(thisRef: P, property: KProperty<*>, value: T) =
+    private var internalValue: T by OnChanged(initial, onChange = onChange)
+
+    override fun setValue(thisRef: P, property: KProperty<*>, value: T) {
         serializer.serialize(value)?.let { thisRef.storeValue(property.name, it) }.asUnit()
+    }
 }

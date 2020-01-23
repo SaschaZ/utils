@@ -6,7 +6,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
 
 interface IProcessingParams {
-    val type: ParallelProcessingTypes
+    val type: ParallelProcessingType
     val channelCapacity: Int
     val scope: CoroutineScope
     val numParallel: Int
@@ -25,7 +25,7 @@ interface IProcessingParams {
 }
 
 data class ProcessingParams(
-    override val type: ParallelProcessingTypes = ParallelProcessingTypes.UNIQUE,
+    override val type: ParallelProcessingType = ParallelProcessingType.UNIQUE,
     override val channelCapacity: Int = Channel.BUFFERED,
     override val scope: CoroutineScope = DefaultCoroutineScope(),
     override val numParallel: Int = 8,
@@ -33,9 +33,10 @@ data class ProcessingParams(
     override val mutex: Mutex? = null
 ) : IProcessingParams
 
-enum class ParallelProcessingTypes {
+enum class ParallelProcessingType {
     UNIQUE,
-    SAME
+    SAME,
+    NONE
 }
 
 fun IProcessingParams.withParallelIdx(idx: Int) =

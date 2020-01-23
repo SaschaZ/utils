@@ -1,68 +1,97 @@
 package de.gapps.utils.observable
 
+import de.gapps.utils.delegates.IOnChanged
 import de.gapps.utils.delegates.OnChanged
-import de.gapps.utils.misc.lastOrNull
+import de.gapps.utils.log.Log
 
 /**
  * Container that provides observing of the internal variable of type [T].
  *
- * @param T Type of the internal value.
- * @param initial Initial value for the internal variable. Will not notify any observers.
- * @property onlyNotifyOnChanged Only notify observer when the internal value changes. Active by default.
- * @property storeRecentValues Stores all values and provide them in the onChanged callback. Inactive by default.
- * @property subscriberStateChanged Is invoked when an observer is added or removed.
- * @param onChanged Callback that is invoked when the internal values changes.
  */
-open class Controllable<out T>(
-    initial: T,
-    private val onlyNotifyOnChanged: Boolean = true,
-    private val notifyForExisting: Boolean = false,
-    private val storeRecentValues: Boolean = false,
+open class Controllable<P : Any, out T : Any?> private constructor(
     private val subscriberStateChanged: ((Boolean) -> Unit)? = null,
-    onChanged: ControlObserver<T> = {}
-) : OnChanged<Any, T>(initial), IControllable<T> {
+    private val notifyForExistingInternal: Boolean,
+    private val onChangedDelegate: OnChanged<P, T>,
+    onChanged: IControlledChangedScope<P, T>.(T) -> Unit = {}
+) : IControllable<P, T>, IOnChanged<P, T> by onChangedDelegate {
 
-    private val subscribers = ArrayList<ControlObserver<T>>()
+    /**
+     *
+     * @param T Type of the internal value.
+     * @param initial Initial value for the internal variable. Will not notify any observers.
+     * @property onlyNotifyOnChanged Only notify observer when the internal value changes. Active by default.
+     * @property storeRecentValues Stores all values and provide them in the onChanged callback. Inactive by default.
+     * @property subscriberStateChanged Is invoked when an observer is added or removed.
+     * @param onControl Callback that is invoked when the internal values changes.
+     */
+    constructor(
+        initial: T,
+        onlyNotifyOnChanged: Boolean = true,
+        notifyForExisting: Boolean = false,
+        storeRecentValues: Boolean = false,
+        subscriberStateChanged: ((Boolean) -> Unit)? = null,
+        onControl: IControlledChangedScope<P, T>.(T) -> Unit = {}
+    ) :
+            this(
+                subscriberStateChanged, notifyForExisting,
+                OnChanged(initial, storeRecentValues, false, onlyNotifyOnChanged), onControl
+            )
 
-    override var value: @UnsafeVariance T
-        get() = valueField
-        set(newValue) {
-            valueField = newValue
-        }
+
+    private val subscribers = ArrayList<IControlledChangedScope<P, T>.(T) -> Unit>()
+
+    private var subscribersAvailable by OnChanged(false) { new ->
+        subscriberStateChanged?.invoke(new)
+    }
 
     init {
+        onChangedDelegate.onChange = { onPropertyChanged() }
         @Suppress("LeakingThis")
         control(onChanged)
     }
 
     private fun newControlledChangeScope(
         newValue: @UnsafeVariance T,
+        thisRef: P?,
         previousValue: T?,
-        previousValues: List<T>
-    ) = ControlledChangedScope(
-        newValue,
-        previousValue, previousValues
-    ) {
+        previousValues: List<T?>
+    ) = ControlledChangedScope(newValue, thisRef, previousValue, previousValues, { clearRecentValues() }) {
+        //        Log.w("333 new=$it; old=$previousValue; value=$value")
         value = it
     }
 
-    override fun control(listener: ControlObserver<T>): () -> Unit {
+    override fun control(listener: IControlledChangedScope<P, T>.(T) -> Unit): () -> Unit {
         subscribers.add(listener)
-        if (notifyForExisting)
-            newControlledChangeScope(value, recentValues.lastOrNull(), recentValues).listener(value)
-        if (subscribers.size > 1) updateSubscriberState()
+        Log.v("value=$value; notifyForExisting=$notifyForExisting")
+        if (notifyForExistingInternal) listener.notify()
+        updateSubscriberState()
+
         return {
             subscribers.remove(listener)
             updateSubscriberState()
         }
     }
 
-    private fun updateSubscriberState() {
-        subscribersAvailable = subscribers.size > 1
+    private fun (IControlledChangedScope<P, T>.(T) -> Unit).notify() {
+        notify(null, onChangedDelegate.value, null, emptyList())
     }
 
-    private var subscribersAvailable by OnChanged(false) { new ->
-        subscriberStateChanged?.invoke(new)
+    private fun (IControlledChangedScope<P, T>.(T) -> Unit).notify(
+        thisRef: P?,
+        new: @UnsafeVariance T,
+        old: @UnsafeVariance T?,
+        previous: List<@UnsafeVariance T?>
+    ) {
+        newControlledChangeScope(new, thisRef, old, previous).this(new)
+    }
+
+    private fun IOnChangedScope<P, @UnsafeVariance T>.onPropertyChanged() {
+        Log.v("new=$value; old=$previousValue")
+        subscribers.forEach { it.notify(thisRef, value, previousValue, previousValues) }
+    }
+
+    private fun updateSubscriberState() {
+        subscribersAvailable = subscribers.size > 1
     }
 }
 

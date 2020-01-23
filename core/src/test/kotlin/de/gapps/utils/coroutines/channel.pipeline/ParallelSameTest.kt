@@ -5,7 +5,7 @@ import org.junit.Test
 import kotlin.test.assertEquals
 
 class ParallelSameTest : ProcessorBaseTest(
-    ParallelProcessingTypes.SAME
+    ParallelProcessingType.SAME
 ) {
 
     @Test

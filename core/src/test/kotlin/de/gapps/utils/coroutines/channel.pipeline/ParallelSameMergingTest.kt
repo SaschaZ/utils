@@ -1,11 +1,12 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
+import de.gapps.utils.log.Log
 import de.gapps.utils.testing.assertion.assert
 import de.gapps.utils.testing.runTest
 import org.junit.Test
 import kotlin.test.assertTrue
 
-class ParallelSameMergingTest : ProcessorBaseTest(ParallelProcessingTypes.SAME) {
+class ParallelSameMergingTest : ProcessorBaseTest(ParallelProcessingType.SAME) {
 
     @Test
     fun testParallelSameMerging() = runTest {
@@ -15,9 +16,9 @@ class ParallelSameMergingTest : ProcessorBaseTest(ParallelProcessingTypes.SAME) 
 
         var prevConsumed: IPipeValue<String>? = null
         consumeValues.forEach {
+            Log.v("$it")
             assertTrue(
-                prevConsumed == null
-                        || it.outIdx >= prevConsumed?.outIdx ?: Integer.MAX_VALUE,
+                it.outIdx >= prevConsumed?.outIdx ?: 0,
                 "\ncurrent: $it\nprevious: $prevConsumed"
             )
             prevConsumed = it

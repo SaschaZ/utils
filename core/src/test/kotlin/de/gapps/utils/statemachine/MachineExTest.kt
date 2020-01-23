@@ -42,7 +42,7 @@ class MachineExTest {
             INITIAL assert state
 
             set event FIRST
-            A assert state
+            state assert A
             assertFalse(executed)
 
             set event SECOND

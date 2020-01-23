@@ -3,12 +3,12 @@ package de.gapps.utils.testing.assertion
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class AssertEqualsScope<T : Any>(
+class AssertEqualsScope<T : Any?>(
     override var expected: T,
     scope: ActualMessageScope<T>
 ) : IValidationScope<T, T>, IActualMessageScope<T> by scope {
     override fun validate() {
-        assertEquals(actual, expected, message())
+        assertEquals(expected, actual, message())
     }
 }
 

@@ -13,7 +13,7 @@ Kotlin Jvm Utilities
 <br>
 
 #### Get started
-`implementation "com.github.SaschaZ.utils:core:1.1.10"`
+`implementation "com.github.SaschaZ.utils:core:1.1.29"`
 [![](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core)
 
 <br>

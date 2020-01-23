@@ -1,38 +1,58 @@
 package de.gapps.utils.delegates
 
 import de.gapps.utils.misc.asUnit
-import kotlinx.coroutines.runBlocking
+import de.gapps.utils.testing.assertion.assert
+import de.gapps.utils.testing.assertion.onFail
+import de.gapps.utils.testing.runTest
+import org.junit.Before
 import org.junit.Test
 
 class OnChangedTest {
 
-    private var toTestVar: Int by OnChanged(0) { new ->
-        toTestOnChangeOldVar = previousValue
-        toTestOnChangeNewVar = new
-    }
+    private var calledCnt: Int = 0
+    private lateinit var delegate: OnChanged<Nothing?, Int>
 
     private var toTestOnChangeOldVar: Int? = null
     private var toTestOnChangeNewVar: Int? = null
 
+    @Before
+    fun before() {
+        calledCnt = 0
+        toTestOnChangeOldVar = null
+        toTestOnChangeNewVar = null
+
+        delegate = OnChanged(0) {
+            calledCnt++
+            toTestOnChangeOldVar = previousValue
+            toTestOnChangeNewVar = value
+        }
+    }
+
     @Test
-    fun testIt() = runBlocking {
-        assert(toTestVar == 0)
-        assert(toTestOnChangeOldVar == null)
-        assert(toTestOnChangeNewVar == null)
+    fun testIt() = runTest {
+        var toTestVar: Int by delegate
+
+        toTestVar onFail "1" assert 0
+        calledCnt onFail "1C" assert 0
+        toTestOnChangeNewVar onFail "1" assert null
+        toTestOnChangeOldVar onFail "1" assert null
 
         toTestVar = 0
-        assert(toTestVar == 0)
-        assert(toTestOnChangeOldVar == null)
-        assert(toTestOnChangeNewVar == null)
+        toTestVar onFail "2" assert 0
+        calledCnt onFail "2C" assert 0
+        toTestOnChangeNewVar onFail "2" assert null
+        toTestOnChangeOldVar onFail "2" assert null
 
         toTestVar = 1
-        assert(toTestVar == 1)
-        assert(toTestOnChangeOldVar == 0)
-        assert(toTestOnChangeNewVar == 1)
+        toTestVar onFail "3" assert 1
+        calledCnt onFail "3C" assert 1
+        toTestOnChangeNewVar onFail "3" assert 1
+        toTestOnChangeOldVar onFail "3" assert 0
 
         toTestVar = 2
-        assert(toTestVar == 2)
-        assert(toTestOnChangeOldVar == 1)
-        assert(toTestOnChangeNewVar == 2)
+        toTestVar onFail "4" assert 2
+        calledCnt onFail "4C" assert 2
+        toTestOnChangeNewVar onFail "4" assert 2
+        toTestOnChangeOldVar onFail "4" assert 1
     }.asUnit()
 }

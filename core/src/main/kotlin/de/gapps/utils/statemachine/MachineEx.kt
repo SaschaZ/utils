@@ -3,8 +3,8 @@ package de.gapps.utils.statemachine
 import de.gapps.utils.log.Log
 import de.gapps.utils.misc.ifN
 import de.gapps.utils.misc.lastOrNull
-import de.gapps.utils.observable.ChangeObserver
 import de.gapps.utils.observable.Controllable
+import de.gapps.utils.observable.IOnChangedScope
 import de.gapps.utils.observable.OnChangedScope
 import de.gapps.utils.statemachine.scopes.*
 
@@ -21,7 +21,7 @@ open class MachineEx<out E : IEvent, out S : IState>(
 
     private val recentChanges = ArrayList<EventChangeScope<E, S>>()
 
-    private val eventHost = Controllable<E?>(null) {
+    private val eventHost = Controllable<Any, E?>(null) {
         it?.processEvent()?.processState()
     }
     override var event: @UnsafeVariance E
@@ -33,16 +33,16 @@ open class MachineEx<out E : IEvent, out S : IState>(
     val set: ISetScope<@UnsafeVariance E, @UnsafeVariance S>
         get() = SetScope(eventHost)
 
-    private var stateHost = Controllable(initialState)
+    private var stateHost = Controllable<Any, S>(initialState)
 
     override val state: S
         get() = stateHost.value
 
-    override fun observeEvent(observer: ChangeObserver<E>) = eventHost.control {
-        value?.let { OnChangedScope(it, previousValue, previousValues.filterNotNull(), {}) }
+    override fun observeEvent(observer: IOnChangedScope<Any, E>.(E) -> Unit) = eventHost.control {
+        value?.let { OnChangedScope(it, thisRef, previousValue, previousValues.filterNotNull(), { }) }
     }
 
-    override fun observeState(observer: ChangeObserver<S>) = stateHost.control(observer)
+    override fun observeState(observer: IOnChangedScope<Any, S>.(S) -> Unit) = stateHost.control(observer)
 
     protected open fun @UnsafeVariance E.processEvent(): S =
         OnEventScope(this, state, recentChanges).run { eventActionMapping(this@processEvent) }

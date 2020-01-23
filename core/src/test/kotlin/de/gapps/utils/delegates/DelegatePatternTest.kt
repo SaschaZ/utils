@@ -2,6 +2,7 @@
 
 package de.gapps.utils.delegates
 
+import de.gapps.utils.testing.assertion.assert
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -27,12 +28,12 @@ class DelegatePatternTest {
 
     @Test
     fun testParent1() {
-        assertEquals("123", TestParent1().foo(), "TestParent1")
+        TestParent1().foo() assert "13"
     }
 
     @Test
     fun testParent2() {
-        assertEquals("123", TestParent2().foo(), "TestParent2")
+        TestParent2().foo() assert "123"
     }
 
     interface IParent {

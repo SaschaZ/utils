@@ -31,7 +31,7 @@ open class Producer<out T : Any>(
 
     @Suppress("LeakingThis")
     private val producerScope
-        get() = ProducerScope<T>(pipeline, params.parallelIdx, { closeOutput() }) {
+        get() = ProducerScope<T>(pipeline, params.parallelIdx, params.type, { closeOutput() }) {
             outputChannel.send(it)
         }
 
@@ -51,6 +51,7 @@ interface IProducerScope<out T : Any> {
     val inIdx: Int
     var outIdx: Int
     val parallelIdx: Int
+    val parallelType: ParallelProcessingType
     val storage: IPipelineStorage
 
     suspend fun send(
@@ -69,6 +70,7 @@ open class ProducerScope<out T : Any>(
     override val inIdx: Int,
     override var outIdx: Int,
     override val parallelIdx: Int = NO_PARALLEL_EXECUTION,
+    override val parallelType: ParallelProcessingType = ParallelProcessingType.NONE,
     override val storage: IPipelineStorage,
     private val closer: suspend IProducerScope<T>.() -> Unit,
     private val sender: suspend (rawValue: IPipeValue<T>) -> Unit
@@ -77,15 +79,16 @@ open class ProducerScope<out T : Any>(
     constructor(
         storage: IPipelineStorage,
         parallelIdx: Int = NO_PARALLEL_EXECUTION,
+        parallelType: ParallelProcessingType = ParallelProcessingType.NONE,
         closer: suspend IProducerScope<T>.() -> Unit,
         sender: suspend (rawValue: IPipeValue<T>) -> Unit
-    ) : this(NO_IDX, 0, parallelIdx, storage, closer, sender)
+    ) : this(NO_IDX, 0, parallelIdx, parallelType, storage, closer, sender)
 
     private val mutex: Mutex = Mutex()
 
     override suspend fun send(
         rawValue: IPipeValue<@UnsafeVariance T>
-    ) = mutex.withLock { rawValue.withParallelIdx(parallelIdx).apply { sender(this) } }
+    ) = mutex.withLock { rawValue.withParallelIdx(parallelIdx, parallelType).apply { sender(this) } }
 
     override suspend fun close() {
         Log.v("producing finished")

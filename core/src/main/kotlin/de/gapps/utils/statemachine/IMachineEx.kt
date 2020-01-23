@@ -1,6 +1,6 @@
 package de.gapps.utils.statemachine
 
-import de.gapps.utils.observable.ChangeObserver
+import de.gapps.utils.observable.IOnChangedScope
 
 /**
  *
@@ -38,7 +38,7 @@ interface IMachineEx<out E : IEvent, out S : IState> {
      * @param observer Is notified when an event changed.
      * @return Invoke to remove the observer.
      */
-    fun observeEvent(observer: ChangeObserver<E>): () -> Unit
+    fun observeEvent(observer: IOnChangedScope<Any, E>.(E) -> Unit): () -> Unit
 
     /**
      * Observe any state change.
@@ -46,5 +46,5 @@ interface IMachineEx<out E : IEvent, out S : IState> {
      * @param observer Is notified when an state changed.
      * @return Invoke to remove the observer.
      */
-    fun observeState(observer: ChangeObserver<S>): () -> Unit
+    fun observeState(observer: IOnChangedScope<Any, S>.(S) -> Unit): () -> Unit
 }

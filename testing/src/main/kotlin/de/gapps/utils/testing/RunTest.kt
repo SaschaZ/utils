@@ -7,7 +7,7 @@ import de.gapps.utils.time.duration.seconds
 import kotlinx.coroutines.runBlocking
 
 inline fun runTest(
-    timeout: IDurationEx = 30.seconds,
+    timeout: IDurationEx = 5.seconds,
     crossinline block: suspend () -> Unit
 ) {
     runBlocking { withTimeout(timeout) { block() } }

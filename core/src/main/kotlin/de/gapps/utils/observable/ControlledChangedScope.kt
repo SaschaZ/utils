@@ -1,22 +1,22 @@
 package de.gapps.utils.observable
 
-import de.gapps.utils.delegates.OnChanged
 
-
-interface IControlledChangedScope<out T> : IOnChangedScope<T> {
+interface IControlledChangedScope<P : Any?, out T> : IOnChangedScope<P, T> {
 
     override var value: @UnsafeVariance T
 }
 
-class ControlledChangedScope<out T>(
+class ControlledChangedScope<P : Any?, out T : Any?>(
     current: T,
+    override val thisRef: P?,
     override val previousValue: T?,
-    override val previousValues: List<T>,
-    onChanged: ChangeObserver<T>
-) : IControlledChangedScope<T> {
-    override var value: @UnsafeVariance T by OnChanged(current) { onChanged(it) }
+    override val previousValues: List<T?>,
+    private val onClearRecentValues: () -> Unit,
+    private val onNewValue: (T) -> Unit
+) : IControlledChangedScope<P, T> {
 
-    override val clearPreviousValues: () -> Unit = {} // TODO implement or change pattern
+    override var value: @UnsafeVariance T = current
+        set(newValue) = onNewValue(newValue)
+
+    override val clearPreviousValues: () -> Unit = { onClearRecentValues() }
 }
-
-typealias ControlObserver<T> = IControlledChangedScope<T>.(T) -> Unit

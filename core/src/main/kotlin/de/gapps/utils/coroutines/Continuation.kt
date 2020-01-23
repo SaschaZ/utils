@@ -1,8 +1,6 @@
 package de.gapps.utils.coroutines
 
-import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
-import de.gapps.utils.misc.asUnit
 import de.gapps.utils.misc.ifN
 import de.gapps.utils.time.duration.IDurationEx
 import kotlinx.coroutines.channels.Channel
@@ -18,15 +16,6 @@ suspend inline fun withTimeout(
     } ifN { block() }
 }
 
-suspend fun continueWhen(
-    timeout: IDurationEx? = null,
-    block: suspend () -> Unit
-) {
-    val continuation = Continuation(timeout)
-    block()
-    continuation.suspendUntilTrigger()
-}
-
 interface IContinuation {
 
     val timeout: IDurationEx?
@@ -37,7 +26,7 @@ interface IContinuation {
      * Will continue execution.
      * May be used by external components.
      */
-    fun trigger()
+    suspend fun trigger()
 }
 
 class Continuation(override val timeout: IDurationEx? = null) : IContinuation {
@@ -47,5 +36,5 @@ class Continuation(override val timeout: IDurationEx? = null) : IContinuation {
 
     override suspend fun suspendUntilTrigger() = withTimeout(timeout) { channel.receive() }
 
-    override fun trigger() = scope.launchEx { channel.send(true) }.asUnit()
+    override suspend fun trigger() = channel.send(true)
 }

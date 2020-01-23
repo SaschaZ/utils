@@ -19,38 +19,21 @@ class ContinuationTest {
 
     @Before
     fun before() = runBlocking {
+        continuation = Continuation()
+        continued = false
     }
 
     @Test
     fun testDirect() = runTest {
-        continuation = Continuation()
         launchEx {
-            continued = false
             continuation.suspendUntilTrigger()
             continued = true
         }
 
-        delay(5.seconds)
+        delay(2.seconds)
         continued onFail "0" assert false
         continuation.trigger()
         delay(1.seconds)
         continued onFail "1" assert true
-    }
-
-    @Test
-    fun testLambda() = runTest {
-        lateinit var trigger: suspend () -> Unit
-        launchEx {
-            continued = false
-            continueWhen {
-                delay(6.seconds)
-            }
-            continued = true
-        }
-
-        delay(4.seconds)
-        continued onFail "2" assert false
-        delay(6.seconds)
-        continued onFail "3" assert true
     }
 }

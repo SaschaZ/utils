@@ -31,7 +31,7 @@ open class Processor<out I : Any, out O : Any>(
     private var outIdx = 0
     @Suppress("LeakingThis", "UNCHECKED_CAST")
     private fun producerScope(inIdx: Int) =
-        ProducerScope<O>(inIdx, outIdx++, params.parallelIdx, pipeline, { closeOutput() }) {
+        ProducerScope<O>(inIdx, outIdx++, params.parallelIdx, params.type, pipeline, { closeOutput() }) {
             (outputChannel as SendChannel<IPipeValue<O>>).send(it)
         }
 
@@ -43,12 +43,11 @@ open class Processor<out I : Any, out O : Any>(
             processingScope(value).block(value.value)
             prevValue = value
         }
-        Log.v("processing finished")
         prevValue?.let { pv -> processingScope(pv).closeOutput() }
     }.let { outputChannel as ReceiveChannel<IPipeValue<O>> }
 
     private suspend fun IProducerScope<O>.closeOutput() {
-        Log.v("processing finished")
+        Log.v("processing finished params=$params")
         onProcessingFinished()
         outputChannel.close()
     }

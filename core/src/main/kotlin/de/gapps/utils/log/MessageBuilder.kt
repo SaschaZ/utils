@@ -1,7 +1,6 @@
 package de.gapps.utils.log
 
 import de.gapps.utils.time.TimeEx
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlin.coroutines.CoroutineContext
 
@@ -12,16 +11,13 @@ internal object MessageBuilder {
     fun wrapMessage(cc: CoroutineContext?, msg: Pair<String, String>) =
         "${TimeEx()} - ${msg.first}:${buildParentComponentString(cc)}-> ${msg.second}"
 
-    val prefix: String
-        get() = "${TimeEx()} - S:${buildParentComponentString()}-> "
-
     private fun buildParentComponentString(cc: CoroutineContext? = null): String {
-        val (className, methodName) = Exception().stackTrace.first {
+        val (fileName, methodName, lineNumber) = Exception().stackTrace.first {
             it.fixedMethodName != "DefaultImpls" && it.fileName?.let { fn ->
-                listOf("Log.kt", "MessageBuilder.kt").contains(fn)
+                listOf("Log.kt", "MessageBuilder.kt", "LogContext.kt").contains(fn)
             } == false
-        }.run { fixedClassName to fixedMethodName }
-        return "${cc?.let { "${cc[CoroutineName]}:" } ?: ""}$className.$methodName"
+        }.run { Triple(fileName, fixedMethodName, lineNumber) }
+        return "(${fileName}:${lineNumber})#${methodName}"
     }
 }
 
