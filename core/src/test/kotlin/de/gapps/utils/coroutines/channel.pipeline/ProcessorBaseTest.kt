@@ -18,8 +18,8 @@ import org.junit.Test
 abstract class ProcessorBaseTest(
     protected val type: ParallelProcessingType = ParallelProcessingType.UNIQUE,
     protected val channelCapacity: Int = Channel.RENDEZVOUS,
-    protected val numParallel: Int = 4,
-    protected val testProducerAmount: Int = 4 * numParallel
+    protected val numParallel: Int = 24,
+    protected val testProducerAmount: Int = 128 * numParallel
 ) {
 
     protected open lateinit var scope: ICoroutineScopeEx

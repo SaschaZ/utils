@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "dev.zieger.utils"
-version = "1.1.38"
+version = "1.1.39"
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
@@ -25,7 +25,7 @@ dependencies {
     testImplementation("androidx.test.ext:junit:1.1.1")
     testImplementation("io.mockk:mockk:1.9.3")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.5.2")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.3.61")
 }
 

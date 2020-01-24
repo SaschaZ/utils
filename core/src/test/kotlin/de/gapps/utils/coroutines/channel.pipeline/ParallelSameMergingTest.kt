@@ -1,6 +1,5 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.log.Log
 import de.gapps.utils.testing.assertion.assert
 import de.gapps.utils.testing.runTest
 import org.junit.Test
@@ -16,7 +15,7 @@ class ParallelSameMergingTest : ProcessorBaseTest(ParallelProcessingType.SAME) {
 
         var prevConsumed: IPipeValue<String>? = null
         consumeValues.forEach {
-            Log.v("$it")
+//            Log.v("$it")
             assertTrue(
                 it.outIdx >= prevConsumed?.outIdx ?: 0,
                 "\ncurrent: $it\nprevious: $prevConsumed"

@@ -44,6 +44,13 @@ interface IPipeValue<out T> : Comparable<IPipeValue<@UnsafeVariance T>> {
 
     val wasProcessedParallel
         get() = parallelIdx > NO_PARALLEL_EXECUTION
+
+    operator fun component1() = value
+    operator fun component2() = time
+    operator fun component3() = inIdx
+    operator fun component4() = outIdx
+    operator fun component5() = parallelIdx
+    operator fun component6() = parallelType
 }
 
 data class PipeValue<T>(

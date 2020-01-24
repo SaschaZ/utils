@@ -2,15 +2,11 @@ package de.gapps.utils.coroutines.channel.pipeline.parallel
 
 import de.gapps.utils.coroutines.channel.pipeline.IPipeValue
 import de.gapps.utils.coroutines.channel.pipeline.IProcessingParams
-import de.gapps.utils.log.logV
 
 
 class ParallelUniqueProcessedValueMerger<out T : Any>(
     params: IProcessingParams
 ) : AbsParallelProcessedValueMerger<T>(params) {
-
-    private val valuesWaitingFull
-        get() = valueSenderMap.size == params.numParallel
 
     private val IPipeValue<T>.isFirst
         get() = lastSend == null
@@ -29,6 +25,6 @@ class ParallelUniqueProcessedValueMerger<out T : Any>(
                 && inIdx - 1 == lastSend?.inIdx
 
     override val IPipeValue<@UnsafeVariance T>.isNext
-        get() = (isFirst || isNextOutIdxOfSameSeries || isNextOutOfNextSeries) logV { "$this -> $it" }
+        get() = (isFirst || isNextOutIdxOfSameSeries || isNextOutOfNextSeries)// logV { "$this -> $it" }
 }
 

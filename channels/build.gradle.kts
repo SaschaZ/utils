@@ -8,12 +8,12 @@ val test by tasks.getting(Test::class) {
 }
 
 group = "dev.zieger.utils"
-version = "1.1.38"
+version = "1.1.39"
 
 dependencies {
     implementation(project(":core"))
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.3")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.3.61")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.3.3")
 
     implementation("org.koin:koin-core:2.0.1")
@@ -35,7 +35,7 @@ dependencies {
     testImplementation("androidx.test.ext:junit:1.1.1")
     testImplementation("io.mockk:mockk:1.9.3")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.5.2")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.3.61")
 }
 
