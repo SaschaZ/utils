@@ -6,6 +6,8 @@ import de.gapps.utils.log.Log
 import de.gapps.utils.misc.ifN
 import de.gapps.utils.misc.lastOrNull
 import de.gapps.utils.observable.Controllable
+import de.gapps.utils.observable.Controllable2
+import de.gapps.utils.observable.Controller2
 import de.gapps.utils.statemachine.scopes.*
 
 /**
@@ -21,7 +23,7 @@ open class MachineEx<out E : IEvent, out S : IState>(
 
     private val recentChanges = ArrayList<EventChangeScope<E, S>>()
 
-    private val eventHost = Controllable<MachineEx<E, S>, E?>(null) {
+    private val eventHost = Controllable2<IMachineEx<E, S>, E?>(null) {
         it?.processEvent()?.processState()
     }
     override var event: @UnsafeVariance E
@@ -33,12 +35,12 @@ open class MachineEx<out E : IEvent, out S : IState>(
     val set: ISetScope<@UnsafeVariance E, @UnsafeVariance S>
         get() = SetScope(eventHost)
 
-    private var stateHost = Controllable<IMachineEx<E, S>, S>(initialState)
+    private var stateHost = Controllable2<IMachineEx<E, S>, S>(initialState)
 
     override val state: S
         get() = stateHost.value
 
-    override fun observeEvent(observer: IOnChangedScope<IMachineEx<@UnsafeVariance E, @UnsafeVariance S>, E>.(E) -> Unit) =
+    override fun observeEvent(observer: Controller2<@UnsafeVariance IMachineEx<E, S>, @UnsafeVariance S>) =
         eventHost.control {
             value?.let {
                 OnChangedScope(
@@ -50,7 +52,7 @@ open class MachineEx<out E : IEvent, out S : IState>(
             }
         }
 
-    override fun observeState(observer: IOnChangedScope<IMachineEx<@UnsafeVariance E, @UnsafeVariance S>, S>.(S) -> Unit) =
+    override fun observeState(observer: Controller2<@UnsafeVariance IMachineEx<E, S>, @UnsafeVariance S>) =
         stateHost.control(observer)
 
     protected open fun @UnsafeVariance E.processEvent(): S =

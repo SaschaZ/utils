@@ -5,7 +5,7 @@ import de.gapps.utils.delegates.IOnChanged
 /**
  * Same as [IObservable] but allows to change the internal variable.
  */
-interface IControllable<out P, out T> : IOnChanged<@UnsafeVariance P, @UnsafeVariance T> {
+interface IControllable2<out P, out T> : IOnChanged<@UnsafeVariance P, @UnsafeVariance T> {
 
     /**
      * Controlled variable.
@@ -16,5 +16,10 @@ interface IControllable<out P, out T> : IOnChanged<@UnsafeVariance P, @UnsafeVar
     /**
      * Observe to changes on the internal [value] and change internal value if needed.
      */
-    fun control(listener: IControlledChangedScope<P, T>.(T) -> Unit): () -> Unit
+    fun control(listener: Controller2<P, T>): () -> Unit
 }
+
+typealias IControllable<T> = IControllable2<Any?, T>
+
+typealias Controller<T> = IControlledChangedScope<Any?, T>.(T) -> Unit
+typealias Controller2<P, T> = IControlledChangedScope<P, T>.(T) -> Unit

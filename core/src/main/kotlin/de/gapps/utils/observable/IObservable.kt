@@ -6,7 +6,7 @@ import kotlin.properties.ReadWriteProperty
 /**
  * Describes a container that holds a variable of type [T] and provides methods to observe changes on this variable.
  */
-interface IObservable<out P : Any?, out T> : ReadWriteProperty<@UnsafeVariance P, @UnsafeVariance T> {
+interface IObservable2<out P: Any?, out T: Any?> : ReadWriteProperty<@UnsafeVariance P, @UnsafeVariance T> {
 
     /**
      * Observed variable.
@@ -18,8 +18,12 @@ interface IObservable<out P : Any?, out T> : ReadWriteProperty<@UnsafeVariance P
     /**
      * Observe to changes on the internal [value]. Change is notified immediately.
      */
-    fun observe(listener: IOnChangedScope<@UnsafeVariance P, T>.(T) -> Unit): () -> Unit
+    fun observe(listener: Observer2<@UnsafeVariance P, @UnsafeVariance T>): ()-> Unit
 
     fun clearRecentValues()
 }
 
+typealias IObservable<T> = IObservable2<Any?, T>
+
+typealias Observer<T> = IOnChangedScope<Any?, T>.(T) -> Unit
+typealias Observer2<P, T> = IOnChangedScope<P, T>.(T) -> Unit

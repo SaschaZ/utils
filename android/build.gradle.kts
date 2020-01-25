@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "dev.zieger.utils"
-version = "1.1.39"
+version = "1.1.41"
 
 android {
     compileSdkVersion(29)

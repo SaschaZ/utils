@@ -4,6 +4,8 @@ import de.gapps.utils.delegates.IOnChangedScope
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
+typealias Observable<T> = Observable2<Any?, T>
+
 /**
  * [ReadWriteProperty] that can be used to add a read only observer to another property with the delegate pattern.
  *
@@ -20,17 +22,17 @@ import kotlin.reflect.KProperty
  *  }
  * ```
  */
-class Observable<out P : Any?, out T : Any?>(
+class Observable2<out P : Any?, out T : Any?>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
     notifyForExisting: Boolean = false,
     storeRecentValues: Boolean = false,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
     onChanged: IOnChangedScope<P, T>.(T) -> Unit = {}
-) : ReadWriteProperty<@UnsafeVariance P, @UnsafeVariance T>, IObservable<P, T> {
+) : ReadWriteProperty<@UnsafeVariance P, @UnsafeVariance T>, IObservable2<P, T> {
 
     private var internal =
-        Controllable(
+        Controllable2(
             initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, subscriberStateChanged,
             onChanged
         )
@@ -44,7 +46,7 @@ class Observable<out P : Any?, out T : Any?>(
     override val value: T
         get() = internal.value
 
-    override fun observe(listener: IOnChangedScope<@UnsafeVariance P, T>.(T) -> Unit): () -> Unit =
+    override fun observe(listener: Observer2<@UnsafeVariance P, @UnsafeVariance T>): () -> Unit =
         internal.control(listener)
 
     override fun clearRecentValues() = internal.clearRecentValues()
