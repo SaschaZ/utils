@@ -10,7 +10,10 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-interface IOnChanged<P : Any?, out T : Any?> : ReadWriteProperty<P, @kotlin.UnsafeVariance T> {
+typealias IOnChanged<T> = IOnChanged2<Any?, T>
+typealias OnChanged<T> = OnChanged2<Any?, T>
+
+interface IOnChanged2<P : Any?, out T : Any?> : ReadWriteProperty<P, @kotlin.UnsafeVariance T> {
     var value: @UnsafeVariance T
 
     val storeRecentValues: Boolean
@@ -22,7 +25,7 @@ interface IOnChanged<P : Any?, out T : Any?> : ReadWriteProperty<P, @kotlin.Unsa
     fun clearRecentValues()
 }
 
-class OnChanged<P : Any?, out T : Any?>(
+class OnChanged2<P : Any?, out T : Any?>(
     initial: T,
     override val storeRecentValues: Boolean = false,
     override val notifyForExisting: Boolean = false,
@@ -31,7 +34,7 @@ class OnChanged<P : Any?, out T : Any?>(
     override val mutex: Mutex? = null,
     private val onChangedS: suspend IOnChangedScope<P, T>.(T) -> Unit = {},
     internal var onChange: IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {}
-) : IOnChanged<P, @UnsafeVariance T> {
+) : IOnChanged2<P, @UnsafeVariance T> {
 
     private var triggeredChangeRunning = false
 

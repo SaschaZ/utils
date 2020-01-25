@@ -1,11 +1,11 @@
 package de.gapps.utils.observable
 
-import de.gapps.utils.delegates.IOnChanged
+import de.gapps.utils.delegates.IOnChanged2
 
 /**
  * Same as [IObservable] but allows to change the internal variable.
  */
-interface IControllable2<out P, out T> : IOnChanged<@UnsafeVariance P, @UnsafeVariance T> {
+interface IControllable2<out P, out T> : IOnChanged2<@UnsafeVariance P, @UnsafeVariance T> {
 
     /**
      * Controlled variable.

@@ -1,8 +1,9 @@
 package de.gapps.utils.observable
 
-import de.gapps.utils.delegates.IOnChanged
+import de.gapps.utils.delegates.IOnChanged2
 import de.gapps.utils.delegates.IOnChangedScope
 import de.gapps.utils.delegates.OnChanged
+import de.gapps.utils.delegates.OnChanged2
 import de.gapps.utils.log.Log
 
 typealias Controllable<T> = Controllable2<Any?, T>
@@ -14,9 +15,9 @@ typealias Controllable<T> = Controllable2<Any?, T>
 open class Controllable2<out P : Any?, out T : Any?> private constructor(
     private val subscriberStateChanged: ((Boolean) -> Unit)? = null,
     private val notifyForExistingInternal: Boolean,
-    private val onChangedDelegate: OnChanged<P, T>,
+    private val onChangedDelegate: OnChanged2<P, T>,
     onChanged: Controller2<P, T> = {}
-) : IControllable2<P, T>, IOnChanged<@UnsafeVariance P, T> by onChangedDelegate {
+) : IControllable2<P, T>, IOnChanged2<@UnsafeVariance P, T> by onChangedDelegate {
 
     /**
      *
@@ -36,7 +37,7 @@ open class Controllable2<out P : Any?, out T : Any?> private constructor(
         onControl: Controller2<P, T> = {}
     ) : this(
         subscriberStateChanged, notifyForExisting,
-        OnChanged(initial, storeRecentValues, false, onlyNotifyOnChanged), onControl
+        OnChanged2(initial, storeRecentValues, false, onlyNotifyOnChanged), onControl
     )
 
 

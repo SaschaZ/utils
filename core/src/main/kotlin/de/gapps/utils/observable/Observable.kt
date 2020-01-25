@@ -1,6 +1,5 @@
 package de.gapps.utils.observable
 
-import de.gapps.utils.delegates.IOnChangedScope
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -28,7 +27,7 @@ class Observable2<out P : Any?, out T : Any?>(
     notifyForExisting: Boolean = false,
     storeRecentValues: Boolean = false,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
-    onChanged: IOnChangedScope<P, T>.(T) -> Unit = {}
+    onChanged: Observer2<P, T> = {}
 ) : ReadWriteProperty<@UnsafeVariance P, @UnsafeVariance T>, IObservable2<P, T> {
 
     private var internal =
