@@ -33,7 +33,7 @@ class ObservableTest {
         class TestClass(value: String) {
             var success: Boolean = false
                 private set
-            val observable = Observable<Any?, String>(value)
+            val observable = Observable(value)
             private var internal by observable.apply {
                 observe { success = true }
             }

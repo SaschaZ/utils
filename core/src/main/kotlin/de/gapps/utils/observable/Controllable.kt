@@ -5,16 +5,18 @@ import de.gapps.utils.delegates.IOnChangedScope
 import de.gapps.utils.delegates.OnChanged
 import de.gapps.utils.log.Log
 
+typealias Controllable<T> = Controllable2<Any?, T>
+
 /**
  * Container that provides observing of the internal variable of type [T].
  *
  */
-open class Controllable<out P : Any?, out T : Any?> private constructor(
+open class Controllable2<out P : Any?, out T : Any?> private constructor(
     private val subscriberStateChanged: ((Boolean) -> Unit)? = null,
     private val notifyForExistingInternal: Boolean,
     private val onChangedDelegate: OnChanged<P, T>,
-    onChanged: IControlledChangedScope<P, T>.(T) -> Unit = {}
-) : IControllable<P, T>, IOnChanged<@UnsafeVariance P, T> by onChangedDelegate {
+    onChanged: Controller2<P, T> = {}
+) : IControllable2<P, T>, IOnChanged<@UnsafeVariance P, T> by onChangedDelegate {
 
     /**
      *
@@ -31,14 +33,14 @@ open class Controllable<out P : Any?, out T : Any?> private constructor(
         notifyForExisting: Boolean = false,
         storeRecentValues: Boolean = false,
         subscriberStateChanged: ((Boolean) -> Unit)? = null,
-        onControl: IControlledChangedScope<P, T>.(T) -> Unit = {}
+        onControl: Controller2<P, T> = {}
     ) : this(
         subscriberStateChanged, notifyForExisting,
         OnChanged(initial, storeRecentValues, false, onlyNotifyOnChanged), onControl
     )
 
 
-    private val subscribers = ArrayList<IControlledChangedScope<P, T>.(T) -> Unit>()
+    private val subscribers = ArrayList<Controller2<P, T>>()
 
     private var subscribersAvailable by OnChanged(false) { new ->
         subscriberStateChanged?.invoke(new)
@@ -60,7 +62,7 @@ open class Controllable<out P : Any?, out T : Any?> private constructor(
         value = it
     }
 
-    override fun control(listener: IControlledChangedScope<P, T>.(T) -> Unit): () -> Unit {
+    override fun control(listener: Controller2<P, T>): () -> Unit {
         subscribers.add(listener)
         Log.v("value=$value; notifyForExisting=$notifyForExisting")
         if (notifyForExistingInternal) listener.notify()
@@ -72,11 +74,11 @@ open class Controllable<out P : Any?, out T : Any?> private constructor(
         }
     }
 
-    private fun (IControlledChangedScope<P, T>.(T) -> Unit).notify() {
+    private fun Controller2<P, T>.notify() {
         notify(null, onChangedDelegate.value, null, emptyList())
     }
 
-    private fun (IControlledChangedScope<P, T>.(T) -> Unit).notify(
+    private fun Controller2<P, T>.notify(
         thisRef: P?,
         new: @UnsafeVariance T,
         old: @UnsafeVariance T?,

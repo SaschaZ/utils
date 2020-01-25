@@ -1,6 +1,7 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.delegates.IOnChangedScope
+import de.gapps.utils.observable.Controller2
 
 /**
  * Base interface for an event of [IMachineEx]
@@ -38,7 +39,7 @@ interface IMachineEx<out E : IEvent, out S : IState> {
      * @param observer Is notified when an event changed.
      * @return Invoke to remove the observer.
      */
-    fun observeEvent(observer: IOnChangedScope<IMachineEx<@UnsafeVariance E, @UnsafeVariance S>, E>.(E) -> Unit): () -> Unit
+    fun observeEvent(observer: Controller2<@UnsafeVariance IMachineEx<E, S>, @UnsafeVariance S>): () -> Unit
 
     /**
      * Observe any state change.
@@ -46,5 +47,5 @@ interface IMachineEx<out E : IEvent, out S : IState> {
      * @param observer Is notified when an state changed.
      * @return Invoke to remove the observer.
      */
-    fun observeState(observer: IOnChangedScope<IMachineEx<@UnsafeVariance E, @UnsafeVariance S>, S>.(S) -> Unit): () -> Unit
+    fun observeState(observer: Controller2<@UnsafeVariance IMachineEx<E, S>, @UnsafeVariance S>): () -> Unit
 }
