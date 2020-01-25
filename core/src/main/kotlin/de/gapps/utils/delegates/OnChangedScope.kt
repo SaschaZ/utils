@@ -1,4 +1,4 @@
-package de.gapps.utils.observable
+package de.gapps.utils.delegates
 
 
 interface IOnChangedScope<P : Any?, out T : Any?> {

@@ -1,6 +1,7 @@
 package de.gapps.utils.observable
 
 import de.gapps.utils.delegates.IOnChanged
+import de.gapps.utils.delegates.IOnChangedScope
 import de.gapps.utils.delegates.OnChanged
 import de.gapps.utils.log.Log
 
@@ -8,12 +9,12 @@ import de.gapps.utils.log.Log
  * Container that provides observing of the internal variable of type [T].
  *
  */
-open class Controllable<out T : Any?> private constructor(
+open class Controllable<out P : Any?, out T : Any?> private constructor(
     private val subscriberStateChanged: ((Boolean) -> Unit)? = null,
     private val notifyForExistingInternal: Boolean,
-    private val onChangedDelegate: OnChanged<Any?, T>,
-    onChanged: IControlledChangedScope<T>.(T) -> Unit = {}
-) : IControllable<T>, IOnChanged<Any?, T> by onChangedDelegate {
+    private val onChangedDelegate: OnChanged<P, T>,
+    onChanged: IControlledChangedScope<P, T>.(T) -> Unit = {}
+) : IControllable<P, T>, IOnChanged<@UnsafeVariance P, T> by onChangedDelegate {
 
     /**
      *
@@ -30,14 +31,14 @@ open class Controllable<out T : Any?> private constructor(
         notifyForExisting: Boolean = false,
         storeRecentValues: Boolean = false,
         subscriberStateChanged: ((Boolean) -> Unit)? = null,
-        onControl: IControlledChangedScope<T>.(T) -> Unit = {}
+        onControl: IControlledChangedScope<P, T>.(T) -> Unit = {}
     ) : this(
         subscriberStateChanged, notifyForExisting,
         OnChanged(initial, storeRecentValues, false, onlyNotifyOnChanged), onControl
     )
 
 
-    private val subscribers = ArrayList<IControlledChangedScope<T>.(T) -> Unit>()
+    private val subscribers = ArrayList<IControlledChangedScope<P, T>.(T) -> Unit>()
 
     private var subscribersAvailable by OnChanged(false) { new ->
         subscriberStateChanged?.invoke(new)
@@ -51,7 +52,7 @@ open class Controllable<out T : Any?> private constructor(
 
     private fun newControlledChangeScope(
         newValue: @UnsafeVariance T,
-        thisRef: Any?,
+        thisRef: P?,
         previousValue: T?,
         previousValues: List<T?>
     ) = ControlledChangedScope(newValue, thisRef, previousValue, previousValues, { clearRecentValues() }) {
@@ -59,7 +60,7 @@ open class Controllable<out T : Any?> private constructor(
         value = it
     }
 
-    override fun control(listener: IControlledChangedScope<T>.(T) -> Unit): () -> Unit {
+    override fun control(listener: IControlledChangedScope<P, T>.(T) -> Unit): () -> Unit {
         subscribers.add(listener)
         Log.v("value=$value; notifyForExisting=$notifyForExisting")
         if (notifyForExistingInternal) listener.notify()
@@ -71,12 +72,12 @@ open class Controllable<out T : Any?> private constructor(
         }
     }
 
-    private fun (IControlledChangedScope<T>.(T) -> Unit).notify() {
+    private fun (IControlledChangedScope<P, T>.(T) -> Unit).notify() {
         notify(null, onChangedDelegate.value, null, emptyList())
     }
 
-    private fun (IControlledChangedScope<T>.(T) -> Unit).notify(
-        thisRef: Any?,
+    private fun (IControlledChangedScope<P, T>.(T) -> Unit).notify(
+        thisRef: P?,
         new: @UnsafeVariance T,
         old: @UnsafeVariance T?,
         previous: List<@UnsafeVariance T?>
@@ -84,7 +85,7 @@ open class Controllable<out T : Any?> private constructor(
         newControlledChangeScope(new, thisRef, old, previous).this(new)
     }
 
-    private fun IOnChangedScope<Any?, @UnsafeVariance T>.onPropertyChanged() {
+    private fun IOnChangedScope<P, @UnsafeVariance T>.onPropertyChanged() {
         subscribers.forEach { it.notify(thisRef, value, previousValue, previousValues) }
     }
 

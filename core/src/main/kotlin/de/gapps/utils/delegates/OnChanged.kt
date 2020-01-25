@@ -4,8 +4,6 @@ package de.gapps.utils.delegates
 
 import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.misc.asUnit
-import de.gapps.utils.observable.IOnChangedScope
-import de.gapps.utils.observable.OnChangedScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.atomic.AtomicReference

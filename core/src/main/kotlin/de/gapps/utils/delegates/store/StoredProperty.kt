@@ -2,11 +2,11 @@
 
 package de.gapps.utils.delegates.store
 
+import de.gapps.utils.delegates.IOnChangedScope
 import de.gapps.utils.delegates.OnChanged
 import de.gapps.utils.json.DeSerializer
 import de.gapps.utils.json.JsonConverter
 import de.gapps.utils.misc.asUnit
-import de.gapps.utils.observable.IOnChangedScope
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 

@@ -1,5 +1,6 @@
 package de.gapps.utils.observable
 
+import de.gapps.utils.delegates.IOnChangedScope
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -19,14 +20,14 @@ import kotlin.reflect.KProperty
  *  }
  * ```
  */
-class Observable<T>(
+class Observable<out P : Any?, out T : Any?>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
     notifyForExisting: Boolean = false,
     storeRecentValues: Boolean = false,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
-    onChanged: IOnChangedScope<Any?, T>.(T) -> Unit = {}
-) : ReadWriteProperty<Any, T>, IObservable<T> {
+    onChanged: IOnChangedScope<P, T>.(T) -> Unit = {}
+) : ReadWriteProperty<@UnsafeVariance P, @UnsafeVariance T>, IObservable<P, T> {
 
     private var internal =
         Controllable(
@@ -34,16 +35,17 @@ class Observable<T>(
             onChanged
         )
 
-    override fun getValue(thisRef: Any, property: KProperty<*>): T = internal.value
+    override fun getValue(thisRef: @UnsafeVariance P, property: KProperty<*>): T = internal.value
 
-    override fun setValue(thisRef: Any, property: KProperty<*>, value: T) {
+    override fun setValue(thisRef: @UnsafeVariance P, property: KProperty<*>, value: @UnsafeVariance T) {
         internal.value = value
     }
 
     override val value: T
         get() = internal.value
 
-    override fun observe(listener: IOnChangedScope<Any?, T>.(T) -> Unit): () -> Unit = internal.control(listener)
+    override fun observe(listener: IOnChangedScope<@UnsafeVariance P, T>.(T) -> Unit): () -> Unit =
+        internal.control(listener)
 
     override fun clearRecentValues() = internal.clearRecentValues()
 }
