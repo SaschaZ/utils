@@ -17,21 +17,21 @@ enum class LibraryType {
 
 fun Project.configurePublishing(type: LibraryType, name: String) {
     when (type) {
-        AAR -> configureAarPublishing()
-        JAR -> configureJarPublishing()
+        AAR -> configureAarPublishing(name)
+        JAR -> configureJarPublishing(name)
     }
 }
 
-internal fun Project.configureJarPublishing() {
+internal fun Project.configureJarPublishing(name: String) {
     configureSourcesJarTaskIfNecessary()
-    configureLibraryJarPublication()
+    configureLibraryJarPublication(name)
 }
 
-internal fun Project.configureLibraryJarPublication() {
+internal fun Project.configureLibraryJarPublication(name: String) {
     extensions.getByType<PublishingExtension>().publications {
         register<MavenPublication>("mavenJava") {
             groupId = Globals.group
-            artifactId = "android"
+            artifactId = name
             version = Globals.version
 
             from(components["java"])
@@ -53,18 +53,18 @@ internal fun Project.configureLibraryJarPublication() {
     }
 }
 
-internal fun Project.configureAarPublishing() {
+internal fun Project.configureAarPublishing(name: String) {
     configureSourcesJarTaskIfNecessary()
     configurePublishTask()
-    configureLibraryAarPublication()
+    configureLibraryAarPublication(name)
 }
 
-internal fun Project.configureLibraryAarPublication() {
+internal fun Project.configureLibraryAarPublication(name: String) {
     val projectName = name
     extensions.getByType<PublishingExtension>().publications {
         register<MavenPublication>("aar") {
             groupId = Globals.group
-            artifactId = "android"
+            artifactId = name
             version = Globals.version
 
             artifact(file("$buildDir/outputs/aar/$projectName-release.aar"))
