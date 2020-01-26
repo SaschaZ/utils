@@ -2,16 +2,31 @@ package de.gapps.utils.statemachine
 
 import de.gapps.utils.delegates.IOnChangedScope
 import de.gapps.utils.observable.Controller2
+import de.gapps.utils.statemachine.scopes.ISetScope
+import de.gapps.utils.time.ITimeEx
+import de.gapps.utils.time.TimeEx
 
 /**
  * Base interface for an event of [IMachineEx]
  */
-interface IEvent
+interface IEvent {
+    val fireAt: ITimeEx
+}
+
+open class Event : IEvent {
+    override var fireAt: ITimeEx = TimeEx()
+}
 
 /**
  * Base interface for a state of [IMachineEx]
  */
-interface IState
+interface IState {
+    val active: Boolean
+}
+
+open class State : IState {
+    override var active: Boolean = false
+}
 
 /**
  * Base interface for a state machine.
@@ -32,6 +47,8 @@ interface IMachineEx<out E : IEvent, out S : IState> {
      * Returns current state.
      */
     val state: S
+
+    val set: ISetScope<@UnsafeVariance E, @UnsafeVariance S>
 
     /**
      * Observe any event change.

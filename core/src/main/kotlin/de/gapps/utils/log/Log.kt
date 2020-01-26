@@ -10,62 +10,62 @@ object Log {
 
     fun CoroutineScope.v(msg: String) = out(
         LogLevel.VERBOSE,
-        (builder.run { wrapMessage("V" to msg) })
+        (builder.run { wrapMessage("V", msg) })
     )
 
     fun v(msg: String) = out(
         LogLevel.VERBOSE,
-        (builder.wrapMessage(null, "V" to msg))
+        (builder.wrapMessage(null, "V", msg))
     )
 
     fun CoroutineScope.d(msg: String) = out(
         LogLevel.DEBUG,
-        (builder.run { wrapMessage("D" to msg) })
+        (builder.run { wrapMessage("D", msg) })
     )
 
     fun d(msg: String) = out(
         LogLevel.DEBUG,
-        (builder.wrapMessage(null, "D" to msg))
+        (builder.wrapMessage(null, "D", msg))
     )
 
     fun CoroutineScope.i(msg: String) = out(
         LogLevel.INFO,
-        (builder.run { wrapMessage("I" to msg) })
+        (builder.run { wrapMessage("I", msg) })
     )
 
     fun i(msg: String) = out(
         LogLevel.INFO,
-        (builder.wrapMessage(null, "I" to msg))
+        (builder.wrapMessage(null, "I", msg))
     )
 
     fun CoroutineScope.w(msg: String) = out(
         LogLevel.WARNING,
-        (builder.run { wrapMessage("W" to msg) })
+        (builder.run { wrapMessage("W", msg) })
     )
 
     fun w(msg: String) = out(
         LogLevel.WARNING,
-        (builder.wrapMessage(null, "W" to msg))
+        (builder.wrapMessage(null, "W", msg))
     )
 
     fun CoroutineScope.e(msg: String) = out(
         LogLevel.EXCEPTION,
-        (builder.run { wrapMessage("E" to msg) })
+        (builder.run { wrapMessage("E", msg) })
     )
 
     fun e(msg: String) = out(
         LogLevel.EXCEPTION,
-        (builder.wrapMessage(null, "E" to msg))
+        (builder.wrapMessage(null, "E", msg))
     )
 
     fun CoroutineScope.e(t: Throwable, msg: String) = out(
         LogLevel.EXCEPTION,
-        (builder.run { wrapMessage("E" to "$t $msg") })
+        (builder.run { wrapMessage("E", "$t $msg") })
     )
 
     fun e(t: Throwable, msg: String) = out(
         LogLevel.EXCEPTION,
-        (builder.wrapMessage(null, "E" to "$t $msg"))
+        (builder.wrapMessage(null, "E", "$t $msg"))
     )
 
     fun r(msg: String) = out(null, msg)

@@ -32,7 +32,7 @@ open class MachineEx<out E : IEvent, out S : IState>(
             eventHost.value = value
         }
 
-    val set: ISetScope<@UnsafeVariance E, @UnsafeVariance S>
+    override val set: ISetScope<@UnsafeVariance E, @UnsafeVariance S>
         get() = SetScope(eventHost)
 
     private var stateHost = Controllable2<IMachineEx<E, S>, S>(initialState)
@@ -66,7 +66,7 @@ open class MachineEx<out E : IEvent, out S : IState>(
 fun <E : IEvent, S : IState> machineEx(
     initialState: S,
     builder: MachineExScope<E, S>.() -> Unit
-): MachineEx<E, S> {
+): IMachineEx<E, S> {
     return MachineExScope<E, S>().run {
         builder()
         MachineEx<E, S>(initialState) { e ->

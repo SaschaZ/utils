@@ -1,18 +1,8 @@
+import de.gapps.utils.configurePublishing
+
 plugins {
     kotlin("jvm")
-    id("maven-publish")
-}
-
-val test by tasks.getting(Test::class) {
-    useJUnitPlatform {}
-}
-
-group = "dev.zieger.utils"
-version = "1.1.42"
-
-repositories {
-    google()
-    mavenCentral()
+    `maven-publish`
 }
 
 dependencies {
@@ -31,25 +21,4 @@ dependencies {
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
 }
 
-tasks {
-    compileKotlin {
-        kotlinOptions.jvmTarget = "1.8"
-    }
-    compileTestKotlin {
-        kotlinOptions.jvmTarget = "1.8"
-    }
-}
-
-val sourcesJar by tasks.registering(Jar::class) {
-    archiveClassifier.set("sources")
-    from(sourceSets.main.get().allSource)
-}
-
-publishing {
-    publications {
-        register("mavenJava", MavenPublication::class) {
-            from(components["java"])
-            artifact(sourcesJar.get())
-        }
-    }
-}
+configurePublishing(de.gapps.utils.LibraryType.JAR, "testing")

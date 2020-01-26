@@ -8,6 +8,6 @@ class TestExtensionsTest {
 
     @Test
     fun testRunTest() = runTest {
-        6 onFail "boooo" assert 9
+        9 onFail "boooo" assert 9
     }
 }

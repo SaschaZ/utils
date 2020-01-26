@@ -1,16 +1,9 @@
-/.gradle/
+.gradle
+.idea
+build
+artifacts
 
-/.idea/
-/*/.idea/
-
-/build/
-/*/build
-
-/artifacts/
-/android/android.iml
-/channels/channels.iml
-/console/console.iml
-/core/core.iml
-/core/error.log
-/local.properties
-/testing/testing.iml
+*.iml
+*.log
+local.properties
+/buildSrc/.gradle/
