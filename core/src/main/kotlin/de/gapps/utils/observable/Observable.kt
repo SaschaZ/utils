@@ -3,7 +3,17 @@ package de.gapps.utils.observable
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-typealias Observable<T> = Observable2<Any?, T>
+open class Observable<out T : Any?>(
+    initial: T,
+    onlyNotifyOnChanged: Boolean = true,
+    notifyForExisting: Boolean = false,
+    storeRecentValues: Boolean = false,
+    subscriberStateChanged: ((Boolean) -> Unit)? = null,
+    onChanged: Observer<T> = {}
+) : Observable2<Any?, T>(
+    initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, subscriberStateChanged,
+    onChanged
+)
 
 /**
  * [ReadWriteProperty] that can be used to add a read only observer to another property with the delegate pattern.
@@ -21,7 +31,7 @@ typealias Observable<T> = Observable2<Any?, T>
  *  }
  * ```
  */
-class Observable2<out P : Any?, out T : Any?>(
+open class Observable2<out P : Any?, out T : Any?>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
     notifyForExisting: Boolean = false,

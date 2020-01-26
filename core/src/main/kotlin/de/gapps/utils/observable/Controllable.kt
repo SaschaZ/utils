@@ -6,12 +6,19 @@ import de.gapps.utils.delegates.OnChanged
 import de.gapps.utils.delegates.OnChanged2
 import de.gapps.utils.log.Log
 
-typealias Controllable<T> = Controllable2<Any?, T>
+open class Controllable<T>(
+    initial: T,
+    onlyNotifyOnChanged: Boolean = true,
+    notifyForExisting: Boolean = false,
+    storeRecentValues: Boolean = false,
+    subscriberStateChanged: ((Boolean) -> Unit)? = null,
+    onControl: Controller<T> = {}
+) :
+    Controllable2<Any?, T>(
+        initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, subscriberStateChanged,
+        onControl
+    )
 
-/**
- * Container that provides observing of the internal variable of type [T].
- *
- */
 open class Controllable2<out P : Any?, out T : Any?> private constructor(
     private val subscriberStateChanged: ((Boolean) -> Unit)? = null,
     private val notifyForExistingInternal: Boolean,
@@ -20,6 +27,7 @@ open class Controllable2<out P : Any?, out T : Any?> private constructor(
 ) : IControllable2<P, T>, IOnChanged2<@UnsafeVariance P, T> by onChangedDelegate {
 
     /**
+     * Container that provides observing of the internal variable of type [T].
      *
      * @param T Type of the internal value.
      * @param initial Initial value for the internal variable. Will not notify any observers.
@@ -89,7 +97,7 @@ open class Controllable2<out P : Any?, out T : Any?> private constructor(
     }
 
     private fun IOnChangedScope<P, @UnsafeVariance T>.onPropertyChanged() {
-        subscribers.forEach { it.notify(thisRef, value, previousValue, previousValues) }
+        ArrayList(subscribers).forEach { it.notify(thisRef, value, previousValue, previousValues) }
     }
 
     private fun updateSubscriberState() {
