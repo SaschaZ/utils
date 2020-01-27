@@ -70,6 +70,50 @@ object Log {
 
     fun r(msg: String) = out(null, msg)
 
-    var out: (level: LogLevel?, msg: String) -> Unit = { _, msg -> println(msg) }
+    var logLevel: LogLevel = LogLevel.VERBOSE
+
+    fun filterLogLevel(level: LogLevel?, block: () -> Unit) {
+        if (level?.let { it >= logLevel } != false) block()
+    }
+
+    private val out: LogOutput = { level, msg -> elements.all { it.log(level, msg) } }
+
+    internal val elements = ArrayList<LogElement>(listOf(LogLevelFilter, PrintLn))
+
+    operator fun plus(element: LogElement) {
+        elements.add(element)
+    }
+
+    operator fun minus(element: LogElement) {
+        elements.remove(element)
+    }
+
+    fun clearElements(
+        addLevelFilter: Boolean = false,
+        addStdOut: Boolean = false
+    ) {
+        elements.clear()
+        if (addLevelFilter) this + LogLevelFilter
+        if (addStdOut) this + PrintLn
+    }
 }
+
+interface LogElement {
+    fun log(level: LogLevel?, msg: String): Boolean
+}
+
+object LogLevelFilter : LogElement {
+    override fun log(level: LogLevel?, msg: String): Boolean {
+        return level?.let { it >= Log.logLevel } != false
+    }
+}
+
+object PrintLn : LogElement {
+    override fun log(level: LogLevel?, msg: String): Boolean {
+        println(msg)
+        return true
+    }
+}
+
+typealias LogOutput = (level: LogLevel?, msg: String) -> Unit
 

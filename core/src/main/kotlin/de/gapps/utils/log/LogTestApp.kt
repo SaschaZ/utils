@@ -7,7 +7,7 @@ import de.gapps.utils.time.duration.minutes
 import kotlinx.coroutines.runBlocking
 
 
-object LogTestApp {
+internal object LogTestApp {
 
     @JvmStatic
     fun main(args: Array<String>) = runBlocking {

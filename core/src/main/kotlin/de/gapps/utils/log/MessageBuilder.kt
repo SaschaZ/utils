@@ -18,7 +18,7 @@ internal object MessageBuilder {
         get() = TimeEx().formatTime(StringConverter.DateFormat.TIME_ONLY)
 
     private val CoroutineContext?.parentComponentString
-        get() = "$coroutineDescription$linkedCodePosition"
+        get() = "$coroutineDescription$codePosition"
 
     private val CoroutineContext?.coroutineDescription
         get() = this?.name?.let { "[$it]" } ?: ""
@@ -26,24 +26,20 @@ internal object MessageBuilder {
     private val CoroutineContext.name
         get() = get(CoroutineName.Key)
 
-    private val linkedCodePosition
-        get() = codePosition.run { "(${first}:${second})#${third}" }
-
     private val codePosition
-        get() = Exception().stackTrace.run { fileName to lineNumber to methodName }
+        get() = Exception().stackTrace.validTrace?.run { "[(${fileName}:${lineNumber})#${fixedMethodName}]" } ?: ""
 
-    private val Array<StackTraceElement>.lineNumber
-        get() = firstOrNull()?.lineNumber
+    private val Array<StackTraceElement>.validTrace
+        get() = firstOrNull {
+            it.fileName?.let { fn ->
+                listOf("Log.kt", "MessageBuilder.kt", "LogContext.kt", "Controllable.kt", "Observable.kt").contains(fn)
+            } == false
+        }
 
-    private val Array<StackTraceElement>.fileName
-        get() = firstOrNull()?.fileName?.let { listOf("Log.kt", "MessageBuilder.kt", "LogContext.kt").contains(it) }
+    private val StackTraceElement.fixedClassName
+        get() = className.split(".").last().split("$").firstOrNull()
 
-    private val Array<StackTraceElement>.className
-        get() = firstOrNull()?.className?.split(".")?.last()?.split("$")?.firstOrNull()
-
-    private val Array<StackTraceElement>.methodName
-        get() = (firstOrNull()?.className?.split(".")?.last()?.split("$")?.getOrNull(1)
-            ?: firstOrNull()?.methodName).nullWhen { it == "DefaultImpls" }
+    private val StackTraceElement.fixedMethodName
+        get() = (className.split(".").last().split("$").getOrNull(1)
+            ?: methodName).nullWhen { it == "DefaultImpls" }
 }
-
-infix fun <A, B, C> Pair<A, B>.to(c: C) = Triple(first, second, c)
