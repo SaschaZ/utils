@@ -19,7 +19,4 @@ interface IControllable2<out P, out T> : IOnChanged2<@UnsafeVariance P, @UnsafeV
     fun control(listener: Controller2<P, T>): () -> Unit
 }
 
-typealias IControllable<T> = IControllable2<Any?, T>
-
-typealias Controller<T> = IControlledChangedScope<Any?, T>.(T) -> Unit
-typealias Controller2<P, T> = IControlledChangedScope<P, T>.(T) -> Unit
+interface IControllable<T> : IControllable2<Any?, T>

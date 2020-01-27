@@ -1,6 +1,5 @@
 package de.gapps.utils.observable
 
-import de.gapps.utils.delegates.IOnChangedScope
 import kotlin.properties.ReadWriteProperty
 
 /**
@@ -23,7 +22,4 @@ interface IObservable2<out P: Any?, out T: Any?> : ReadWriteProperty<@UnsafeVari
     fun clearRecentValues()
 }
 
-typealias IObservable<T> = IObservable2<Any?, T>
-
-typealias Observer<T> = IOnChangedScope<Any?, T>.(T) -> Unit
-typealias Observer2<P, T> = IOnChangedScope<P, T>.(T) -> Unit
+interface IObservable<T> : IObservable2<Any?, T>
