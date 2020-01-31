@@ -12,8 +12,6 @@ open class DurationEx(override val millis: Long = 0L) : IDurationEx {
 
     constructor(value: Number, timeUnit: TimeUnit = TimeUnit.MS) : this(value.toLong().toMillis(timeUnit))
 
-    override val clazz: KClass<DurationEx> = DurationEx::class
-
     override fun toString() = formatDuration()
     override fun equals(other: Any?) = millis == (other as? IDurationEx)?.millis
     override fun hashCode() = millis.hashCode() + javaClass.hashCode()

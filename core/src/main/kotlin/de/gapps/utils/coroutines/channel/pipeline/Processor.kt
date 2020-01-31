@@ -29,27 +29,35 @@ open class Processor<out I : Any, out O : Any>(
     override var pipeline: IPipeline<*, *> = DummyPipeline()
 
     private var outIdx = 0
+
     @Suppress("LeakingThis", "UNCHECKED_CAST")
     private fun producerScope(inIdx: Int) =
         ProducerScope<O>(inIdx, outIdx++, params.parallelIdx, params.type, pipeline, { closeOutput() }) {
+            pipeline.tick(this@Processor, PipelineElementStage.SEND_OUTPUT)
             (outputChannel as SendChannel<IPipeValue<O>>).send(it)
         }
 
     private fun processingScope(rawValue: IPipeValue<I>) = ProcessingScope(rawValue, producerScope(rawValue.outIdx))
 
-    override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process() = scope.launch {
-        var prevValue: IPipeValue<I>? = null
-        for (value in this@process) {
-            processingScope(value).block(value.value)
-            prevValue = value
-        }
-        prevValue?.let { pv -> processingScope(pv).closeOutput() }
-    }.let { outputChannel as ReceiveChannel<IPipeValue<O>> }
+    override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IPipeValue<@UnsafeVariance O>> =
+        scope.launch {
+            var prevValue: IPipeValue<I>? = null
+            pipeline.tick(this@Processor, PipelineElementStage.RECEIVE_INPUT)
+            for (value in this@process) {
+                pipeline.tick(this@Processor, PipelineElementStage.PROCESSING)
+                processingScope(value).block(value.value)
+                prevValue = value
+                pipeline.tick(this@Processor, PipelineElementStage.RECEIVE_INPUT)
+            }
+            prevValue?.let { pv -> processingScope(pv).closeOutput() }
+        }.let { outputChannel }
 
     private suspend fun IProducerScope<O>.closeOutput() {
         Log.v("processing finished params=$params")
+        pipeline.tick(this@Processor, PipelineElementStage.FINISHED_PROCESSING)
         onProcessingFinished()
         outputChannel.close()
+        pipeline.tick(this@Processor, PipelineElementStage.FINISHED_CLOSING)
     }
 }
 

@@ -15,14 +15,14 @@ interface IProducer<out T : Any> : IPipelineElement<Any?, T> {
 
     override fun ReceiveChannel<IPipeValue<Any?>>.pipe(): ReceiveChannel<IPipeValue<T>> = produce()
 
-    fun produce(): ReceiveChannel<IPipeValue<T>>
+    fun produce(): ReceiveChannel<IPipeValue<@UnsafeVariance T>>
 
     suspend fun IProducerScope<@UnsafeVariance T>.onProducingFinished() = Unit
 }
 
 open class Producer<out T : Any>(
     override var params: IProcessingParams = ProcessingParams(),
-    private val outputChannel: Channel<IPipeValue<T>> = Channel(params.channelCapacity),
+    private val outputChannel: Channel<IPipeValue<@UnsafeVariance T>> = Channel(params.channelCapacity),
     protected open val block: suspend IProducerScope<@UnsafeVariance T>.() -> Unit =
         { throw IllegalArgumentException("No producer block defined") }
 ) : IProducer<T>, Identity by Id("Producer") {
@@ -32,17 +32,22 @@ open class Producer<out T : Any>(
     @Suppress("LeakingThis")
     private val producerScope
         get() = ProducerScope<T>(pipeline, params.parallelIdx, params.type, { closeOutput() }) {
+            pipeline.tick(this@Producer, PipelineElementStage.SEND_OUTPUT)
             outputChannel.send(it)
+            pipeline.tick(this@Producer, PipelineElementStage.PROCESSING)
         }
 
-    override fun produce() = scope.launch {
+    override fun produce(): ReceiveChannel<IPipeValue<T>> = scope.launch {
+        pipeline.tick(this@Producer, PipelineElementStage.PROCESSING)
         producerScope.block()
-    }.let { outputChannel as ReceiveChannel<IPipeValue<T>> }
+    }.let { outputChannel }
 
     private suspend fun IProducerScope<T>.closeOutput() {
         Log.v("producing finished")
+        pipeline.tick(this@Producer, PipelineElementStage.FINISHED_PROCESSING)
         onProducingFinished()
         outputChannel.close()
+        pipeline.tick(this@Producer, PipelineElementStage.FINISHED_CLOSING)
     }
 }
 

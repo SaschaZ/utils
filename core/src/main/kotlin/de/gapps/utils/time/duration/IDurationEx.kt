@@ -1,10 +1,10 @@
 package de.gapps.utils.time.duration
 
 import de.gapps.utils.misc.divMod
-import de.gapps.utils.time.base.IMillisecondArithmetic
+import de.gapps.utils.time.base.IMillisecondHolderComparator
 import de.gapps.utils.time.base.TimeUnit
 
-interface IDurationEx : IMillisecondArithmetic<IDurationEx, DurationEx> {
+interface IDurationEx : IMillisecondHolderComparator {
 
     fun formatDuration(
         align: Boolean = false,
@@ -19,7 +19,4 @@ interface IDurationEx : IMillisecondArithmetic<IDurationEx, DurationEx> {
         }.joinToString(" ")
     }
 }
-
-fun min(a: IDurationEx, b: IDurationEx): IDurationEx = if (a < b) a else b
-fun max(a: IDurationEx, b: IDurationEx): IDurationEx = if (a > b) a else b
 

@@ -1,6 +1,6 @@
 @file:Suppress("LeakingThis")
 
-package de.gapps.utils.coroutines.channel.pipeline.parallel
+package de.gapps.utils.coroutines.channel.parallel
 
 import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.channel.pipeline.*

@@ -3,12 +3,13 @@ package de.gapps.utils.time
 import de.gapps.utils.log.Log
 import java.text.SimpleDateFormat
 import java.time.ZonedDateTime
+import java.util.*
 
 open class TimeParseHelper {
 
     protected fun String.stringToMillis(): Long {
         return try {
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX")
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.getDefault())
             val result = dateFormat.parse(this)
             result.time
         } catch (t: Throwable) {

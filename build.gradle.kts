@@ -19,9 +19,9 @@ plugins {
 
 allprojects {
     repositories {
+        mavenLocal()
         mavenCentral()
         google()
-        mavenLocal()
         jcenter()
         maven { url = uri("https://kotlin.bintray.com/ktor") }
         maven { url = uri("https://kotlin.bintray.com/kotlinx") }

@@ -20,8 +20,6 @@ open class TimeEx(override val millis: Long = Date().time.toMillis(MS)) : ITimeE
     constructor(ldt: LocalDateTime) :
             this(ldt.toInstant(ZoneOffset.systemDefault().rules.getOffset(ldt)).toEpochMilli())
 
-    override val clazz: KClass<TimeEx> = TimeEx::class
-
     override fun toString() = formatTime(StringConverter.DateFormat.COMPLETE)
     override fun equals(other: Any?) = millis == (other as? ITimeEx)?.millis
     override fun hashCode() = millis.hashCode() + javaClass.hashCode()

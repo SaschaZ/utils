@@ -3,7 +3,7 @@ import org.gradle.api.artifacts.dsl.DependencyHandler
 object Dependencies {
 
     fun DependencyHandler.fullTesting() {
-        with(Libs) {
+        Libs.apply {
             add("testImplementation", testing)
             add("testImplementation", kotlinTest)
             add("testImplementation", kotlinTestRunnerJunit5)

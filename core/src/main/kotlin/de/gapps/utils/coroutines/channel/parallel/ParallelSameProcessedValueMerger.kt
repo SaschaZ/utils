@@ -1,4 +1,4 @@
-package de.gapps.utils.coroutines.channel.pipeline.parallel
+package de.gapps.utils.coroutines.channel.parallel
 
 import de.gapps.utils.coroutines.channel.pipeline.IPipeValue
 import de.gapps.utils.coroutines.channel.pipeline.IProcessingParams

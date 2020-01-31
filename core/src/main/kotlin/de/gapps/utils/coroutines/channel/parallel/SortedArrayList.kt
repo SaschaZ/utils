@@ -1,4 +1,4 @@
-package de.gapps.utils.coroutines.channel.pipeline.parallel
+package de.gapps.utils.coroutines.channel.parallel
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

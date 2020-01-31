@@ -28,12 +28,17 @@ open class Consumer<out I : Any>(
 
     override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.consume() = scope.launchEx {
         var prevValue: IPipeValue<I>? = null
+        pipeline.tick(this@Consumer, PipelineElementStage.RECEIVE_INPUT)
         for (value in this@consume) {
+            pipeline.tick(this@Consumer, PipelineElementStage.PROCESSING)
             ConsumerScope(value, pipeline).block(value.value)
             prevValue = value
+            pipeline.tick(this@Consumer, PipelineElementStage.RECEIVE_INPUT)
         }
         Log.v("consuming finished")
+        pipeline.tick(this@Consumer, PipelineElementStage.FINISHED_PROCESSING)
         prevValue?.let { pv -> ConsumerScope(pv, pipeline).onConsumingFinished() }
+        pipeline.tick(this@Consumer, PipelineElementStage.FINISHED_CLOSING)
     }
 }
 

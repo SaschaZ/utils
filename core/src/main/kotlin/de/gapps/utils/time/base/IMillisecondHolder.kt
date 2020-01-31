@@ -26,6 +26,9 @@ interface IMillisecondHolder : Comparable<IMillisecondHolder> {
 
     val positive: Boolean
         get() = millis > 0L
+
+    val negative: Boolean
+        get() = millis < 0L
 }
 
 fun <T : IMillisecondHolder> List<T>.oldest(): T? = minBy { it.millis }

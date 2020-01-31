@@ -5,6 +5,8 @@ import de.gapps.utils.coroutines.builder.withContextEx
 import de.gapps.utils.coroutines.scope.CoroutineScopeEx
 import de.gapps.utils.time.ITimeEx
 import de.gapps.utils.time.TimeEx
+import de.gapps.utils.time.base.minus
+import de.gapps.utils.time.base.plus
 import de.gapps.utils.time.duration.IDurationEx
 import de.gapps.utils.time.duration.toDuration
 import kotlinx.coroutines.Job
@@ -40,7 +42,7 @@ class AntiSpamProxy(
             lastExecuteTime = current
             code()
         } else {
-            job = scope.launchEx(delayed = (before!! - current).toDuration(), mutex = mutex) { code() }
+            job = scope.launchEx(delayed = before!! - current, mutex = mutex) { code() }
         }
     }.asUnit()
 }

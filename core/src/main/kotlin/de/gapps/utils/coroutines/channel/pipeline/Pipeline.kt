@@ -10,7 +10,7 @@ interface IPipelineStorage {
     fun <T> read(key: String): T
 }
 
-interface IPipeline<out I : Any, out O : Any> : IProcessor<I, O>, IPipelineStorage
+interface IPipeline<out I : Any, out O : Any> : IProcessor<I, O>, IPipelineStorage, IPipelineObserver
 
 abstract class AbsPipeline<out I : Any, out O : Any>(
     override var params: IProcessingParams,
@@ -41,14 +41,16 @@ class Pipeline<out I : Any, out O : Any>(
     inOutRelation: ProcessorValueRelation = ProcessorValueRelation.Unspecified,
     outputChannel: Channel<out IPipeValue<O>> = Channel(params.channelCapacity),
     pipes: List<IProcessor<*, *>>
-) : AbsPipeline<I, O>(params, inOutRelation, outputChannel, pipes), Identity by Id("Pipeline") {
+) : AbsPipeline<I, O>(params, inOutRelation, outputChannel, pipes),
+    IPipelineObserver by PipelineObserver(params.scope),
+    Identity by Id("Pipeline") {
 
     override var pipeline: IPipeline<*, *> = this.apply {
         pipes.forEach { it.pipeline = this }
     }
 }
 
-class DummyPipeline : IPipeline<Any, Any>, Identity by NoId {
+class DummyPipeline : IPipeline<Any, Any>, IPipelineObserver by PipelineObserver(), Identity by NoId {
 
     override fun ReceiveChannel<IPipeValue<Any>>.process(): ReceiveChannel<IPipeValue<Any>> = Channel()
 

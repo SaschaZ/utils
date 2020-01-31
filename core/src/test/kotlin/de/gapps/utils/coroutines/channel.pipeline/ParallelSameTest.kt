@@ -1,6 +1,7 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
 import de.gapps.utils.testing.runTest
+import de.gapps.utils.time.duration.seconds
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -9,7 +10,7 @@ class ParallelSameTest : ProcessorBaseTest(
 ) {
 
     @Test
-    fun testSamePiped() = runTest {
+    fun testSamePiped() = runTest(10.seconds) {
         testProducer + testParallelProcessor + testConsumer
 
         assertEquals(consumeValues.size, testProducerAmount * numParallel)
@@ -22,7 +23,7 @@ class ParallelSameTest : ProcessorBaseTest(
     }
 
     @Test
-    fun testSameStandalone() = runTest {
+    fun testSameStandalone() = runTest(10.seconds) {
         testParallelProcessor.run {
             testConsumer.run {
                 testProducer.produce().process().consume().join()
