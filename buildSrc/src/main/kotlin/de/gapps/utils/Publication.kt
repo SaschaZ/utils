@@ -36,19 +36,6 @@ internal fun Project.configureLibraryJarPublication(name: String) {
 
             from(components["java"])
             artifact(getSourcesJarTask())
-
-            pom.withXml {
-                asNode().appendNode("dependencies").apply {
-                    configurations["implementation"].dependencies.forEach { dependency ->
-                        val dependencyNode = appendNode("dependency")
-                        dependencyNode.appendNode(dependency, "runtime")
-                    }
-                    configurations["api"].dependencies.forEach { dependency ->
-                        val dependencyNode = appendNode("dependency")
-                        dependencyNode.appendNode(dependency)
-                    }
-                }
-            }
         }
     }
 }
@@ -69,19 +56,6 @@ internal fun Project.configureLibraryAarPublication(name: String) {
 
             artifact(file("$buildDir/outputs/aar/$projectName-release.aar"))
             artifact(getSourcesJarTask())
-
-            pom.withXml {
-                asNode().appendNode("dependencies").apply {
-                    configurations["implementation"].dependencies.forEach { dependency ->
-                        val dependencyNode = appendNode("dependency")
-                        dependencyNode.appendNode(dependency, "runtime")
-                    }
-                    configurations["api"].dependencies.forEach { dependency ->
-                        val dependencyNode = appendNode("dependency")
-                        dependencyNode.appendNode(dependency)
-                    }
-                }
-            }
         }
     }
 }
