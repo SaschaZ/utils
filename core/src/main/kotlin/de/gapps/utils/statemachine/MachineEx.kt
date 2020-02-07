@@ -12,6 +12,8 @@ import de.gapps.utils.statemachine.scopes.*
 /**
  * Simple state machine.
  *
+ *
+ *
  * @param initialState The state machine is initialized with this state. This will not trigger any actions.
  * @property eventActionMapping Callback that is used to get the new state when an event comes in.
  */
@@ -71,13 +73,22 @@ fun <E : IEvent, S : IState> machineEx(
                 previousChanges.lastOrNull()?.stateBefore,
                 state
             ).run {
-                eventStatesActionMapping.entries.firstOrNull { it.key.first == e && it.key.second == state }
+                eventStatePairToEventChangeScopeMap.entries.firstOrNull { it.key == e to state }
                     ?.value?.invoke(this) ifN {
                     Log.w("No state defined for event $event with state $state.")
                     state
                 }
             }
-        }.also { it.observeState { s -> stateEventStateActionMap[s]?.invoke(StateChangeScope(previousValue, value)) } }
+        }.also {
+            it.observeState { s ->
+                stateToStateChangeScopeMap[s]?.invoke(
+                    StateChangeScope(
+                        previousValue,
+                        value
+                    )
+                )
+            }
+        }
     }
 }
 

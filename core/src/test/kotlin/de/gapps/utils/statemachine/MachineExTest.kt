@@ -20,11 +20,11 @@ class MachineExTest {
         D
     }
 
-    enum class Event2 : IEvent {
-        FIRST,
-        SECOND,
-        THIRD,
-        FOURTH
+    sealed class Event2 : IEvent {
+        class FIRST : Event2()
+        class SECOND : Event2()
+        class THIRD : Event2()
+        class FOURTH : Event2()
     }
 
     @Test
@@ -33,30 +33,30 @@ class MachineExTest {
         machineEx<Event2, State2>(
             INITIAL
         ) {
-            on event FIRST withState INITIAL changeTo A
-            on events (SECOND or FIRST or THIRD) withStates (A or B) changeTo C
-            on event THIRD withState C run { D }
-            on event FOURTH withState D changeTo B
+            on event FIRST() withState INITIAL changeTo A
+            on events (SECOND() or FIRST() or THIRD()) withStates (A or B) changeTo C
+            on event THIRD() withState C run { D }
+            on event FOURTH() withState D changeTo B
             on state D onlyRun { executed = true }
         }.run {
             INITIAL assert state
 
-            set event FIRST
+            set event FIRST()
             state assert A
             assertFalse(executed)
 
-            set event SECOND
+            set event SECOND()
             C assert state
             assertFalse(executed)
 
-            set event THIRD
+            set event THIRD()
             D assert state
             assertTrue(executed)
 
-            set event FOURTH
+            set event FOURTH()
             B assert state
 
-            set event FIRST
+            set event FIRST()
             C assert state
         }
     }
@@ -67,13 +67,13 @@ class MachineExTest {
             INITIAL
         ) { e ->
             when (e to state) {
-                FIRST to INITIAL -> {
+                FIRST() to INITIAL -> {
                     A
                 }
                 else -> throw IllegalStateException("")
             }
         }.run {
-            set event FIRST
+            set event FIRST()
             A assert state
         }
     }
