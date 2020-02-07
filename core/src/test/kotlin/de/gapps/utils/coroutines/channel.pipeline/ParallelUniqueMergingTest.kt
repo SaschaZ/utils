@@ -2,13 +2,14 @@ package de.gapps.utils.coroutines.channel.pipeline
 
 import de.gapps.utils.testing.assertion.assert
 import de.gapps.utils.testing.runTest
+import de.gapps.utils.time.duration.seconds
 import org.junit.Test
 import kotlin.test.assertTrue
 
 class ParallelUniqueMergingTest : ProcessorBaseTest(ParallelProcessingType.UNIQUE) {
 
     @Test
-    fun testParallelUniqueMerging() = runTest {
+    fun testParallelUniqueMerging() = runTest(30.seconds) {
         testProducer + testParallelProcessor + testConsumer
 
         consumeValues.size assert testProducerAmount

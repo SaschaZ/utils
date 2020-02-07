@@ -1,32 +1,17 @@
 package de.gapps.utils.statemachine
 
-import de.gapps.utils.delegates.IOnChangedScope
-import de.gapps.utils.observable.Controller2
+import de.gapps.utils.observable.Controller
 import de.gapps.utils.statemachine.scopes.ISetScope
-import de.gapps.utils.time.ITimeEx
-import de.gapps.utils.time.TimeEx
 
 /**
  * Base interface for an event of [IMachineEx]
  */
-interface IEvent {
-    val fireAt: ITimeEx
-}
-
-open class Event : IEvent {
-    override var fireAt: ITimeEx = TimeEx()
-}
+interface IEvent
 
 /**
  * Base interface for a state of [IMachineEx]
  */
-interface IState {
-    val active: Boolean
-}
-
-open class State : IState {
-    override var active: Boolean = false
-}
+interface IState
 
 /**
  * Base interface for a state machine.
@@ -48,7 +33,7 @@ interface IMachineEx<out E : IEvent, out S : IState> {
      */
     val state: S
 
-    val set: ISetScope<@UnsafeVariance E, @UnsafeVariance S>
+    val set: ISetScope<@UnsafeVariance E>
 
     /**
      * Observe any event change.
@@ -56,7 +41,7 @@ interface IMachineEx<out E : IEvent, out S : IState> {
      * @param observer Is notified when an event changed.
      * @return Invoke to remove the observer.
      */
-    fun observeEvent(observer: Controller2<@UnsafeVariance IMachineEx<E, S>, @UnsafeVariance S>): () -> Unit
+    fun observeEvent(observer: Controller<@UnsafeVariance S>): () -> Unit
 
     /**
      * Observe any state change.
@@ -64,5 +49,5 @@ interface IMachineEx<out E : IEvent, out S : IState> {
      * @param observer Is notified when an state changed.
      * @return Invoke to remove the observer.
      */
-    fun observeState(observer: Controller2<@UnsafeVariance IMachineEx<E, S>, @UnsafeVariance S>): () -> Unit
+    fun observeState(observer: Controller<@UnsafeVariance S>): () -> Unit
 }

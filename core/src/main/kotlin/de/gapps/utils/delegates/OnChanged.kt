@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-typealias IOnChanged<T> = IOnChanged2<Any?, T>
+interface IOnChanged<T> : IOnChanged2<Any?, T>
 typealias OnChanged<T> = OnChanged2<Any?, T>
 
 interface IOnChanged2<P : Any?, out T : Any?> : ReadWriteProperty<P, @kotlin.UnsafeVariance T> {

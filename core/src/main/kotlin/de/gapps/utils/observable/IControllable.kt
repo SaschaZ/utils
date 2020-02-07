@@ -1,5 +1,6 @@
 package de.gapps.utils.observable
 
+import de.gapps.utils.delegates.IOnChanged
 import de.gapps.utils.delegates.IOnChanged2
 
 /**
@@ -19,4 +20,16 @@ interface IControllable2<out P, out T> : IOnChanged2<@UnsafeVariance P, @UnsafeV
     fun control(listener: Controller2<P, T>): () -> Unit
 }
 
-interface IControllable<T> : IControllable2<Any?, T>
+interface IControllable<T> : IOnChanged<T> {
+
+    /**
+     * Controlled variable.
+     * Changes on this variable will notify registered observers immediately.
+     */
+    override var value: @UnsafeVariance T
+
+    /**
+     * Observe to changes on the internal [value] and change internal value if needed.
+     */
+    fun control(listener: Controller<T>): () -> Unit
+}

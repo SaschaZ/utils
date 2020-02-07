@@ -13,11 +13,9 @@ open class Controllable<T>(
     storeRecentValues: Boolean = false,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
     onControl: Controller<T> = {}
-) :
-    Controllable2<Any?, T>(
-        initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, subscriberStateChanged,
-        onControl
-    )
+) : IControllable<T>, Controllable2<Any?, T>(
+    initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, subscriberStateChanged, onControl
+)
 
 open class Controllable2<out P : Any?, out T : Any?> private constructor(
     private val subscriberStateChanged: ((Boolean) -> Unit)? = null,

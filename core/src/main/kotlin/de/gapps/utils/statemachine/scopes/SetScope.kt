@@ -1,17 +1,14 @@
 package de.gapps.utils.statemachine.scopes
 
-import de.gapps.utils.observable.IControllable2
+import de.gapps.utils.observable.IControllable
 import de.gapps.utils.statemachine.IEvent
-import de.gapps.utils.statemachine.IMachineEx
-import de.gapps.utils.statemachine.IState
 
 
-interface ISetScope<E : IEvent, S : IState> {
+interface ISetScope<E : IEvent> {
     infix fun event(event: E)
 }
 
-class SetScope<E : IEvent, S : IState>(private val eventHost: IControllable2<IMachineEx<E, S>, E?>) :
-    ISetScope<E, S> {
+class SetScope<E : IEvent>(private val eventHost: IControllable<E>) : ISetScope<E> {
     override fun event(event: E) {
         eventHost.value = event
     }

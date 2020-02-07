@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 class ParallelSameMergingTest : ProcessorBaseTest(ParallelProcessingType.SAME) {
 
     @Test
-    fun testParallelSameMerging() = runTest(10.seconds) {
+    fun testParallelSameMerging() = runTest(100.seconds) {
         testProducer + testParallelProcessor + testConsumer
 
         consumeValues.size assert testProducerAmount * numParallel

@@ -9,7 +9,7 @@ import de.gapps.utils.misc.asUnit
 import de.gapps.utils.testing.assertion.assert
 import de.gapps.utils.testing.runTest
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.RENDEZVOUS
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -17,8 +17,8 @@ import org.junit.Test
 
 abstract class ProcessorBaseTest(
     protected val type: ParallelProcessingType = ParallelProcessingType.UNIQUE,
-    protected val channelCapacity: Int = Channel.RENDEZVOUS,
-    protected val numParallel: Int = 24,
+    protected val channelCapacity: Int = RENDEZVOUS,
+    protected val numParallel: Int = 8,
     protected val testProducerAmount: Int = 128 * numParallel
 ) {
 

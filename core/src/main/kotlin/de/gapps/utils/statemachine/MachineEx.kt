@@ -1,13 +1,12 @@
 package de.gapps.utils.statemachine
 
-import de.gapps.utils.delegates.IOnChangedScope
 import de.gapps.utils.delegates.OnChangedScope
 import de.gapps.utils.log.Log
 import de.gapps.utils.misc.ifN
 import de.gapps.utils.misc.lastOrNull
 import de.gapps.utils.observable.Controllable
-import de.gapps.utils.observable.Controllable2
-import de.gapps.utils.observable.Controller2
+import de.gapps.utils.observable.Controller
+import de.gapps.utils.observable.IControllable
 import de.gapps.utils.statemachine.scopes.*
 
 /**
@@ -18,41 +17,35 @@ import de.gapps.utils.statemachine.scopes.*
  */
 open class MachineEx<out E : IEvent, out S : IState>(
     initialState: S,
-    private val eventActionMapping: EventStateActionMapper<E, S>
+    private val eventActionMapping: IOnEventScope<E, S>.(E) -> S
 ) : IMachineEx<E, S> {
 
     private val recentChanges = ArrayList<EventChangeScope<E, S>>()
 
-    private val eventHost = Controllable2<IMachineEx<E, S>, E?>(null) {
-        it?.processEvent()?.processState()
+    @Suppress("UNCHECKED_CAST")
+    private val eventHost: IControllable<E> = Controllable(INITIAL_EVENT as E) {
+        it.processEvent().processState()
     }
-    override var event: @UnsafeVariance E
-        get() = eventHost.value ?: throw IllegalStateException("Can not provide unset event")
-        set(value) {
-            eventHost.value = value
-        }
 
-    override val set: ISetScope<@UnsafeVariance E, @UnsafeVariance S>
+    override var event: @UnsafeVariance E by eventHost
+
+    override val set: ISetScope<@UnsafeVariance E>
         get() = SetScope(eventHost)
 
-    private var stateHost = Controllable2<IMachineEx<E, S>, S>(initialState)
+    private var stateHost = Controllable<S>(initialState)
+    override val state: S by stateHost
 
-    override val state: S
-        get() = stateHost.value
-
-    override fun observeEvent(observer: Controller2<@UnsafeVariance IMachineEx<E, S>, @UnsafeVariance S>) =
+    override fun observeEvent(observer: Controller<@UnsafeVariance S>) =
         eventHost.control {
-            value?.let {
-                OnChangedScope(
-                    it,
-                    thisRef,
-                    previousValue,
-                    previousValues.filterNotNull(),
-                    { })
-            }
+            OnChangedScope(
+                value,
+                thisRef,
+                previousValue,
+                previousValues.filterNotNull(),
+                { })
         }
 
-    override fun observeState(observer: Controller2<@UnsafeVariance IMachineEx<E, S>, @UnsafeVariance S>) =
+    override fun observeState(observer: Controller<@UnsafeVariance S>) =
         stateHost.control(observer)
 
     protected open fun @UnsafeVariance E.processEvent(): S =
@@ -63,6 +56,9 @@ open class MachineEx<out E : IEvent, out S : IState>(
     }
 }
 
+/**
+ * Builder for MachineEx. Allows building of event action mapping with a simple DSL instead of providing it in a List.
+ */
 fun <E : IEvent, S : IState> machineEx(
     initialState: S,
     builder: MachineExScope<E, S>.() -> Unit
@@ -85,4 +81,5 @@ fun <E : IEvent, S : IState> machineEx(
     }
 }
 
-typealias EventStateActionMapper<E, S> = IOnEventScope<E, S>.(E) -> S
+@Suppress("ClassName")
+object INITIAL_EVENT : IEvent

@@ -45,7 +45,7 @@ class Pipeline<out I : Any, out O : Any>(
     IPipelineObserver by PipelineObserver(params.scope),
     Identity by Id("Pipeline") {
 
-    override var pipeline: IPipeline<*, *> = this.apply {
+    override var pipeline: IPipeline<*, *> = apply {
         pipes.forEach { it.pipeline = this }
     }
 }
