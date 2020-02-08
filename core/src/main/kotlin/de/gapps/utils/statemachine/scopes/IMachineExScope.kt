@@ -35,7 +35,7 @@ interface IMachineExScope<out E : IEvent, out S : IState> {
         action: EventChangeScope<@UnsafeVariance E, @UnsafeVariance S>.() -> @UnsafeVariance S
     ) = addMapping(events, states, action)
 
-    infix fun IEventStateScope<@UnsafeVariance E, @UnsafeVariance S>.onlyRun(
+    infix fun IEventStateScope<@UnsafeVariance E, @UnsafeVariance S>.runOnly(
         action: EventChangeScope<@UnsafeVariance E, @UnsafeVariance S>.() -> Unit
     ) = addMapping(events, states) { action(); states.first() }
 
@@ -56,7 +56,7 @@ interface IMachineExScope<out E : IEvent, out S : IState> {
     infix fun IOnScope.state(state: @UnsafeVariance S) = StateScope(this, state)
     infix fun IOnScope.states(states: List<@UnsafeVariance S>) = StateScope(this, states)
 
-    infix fun IStateScope<@UnsafeVariance S>.onlyRun(
+    infix fun IStateScope<@UnsafeVariance S>.runOnly(
         action: StateChangeScope<@UnsafeVariance S>.() -> Unit
     ) = addMapping(states, action)
 

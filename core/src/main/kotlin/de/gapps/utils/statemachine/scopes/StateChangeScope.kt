@@ -4,11 +4,9 @@ import de.gapps.utils.statemachine.IState
 
 
 interface IStateChangeScope<S : IState> {
-    val stateBefore: S?
-    val stateAfter: S
+    val state: S
 }
 
 data class StateChangeScope<S : IState>(
-    override val stateBefore: S?,
-    override val stateAfter: S
+    override val state: S
 ) : IStateChangeScope<S>

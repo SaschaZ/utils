@@ -6,9 +6,13 @@ import de.gapps.utils.statemachine.IState
 
 open class MachineExScope<out E : IEvent, out S : IState> : IMachineExScope<E, S> {
 
-    internal val eventStatePairToEventChangeScopeMap = HashMap<Pair<@UnsafeVariance E, @UnsafeVariance S>,
+    private val eventStatePairToEventChangeScopeMap = HashMap<Pair<@UnsafeVariance E, @UnsafeVariance S>,
             EventChangeScope<@UnsafeVariance E, @UnsafeVariance S>.() -> @UnsafeVariance S>()
-    internal val stateToStateChangeScopeMap =
+
+    val eventStateMapping
+        get() = HashMap(eventStatePairToEventChangeScopeMap)
+
+    private val stateToStateChangeScopeMap =
         HashMap<@UnsafeVariance S, StateChangeScope<@UnsafeVariance S>.() -> Unit>()
 
     override fun addMapping(

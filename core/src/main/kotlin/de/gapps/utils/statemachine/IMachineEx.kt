@@ -24,15 +24,18 @@ interface IState
 interface IMachineEx<out E : IEvent, out S : IState> {
 
     /**
-     * Get latest event or set a new event.
+     * Get latest event.
      */
-    var event: @UnsafeVariance E
+    val event: @UnsafeVariance E
 
     /**
      * Returns current state.
      */
     val state: S
 
+    /**
+     * Returns a scope which should be used to fire the next event.
+     */
     val set: ISetScope<@UnsafeVariance E>
 
     /**

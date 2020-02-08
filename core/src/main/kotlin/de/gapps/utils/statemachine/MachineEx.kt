@@ -2,8 +2,8 @@ package de.gapps.utils.statemachine
 
 import de.gapps.utils.delegates.OnChangedScope
 import de.gapps.utils.log.Log
+import de.gapps.utils.log.logV
 import de.gapps.utils.misc.ifN
-import de.gapps.utils.misc.lastOrNull
 import de.gapps.utils.observable.Controllable
 import de.gapps.utils.observable.Controller
 import de.gapps.utils.observable.IControllable
@@ -22,6 +22,9 @@ open class MachineEx<out E : IEvent, out S : IState>(
     private val eventActionMapping: IOnEventScope<E, S>.(E) -> S
 ) : IMachineEx<E, S> {
 
+    @Suppress("ClassName")
+    object INITIAL_EVENT : IEvent
+
     private val recentChanges = ArrayList<EventChangeScope<E, S>>()
 
     @Suppress("UNCHECKED_CAST")
@@ -37,6 +40,13 @@ open class MachineEx<out E : IEvent, out S : IState>(
     private var stateHost = Controllable<S>(initialState)
     override val state: S by stateHost
 
+    protected open fun @UnsafeVariance E.processEvent(): S =
+        OnEventScope(this, state, recentChanges).run { eventActionMapping(this@processEvent) }
+
+    protected open fun @UnsafeVariance S.processState() {
+        stateHost.value = this
+    }
+
     override fun observeEvent(observer: Controller<@UnsafeVariance S>) =
         eventHost.control {
             OnChangedScope(
@@ -49,48 +59,32 @@ open class MachineEx<out E : IEvent, out S : IState>(
 
     override fun observeState(observer: Controller<@UnsafeVariance S>) =
         stateHost.control(observer)
-
-    protected open fun @UnsafeVariance E.processEvent(): S =
-        OnEventScope(this, state, recentChanges).run { eventActionMapping(this@processEvent) }
-
-    protected open fun @UnsafeVariance S.processState() {
-        stateHost.value = this
-    }
 }
 
 /**
  * Builder for MachineEx. Allows building of event action mapping with a simple DSL instead of providing it in a List.
  */
-fun <E : IEvent, S : IState> machineEx(
+inline fun <reified E : IEvent, reified S : IState> machineEx(
     initialState: S,
+    checkEventForType: Boolean = false,
+    checkStateForType: Boolean = false,
     builder: MachineExScope<E, S>.() -> Unit
 ): IMachineEx<E, S> {
     return MachineExScope<E, S>().run {
         builder()
-        MachineEx<E, S>(initialState) { e ->
-            EventChangeScope(
-                event,
-                previousChanges.lastOrNull()?.stateBefore,
-                state
-            ).run {
-                eventStatePairToEventChangeScopeMap.entries.firstOrNull { it.key == e to state }
-                    ?.value?.invoke(this) ifN {
+        MachineEx(initialState) { e ->
+            EventChangeScope(event, state).run rt@{
+                val fittingPair = eventStateMapping.entries.firstOrNull {
+                    it.key.run {
+                        if (checkEventForType) e::class.isInstance(first) else e == first
+                                && if (checkStateForType) state::class.isInstance(second) else state == second
+                    }
+                }
+                fittingPair?.value?.invoke(this) logV { "$this -> $it" } ifN {
                     Log.w("No state defined for event $event with state $state.")
                     state
                 }
             }
-        }.also {
-            it.observeState { s ->
-                stateToStateChangeScopeMap[s]?.invoke(
-                    StateChangeScope(
-                        previousValue,
-                        value
-                    )
-                )
-            }
         }
     }
 }
-
-@Suppress("ClassName")
-object INITIAL_EVENT : IEvent

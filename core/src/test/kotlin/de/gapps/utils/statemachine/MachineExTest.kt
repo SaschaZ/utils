@@ -2,78 +2,73 @@
 
 package de.gapps.utils.statemachine
 
-import de.gapps.utils.statemachine.MachineExTest.Event2.*
-import de.gapps.utils.statemachine.MachineExTest.State2.*
+import de.gapps.utils.statemachine.MachineExTest.Event.*
+import de.gapps.utils.statemachine.MachineExTest.State.*
 import de.gapps.utils.testing.assertion.assert
 import org.junit.Test
 
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
-
 class MachineExTest {
 
-    enum class State2 : IState {
-        INITIAL,
-        A,
-        B,
-        C,
-        D
+    sealed class State : IState {
+        object INITIAL : State()
+        object A : State()
+        object B : State()
+        object C : State()
+        object D : State()
     }
 
-    sealed class Event2 : IEvent {
-        class FIRST : Event2()
-        class SECOND : Event2()
-        class THIRD : Event2()
-        class FOURTH : Event2()
+    sealed class Event : IEvent {
+        object FIRST : Event()
+        object SECOND : Event()
+        object THIRD : Event()
+        object FOURTH : Event()
     }
 
     @Test
     fun testIt() {
         var executed = false
-        machineEx<Event2, State2>(
+        machineEx<Event, State>(
             INITIAL
         ) {
-            on event FIRST() withState INITIAL changeTo A
-            on events (SECOND() or FIRST() or THIRD()) withStates (A or B) changeTo C
-            on event THIRD() withState C run { D }
-            on event FOURTH() withState D changeTo B
-            on state D onlyRun { executed = true }
+            on event FIRST withState INITIAL changeTo A
+            on events (FIRST or SECOND or THIRD) withStates (A or B) changeTo C
+            on event THIRD withState C run { D }
+            on event FOURTH withState D changeTo B
+            on state D runOnly { executed = true }
         }.run {
-            INITIAL assert state
+            state assert INITIAL
 
-            set event FIRST()
+            set event FIRST
             state assert A
-            assertFalse(executed)
+            executed assert false
 
-            set event SECOND()
-            C assert state
-            assertFalse(executed)
+            set event SECOND
+            state assert C
+            executed assert false
 
-            set event THIRD()
-            D assert state
-            assertTrue(executed)
+            set event THIRD
+            state assert D
+            executed assert false
 
-            set event FOURTH()
-            B assert state
+            set event FOURTH
+            state assert B
 
-            set event FIRST()
-            C assert state
+            set event FIRST
+            state assert C
         }
     }
 
     @Test
     fun testCtor() {
-        MachineEx<Event2, State2>(
+        MachineEx<Event, State>(
             INITIAL
         ) { e ->
-            when (e to state) {
-                FIRST() to INITIAL -> {
-                    A
-                }
-                else -> throw IllegalStateException("")
+            (e::class.isInstance(FIRST)
+                    && state::class.isInstance(INITIAL)).let {
+                if (it) A else throw IllegalStateException("")
             }
         }.run {
-            set event FIRST()
+            set event FIRST
             A assert state
         }
     }
