@@ -7,12 +7,13 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlin.coroutines.CoroutineContext
 
-internal object MessageBuilder {
+object MessageBuilder {
 
-    fun CoroutineScope.wrapMessage(lvl: String, msg: String) = wrapMessage(coroutineContext, lvl, msg)
+    fun CoroutineScope.wrapMessage(lvl: String, msg: String, addTime: Boolean = true) =
+        wrapMessage(coroutineContext, lvl, msg, addTime)
 
-    fun wrapMessage(cc: CoroutineContext? = null, lvl: String, msg: String) =
-        "$time - $lvl:${cc.parentComponentString}-> $msg"
+    fun wrapMessage(cc: CoroutineContext? = null, lvl: String, msg: String, addTime: Boolean = true) =
+        "${if (addTime) "$time - " else ""}$lvl:${cc.parentComponentString}-> $msg"
 
     private val time
         get() = TimeEx().formatTime(StringConverter.DateFormat.TIME_ONLY)

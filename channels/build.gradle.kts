@@ -32,11 +32,21 @@ dependencies {
     }
 }
 
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = Globals.group
+            artifactId = "channels"
+            version = Globals.version
+
+            from(components["java"])
+        }
+    }
+}
+
 java {
     @Suppress("UnstableApiUsage")
     withSourcesJar()
     @Suppress("UnstableApiUsage")
     withJavadocJar()
 }
-
-configurePublishing(de.gapps.utils.LibraryType.JAR, "channels")

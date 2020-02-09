@@ -8,7 +8,7 @@ object AndroidLog : LogElement {
 
     private var tag = ""
 
-    override fun log(level: LogLevel?, msg: String): Boolean {
+    override fun log(level: LogLevel?, msg: String): String {
         when (level) {
             LogLevel.VERBOSE -> android.util.Log.v(tag, msg)
             LogLevel.DEBUG -> android.util.Log.d(tag, msg)
@@ -17,12 +17,12 @@ object AndroidLog : LogElement {
             LogLevel.EXCEPTION -> android.util.Log.e(tag, msg)
             else -> android.util.Log.v("", msg)
         }
-        return true
+        return msg
     }
 
     fun initialize(tag: String) {
         this.tag = tag
-        Log.clearElements(addLevelFilter = true)
+        Log.clearElements(addTime = false, addLevelFilter = true)
         Log + this
     }
 }

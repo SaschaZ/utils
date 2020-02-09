@@ -18,7 +18,7 @@ fun Project.configureSourcesJarTaskIfNecessary() {
     if (tasks.findByName(sourcesJarTaskName) != null) return
 
     val extensions = extensions
-    tasks.register(sourcesJarTaskName, Jar::class) {
+    tasks.register<Jar>(sourcesJarTaskName) {
         archiveClassifier.set("sources")
         from(extensions.findByType(SourceSetContainer::class)?.let { it.findByName("main")?.java?.srcDirs }
             ?: extensions.getByType(AndroidBaseExtension::class).sourceSets["main"].java.srcDirs)

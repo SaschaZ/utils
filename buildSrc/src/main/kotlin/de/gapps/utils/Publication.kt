@@ -40,7 +40,7 @@ internal fun Project.configureLibraryJarPublication(name: String) {
 
 internal fun Project.configureAarPublishing(name: String) {
     configureSourcesJarTaskIfNecessary()
-    configurePublishTask()
+//    configurePublishTask()
     configureLibraryAarPublication(name)
 }
 

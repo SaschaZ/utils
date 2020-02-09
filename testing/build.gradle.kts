@@ -21,11 +21,21 @@ dependencies {
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
 }
 
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = Globals.group
+            artifactId = "testing"
+            version = Globals.version
+
+            from(components["java"])
+        }
+    }
+}
+
 java {
     @Suppress("UnstableApiUsage")
     withSourcesJar()
     @Suppress("UnstableApiUsage")
     withJavadocJar()
 }
-
-configurePublishing(de.gapps.utils.LibraryType.JAR, "testing")

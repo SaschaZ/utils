@@ -56,10 +56,10 @@ class LogCache private constructor(private val scope: CoroutineScopeEx = Default
         }
     }
 
-    override fun log(level: LogLevel?, msg: String): Boolean {
+    override fun log(level: LogLevel?, msg: String): String {
         val logMessage = level to msg to System.nanoTime()
         if (!input.offer(logMessage)) scope.launchEx { input.send(logMessage) }
-        return true
+        return msg
     }
 }
 

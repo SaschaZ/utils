@@ -7,12 +7,24 @@ plugins {
 
 dependencies {
     with(Libs) {
-        implementation(core)
+        api(core)
         implementation(kotlin)
         implementation(coroutinesJdk)
 
         implementation(mordant)
         implementation(progressbar)
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = Globals.group
+            artifactId = "console"
+            version = Globals.version
+
+            from(components["java"])
+        }
     }
 }
 
@@ -22,5 +34,3 @@ java {
     @Suppress("UnstableApiUsage")
     withJavadocJar()
 }
-
-configurePublishing(de.gapps.utils.LibraryType.JAR, "console")
