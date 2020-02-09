@@ -14,9 +14,8 @@ import de.gapps.utils.time.ITimeEx
 import de.gapps.utils.time.TimeEx
 import de.gapps.utils.time.base.minus
 import de.gapps.utils.time.base.plus
-import de.gapps.utils.time.base.rem
 import de.gapps.utils.time.duration.IDurationEx
-import de.gapps.utils.time.duration.years
+import de.gapps.utils.time.duration.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 
@@ -65,9 +64,9 @@ internal class LogFilterProxy(private val scope: DefaultCoroutineScope = Default
                         || previousContentMessages[filter.id]?.second?.let { it != msg } != false
 
                 val now = TimeEx()
-                val minInterval = filter.minInterval ?: 1.years
+                val minInterval = filter.minInterval ?: 1.milliseconds
                 val toWait = previousIntervalMessages[filter.id]?.first.let { last ->
-                    last?.let { last - last % minInterval + minInterval - now }
+                    last?.let { last - now + minInterval }
                 }
 
                 fun act(level: LogLevel?, msg: String) {
@@ -78,7 +77,7 @@ internal class LogFilterProxy(private val scope: DefaultCoroutineScope = Default
                 }
 
                 if (contentChanged) {
-                    if (toWait?.negative == true) act(level, msg)
+                    if (toWait?.negative != false) act(level, msg)
                     else if (filter.resend) {
                         previousIntervalMessagesResend[filter.id]?.first?.cancel()
                         previousIntervalMessagesResend[filter.id] =

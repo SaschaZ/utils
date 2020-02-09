@@ -4,10 +4,6 @@ import de.gapps.utils.time.ITimeEx
 import de.gapps.utils.time.TimeEx
 import de.gapps.utils.time.duration.DurationEx
 import de.gapps.utils.time.duration.IDurationEx
-import de.gapps.utils.time.duration.toDuration
-import de.gapps.utils.time.time
-import kotlin.reflect.KClass
-import kotlin.reflect.full.primaryConstructor
 
 operator fun ITimeEx.plus(other: Number): ITimeEx =
     TimeEx(millis + other.toLong())
@@ -36,7 +32,7 @@ operator fun IDurationEx.minus(other: Number): IDurationEx =
     DurationEx(millis - other.toLong())
 
 operator fun ITimeEx.minus(other: ITimeEx): IDurationEx =
-    DurationEx(millis + other.millis)
+    DurationEx(millis - other.millis)
 operator fun ITimeEx.minus(other: IDurationEx): ITimeEx =
     TimeEx(millis - other.millis)
 operator fun IDurationEx.minus(other: IDurationEx): IDurationEx =
