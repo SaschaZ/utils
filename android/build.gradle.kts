@@ -37,7 +37,7 @@ android {
 
 dependencies {
     Libs.run {
-        implementation(core)
+        api(core)
         implementation(multidex)
         implementation(kotlin)
         implementation(coroutinesJdk)
