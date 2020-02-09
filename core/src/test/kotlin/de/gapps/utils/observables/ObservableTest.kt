@@ -19,7 +19,7 @@ class ObservableTest {
         testClass.observable.value onFail "1" assert "foo"
         var latestObservedChanged: String = testClass.observable.value
         launchEx { testClass.observable.observe { Log.d("observe; value=$it"); latestObservedChanged = it } }
-
+        delay(100L)
         launchEx { testClass.triggerChange("boo") }
         delay(100L)
 

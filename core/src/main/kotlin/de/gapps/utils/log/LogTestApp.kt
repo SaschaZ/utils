@@ -21,6 +21,7 @@ internal object LogTestApp {
 //            }
 //        }
 
+        Log.v("das ist ein test")
         print("\u001b[35mHello")
         print("\u001b[36mWorld")
         delay(500.milliseconds)

@@ -229,7 +229,7 @@ open class WrapMessage(val addTime: Boolean = true,
 
 object LogLevelFilter : LogElement {
     override fun log(level: LogLevel?, msg: String) =
-        msg.nullWhen { level?.let { it >= Log.logLevel } != false }
+        msg.nullWhen { level?.let { it >= Log.logLevel } == false }
 }
 
 object PrintLn : LogElement {

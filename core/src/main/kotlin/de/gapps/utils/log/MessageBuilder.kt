@@ -34,6 +34,7 @@ object MessageBuilder {
         get() = firstOrNull {
             it.fileName?.let { fn ->
                 listOf("Log.kt", "MessageBuilder.kt", "LogContext.kt", "Controllable.kt", "Observable.kt").contains(fn)
+                        || it.fixedMethodName == "wrapMessage"
             } == false
         }
 
