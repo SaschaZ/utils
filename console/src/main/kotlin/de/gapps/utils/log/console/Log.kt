@@ -20,7 +20,7 @@ fun Log.p(
 
 object LogColored : LogElement {
 
-    override fun log(level: LogLevel?, msg: String): Boolean {
+    override fun log(level: LogLevel?, msg: String): String? {
         with(TermColors()) {
             println(
                 when (level) {
@@ -33,7 +33,7 @@ object LogColored : LogElement {
                 }
             )
         }
-        return true
+        return msg
     }
 
     fun initialize() {
