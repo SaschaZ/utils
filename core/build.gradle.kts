@@ -20,4 +20,11 @@ dependencies {
     with(Dependencies) { fullTesting() }
 }
 
+java {
+    @Suppress("UnstableApiUsage")
+    withSourcesJar()
+    @Suppress("UnstableApiUsage")
+    withJavadocJar()
+}
+
 configurePublishing(LibraryType.JAR, "core")

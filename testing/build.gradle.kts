@@ -21,4 +21,11 @@ dependencies {
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
 }
 
+java {
+    @Suppress("UnstableApiUsage")
+    withSourcesJar()
+    @Suppress("UnstableApiUsage")
+    withJavadocJar()
+}
+
 configurePublishing(de.gapps.utils.LibraryType.JAR, "testing")

@@ -23,7 +23,6 @@ fun Project.configurePublishing(type: LibraryType, name: String) {
 }
 
 internal fun Project.configureJarPublishing(name: String) {
-    configureSourcesJarTaskIfNecessary()
     configureLibraryJarPublication(name)
 }
 
@@ -35,7 +34,6 @@ internal fun Project.configureLibraryJarPublication(name: String) {
             version = Globals.version
 
             from(components["java"])
-            artifact(getSourcesJarTask())
         }
     }
 }

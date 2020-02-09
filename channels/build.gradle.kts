@@ -32,4 +32,11 @@ dependencies {
     }
 }
 
+java {
+    @Suppress("UnstableApiUsage")
+    withSourcesJar()
+    @Suppress("UnstableApiUsage")
+    withJavadocJar()
+}
+
 configurePublishing(de.gapps.utils.LibraryType.JAR, "channels")

@@ -2,6 +2,7 @@ package de.gapps.utils
 
 import com.android.build.gradle.BaseExtension
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.findByType
@@ -24,4 +25,4 @@ fun Project.configureSourcesJarTaskIfNecessary() {
     }
 }
 
-fun Project.getSourcesJarTask() = tasks.getByName(sourcesJarTaskName)
+fun Project.getSourcesJarTask(): Task = tasks.getByName(sourcesJarTaskName)
