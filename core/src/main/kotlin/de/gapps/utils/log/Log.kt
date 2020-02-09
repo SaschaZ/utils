@@ -66,8 +66,8 @@ internal class LogFilterProxy(private val scope: DefaultCoroutineScope = Default
 
                 val now = TimeEx()
                 val minInterval = filter.minInterval ?: 1.years
-                val intervalOk = previousIntervalMessages[filter.id]?.first.let { last ->
-                    last == null || last - last % minInterval + minInterval >= now
+                val toWait = previousIntervalMessages[filter.id]?.first.let { last ->
+                    last?.let { last - last % minInterval + minInterval - now }
                 }
 
                 fun act(level: LogLevel?, msg: String) {
@@ -78,11 +78,11 @@ internal class LogFilterProxy(private val scope: DefaultCoroutineScope = Default
                 }
 
                 if (contentChanged) {
-                    if (intervalOk) act(level, msg)
+                    if (toWait?.negative == true) act(level, msg)
                     else if (filter.resend) {
                         previousIntervalMessagesResend[filter.id]?.first?.cancel()
                         previousIntervalMessagesResend[filter.id] =
-                            scope.launchEx { act(level, msg) } to level to msg
+                            scope.launchEx(delayed = toWait) { act(level, msg) } to level to msg
                     }
                 }
             }
