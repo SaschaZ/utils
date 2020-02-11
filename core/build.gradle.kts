@@ -1,7 +1,3 @@
-import de.gapps.utils.LibraryType
-import de.gapps.utils.configurePublishing
-import de.gapps.utils.getSourcesJarTask
-
 plugins {
     kotlin("jvm")
     `maven-publish`
@@ -20,8 +16,6 @@ dependencies {
 
     with(Dependencies) { fullTesting() }
 }
-
-//configurePublishing(LibraryType.JAR, "core")
 
 publishing {
     publications {
