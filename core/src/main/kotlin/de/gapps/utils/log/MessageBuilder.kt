@@ -32,6 +32,7 @@ object MessageBuilder {
 
     private val Array<StackTraceElement>.validTrace
         get() = firstOrNull {
+            it.className.startsWith("kotlin")
             it.fileName?.let { fn ->
                 listOf(
                     "Log.kt", "MessageBuilder.kt", "LogContext.kt", "Controllable.kt", "Observable.kt",

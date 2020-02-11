@@ -21,7 +21,9 @@ internal object LogTestApp {
 //            }
 //        }
 
-        Log.v("das ist ein test")
+        repeat(10) { n ->
+            n logV { m = "das ist ein test $n" }
+        }
         print("\u001b[35mHello")
         print("\u001b[36mWorld")
         delay(500.milliseconds)
