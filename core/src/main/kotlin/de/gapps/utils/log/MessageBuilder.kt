@@ -33,7 +33,10 @@ object MessageBuilder {
     private val Array<StackTraceElement>.validTrace
         get() = firstOrNull {
             it.fileName?.let { fn ->
-                listOf("Log.kt", "MessageBuilder.kt", "LogContext.kt", "Controllable.kt", "Observable.kt").contains(fn)
+                listOf(
+                    "Log.kt", "MessageBuilder.kt", "LogContext.kt", "Controllable.kt", "Observable.kt",
+                    "ExecuteExInternal.kt"
+                ).contains(fn)
                         || it.fixedMethodName == "wrapMessage"
             } == false
         }
