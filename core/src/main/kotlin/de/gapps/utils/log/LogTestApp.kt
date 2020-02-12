@@ -5,7 +5,6 @@ import de.gapps.utils.log.Filter.Companion.GENERIC
 import de.gapps.utils.misc.asUnit
 import de.gapps.utils.time.delay
 import de.gapps.utils.time.duration.milliseconds
-import de.gapps.utils.time.duration.minutes
 import de.gapps.utils.time.duration.seconds
 import kotlinx.coroutines.runBlocking
 
@@ -16,7 +15,7 @@ internal object LogTestApp {
     fun main(args: Array<String>) = runBlocking {
         repeat(10) { n ->
             launchEx {
-                n logV { m = "das ist ein test $n"; f = GENERIC("foo", 1.seconds, resend = false) }
+                n logV { m = "das ist ein test $n"; f = GENERIC("foo", 1.seconds) }
             }
             delay(300.milliseconds)
         }

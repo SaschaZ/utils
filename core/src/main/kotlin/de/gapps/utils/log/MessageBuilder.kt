@@ -32,12 +32,13 @@ object MessageBuilder {
 
     private val Array<StackTraceElement>.validTrace
         get() = firstOrNull {
-            !it.className.startsWith("kotlin")
-                    && it.fileName?.let { fn ->
+            it.fileName?.let { fn ->
                 listOf(
                     "Log.kt", "MessageBuilder.kt", "LogContext.kt", "Controllable.kt", "Observable.kt",
                     "ExecuteExInternal.kt"
-                ).contains(fn) || it.fixedMethodName == "wrapMessage"
+                ).contains(fn)
+                        && !it.className.startsWith("kotlin")
+                        && it.fixedMethodName != "wrapMessage"
             } == false
         }
 
