@@ -1,8 +1,39 @@
 import de.gapps.utils.configurePublishing
+import de.gapps.utils.configureSourcesJarTaskIfNecessary
+import de.gapps.utils.getSourcesJarTask
 
 plugins {
-    kotlin("jvm")
+    id("com.android.library")
+    kotlin("android")
+    id("kotlin-android-extensions")
     `maven-publish`
+}
+
+android {
+    compileSdkVersion(Android.apiLevel)
+    buildToolsVersion(Android.buildTools)
+    defaultConfig {
+        minSdkVersion(Android.minSdk)
+        targetSdkVersion(Android.targetSdk)
+        multiDexEnabled = true
+        versionCode = Android.versionCode
+        versionName = Android.versionName
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
+    sourceSets {
+        getByName("androidTest").java.setSrcDirs(listOf("src/main/kotlin", "src/androidTest/kotlin"))
+        getByName("androidTest").assets.setSrcDirs(listOf("src/main/assets"))
+
+        getByName("main").java.setSrcDirs(listOf("src/main/kotlin"))
+        getByName("main").assets.setSrcDirs(listOf("src/main/assets"))
+    }
 }
 
 dependencies {
@@ -21,6 +52,8 @@ dependencies {
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
 }
 
+configureSourcesJarTaskIfNecessary()
+
 publishing {
     publications {
         create<MavenPublication>("maven") {
@@ -28,14 +61,8 @@ publishing {
             artifactId = "testing"
             version = Globals.version
 
-            from(components["java"])
+            artifact(file("$buildDir/outputs/aar/testing-release.aar"))
+            artifact(getSourcesJarTask())
         }
     }
-}
-
-java {
-    @Suppress("UnstableApiUsage")
-    withSourcesJar()
-    @Suppress("UnstableApiUsage")
-    withJavadocJar()
 }

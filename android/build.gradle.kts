@@ -62,9 +62,6 @@ dependencies {
     }
 }
 
-//configurePublishing(LibraryType.AAR, "android")
-
-
 configureSourcesJarTaskIfNecessary()
 
 publishing {
