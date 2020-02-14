@@ -22,6 +22,10 @@ interface IOnChanged2<P : Any?, out T : Any?> : ReadWriteProperty<P, @kotlin.Uns
     val scope: CoroutineScope?
     val mutex: Mutex?
 
+    val veto: suspend (@UnsafeVariance T) -> Boolean
+    val onChangedS: suspend IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit
+    var onChange: IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit
+
     fun clearRecentValues()
 }
 
@@ -32,8 +36,10 @@ class OnChanged2<P : Any?, out T : Any?>(
     override val notifyOnChangedValueOnly: Boolean = true,
     override val scope: CoroutineScope? = null,
     override val mutex: Mutex? = null,
-    private val onChangedS: suspend IOnChangedScope<P, T>.(T) -> Unit = {},
-    internal var onChange: IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {}
+    override val veto: suspend (@UnsafeVariance T) -> Boolean = { true },
+    override val onChangedS: suspend IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {},
+    override var onChange: IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {}
+
 ) : IOnChanged2<P, @UnsafeVariance T> {
 
     private var triggeredChangeRunning = false
