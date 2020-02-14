@@ -5,7 +5,7 @@ import org.gradle.kotlin.dsl.project
 
 object Libs  {
     val DependencyHandler.core
-        get() = project(":core")
+        get() = project(":core", "default")
     val DependencyHandler.console
         get() = project(":console")
     val DependencyHandler.testing

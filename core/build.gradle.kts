@@ -1,8 +1,11 @@
+import de.gapps.utils.configurePublishing
+
 plugins {
     id("com.android.library")
     kotlin("android")
     id("kotlin-android-extensions")
-    id("digital.wup.android-maven-publish")
+    id("maven-publish")
+//    id("digital.wup.android-maven-publish")
 }
 
 android {
@@ -46,19 +49,4 @@ dependencies {
     with(Dependencies) { fullTesting() }
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("mavenAar") {
-            groupId = Globals.group
-            artifactId = "core"
-            version = Globals.version
-            from(components["android"])
-        }
-    }
-
-    repositories {
-        maven {
-            url = uri("$buildDir/releases")
-        }
-    }
-}
+configurePublishing(de.gapps.utils.LibraryType.AAR, "core")

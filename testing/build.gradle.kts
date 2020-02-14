@@ -1,8 +1,13 @@
+import de.gapps.utils.LibraryType.AAR
+import de.gapps.utils.configurePublishing
+
 plugins {
     id("com.android.library")
     kotlin("android")
     id("kotlin-android-extensions")
-    id("digital.wup.android-maven-publish")
+    id("maven-publish")
+//    id("digital.wup.android-maven-publish")
+//    id("com.kezong.fat-aar")
 }
 
 android {
@@ -32,35 +37,28 @@ android {
     }
 }
 
+// If the value is changed to true, the dependencies of the remote dependency will also be embedded in the final aar.
+// the default value of transitive is false
+//configurations["embed"].isTransitive = true
+
 dependencies {
-    api(project(":core"))
-    implementation(kotlin("stdlib-jdk8"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.3")
-    implementation("org.jetbrains.kotlin:kotlin-test:1.3.61")
+    Libs.run {
+        api(core)
 
-    implementation("com.squareup.okhttp3:mockwebserver:4.3.1")
-    implementation("org.bouncycastle:bcprov-jdk16:1.46")
-    implementation("androidx.test:rules:1.2.0")
-    implementation("androidx.test:runner:1.2.0")
-    implementation("androidx.test.espresso:espresso-core:3.2.0")
-    implementation("androidx.test:core:1.2.0")
+        implementation(kotlin)
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.3")
+        implementation("org.jetbrains.kotlin:kotlin-test:1.3.61")
 
-    testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
-}
+        implementation("com.squareup.okhttp3:mockwebserver:4.3.1")
+        implementation("org.bouncycastle:bcprov-jdk16:1.46")
+        implementation("androidx.test:rules:1.2.0")
+        implementation("androidx.test:runner:1.2.0")
+        implementation("androidx.test.espresso:espresso-core:3.2.0")
+        implementation("androidx.test:core:1.2.0")
 
-publishing {
-    publications {
-        create<MavenPublication>("mavenAar") {
-            groupId = Globals.group
-            artifactId = "testing"
-            version = Globals.version
-            from(components["android"])
-        }
-    }
-
-    repositories {
-        maven {
-            url = uri("$buildDir/releases")
-        }
+        testImplementation(project(":core"))
+        testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
     }
 }
+
+configurePublishing(AAR, "testing")

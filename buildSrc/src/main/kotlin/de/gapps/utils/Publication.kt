@@ -44,8 +44,7 @@ internal fun Project.configureAarPublishing(name: String) {
     configureLibraryAarPublication(name)
 }
 
-internal fun Project.configureLibraryAarPublication(name: String) {
-    val projectName = name
+internal fun Project.configureLibraryAarPublication(projectName: String) {
     extensions.getByType<PublishingExtension>().publications {
         register<MavenPublication>("aar") {
             groupId = Globals.group

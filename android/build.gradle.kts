@@ -1,8 +1,12 @@
+import de.gapps.utils.configurePublishing
+
 plugins {
     id("com.android.library")
     kotlin("android")
     id("kotlin-android-extensions")
-    id("digital.wup.android-maven-publish")
+    id("maven-publish")
+//    id("digital.wup.android-maven-publish")
+//    id("com.kezong.fat-aar")
 }
 
 android {
@@ -15,6 +19,7 @@ android {
         versionCode = Android.versionCode
         versionName = Android.versionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        missingDimensionStrategy("dev.zieger.utils:core", "release")
     }
     buildTypes {
         getByName("release") {
@@ -35,6 +40,7 @@ android {
 dependencies {
     Libs.run {
         api(core)
+
         implementation(multidex)
         implementation(kotlin)
         implementation(coroutinesJdk)
@@ -59,19 +65,4 @@ dependencies {
     }
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("mavenAar") {
-            groupId = Globals.group
-            artifactId = "android"
-            version = Globals.version
-            from(components["android"])
-        }
-    }
-
-    repositories {
-        maven {
-            url = uri("$buildDir/releases")
-        }
-    }
-}
+configurePublishing(de.gapps.utils.LibraryType.AAR, "android")
