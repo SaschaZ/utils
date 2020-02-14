@@ -1,11 +1,8 @@
-import de.gapps.utils.configureSourcesJarTaskIfNecessary
-import de.gapps.utils.getSourcesJarTask
-
 plugins {
     id("com.android.library")
     kotlin("android")
     id("kotlin-android-extensions")
-    `maven-publish`
+    id("digital.wup.android-maven-publish")
 }
 
 android {
@@ -62,17 +59,19 @@ dependencies {
     }
 }
 
-configureSourcesJarTaskIfNecessary()
-
 publishing {
     publications {
-        create<MavenPublication>("maven") {
+        create<MavenPublication>("mavenAar") {
             groupId = Globals.group
             artifactId = "android"
             version = Globals.version
+            from(components["android"])
+        }
+    }
 
-            artifact(file("$buildDir/outputs/aar/android-release.aar"))
-            artifact(getSourcesJarTask())
+    repositories {
+        maven {
+            url = uri("$buildDir/releases")
         }
     }
 }

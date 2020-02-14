@@ -1,24 +1,33 @@
 package de.gapps.utils.time
 
 import de.gapps.utils.misc.formatQuery
-import de.gapps.utils.time.StringConverter.DateFormat.*
+import de.gapps.utils.time.DateFormat.*
+import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
+
+enum class DateFormat {
+
+    COMPLETE,
+    DATE_ONLY,
+    TIME_ONLY,
+    HuM,
+    PLOT,
+    FILENAME,
+    EXCHANGE
+}
+
 interface StringConverter : ZoneDateTimeHolder {
 
-    enum class DateFormat {
+    fun formatTime(format: DateFormat = COMPLETE): String =
+        StringConverterDelegate.formatTime(format, zoneDateTime, localDateTime)
+}
 
-        COMPLETE,
-        DATE_ONLY,
-        TIME_ONLY,
-        HuM,
-        PLOT,
-        FILENAME,
-        EXCHANGE
-    }
+object StringConverterDelegate {
 
-    fun formatTime(format: DateFormat = COMPLETE): String {
+    var formatTime: (DateFormat, ZonedDateTime, LocalDateTime) -> String = { format, zoneDateTime, localDateTime ->
         val formatter = DateTimeFormatter.ofPattern(
             when (format) {
                 COMPLETE -> "dd.MM.yyyy-HH:mm:ss"
@@ -31,7 +40,7 @@ interface StringConverter : ZoneDateTimeHolder {
             }
         )
 
-        return if (format == EXCHANGE) {
+        if (format == EXCHANGE) {
             zoneDateTime.withZoneSameInstant(TimeZone.getTimeZone("UTC").toZoneId()).format(formatter).formatQuery()
         } else localDateTime.format(formatter)!!
     }

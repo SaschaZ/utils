@@ -1,11 +1,8 @@
-import de.gapps.utils.configureSourcesJarTaskIfNecessary
-import de.gapps.utils.getSourcesJarTask
-
 plugins {
     id("com.android.library")
     kotlin("android")
     id("kotlin-android-extensions")
-    `maven-publish`
+    id("digital.wup.android-maven-publish")
 }
 
 android {
@@ -38,7 +35,7 @@ android {
 dependencies {
     with(Libs) {
         implementation(kotlin)
-        implementation(coroutinesJdk)
+        implementation(coroutinesAndroid)
         implementation(coroutinesSwing)
 
         implementation(koin)
@@ -49,17 +46,19 @@ dependencies {
     with(Dependencies) { fullTesting() }
 }
 
-configureSourcesJarTaskIfNecessary()
-
 publishing {
     publications {
-        create<MavenPublication>("maven") {
+        create<MavenPublication>("mavenAar") {
             groupId = Globals.group
             artifactId = "core"
             version = Globals.version
+            from(components["android"])
+        }
+    }
 
-            artifact(file("$buildDir/outputs/aar/core-release.aar"))
-            artifact(getSourcesJarTask())
+    repositories {
+        maven {
+            url = uri("$buildDir/releases")
         }
     }
 }

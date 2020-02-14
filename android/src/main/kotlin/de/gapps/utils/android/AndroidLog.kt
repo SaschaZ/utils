@@ -1,8 +1,10 @@
 package de.gapps.utils.android
 
+import android.content.Context
 import de.gapps.utils.log.Log
 import de.gapps.utils.log.LogElement
 import de.gapps.utils.log.LogLevel
+import de.gapps.utils.time.StringConverterDelegate
 
 object AndroidLog : LogElement {
 
@@ -20,8 +22,11 @@ object AndroidLog : LogElement {
         return msg
     }
 
-    fun initialize(tag: String) {
+    fun initialize(context: Context, tag: String) {
         this.tag = tag
+        StringConverterDelegate.formatTime = { format, zone, local ->
+            "$local"
+        }
         Log.clearElements(addTime = false, addLevelFilter = true)
         Log + this
     }

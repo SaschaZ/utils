@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 buildscript {
     repositories {
         mavenCentral()
@@ -9,12 +7,12 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:3.5.3")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.61")
+        classpath("digital.wup:android-maven-publish:3.6.2")
     }
 }
 
 plugins {
     kotlin("jvm") version "1.3.61"
-    id("com.github.johnrengelman.shadow") version "5.2.0"
 }
 
 allprojects {

@@ -1,8 +1,6 @@
 package de.gapps.utils.log
 
 import de.gapps.utils.misc.nullWhen
-import de.gapps.utils.time.StringConverter
-import de.gapps.utils.time.TimeEx
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlin.coroutines.CoroutineContext
@@ -16,7 +14,7 @@ object MessageBuilder {
         "${if (addTime) "$time - " else ""}$lvl:${cc.parentComponentString}-> $msg"
 
     private val time
-        get() = TimeEx().formatTime(StringConverter.DateFormat.TIME_ONLY)
+        get() = ""//TimeEx().formatTime(DateFormat.TIME_ONLY)
 
     private val CoroutineContext?.parentComponentString
         get() = "$coroutineDescription$codePosition"
@@ -37,9 +35,9 @@ object MessageBuilder {
                     "Log.kt", "MessageBuilder.kt", "LogContext.kt", "Controllable.kt", "Observable.kt",
                     "ExecuteExInternal.kt"
                 ).contains(fn)
-                        && !it.className.startsWith("kotlin")
-                        && it.fixedMethodName != "wrapMessage"
             } == false
+                    && !it.className.startsWith("kotlin")
+                    && it.fixedMethodName != "wrapMessage"
         }
 
     private val StackTraceElement.fixedClassName

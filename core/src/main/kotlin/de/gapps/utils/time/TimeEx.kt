@@ -8,7 +8,6 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.util.*
-import kotlin.reflect.KClass
 
 open class TimeEx(override val millis: Long = Date().time.toMillis(MS)) : ITimeEx {
 
@@ -20,7 +19,7 @@ open class TimeEx(override val millis: Long = Date().time.toMillis(MS)) : ITimeE
     constructor(ldt: LocalDateTime) :
             this(ldt.toInstant(ZoneOffset.systemDefault().rules.getOffset(ldt)).toEpochMilli())
 
-    override fun toString() = formatTime(StringConverter.DateFormat.COMPLETE)
+    override fun toString() = formatTime(DateFormat.COMPLETE)
     override fun equals(other: Any?) = millis == (other as? ITimeEx)?.millis
     override fun hashCode() = millis.hashCode() + javaClass.hashCode()
 }
