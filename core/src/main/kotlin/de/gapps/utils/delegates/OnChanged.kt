@@ -22,7 +22,7 @@ interface IOnChanged2<P : Any?, out T : Any?> : ReadWriteProperty<P, @kotlin.Uns
     val scope: CoroutineScope?
     val mutex: Mutex?
 
-    val veto: suspend (@UnsafeVariance T) -> Boolean
+    val veto: (@UnsafeVariance T) -> Boolean
     val onChangedS: suspend IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit
     var onChange: IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit
 
@@ -36,7 +36,7 @@ class OnChanged2<P : Any?, out T : Any?>(
     override val notifyOnChangedValueOnly: Boolean = true,
     override val scope: CoroutineScope? = null,
     override val mutex: Mutex? = null,
-    override val veto: suspend (@UnsafeVariance T) -> Boolean = { true },
+    override val veto: (@UnsafeVariance T) -> Boolean = { false },
     override val onChangedS: suspend IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {},
     override var onChange: IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {}
 
@@ -50,7 +50,7 @@ class OnChanged2<P : Any?, out T : Any?>(
     override var value: @UnsafeVariance T = initial
         set(newValue) {
             val block = {
-                if (field != newValue || !notifyOnChangedValueOnly || triggeredChangeRunning) {
+                if (!veto(newValue) && (field != newValue || !notifyOnChangedValueOnly || triggeredChangeRunning)) {
                     triggeredChangeRunning = false
                     val old = field
                     field = newValue

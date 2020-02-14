@@ -48,7 +48,7 @@ internal fun Project.configureLibraryAarPublication(projectName: String) {
     extensions.getByType<PublishingExtension>().publications {
         register<MavenPublication>("aar") {
             groupId = Globals.group
-            artifactId = name
+            artifactId = projectName
             version = Globals.version
 
             artifact(file("$buildDir/outputs/aar/$projectName-release.aar"))
