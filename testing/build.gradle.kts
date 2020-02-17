@@ -1,45 +1,10 @@
-import de.gapps.utils.LibraryType.AAR
+import de.gapps.utils.LibraryType.JAR
 import de.gapps.utils.configurePublishing
 
 plugins {
-    id("com.android.library")
-    kotlin("android")
-    id("kotlin-android-extensions")
+    kotlin("jvm")
     id("maven-publish")
-//    id("digital.wup.android-maven-publish")
-//    id("com.kezong.fat-aar")
 }
-
-android {
-    compileSdkVersion(Android.apiLevel)
-    buildToolsVersion(Android.buildTools)
-    defaultConfig {
-        minSdkVersion(Android.minSdk)
-        targetSdkVersion(Android.targetSdk)
-        multiDexEnabled = true
-        versionCode = Android.versionCode
-        versionName = Android.versionName
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-        }
-    }
-
-    sourceSets {
-        getByName("androidTest").java.setSrcDirs(listOf("src/main/kotlin", "src/androidTest/kotlin"))
-        getByName("androidTest").assets.setSrcDirs(listOf("src/main/assets"))
-
-        getByName("main").java.setSrcDirs(listOf("src/main/kotlin"))
-        getByName("main").assets.setSrcDirs(listOf("src/main/assets"))
-    }
-}
-
-// If the value is changed to true, the dependencies of the remote dependency will also be embedded in the final aar.
-// the default value of transitive is false
-//configurations["embed"].isTransitive = true
 
 dependencies {
     Libs.run {
@@ -61,4 +26,4 @@ dependencies {
     }
 }
 
-configurePublishing(AAR, "testing")
+configurePublishing(JAR, "testing")

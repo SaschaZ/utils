@@ -1,3 +1,4 @@
+import de.gapps.utils.LibraryType.AAR
 import de.gapps.utils.configurePublishing
 
 plugins {
@@ -65,4 +66,4 @@ dependencies {
     }
 }
 
-configurePublishing(de.gapps.utils.LibraryType.AAR, "android")
+configurePublishing(AAR, "android")

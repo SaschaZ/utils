@@ -23,6 +23,7 @@ fun Project.configurePublishing(type: LibraryType, name: String) {
 }
 
 internal fun Project.configureJarPublishing(name: String) {
+    configurePublishTask(JAR)
     configureLibraryJarPublication(name)
 }
 
@@ -40,7 +41,7 @@ internal fun Project.configureLibraryJarPublication(name: String) {
 
 internal fun Project.configureAarPublishing(name: String) {
     configureSourcesJarTaskIfNecessary()
-//    configurePublishTask()
+    configurePublishTask(AAR)
     configureLibraryAarPublication(name)
 }
 
@@ -57,10 +58,11 @@ internal fun Project.configureLibraryAarPublication(projectName: String) {
     }
 }
 
-internal fun Project.configurePublishTask() = afterEvaluate {
+internal fun Project.configurePublishTask(type: LibraryType) = afterEvaluate {
     val publish = tasks["publish"]
-    val assembleRelease = tasks["assembleRelease"]
-    val publishAarPublicationToMavenLocal = tasks["publishAarPublicationToMavenLocal"]
+    val assembleRelease = tasks["assemble${if (type == AAR) "Release" else ""}"]
+    val publishAarPublicationToMavenLocal = tasks[if (type == AAR) "publishAarPublicationToMavenLocal"
+    else "publishMavenJavaPublicationToMavenLocal"]
 
     publishAarPublicationToMavenLocal.dependsOn(assembleRelease)
     publish.dependsOn(assembleRelease)
