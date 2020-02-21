@@ -17,8 +17,12 @@ class MachineExTest {
         object D : State()
     }
 
-    sealed class Event : IEvent {
-        object FIRST : Event()
+    sealed class Event : IEvent, MutableMap<String, Any> by HashMap() {
+        object FIRST : Event() { init {
+            put("foo", "test it")
+        }
+        }
+
         object SECOND : Event()
         object THIRD : Event()
         object FOURTH : Event()

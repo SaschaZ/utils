@@ -6,7 +6,7 @@ import de.gapps.utils.statemachine.scopes.ISetScope
 /**
  * Base interface for an event of [IMachineEx]
  */
-interface IEvent
+interface IEvent : MutableMap<String, Any>
 
 /**
  * Base interface for a state of [IMachineEx]

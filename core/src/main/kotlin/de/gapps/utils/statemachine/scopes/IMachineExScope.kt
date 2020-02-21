@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package de.gapps.utils.statemachine.scopes
 
 import de.gapps.utils.statemachine.IEvent
@@ -12,19 +14,25 @@ interface IMachineExScope<out E : IEvent, out S : IState> {
      *   OnScope  *
      **************/
 
-    val on: IOnScope
-        get() = OnScope()
+    val on: IOnScope<E, S>
+        get() = OnScope(this)
 
-    infix fun IOnScope.event(event: @UnsafeVariance E) = EventScope(this, event)
-    infix fun IOnScope.events(events: List<@UnsafeVariance E>) = EventScope(this, events)
+    infix fun IOnScope<@UnsafeVariance E, @UnsafeVariance S>.event(event: @UnsafeVariance E) =
+        EventScope(this, event)
+
+    infix fun IOnScope<@UnsafeVariance E, @UnsafeVariance S>.events(events: List<@UnsafeVariance E>) =
+        EventScope(this, events)
 
 
     /*****************
      *   EventScope  *
      *****************/
 
-    infix fun IEventScope<@UnsafeVariance E>.withState(state: @UnsafeVariance S) = EventStateScope(this, state)
-    infix fun IEventScope<@UnsafeVariance E>.withStates(states: List<@UnsafeVariance S>) = EventStateScope(this, states)
+    infix fun IEventScope<@UnsafeVariance E, @UnsafeVariance S>.withState(state: @UnsafeVariance S) =
+        EventStateScope(this, state)
+
+    infix fun IEventScope<@UnsafeVariance E, @UnsafeVariance S>.withStates(states: List<@UnsafeVariance S>) =
+        EventStateScope(this, states)
 
 
     /**********************
@@ -53,10 +61,13 @@ interface IMachineExScope<out E : IEvent, out S : IState> {
      *   StateScope  *
      *****************/
 
-    infix fun IOnScope.state(state: @UnsafeVariance S) = StateScope(this, state)
-    infix fun IOnScope.states(states: List<@UnsafeVariance S>) = StateScope(this, states)
+    infix fun IOnScope<@UnsafeVariance E, @UnsafeVariance S>.state(state: @UnsafeVariance S) =
+        StateScope(this, state)
 
-    infix fun IStateScope<@UnsafeVariance S>.runOnly(
+    infix fun IOnScope<@UnsafeVariance E, @UnsafeVariance S>.states(states: List<@UnsafeVariance S>) =
+        StateScope(this, states)
+
+    infix fun IStateScope<@UnsafeVariance E, @UnsafeVariance S>.runOnly(
         action: StateChangeScope<@UnsafeVariance S>.() -> Unit
     ) = addMapping(states, action)
 
@@ -71,6 +82,7 @@ interface IMachineExScope<out E : IEvent, out S : IState> {
      ***********/
 
     infix fun @UnsafeVariance E.or(o: @UnsafeVariance E) = listOf(this, o)
+
     infix fun List<@UnsafeVariance E>.or(o: @UnsafeVariance E): List<E> = toMutableList().also { it.add(o) }
 
     infix fun @UnsafeVariance S.or(o: @UnsafeVariance S) = listOf(this, o)

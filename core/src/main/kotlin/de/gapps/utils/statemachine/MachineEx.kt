@@ -23,7 +23,7 @@ open class MachineEx<out E : IEvent, out S : IState>(
 ) : IMachineEx<E, S> {
 
     @Suppress("ClassName")
-    object INITIAL_EVENT : IEvent
+    object INITIAL_EVENT : IEvent, MutableMap<String, Any> by HashMap()
 
     private val recentChanges = ArrayList<EventChangeScope<E, S>>()
 
