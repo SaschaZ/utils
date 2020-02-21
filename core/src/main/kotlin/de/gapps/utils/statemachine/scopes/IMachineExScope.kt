@@ -87,7 +87,8 @@ operator fun <T : Any> T.div(o: T) = listOf(this, o)
 operator fun <T : Any> List<T>.div(o: T) = listOfNotNull(getOrNull(0), getOrNull(1), o)
 
 operator fun <K : Any, V : Any> Pair<K, V>.plus(o: Pair<K, V>) = listOf(this, o)
-operator fun <K : Any, V : Any> List<Pair<K, V>>.plus(o: Pair<K, V>) = listOfNotNull(getOrNull(0), getOrNull(1), 0)
+operator fun <K : Any, V : Any> List<Pair<K, V>>.plus(o: Pair<K, V>): List<Pair<K, V>> =
+    toMutableList().apply { add(o) }
 
 operator fun <K : Any, V : Any> K.times(o: V) = this to o
 
