@@ -4,12 +4,20 @@ import de.gapps.utils.observable.IControllable
 import de.gapps.utils.statemachine.IEvent
 
 
-interface ISetScope<E : IEvent> {
-    infix fun event(event: E)
+interface ISetScope<out K : Any, out V : Any, out E : IEvent<K, V>> : IEvent<K, V> {
+    val event: E
+    infix fun event(event: @UnsafeVariance E): ISetScope<K, V, IEvent<K, V>>
 }
 
-class SetScope<E : IEvent>(private val eventHost: IControllable<E>) : ISetScope<E> {
-    override fun event(event: E) {
+class SetScope<out K : Any, out V : Any, out E : IEvent<K, V>>(private val eventHost: IControllable<E>) :
+    ISetScope<K, V, E>,
+    MutableMap<@UnsafeVariance K, @UnsafeVariance V> by HashMap() {
+
+    override val event: E
+        get() = eventHost.value
+
+    override fun event(event: @UnsafeVariance E): ISetScope<K, V, E> {
         eventHost.value = event
+        return this
     }
 }
