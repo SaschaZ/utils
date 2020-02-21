@@ -1,5 +1,6 @@
 plugins {
     `kotlin-dsl`
+    id("org.jetbrains.dokka") version "0.10.0"
 }
 
 repositories {

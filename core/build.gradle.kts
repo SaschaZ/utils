@@ -1,8 +1,10 @@
+import de.gapps.utils.LibraryType.JAR
 import de.gapps.utils.configurePublishing
 
 plugins {
     kotlin("jvm")
     id("maven-publish")
+    id("org.jetbrains.dokka") version "0.10.0"
 }
 
 dependencies {
@@ -19,4 +21,11 @@ dependencies {
     with(Dependencies) { fullTesting() }
 }
 
-configurePublishing(de.gapps.utils.LibraryType.JAR, "core")
+tasks {
+    dokka {
+        outputFormat = "html"
+        outputDirectory = "$buildDir/javadoc"
+    }
+}
+
+configurePublishing(JAR, "core")

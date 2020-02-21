@@ -80,7 +80,7 @@ inline fun <reified E : IEvent, reified S : IState> machineEx(
                                 && if (checkStateForType) state::class.isInstance(second) else state == second
                     }
                 }
-                fittingPair?.value?.invoke(this) logV { "$this -> $it" } ifN {
+                fittingPair?.value?.invoke(this) logV { m = "$this -> $it" } ifN {
                     Log.w("No state defined for event $event with state $state.")
                     state
                 }

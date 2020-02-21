@@ -4,6 +4,7 @@ import de.gapps.utils.configurePublishing
 plugins {
     kotlin("jvm")
     id("maven-publish")
+    id("org.jetbrains.dokka") version "0.10.0"
 }
 
 dependencies {
@@ -24,6 +25,18 @@ dependencies {
         testImplementation(project(":core"))
         testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
     }
+}
+
+tasks {
+    dokka {
+        outputFormat = "html"
+        outputDirectory = "$buildDir/javadoc"
+    }
+}
+
+val sourcesJar by tasks.registering(Jar::class) {
+    classifier = "sources"
+    from(sourceSets.main.get().allSource)
 }
 
 configurePublishing(JAR, "testing")

@@ -6,6 +6,7 @@ plugins {
     kotlin("android")
     id("kotlin-android-extensions")
     id("maven-publish")
+    id("org.jetbrains.dokka") version "0.10.0"
 //    id("digital.wup.android-maven-publish")
 //    id("com.kezong.fat-aar")
 }
@@ -63,6 +64,13 @@ dependencies {
         androidTestImplementation(androidXtestRules)
         androidTestImplementation(mockWebServer)
         androidTestImplementation(bouncyCastle)
+    }
+}
+
+tasks {
+    dokka {
+        outputFormat = "html"
+        outputDirectory = "$buildDir/javadoc"
     }
 }
 

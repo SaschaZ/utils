@@ -4,7 +4,6 @@ Kotlin Jvm Utilities
 
 ## Contains utilities for
 - [utilsEx](#utilsex)
-  - [Contains utilities for](#contains-utilities-for)
   - [Get started](#get-started)
   - [TimeEx, DurationEx](#timeex-durationex)
   - [Observable, Controllable](#observable-controllable)
