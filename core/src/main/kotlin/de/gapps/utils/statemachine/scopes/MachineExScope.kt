@@ -4,7 +4,7 @@ import de.gapps.utils.log.Log
 import de.gapps.utils.statemachine.IEvent
 import de.gapps.utils.statemachine.IState
 
-open class MachineExScope<out E : IEvent, out S : IState> : IMachineExScope<E, S> {
+open class MachineExScope<out E : IEvent<*, *>, out S : IState> : IMachineExScope<E, S> {
 
     private val eventStatePairToEventChangeScopeMap = HashMap<Pair<@UnsafeVariance E, @UnsafeVariance S>,
             EventChangeScope<@UnsafeVariance E, @UnsafeVariance S>.() -> @UnsafeVariance S>()

@@ -17,13 +17,13 @@ import de.gapps.utils.statemachine.scopes.*
  * @param initialState The state machine is initialized with this state. This will not trigger any actions.
  * @property eventActionMapping Callback that is used to get the new state when an event comes in.
  */
-open class MachineEx<out E : IEvent, out S : IState>(
+open class MachineEx<out K : Any, out V : Any, out E : IEvent<K, V>, out S : IState>(
     initialState: S,
     private val eventActionMapping: IOnEventScope<E, S>.(E) -> S
-) : IMachineEx<E, S> {
+) : IMachineEx<K, V, E, S> {
 
     @Suppress("ClassName")
-    object INITIAL_EVENT : IEvent, MutableMap<String, Any> by HashMap()
+    object INITIAL_EVENT : Event<String, String>()
 
     private val recentChanges = ArrayList<EventChangeScope<E, S>>()
 
@@ -34,7 +34,7 @@ open class MachineEx<out E : IEvent, out S : IState>(
 
     override var event: @UnsafeVariance E by eventHost
 
-    override val set: ISetScope<@UnsafeVariance E>
+    override val set: ISetScope<K, V, @UnsafeVariance E>
         get() = SetScope(eventHost)
 
     private var stateHost = Controllable<S>(initialState)
@@ -64,15 +64,15 @@ open class MachineEx<out E : IEvent, out S : IState>(
 /**
  * Builder for MachineEx. Allows building of event action mapping with a simple DSL instead of providing it in a List.
  */
-inline fun <reified E : IEvent, reified S : IState> machineEx(
+inline fun <reified K : Any, reified V : Any, reified E : IEvent<K, V>, reified S : IState> machineEx(
     initialState: S,
     checkEventForType: Boolean = false,
     checkStateForType: Boolean = false,
     builder: MachineExScope<E, S>.() -> Unit
-): IMachineEx<E, S> {
+): IMachineEx<K, V, E, S> {
     return MachineExScope<E, S>().run {
         builder()
-        MachineEx(initialState) { e ->
+        MachineEx<K, V, E, S>(initialState) { e ->
             EventChangeScope(event, state).run rt@{
                 val fittingPair = eventStateMapping.entries.firstOrNull {
                     it.key.run {

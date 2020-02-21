@@ -6,13 +6,13 @@ import de.gapps.utils.statemachine.IEvent
 import de.gapps.utils.statemachine.IState
 
 
-interface IEventScope<out E : IEvent, out S : IState> : IOnScope<E, S> {
+interface IEventScope<out E : IEvent<*, *>, out S : IState> : IOnScope<E, S> {
     val events: List<@UnsafeVariance E>
     val event
         get() = events.first()
 }
 
-class EventScope<out E : IEvent, out S : IState>(
+class EventScope<out E : IEvent<*, *>, out S : IState>(
     onScope: IOnScope<E, S>,
     override val events: List<@UnsafeVariance E>
 ) : IEventScope<E, S>, IOnScope<E, S> by onScope {
@@ -20,12 +20,12 @@ class EventScope<out E : IEvent, out S : IState>(
     constructor(onScope: IOnScope<E, S>, event: E) : this(onScope, listOf(event))
 }
 
-interface IEventStateScope<out E : IEvent, out S : IState> : IEventScope<E, S> {
+interface IEventStateScope<out E : IEvent<*, *>, out S : IState> : IEventScope<E, S> {
     val states: List<@UnsafeVariance S>
     val state: S?
 }
 
-class EventStateScope<out E : IEvent, out S : IState>(
+class EventStateScope<out E : IEvent<*, *>, out S : IState>(
     eventScope: IEventScope<E, S>,
     override val states: List<@UnsafeVariance S>
 ) : IEventStateScope<E, S>, IEventScope<E, S> by eventScope {

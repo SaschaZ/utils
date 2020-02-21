@@ -6,7 +6,9 @@ import de.gapps.utils.statemachine.scopes.ISetScope
 /**
  * Base interface for an event of [IMachineEx]
  */
-interface IEvent : MutableMap<String, Any>
+interface IEvent<out K : Any, out V : Any> : MutableMap<@UnsafeVariance K, @UnsafeVariance V>
+
+open class Event<out K : Any, out V : Any> : IEvent<K, V>, MutableMap<@UnsafeVariance K, @UnsafeVariance V> by HashMap()
 
 /**
  * Base interface for a state of [IMachineEx]
@@ -21,7 +23,7 @@ interface IState
  * @param E Event type of [IEvent].
  * @param S State type of [IState].
  */
-interface IMachineEx<out E : IEvent, out S : IState> {
+interface IMachineEx<out K : Any, out V : Any, out E : IEvent<K, V>, out S : IState> {
 
     /**
      * Get latest event.
@@ -36,7 +38,7 @@ interface IMachineEx<out E : IEvent, out S : IState> {
     /**
      * Returns a scope which should be used to fire the next event.
      */
-    val set: ISetScope<@UnsafeVariance E>
+    val set: ISetScope<K, V, @UnsafeVariance E>
 
     /**
      * Observe any event change.
