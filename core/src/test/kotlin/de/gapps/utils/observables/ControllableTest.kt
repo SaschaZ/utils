@@ -6,10 +6,10 @@ import de.gapps.utils.observable.Controllable
 import de.gapps.utils.testing.assertion.assert
 import de.gapps.utils.testing.assertion.onFail
 import de.gapps.utils.testing.runTest
+import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.delay
-import org.junit.Test
 
-class ControllableTest {
+class ControllableTest : AnnotationSpec() {
 
     @Test
     fun `test controllable`() = runTest {

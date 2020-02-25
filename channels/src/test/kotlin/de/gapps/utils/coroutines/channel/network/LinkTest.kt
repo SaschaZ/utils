@@ -11,7 +11,7 @@ import org.junit.Ignore
 import org.junit.Test
 import kotlin.test.assertEquals
 
-class LinkTest {
+class LinkTest : AnnotationSpec() {
 
     @Before
     fun before() = runBlocking {

@@ -16,17 +16,18 @@ import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Base interface for an event of [IMachineEx]
+ * Base interface for an event of [MachineEx]
  */
-interface IEvent : MutableMap<String, String>
-
-open class Event : IEvent, MutableMap<String, String> by HashMap()
+interface IEvent
 
 /**
- * Base interface for a state of [IMachineEx]
+ * Base interface for a state of [MachineEx]
  */
 interface IState
 
+/**
+ *
+ */
 open class MachineEx<out EventType : IEvent, out StateType : IState>(
     private val initialState: StateType,
     protected val scope: CoroutineScopeEx = DefaultCoroutineScope(),
@@ -61,6 +62,8 @@ open class MachineEx<out EventType : IEvent, out StateType : IState>(
     private val mutablePreviousStateChanges =
         ArrayList<EventChangeScope<@UnsafeVariance EventType, @UnsafeVariance StateType>>()
 
+    private val finishedProcessingEvent = Channel<Boolean>()
+
     init {
         scope.launchEx {
             for (eventType in eventChannel) eventType.processEvent()
@@ -76,11 +79,9 @@ open class MachineEx<out EventType : IEvent, out StateType : IState>(
         if (!isProcessingActive) scope.launch { finishedProcessingEvent.send(true) }
     }
 
-    private val finishedProcessingEvent = Channel<Boolean>()
-
-    open fun release() = scope.cancel().asUnit()
-
     suspend fun suspendUtilProcessingFinished() {
         while (isProcessingActive) finishedProcessingEvent.receive()
     }
+
+    open fun release() = scope.cancel().asUnit()
 }

@@ -3,10 +3,10 @@
 package de.gapps.utils.delegates
 
 import de.gapps.utils.testing.assertion.assert
-import org.junit.Test
+import io.kotlintest.specs.AnnotationSpec
 import kotlin.test.assertEquals
 
-class DelegatePatternTest {
+class DelegatePatternTest : AnnotationSpec() {
 
     interface TestInterface {
         fun foo(): String = boo()

@@ -2,7 +2,27 @@ package de.gapps.utils.misc
 
 import kotlin.reflect.KClass
 
-inline infix fun <R> R?.ifN(block: () -> R): R = this ?: block()
+/**
+ * Can be used to handle a "else when null" case without the need of calling `.invoke()`
+ *
+ * Example:
+ * ```kotlin
+ *  val testVal = someNullableValue?.let {
+ *      it + 4
+ *  } ?: {
+ *      10
+ *  }.invoke()
+ * ```
+ * becomes
+ * ```kotlin
+ *  val testVal = someNullableValue?.let {
+ *      it + 4
+ *  } ifNull {
+ *      10
+ *  }
+ * ```
+ */
+inline infix fun <R> R?.ifNull(block: () -> R): R = this ?: block()
 
 val <T : Any> KClass<T>.name: String
     get() = java.simpleName

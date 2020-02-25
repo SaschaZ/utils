@@ -10,7 +10,7 @@ import org.junit.Ignore
 import org.junit.Test
 import kotlin.random.Random
 
-class NetworkTest {
+class NetworkTest : AnnotationSpec() {
 
     @Before
     fun before() = runBlocking {

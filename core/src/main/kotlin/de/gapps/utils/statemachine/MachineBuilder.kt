@@ -1,8 +1,7 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.log.Log
-import de.gapps.utils.log.logV
-import de.gapps.utils.misc.ifN
+import de.gapps.utils.misc.ifNull
 import de.gapps.utils.statemachine.scopes.MachineExScope
 import de.gapps.utils.statemachine.scopes.lvl4.EventChangeScope
 
@@ -23,7 +22,7 @@ inline fun <reified E : IEvent, reified S : IState> machineEx(
                                 && if (false) state::class.isInstance(second) else state == second
                     }
                 }
-                fittingPair?.value?.invoke(this) logV { m = "$this -> $it" } ifN {
+                fittingPair?.value?.invoke(this) ifNull {
                     Log.w("No state defined for event $event with state $state.")
                     state
                 }

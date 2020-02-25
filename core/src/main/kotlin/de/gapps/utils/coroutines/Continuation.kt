@@ -1,7 +1,7 @@
 package de.gapps.utils.coroutines
 
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
-import de.gapps.utils.misc.ifN
+import de.gapps.utils.misc.ifNull
 import de.gapps.utils.time.duration.IDurationEx
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withTimeout
@@ -13,7 +13,7 @@ suspend inline fun withTimeout(
 ) {
     timeout?.let {
         withTimeout(timeout.millis) { block() }
-    } ifN { block() }
+    } ifNull { block() }
 }
 
 interface IContinuation {

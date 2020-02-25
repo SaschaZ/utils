@@ -5,7 +5,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 
-class PortContainerTest {
+class PortContainerTest : AnnotationSpec() {
 
     private lateinit var input0: Port.Input<Int>
     private lateinit var output0: Port.Output<Int>

@@ -10,7 +10,7 @@ import org.junit.Test
 import kotlin.test.assertEquals
 
 
-class HostTest {
+class HostTest : AnnotationSpec() {
 
     private fun testNode(id: String) =
         Node(Input<Int>("${id}Input0") + Output<Int>("${id}Output0"), id) {

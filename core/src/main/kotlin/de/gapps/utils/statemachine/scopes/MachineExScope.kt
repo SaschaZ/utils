@@ -5,8 +5,9 @@ import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import de.gapps.utils.log.Log
 import de.gapps.utils.statemachine.IEvent
 import de.gapps.utils.statemachine.IState
-import de.gapps.utils.statemachine.scopes.lvl1.StateChangeScope
+import de.gapps.utils.statemachine.scopes.definition.lvl1.StateChangeScope
 import de.gapps.utils.statemachine.scopes.lvl4.EventChangeScope
+import kotlin.reflect.KClass
 
 open class MachineExScope<out E : IEvent, out S : IState>(override val scope: CoroutineScopeEx = DefaultCoroutineScope()) :
     IMachineExScope<E, S> {
@@ -18,9 +19,9 @@ open class MachineExScope<out E : IEvent, out S : IState>(override val scope: Co
         get() = HashMap(eventStatePairToEventChangeScopeMap)
 
     private val stateToStateChangeScopeMap =
-        HashMap<@UnsafeVariance S, StateChangeScope<@UnsafeVariance S>.() -> Unit>()
+        HashMap<@UnsafeVariance S, StateChangeScope<@UnsafeVariance S>.() -> S>()
 
-    override fun addMapping(
+    override fun addMappingValue(
         events: List<@UnsafeVariance E>,
         states: List<@UnsafeVariance S>,
         action: EventChangeScope<@UnsafeVariance E, @UnsafeVariance S>.() -> @UnsafeVariance S
@@ -34,7 +35,18 @@ open class MachineExScope<out E : IEvent, out S : IState>(override val scope: Co
         }
     }
 
-    override fun addMapping(states: List<@UnsafeVariance S>, action: StateChangeScope<@UnsafeVariance S>.() -> Unit) {
+    override fun addMappingType(
+        eventTypes: List<KClass<@UnsafeVariance E>>,
+        stateTypes: List<KClass<@UnsafeVariance S>>,
+        action: EventChangeScope<E, S>.() -> @UnsafeVariance S
+    ) {
+        // TODO
+    }
+
+    override fun addMappingValue(
+        states: List<@UnsafeVariance S>,
+        action: StateChangeScope<@UnsafeVariance S>.() -> @UnsafeVariance S
+    ) {
         states.forEach { state ->
             if (stateToStateChangeScopeMap[state] != null) Log.w("Overwriting state action for state $state")
             stateToStateChangeScopeMap[state] = action

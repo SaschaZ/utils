@@ -8,11 +8,10 @@ import de.gapps.utils.testing.assertion.onFail
 import de.gapps.utils.testing.runTest
 import de.gapps.utils.time.delay
 import de.gapps.utils.time.duration.seconds
+import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.runBlocking
-import org.junit.Before
-import org.junit.Test
 
-class ContinuationTest {
+class ContinuationTest : AnnotationSpec() {
 
     private lateinit var continuation: Continuation
     private var continued = false

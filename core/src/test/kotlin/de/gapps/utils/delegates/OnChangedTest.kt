@@ -4,10 +4,9 @@ import de.gapps.utils.misc.asUnit
 import de.gapps.utils.testing.assertion.assert
 import de.gapps.utils.testing.assertion.onFail
 import de.gapps.utils.testing.runTest
-import org.junit.Before
-import org.junit.Test
+import io.kotlintest.specs.AnnotationSpec
 
-class OnChangedTest {
+class OnChangedTest : AnnotationSpec() {
 
     private var calledCnt: Int = 0
     private lateinit var delegate: OnChanged<Int>

@@ -1,15 +1,13 @@
 package de.gapps.utils.time
 
-import de.gapps.utils.time.base.minus
-import de.gapps.utils.time.base.plus
 import de.gapps.utils.time.base.div
+import de.gapps.utils.time.base.minus
 import de.gapps.utils.time.base.times
 import de.gapps.utils.time.duration.minutes
-import de.gapps.utils.time.duration.toDuration
 import de.gapps.utils.time.duration.years
-import org.junit.Test
+import io.kotlintest.specs.AnnotationSpec
 
-class TimeExTest {
+class TimeExTest : AnnotationSpec() {
 
     @Test
     fun testPrint() {

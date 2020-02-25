@@ -1,8 +1,8 @@
 package de.gapps.utils.misc
 
-import org.junit.Test
+import io.kotlintest.specs.AnnotationSpec
 
-class NumberExTest {
+class NumberExTest : AnnotationSpec() {
 
     @Test
     fun testIt() {

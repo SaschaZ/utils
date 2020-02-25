@@ -19,8 +19,8 @@ open class Observable<out T : Any?>(
  * [ReadWriteProperty] that can be used to add a read only observer to another property with the delegate pattern.
  *
  * Example:
- * ```
- *  class TestClass {
+ * ```kotlin
+ *  class Test : AnnotationSpec() {Class {
  *      val observable = ObservableDelegate("foo")
  *      private var internalVar by observable
  *  }
