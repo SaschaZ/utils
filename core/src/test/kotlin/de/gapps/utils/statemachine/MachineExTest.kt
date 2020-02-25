@@ -3,18 +3,29 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.log.logV
+import de.gapps.utils.misc.name
 import de.gapps.utils.statemachine.MachineExTest.State.*
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
 import de.gapps.utils.statemachine.scopes.div
-import de.gapps.utils.statemachine.scopes.plus
-import de.gapps.utils.statemachine.scopes.times
-import de.gapps.utils.statemachine.scopes.withParameter
+import de.gapps.utils.statemachine.scopes.lvl0.on
+import de.gapps.utils.statemachine.scopes.lvl0.set
+import de.gapps.utils.statemachine.scopes.lvl1.event
+import de.gapps.utils.statemachine.scopes.lvl1.events
+import de.gapps.utils.statemachine.scopes.lvl1.state
+import de.gapps.utils.statemachine.scopes.lvl2.withState
+import de.gapps.utils.statemachine.scopes.lvl2.withStates
+import de.gapps.utils.statemachine.scopes.lvl3.changeStateTo
+import de.gapps.utils.statemachine.scopes.lvl3.execute
 import de.gapps.utils.testing.assertion.assert
-import org.junit.Test
+import de.gapps.utils.testing.runTest
+import io.kotlintest.specs.AnnotationSpec
 
-class MachineExTest {
+
+class MachineExTest : AnnotationSpec() {
 
     sealed class State : IState {
+        override fun toString(): String = this::class.name
+
         object INITIAL : State()
         object A : State()
         object B : State()
@@ -22,63 +33,67 @@ class MachineExTest {
         object D : State()
     }
 
-    sealed class TestEvent : Event<String, String>() {
-        object FIRST : TestEvent() { init {
-            put("foo", "test it")
-        }
-        }
+    sealed class TestEvent : Event() {
+        override fun toString(): String = this::class.name
 
+        object FIRST : TestEvent()
         object SECOND : TestEvent()
         object THIRD : TestEvent()
         object FOURTH : TestEvent()
     }
 
     @Test
-    fun testIt() {
+    fun testBuilder() = runTest {
         var executed = false
-        machineEx<String, String, Event<String, String>, State>(
+        machineEx<Event, State>(
             INITIAL
         ) {
-            on event FIRST withState INITIAL changeTo A logV { m = "key=$it" }
-            on events FIRST / SECOND / THIRD withStates A / B changeTo C
-            on event THIRD withState C run { D }
-            on event FOURTH withState D changeTo B
+            on event FIRST withState INITIAL changeStateTo A logV { m = "key=$it" }
+            on events FIRST / SECOND / THIRD withStates A / B changeStateTo C
+            on event THIRD withState C execute { D }
+            on event FOURTH withState D changeStateTo B
             on state D runOnly { executed = true }
         }.run {
             state assert INITIAL
 
-            set event FIRST withParameter "foo" * "boo" + "moo" * "woo"
+            set event FOURTH
+            set event THIRD
+            set event FOURTH
+            set event THIRD
+            set event FOURTH
+            set event THIRD
+            set event FOURTH
+            set eventSync FIRST
             state assert A
             executed assert false
 
-            set event SECOND
+            set eventSync SECOND
             state assert C
             executed assert false
 
-            set event THIRD
+            set eventSync THIRD
             state assert D
             executed assert false
 
-            set event FOURTH
+            set eventSync FOURTH
             state assert B
 
-            set event FIRST
+            set eventSync FIRST
             state assert C
         }
     }
 
     @Test
-    fun testCtor() {
-        MachineEx<String, String, Event<String, String>, State>(
+    fun testConstructor() = runTest {
+        MachineEx<Event, State>(
             INITIAL
         ) { e ->
-            (e::class.isInstance(FIRST)
-                    && state::class.isInstance(INITIAL)).let {
+            (e == FIRST && state == INITIAL).let {
                 if (it) A else throw IllegalStateException("")
             }
         }.run {
-            set event FIRST
-            A assert state
+            set eventSync FIRST
+            state assert A
         }
     }
 }

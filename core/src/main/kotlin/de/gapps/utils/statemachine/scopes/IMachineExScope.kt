@@ -2,53 +2,25 @@
 
 package de.gapps.utils.statemachine.scopes
 
+import de.gapps.utils.coroutines.builder.launchEx
+import de.gapps.utils.coroutines.scope.CoroutineScopeEx
 import de.gapps.utils.statemachine.IEvent
 import de.gapps.utils.statemachine.IState
+import de.gapps.utils.statemachine.scopes.lvl1.IStateScope
+import de.gapps.utils.statemachine.scopes.lvl1.StateChangeScope
+import de.gapps.utils.statemachine.scopes.lvl4.EventChangeScope
 
 /**
  * Scope that provides easy dsl to define state machine behaviour.
  */
-interface IMachineExScope<out E : IEvent<*, *>, out S : IState> {
+interface IMachineExScope<out E : IEvent, out S : IState> {
 
-    /**************
-     *   OnScope  *
-     **************/
-
-    val on: IOnScope<E, S>
-        get() = OnScope(this)
-
-    infix fun IOnScope<@UnsafeVariance E, @UnsafeVariance S>.event(event: @UnsafeVariance E) =
-        EventScope(this, event)
-
-    infix fun IOnScope<@UnsafeVariance E, @UnsafeVariance S>.events(events: List<@UnsafeVariance E>) =
-        EventScope(this, events)
-
-
-    /*****************
-     *   EventScope  *
-     *****************/
-
-    infix fun IEventScope<@UnsafeVariance E, @UnsafeVariance S>.withState(state: @UnsafeVariance S) =
-        EventStateScope(this, state)
-
-    infix fun IEventScope<@UnsafeVariance E, @UnsafeVariance S>.withStates(states: List<@UnsafeVariance S>) =
-        EventStateScope(this, states)
+    val scope: CoroutineScopeEx
 
 
     /**********************
      *   EventStateScope  *
      **********************/
-
-    infix fun IEventStateScope<@UnsafeVariance E, @UnsafeVariance S>.run(
-        action: EventChangeScope<@UnsafeVariance E, @UnsafeVariance S>.() -> @UnsafeVariance S
-    ) = addMapping(events, states, action)
-
-    infix fun IEventStateScope<@UnsafeVariance E, @UnsafeVariance S>.runOnly(
-        action: EventChangeScope<@UnsafeVariance E, @UnsafeVariance S>.() -> Unit
-    ) = addMapping(events, states) { action(); states.first() }
-
-    infix fun IEventStateScope<@UnsafeVariance E, @UnsafeVariance S>.changeTo(toState: @UnsafeVariance S) =
-        addMapping(events, states) { toState }
 
     fun addMapping(
         events: List<@UnsafeVariance E>,
@@ -61,15 +33,13 @@ interface IMachineExScope<out E : IEvent<*, *>, out S : IState> {
      *   StateScope  *
      *****************/
 
-    infix fun IOnScope<@UnsafeVariance E, @UnsafeVariance S>.state(state: @UnsafeVariance S) =
-        StateScope(this, state)
-
-    infix fun IOnScope<@UnsafeVariance E, @UnsafeVariance S>.states(states: List<@UnsafeVariance S>) =
-        StateScope(this, states)
-
     infix fun IStateScope<@UnsafeVariance E, @UnsafeVariance S>.runOnly(
         action: StateChangeScope<@UnsafeVariance S>.() -> Unit
     ) = addMapping(states, action)
+
+    infix fun IStateScope<@UnsafeVariance E, @UnsafeVariance S>.runOnlyS(
+        action: StateChangeScope<@UnsafeVariance S>.() -> Unit
+    ) = scope.launchEx { addMapping(states, action) }
 
     fun addMapping(
         states: @UnsafeVariance List<@UnsafeVariance S>,

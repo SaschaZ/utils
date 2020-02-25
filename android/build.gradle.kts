@@ -44,12 +44,13 @@ dependencies {
         api(core)
 
         implementation(multidex)
-        implementation(kotlin)
-        implementation(coroutinesJdk)
-        implementation(coroutinesAndroid)
         implementation(androidXappCompat)
         implementation(androidXcoreKtx)
         implementation(androidXconstraintLayout)
+
+        implementation(kotlin)
+        implementation(coroutinesJdk)
+        implementation(coroutinesAndroid)
 
         implementation(testing)
         implementation(androidXtestEspressoCore)

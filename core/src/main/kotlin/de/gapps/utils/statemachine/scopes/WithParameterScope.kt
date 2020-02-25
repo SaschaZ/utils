@@ -1,15 +1,16 @@
 package de.gapps.utils.statemachine.scopes
 
 import de.gapps.utils.statemachine.IEvent
+import de.gapps.utils.statemachine.scopes.lvl0.ISetScope
 
 
-interface IWithParameterScope<out K : Any, out V : Any> {
-    val params: List<Pair<K, V>>
+interface IWithParameterScope {
+    val params: List<Pair<String, String>>
 }
 
-class WithParameterScope<out K : Any, out V : Any>(scope: IWithParameterScope<K, V>) :
-    IWithParameterScope<K, V> by scope
+class WithParameterScope(scope: IWithParameterScope) :
+    IWithParameterScope by scope
 
-infix fun <K : Any, V : Any> ISetScope<K, V, IEvent<K, V>>.withParameter(params: List<Pair<K, V>>) {
-    event.putAll(params)
+infix fun ISetScope<IEvent>.withParameter(params: List<Pair<String, String>>) {
+//    event.putAll(params)
 }

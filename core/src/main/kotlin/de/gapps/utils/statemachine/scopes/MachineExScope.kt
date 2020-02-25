@@ -1,10 +1,15 @@
 package de.gapps.utils.statemachine.scopes
 
+import de.gapps.utils.coroutines.scope.CoroutineScopeEx
+import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import de.gapps.utils.log.Log
 import de.gapps.utils.statemachine.IEvent
 import de.gapps.utils.statemachine.IState
+import de.gapps.utils.statemachine.scopes.lvl1.StateChangeScope
+import de.gapps.utils.statemachine.scopes.lvl4.EventChangeScope
 
-open class MachineExScope<out E : IEvent<*, *>, out S : IState> : IMachineExScope<E, S> {
+open class MachineExScope<out E : IEvent, out S : IState>(override val scope: CoroutineScopeEx = DefaultCoroutineScope()) :
+    IMachineExScope<E, S> {
 
     private val eventStatePairToEventChangeScopeMap = HashMap<Pair<@UnsafeVariance E, @UnsafeVariance S>,
             EventChangeScope<@UnsafeVariance E, @UnsafeVariance S>.() -> @UnsafeVariance S>()

@@ -1,90 +1,86 @@
+@file:Suppress("MemberVisibilityCanBePrivate")
+
 package de.gapps.utils.statemachine
 
-import de.gapps.utils.delegates.OnChangedScope
-import de.gapps.utils.log.Log
-import de.gapps.utils.log.logV
-import de.gapps.utils.misc.ifN
-import de.gapps.utils.observable.Controllable
-import de.gapps.utils.observable.Controller
-import de.gapps.utils.observable.IControllable
-import de.gapps.utils.statemachine.scopes.*
+import de.gapps.utils.coroutines.builder.launchEx
+import de.gapps.utils.coroutines.scope.CoroutineScopeEx
+import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
+import de.gapps.utils.misc.asUnit
+import de.gapps.utils.statemachine.scopes.lvl0.IOnEventScope
+import de.gapps.utils.statemachine.scopes.lvl0.OnEventScope
+import de.gapps.utils.statemachine.scopes.lvl4.EventChangeScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Simple state machine.
- *
- *
- *
- * @param initialState The state machine is initialized with this state. This will not trigger any actions.
- * @property eventActionMapping Callback that is used to get the new state when an event comes in.
+ * Base interface for an event of [IMachineEx]
  */
-open class MachineEx<out K : Any, out V : Any, out E : IEvent<K, V>, out S : IState>(
-    initialState: S,
-    private val eventActionMapping: IOnEventScope<E, S>.(E) -> S
-) : IMachineEx<K, V, E, S> {
+interface IEvent : MutableMap<String, String>
 
-    @Suppress("ClassName")
-    object INITIAL_EVENT : Event<String, String>()
-
-    private val recentChanges = ArrayList<EventChangeScope<E, S>>()
-
-    @Suppress("UNCHECKED_CAST")
-    private val eventHost: IControllable<E> = Controllable(INITIAL_EVENT as E) {
-        it.processEvent().processState()
-    }
-
-    override var event: @UnsafeVariance E by eventHost
-
-    override val set: ISetScope<K, V, @UnsafeVariance E>
-        get() = SetScope(eventHost)
-
-    private var stateHost = Controllable<S>(initialState)
-    override val state: S by stateHost
-
-    protected open fun @UnsafeVariance E.processEvent(): S =
-        OnEventScope(this, state, recentChanges).run { eventActionMapping(this@processEvent) }
-
-    protected open fun @UnsafeVariance S.processState() {
-        stateHost.value = this
-    }
-
-    override fun observeEvent(observer: Controller<@UnsafeVariance S>) =
-        eventHost.control {
-            OnChangedScope(
-                value,
-                thisRef,
-                previousValue,
-                previousValues.filterNotNull(),
-                { })
-        }
-
-    override fun observeState(observer: Controller<@UnsafeVariance S>) =
-        stateHost.control(observer)
-}
+open class Event : IEvent, MutableMap<String, String> by HashMap()
 
 /**
- * Builder for MachineEx. Allows building of event action mapping with a simple DSL instead of providing it in a List.
+ * Base interface for a state of [IMachineEx]
  */
-inline fun <reified K : Any, reified V : Any, reified E : IEvent<K, V>, reified S : IState> machineEx(
-    initialState: S,
-    checkEventForType: Boolean = false,
-    checkStateForType: Boolean = false,
-    builder: MachineExScope<E, S>.() -> Unit
-): IMachineEx<K, V, E, S> {
-    return MachineExScope<E, S>().run {
-        builder()
-        MachineEx<K, V, E, S>(initialState) { e ->
-            EventChangeScope(event, state).run rt@{
-                val fittingPair = eventStateMapping.entries.firstOrNull {
-                    it.key.run {
-                        if (checkEventForType) e::class.isInstance(first) else e == first
-                                && if (checkStateForType) state::class.isInstance(second) else state == second
-                    }
-                }
-                fittingPair?.value?.invoke(this) logV { m = "$this -> $it" } ifN {
-                    Log.w("No state defined for event $event with state $state.")
-                    state
-                }
-            }
+interface IState
+
+open class MachineEx<out EventType : IEvent, out StateType : IState>(
+    private val initialState: StateType,
+    protected val scope: CoroutineScopeEx = DefaultCoroutineScope(),
+    val findStateForEvent: IOnEventScope<@UnsafeVariance EventType,
+            @UnsafeVariance StateType>.(event: @UnsafeVariance EventType) -> StateType? = { null }
+) {
+    private val eventMutex = Mutex()
+    private val eventChannel = Channel<EventType>(Channel.BUFFERED)
+    var event: @UnsafeVariance EventType?
+        get() = previousEvents.lastOrNull()
+        set(value) = value?.also {
+            submittedEventCount.incrementAndGet()
+            scope.launchEx(mutex = eventMutex) { eventChannel.send(value) }
+        }.asUnit()
+    val previousEvents: List<EventType>
+        get() = mutablePreviousEvents
+    private val mutablePreviousEvents = ArrayList<EventType>()
+
+    private val submittedEventCount = AtomicInteger(0)
+    private val processedEventCount = AtomicInteger(0)
+    val isProcessingActive: Boolean
+        get() = submittedEventCount.get() != processedEventCount.get()
+
+    val state: StateType
+        get() = previousStates.lastOrNull() ?: initialState
+    val previousStates: List<StateType>
+        get() = mutablePreviousStates
+    private val mutablePreviousStates = ArrayList<StateType>()
+
+    val previousChanges: List<EventChangeScope<@UnsafeVariance EventType, @UnsafeVariance StateType>>
+        get() = mutablePreviousStateChanges
+    private val mutablePreviousStateChanges =
+        ArrayList<EventChangeScope<@UnsafeVariance EventType, @UnsafeVariance StateType>>()
+
+    init {
+        scope.launchEx {
+            for (eventType in eventChannel) eventType.processEvent()
         }
+    }
+
+    private fun @UnsafeVariance EventType.processEvent() {
+        OnEventScope(this, state, previousChanges).findStateForEvent(this)?.also { targetState ->
+            mutablePreviousStates.add(targetState)
+            event?.let { mutablePreviousStateChanges.add(EventChangeScope(it, state)).asUnit() }
+        }
+        processedEventCount.incrementAndGet()
+        if (!isProcessingActive) scope.launch { finishedProcessingEvent.send(true) }
+    }
+
+    private val finishedProcessingEvent = Channel<Boolean>()
+
+    open fun release() = scope.cancel().asUnit()
+
+    suspend fun suspendUtilProcessingFinished() {
+        while (isProcessingActive) finishedProcessingEvent.receive()
     }
 }
