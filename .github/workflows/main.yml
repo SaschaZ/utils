@@ -9,7 +9,16 @@ jobs:
   assembe:
     runs-on: ubuntu-lates;
      steps:
-     - uses: actions/checkout@master
-     - uses: OrangeLabs-moe/gradle-actions@v5.0-openjdk-8
-      with:
-       args: publishToMavenLocal
+     - name: Gradle Command
+  uses: eskatos/gradle-command-action@v1
+  with:
+    # Path to the Gradle Wrapper directory
+    wrapper-directory: # optional
+    # Path to the Gradle executable
+    gradle-executable: # optional
+    # Gradle version to use
+    gradle-version: # optional
+    # Path to the root directory of the build
+    build-root-directory: # optional
+    # Gradle command line arguments, see gradle --help
+    arguments: # optional
