@@ -2,8 +2,14 @@ name: CI
 
 on: [push]
 
+branches:
+  - master
+    
 jobs:
-  runs-on: ubuntu-lates;
-  
-build; 
-
+  assembe:
+    runs-on: ubuntu-lates;
+     steps:
+      - uses: actions/checkout@master
+      - uses: OrangeLabs-moe/gradle-actions@v5.0-openjdk-8
+      with:
+        args: publishToMavenLocal
