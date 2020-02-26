@@ -3,18 +3,7 @@ name: CI
 on: [push]
 
 jobs:
-  build:
+  runs-on: ubuntu-lates;
+  
+build; 
 
-    runs-on: ubuntu-latest
-
-  steps:
-    - name: GitHub Action for Build
-  uses: buildtool/build-action@v1
-  with:
-    # specify Dockerfile to use
-    dockerfile: # optional, default is Dockerfile
-    # docker build-args arguments
-    docker-build-args: # optional
-      - name: One Click Docker
-                      
-    uses: pangzineng/Github-Action-One-Click-Docker@v1.1.1
