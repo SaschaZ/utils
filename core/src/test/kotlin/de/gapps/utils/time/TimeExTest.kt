@@ -5,9 +5,9 @@ import de.gapps.utils.time.base.minus
 import de.gapps.utils.time.base.times
 import de.gapps.utils.time.duration.minutes
 import de.gapps.utils.time.duration.years
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
-class TimeExTest : AnnotationSpec() {
+class TimeExTest {
 
     @Test
     fun testPrint() {

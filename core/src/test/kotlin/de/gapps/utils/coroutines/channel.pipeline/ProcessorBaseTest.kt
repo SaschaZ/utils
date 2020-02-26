@@ -11,9 +11,9 @@ import de.gapps.utils.testing.runTest
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel.Factory.RENDEZVOUS
 import kotlinx.coroutines.runBlocking
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 abstract class ProcessorBaseTest(
     protected val type: ParallelProcessingType = ParallelProcessingType.UNIQUE,
@@ -30,7 +30,7 @@ abstract class ProcessorBaseTest(
     protected open lateinit var testConsumer: Consumer<String>
     protected lateinit var consumeValues: ArrayList<IPipeValue<String>>
 
-    @Before
+    @BeforeEach
     open fun before() = runBlocking {
         scope = DefaultCoroutineScope()
         params = ProcessingParams(
@@ -63,7 +63,7 @@ abstract class ProcessorBaseTest(
         }
     }.asUnit()
 
-    @After
+    @AfterEach
     open fun after() {
         scope.cancel()
     }

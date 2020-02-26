@@ -11,7 +11,7 @@ object Libs  {
     val DependencyHandler.jdk
         get() = project(":jdk")
     val DependencyHandler.jdkTesting
-        get() = project(":core-testing")
+        get() = project(":jdk-testing")
     val DependencyHandler.android
         get() = project(":android")
     val DependencyHandler.androidTesting

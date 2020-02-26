@@ -4,9 +4,9 @@ import de.gapps.utils.testing.runTest
 import de.gapps.utils.time.delay
 import de.gapps.utils.time.duration.milliseconds
 import de.gapps.utils.time.duration.seconds
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
-internal class LogFilterProxyTest : AnnotationSpec() {
+internal class LogFilterProxyTest {
 
     @Test
     fun testMessageWrapper() = runTest(100.seconds) {

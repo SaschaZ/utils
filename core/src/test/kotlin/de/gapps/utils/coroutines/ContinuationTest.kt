@@ -8,15 +8,16 @@ import de.gapps.utils.testing.assertion.onFail
 import de.gapps.utils.testing.runTest
 import de.gapps.utils.time.delay
 import de.gapps.utils.time.duration.seconds
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-class ContinuationTest : AnnotationSpec() {
+class ContinuationTest {
 
     private lateinit var continuation: Continuation
     private var continued = false
 
-    @Before
+    @BeforeEach
     fun before() = runBlocking {
         continuation = Continuation()
         continued = false

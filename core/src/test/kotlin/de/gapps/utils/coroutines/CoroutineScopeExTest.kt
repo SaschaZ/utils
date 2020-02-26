@@ -4,13 +4,13 @@ import de.gapps.utils.misc.asUnit
 import de.gapps.utils.testing.TestCoroutineScope
 import de.gapps.utils.time.delay
 import de.gapps.utils.time.duration.milliseconds
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Test
 
-class CoroutineScopeExTest : AnnotationSpec() {
+class CoroutineScopeExTest {
 
     @Test
     fun testExecute() = runBlocking {

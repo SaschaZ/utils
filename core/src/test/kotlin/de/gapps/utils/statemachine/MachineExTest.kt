@@ -11,10 +11,10 @@ import de.gapps.utils.statemachine.scopes.plus
 import de.gapps.utils.statemachine.scopes.unaryPlus
 import de.gapps.utils.testing.assertion.assert
 import de.gapps.utils.testing.runTest
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
 
-class MachineExTest : AnnotationSpec() {
+class MachineExTest {
 
     sealed class TestState : IState {
         override fun toString(): String = this::class.name

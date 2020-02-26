@@ -8,9 +8,9 @@ import de.gapps.utils.time.duration.IDurationEx
 import de.gapps.utils.time.duration.minutes
 import de.gapps.utils.time.duration.weeks
 import de.gapps.utils.time.progression.step
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
-class TimeProgressionTest : AnnotationSpec() {
+class TimeProgressionTest {
 
     @Test
     fun testInit() {

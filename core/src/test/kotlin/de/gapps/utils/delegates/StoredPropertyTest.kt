@@ -2,17 +2,19 @@ package de.gapps.utils.delegates
 
 import de.gapps.utils.misc.asUnit
 import de.gapps.utils.testing.runTest
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-class StoredPropertyTest : AnnotationSpec() {
+class StoredPropertyTest {
 
-    @Before
+    @BeforeEach
     fun before() = runBlocking {
 
     }.asUnit()
 
-    @After
+    @AfterEach
     fun after() = runBlocking {
 
     }.asUnit()

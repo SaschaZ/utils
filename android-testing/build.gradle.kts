@@ -6,7 +6,7 @@ plugins {
     kotlin("android")
     id("kotlin-android-extensions")
     id("maven-publish")
-    id("org.jetbrains.dokka") version "0.10.0"
+    id("org.jetbrains.dokka")
 //    id("digital.wup.android-maven-publish")
 //    id("com.kezong.fat-aar")
 }

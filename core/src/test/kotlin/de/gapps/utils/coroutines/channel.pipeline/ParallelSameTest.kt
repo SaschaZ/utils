@@ -2,7 +2,7 @@ package de.gapps.utils.coroutines.channel.pipeline
 
 import de.gapps.utils.testing.runTest
 import de.gapps.utils.time.duration.seconds
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 class ParallelSameTest : ProcessorBaseTest(

@@ -4,7 +4,7 @@ import de.gapps.utils.configurePublishing
 plugins {
     kotlin("jvm")
     id("maven-publish")
-    id("org.jetbrains.dokka") version "0.10.0"
+    id("org.jetbrains.dokka")
 //    id("digital.wup.android-maven-publish")
 //    id("com.kezong.fat-aar")
 }

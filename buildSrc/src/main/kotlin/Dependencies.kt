@@ -10,9 +10,10 @@ object Dependencies {
             add("testImplementation", kotlinTest)
             add("testImplementation", kotlinTestRunnerJunit5)
 
+            add("testImplementation", mockk)
             add("testImplementation", koinTest)
 
-            add("testRuntimeOnly", junitJupiterEngine)
+            add("testImplementation", junitJupiterEngine)
         }
     }
 

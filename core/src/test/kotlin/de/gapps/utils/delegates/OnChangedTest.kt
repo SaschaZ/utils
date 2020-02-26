@@ -4,9 +4,10 @@ import de.gapps.utils.misc.asUnit
 import de.gapps.utils.testing.assertion.assert
 import de.gapps.utils.testing.assertion.onFail
 import de.gapps.utils.testing.runTest
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-class OnChangedTest : AnnotationSpec() {
+class OnChangedTest {
 
     private var calledCnt: Int = 0
     private lateinit var delegate: OnChanged<Int>
@@ -14,7 +15,7 @@ class OnChangedTest : AnnotationSpec() {
     private var toTestOnChangeOldVar: Int? = null
     private var toTestOnChangeNewVar: Int? = null
 
-    @Before
+    @BeforeEach
     fun before() {
         calledCnt = 0
         toTestOnChangeOldVar = null
