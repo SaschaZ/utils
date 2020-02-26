@@ -3,7 +3,7 @@ package de.gapps.utils.misc
 import kotlin.reflect.KClass
 
 /**
- * Can be used to handle a "else when null" case without the need of calling `.invoke()`
+ * Can be used to handle a "else when null" case without the need of calling `.invoke()`.
  *
  * Example:
  * ```kotlin

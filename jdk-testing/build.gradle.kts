@@ -5,20 +5,17 @@ plugins {
     kotlin("jvm")
     id("maven-publish")
     id("org.jetbrains.dokka") version "0.10.0"
+//    id("digital.wup.android-maven-publish")
+//    id("com.kezong.fat-aar")
 }
 
 dependencies {
-    with(Libs) {
+    Libs.run {
         implementation(kotlin)
-        implementation(coroutinesAndroid)
-        implementation(coroutinesSwing)
+        implementation(coroutinesJdk)
 
-        implementation(koin)
-        implementation(jackson)
-        implementation(slf4jSimple)
+        with(Dependencies) { kotlinTesting() }
     }
-
-    with(Dependencies) { kotlinTesting() }
 }
 
 tasks {
@@ -28,4 +25,4 @@ tasks {
     }
 }
 
-configurePublishing(JAR, "core")
+configurePublishing(JAR, "jdk-testing")

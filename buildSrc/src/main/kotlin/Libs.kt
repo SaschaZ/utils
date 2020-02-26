@@ -5,15 +5,17 @@ import org.gradle.kotlin.dsl.project
 
 object Libs  {
     val DependencyHandler.core
-        get() = project(":core", "default")
-    val DependencyHandler.console
-        get() = project(":console")
-    val DependencyHandler.testing
-        get() = project(":testing")
-    val DependencyHandler.channels
-        get() = project(":channels")
+        get() = project(":core")
+    val DependencyHandler.coreTesting
+        get() = project(":core-testing")
+    val DependencyHandler.jdk
+        get() = project(":jdk")
+    val DependencyHandler.jdkTesting
+        get() = project(":core-testing")
     val DependencyHandler.android
         get() = project(":android")
+    val DependencyHandler.androidTesting
+        get() = project(":android-testing")
 
     val kotlin = "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${Versions.kotlin}"
     val kotlinTest = "org.jetbrains.kotlin:kotlin-test:${Versions.kotlin}"

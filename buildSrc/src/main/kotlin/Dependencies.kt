@@ -2,24 +2,28 @@ import org.gradle.api.artifacts.dsl.DependencyHandler
 
 object Dependencies {
 
-    fun DependencyHandler.fullTesting() {
+    fun DependencyHandler.kotlinTesting() {
         Libs.apply {
-            add("testImplementation", testing)
+            add("testImplementation", coreTesting)
 
+            add("testImplementation", coroutinesCore)
             add("testImplementation", kotlinTest)
             add("testImplementation", kotlinTestRunnerJunit5)
-//            add("testImplementation", coroutinesCore)
 
             add("testImplementation", koinTest)
 
+            add("testImplementation", kotlinTestRunnerJunit5)
+            add("testRuntimeOnly", junitJupiterEngine)
+        }
+    }
+
+    fun DependencyHandler.androidTesting() {
+        Libs.apply {
             add("testImplementation", androidXtestCore)
             add("testImplementation", androidXtestRules)
             add("testImplementation", androidXtestRunner)
             add("testImplementation", androidXtestEspressoCore)
             add("testImplementation", androidXtestExt)
-
-            add("testImplementation", mockk)
-            add("testRuntimeOnly", junitJupiterEngine)
         }
     }
 }

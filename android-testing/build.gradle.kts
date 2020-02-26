@@ -21,7 +21,6 @@ android {
         versionCode = Android.versionCode
         versionName = Android.versionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        missingDimensionStrategy("dev.zieger.utils:core", "release")
     }
     buildTypes {
         getByName("release") {
@@ -42,10 +41,9 @@ android {
     }
 }
 
+
 dependencies {
     Libs.run {
-        api(core)
-
         implementation(multidex)
         implementation(androidXappCompat)
         implementation(androidXcoreKtx)
@@ -54,7 +52,11 @@ dependencies {
         implementation(kotlin)
         implementation(coroutinesAndroid)
 
-        androidTestImplementation(androidTesting)
+        implementation(androidXtestEspressoCore)
+        implementation(androidXtestRunner)
+        implementation(androidXtestCore)
+        implementation(androidXtestRules)
+
         androidTestImplementation(androidXtestEspressoCore)
         androidTestImplementation(androidXtestRunner)
         androidTestImplementation(androidXtestCore)
@@ -71,4 +73,4 @@ tasks {
     }
 }
 
-configurePublishing(AAR, "android")
+configurePublishing(AAR, "android-testing")

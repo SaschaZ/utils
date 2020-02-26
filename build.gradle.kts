@@ -1,8 +1,12 @@
 buildscript {
     repositories {
+        mavenLocal()
         mavenCentral()
         google()
         jcenter()
+        maven { url = uri("https://jitpack.io") }
+        maven { url = uri("https://kotlin.bintray.com/ktor") }
+        maven { url = uri("https://kotlin.bintray.com/kotlinx") }
     }
     dependencies {
         classpath("com.android.tools.build:gradle:3.4.2")
