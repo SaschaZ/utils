@@ -9,7 +9,7 @@ jobs:
   assembe:
     runs-on: ubuntu-lates;
      steps:
-      - uses: actions/checkout@master
-      - uses: OrangeLabs-moe/gradle-actions@v5.0-openjdk-8
-      with:
-        args: publishToMavenLocal
+        - uses: actions/checkout@master
+        - uses: OrangeLabs-moe/gradle-actions@v5.0-openjdk-8
+          with:
+            args: publishToMavenLocal
