@@ -10,8 +10,7 @@ plugins {
 dependencies {
     with(Libs) {
         implementation(kotlin)
-        implementation(coroutinesAndroid)
-        implementation(coroutinesSwing)
+        implementation(coroutinesJdk)
 
         implementation(koin)
         implementation(jackson)

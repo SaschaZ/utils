@@ -2,7 +2,6 @@ package de.gapps.utils.coroutines.scope
 
 import de.gapps.utils.coroutines.scope.ICoroutineScopeEx.Companion.DEFAULT_NAME
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.swing.Swing
 
 
 open class DefaultCoroutineScope(
@@ -20,7 +19,3 @@ open class IoCoroutineScope(
 open class UnconfinedCoroutineScope(
     scopeName: String = DEFAULT_NAME
 ) : CoroutineScopeEx(scopeName, Dispatchers.Unconfined)
-
-open class SwingCoroutineScope(
-    scopeName: String = DEFAULT_NAME
-) : CoroutineScopeEx(scopeName, Dispatchers.Swing)

@@ -57,12 +57,9 @@ dependencies {
         implementation(androidXtestCore)
         implementation(androidXtestRules)
 
-        androidTestImplementation(androidXtestEspressoCore)
-        androidTestImplementation(androidXtestRunner)
-        androidTestImplementation(androidXtestCore)
-        androidTestImplementation(androidXtestRules)
         androidTestImplementation(mockWebServer)
         androidTestImplementation(bouncyCastle)
+        with(Dependencies) { androidTesting() }
     }
 }
 

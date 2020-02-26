@@ -54,13 +54,9 @@ dependencies {
         implementation(kotlin)
         implementation(coroutinesAndroid)
 
-        androidTestImplementation(androidTesting)
-        androidTestImplementation(androidXtestEspressoCore)
-        androidTestImplementation(androidXtestRunner)
-        androidTestImplementation(androidXtestCore)
-        androidTestImplementation(androidXtestRules)
         androidTestImplementation(mockWebServer)
         androidTestImplementation(bouncyCastle)
+        with(Dependencies) { androidTesting() }
     }
 }
 

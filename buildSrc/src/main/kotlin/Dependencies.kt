@@ -12,7 +12,6 @@ object Dependencies {
 
             add("testImplementation", koinTest)
 
-            add("testImplementation", kotlinTestRunnerJunit5)
             add("testRuntimeOnly", junitJupiterEngine)
         }
     }

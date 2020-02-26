@@ -17,13 +17,8 @@ dependencies {
 
         implementation("com.squareup.okhttp3:mockwebserver:4.3.1")
         implementation("org.bouncycastle:bcprov-jdk16:1.46")
-        implementation("androidx.test:rules:1.2.0")
-        implementation("androidx.test:runner:1.2.0")
-        implementation("androidx.test.espresso:espresso-core:3.2.0")
-        implementation("androidx.test:core:1.2.0")
 
-        testImplementation(project(":core"))
-        testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
+        with(Dependencies) { kotlinTesting() }
     }
 }
 
