@@ -2,12 +2,12 @@
 
 package de.gapps.utils.observables
 
+import de.gapps.utils.core_testing.assertion.assert
+import de.gapps.utils.core_testing.assertion.onFail
+import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.log.Log
 import de.gapps.utils.observable.Observable
-import de.gapps.utils.testing.assertion.assert
-import de.gapps.utils.testing.assertion.onFail
-import de.gapps.utils.testing.runTest
 import kotlinx.coroutines.delay
 import org.junit.jupiter.api.Test
 

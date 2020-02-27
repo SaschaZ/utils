@@ -24,6 +24,10 @@ fun Project.configurePublishing(type: LibraryType, name: String) {
         AAR -> configureAarPublishing(name)
         JAR -> configureJarPublishing(name)
     }
+
+//    tasks.findByName("assembleAndroidTest")?.also {
+//        tasks.replace("assembleAndroidTest")
+//    }
 }
 
 internal fun Project.configureJarPublishing(name: String) {

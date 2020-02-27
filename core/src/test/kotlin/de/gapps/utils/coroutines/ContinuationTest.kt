@@ -2,10 +2,10 @@
 
 package de.gapps.utils.coroutines
 
+import de.gapps.utils.core_testing.assertion.assert
+import de.gapps.utils.core_testing.assertion.onFail
+import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.coroutines.builder.launchEx
-import de.gapps.utils.testing.assertion.assert
-import de.gapps.utils.testing.assertion.onFail
-import de.gapps.utils.testing.runTest
 import de.gapps.utils.time.delay
 import de.gapps.utils.time.duration.seconds
 import kotlinx.coroutines.runBlocking

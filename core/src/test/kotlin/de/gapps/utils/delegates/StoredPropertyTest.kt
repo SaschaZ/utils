@@ -1,7 +1,7 @@
 package de.gapps.utils.delegates
 
+import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.misc.asUnit
-import de.gapps.utils.testing.runTest
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach

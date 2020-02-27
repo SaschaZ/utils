@@ -9,7 +9,7 @@ plugins {
 
 dependencies {
     Libs.run {
-        api(core)
+        implementation(core)
 
         implementation(kotlin)
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.3")

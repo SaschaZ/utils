@@ -1,4 +1,4 @@
-package de.gapps.utils.testing.assertion
+package de.gapps.utils.core_testing.assertion
 
 
 infix fun String.assert(expected: Regex) =

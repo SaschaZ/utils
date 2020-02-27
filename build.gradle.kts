@@ -11,8 +11,6 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:3.4.2")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.61")
-//        classpath("digital.wup:android-maven-publish:3.6.2")
-//        classpath("com.kezong:fat-aar:1.2.8")
     }
 }
 

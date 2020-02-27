@@ -2,12 +2,12 @@
 
 package de.gapps.utils.coroutines.channel.pipeline
 
+import de.gapps.utils.core_testing.assertion.assert
+import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.coroutines.channel.parallel.ParallelProcessor
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import de.gapps.utils.coroutines.scope.ICoroutineScopeEx
 import de.gapps.utils.misc.asUnit
-import de.gapps.utils.testing.assertion.assert
-import de.gapps.utils.testing.runTest
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel.Factory.RENDEZVOUS
 import kotlinx.coroutines.runBlocking

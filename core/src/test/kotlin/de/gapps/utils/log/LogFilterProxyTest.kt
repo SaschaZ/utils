@@ -1,6 +1,6 @@
 package de.gapps.utils.log
 
-import de.gapps.utils.testing.runTest
+import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.time.delay
 import de.gapps.utils.time.duration.milliseconds
 import de.gapps.utils.time.duration.seconds

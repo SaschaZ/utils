@@ -2,7 +2,7 @@
 
 package de.gapps.utils.delegates
 
-import de.gapps.utils.testing.assertion.assert
+import de.gapps.utils.core_testing.assertion.assert
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 

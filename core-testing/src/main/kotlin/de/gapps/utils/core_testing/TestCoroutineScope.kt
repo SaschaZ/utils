@@ -1,6 +1,6 @@
 @file:Suppress("unused", "MemberVisibilityCanBePrivate")
 
-package de.gapps.utils.testing
+package de.gapps.utils.core_testing
 
 import de.gapps.utils.coroutines.scope.ICoroutineScopeEx
 import kotlinx.coroutines.CoroutineDispatcher

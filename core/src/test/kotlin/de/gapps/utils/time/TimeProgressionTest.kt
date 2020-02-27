@@ -1,6 +1,6 @@
 package de.gapps.utils.time
 
-import de.gapps.utils.testing.assertion.assert
+import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.time.base.div
 import de.gapps.utils.time.base.minus
 import de.gapps.utils.time.base.times

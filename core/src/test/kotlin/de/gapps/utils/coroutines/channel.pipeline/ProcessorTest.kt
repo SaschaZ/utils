@@ -1,8 +1,8 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
+import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.misc.asUnit
 import de.gapps.utils.misc.runEachIndexed
-import de.gapps.utils.testing.assertion.assert
 import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test

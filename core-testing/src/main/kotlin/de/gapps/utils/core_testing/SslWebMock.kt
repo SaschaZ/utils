@@ -1,4 +1,4 @@
-package de.gapps.utils.testing
+package de.gapps.utils.core_testing
 
 import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.executeNativeBlocking

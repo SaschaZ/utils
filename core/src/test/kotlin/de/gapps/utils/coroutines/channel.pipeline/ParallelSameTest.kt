@@ -1,6 +1,6 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.testing.runTest
+import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.time.duration.seconds
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals

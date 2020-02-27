@@ -1,4 +1,4 @@
-package de.gapps.utils.testing
+package de.gapps.utils.core_testing
 
 import de.gapps.utils.coroutines.withTimeout
 import de.gapps.utils.misc.asUnit

@@ -1,9 +1,9 @@
 package de.gapps.utils.delegates
 
+import de.gapps.utils.core_testing.assertion.assert
+import de.gapps.utils.core_testing.assertion.onFail
+import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.misc.asUnit
-import de.gapps.utils.testing.assertion.assert
-import de.gapps.utils.testing.assertion.onFail
-import de.gapps.utils.testing.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 

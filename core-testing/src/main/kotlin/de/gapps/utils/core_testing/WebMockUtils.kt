@@ -2,7 +2,6 @@
 
 package de.gapps.utils.core_testing
 
-import de.gapps.utils.testing.SslWebMock
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
 import java.io.InputStream

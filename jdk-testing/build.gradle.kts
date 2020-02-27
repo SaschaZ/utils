@@ -5,8 +5,6 @@ plugins {
     kotlin("jvm")
     id("maven-publish")
     id("org.jetbrains.dokka")
-//    id("digital.wup.android-maven-publish")
-//    id("com.kezong.fat-aar")
 }
 
 dependencies {

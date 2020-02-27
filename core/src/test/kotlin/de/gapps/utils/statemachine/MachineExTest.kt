@@ -2,6 +2,8 @@
 
 package de.gapps.utils.statemachine
 
+import de.gapps.utils.core_testing.assertion.assert
+import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.misc.name
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
 import de.gapps.utils.statemachine.MachineExTest.TestState.*
@@ -9,8 +11,6 @@ import de.gapps.utils.statemachine.scopes.definition.lvl0.on
 import de.gapps.utils.statemachine.scopes.manipulation.set
 import de.gapps.utils.statemachine.scopes.plus
 import de.gapps.utils.statemachine.scopes.unaryPlus
-import de.gapps.utils.testing.assertion.assert
-import de.gapps.utils.testing.runTest
 import org.junit.jupiter.api.Test
 
 
