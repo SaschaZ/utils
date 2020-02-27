@@ -59,4 +59,5 @@ ENV GRADLE_OPTS "-XX:+UseG1GC -XX:MaxGCPauseMillis=1000"
 ADD . /project
 WORKDIR /project
 RUN rm local.properties
+RUN .gradlew clean
 CMD ["./gradlew", "publishToMavenLocal"]
