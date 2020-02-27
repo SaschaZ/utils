@@ -13,7 +13,10 @@ object Dependencies {
             add("testImplementation", mockk)
             add("testImplementation", koinTest)
 
-            add("testImplementation", junitJupiterEngine)
+            add("testImplementation", "junit:junit:4.13")
+            add("testImplementation", "org.junit.vintage:junit-vintage-engine:5.6.0")
+            add("testImplementation", "org.junit.jupiter:junit-jupiter-api:5.6.0")
+            add("testImplementation", "org.junit.jupiter:junit-jupiter-engine:5.6.0")
         }
     }
 

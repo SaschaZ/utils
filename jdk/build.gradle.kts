@@ -17,6 +17,10 @@ dependencies {
 }
 
 tasks {
+    test {
+        useJUnitPlatform()
+    }
+
     dokka {
         outputFormat = "html"
         outputDirectory = "$buildDir/javadoc"
