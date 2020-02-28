@@ -13,5 +13,7 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
+    - name: setup-android
+      uses: msfjarvis/setup-android@0.2
     - name: Build with Gradle
       run: ./gradlew clean assemble
