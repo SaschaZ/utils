@@ -4,9 +4,9 @@ import de.gapps.utils.log.Log
 import de.gapps.utils.misc.asUnit
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import org.junit.Before
+import org.junit.jupiter.api.BeforeEach
 import org.junit.Ignore
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 
@@ -21,7 +21,7 @@ class HostTest : AnnotationSpec() {
 
     private lateinit var host: IHost
 
-    @Before
+    @BeforeEach
     fun before() = runBlocking {
         host = Host(Input<Int>("Host0Input0") + Output<Int>("Host0Output0"), "Host0")
     }.asUnit()

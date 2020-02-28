@@ -1,6 +1,8 @@
-object Versions  {
+package de.gapps.utils
+
+object Versions {
     val kotlin = "1.3.61"
-    val kotlinTestRunnerJunit5 = "3.4.2"
+    val kotest = "3.4.2"
 
     val coroutines = "1.3.3"
     val multidex = "2.0.1"
@@ -13,7 +15,6 @@ object Versions  {
     val slf4jSimple = "1.7.29"
     val mordant = "1.2.1"
     val progressbar = "0.8.0"
-
 
 
     val androidXtestEspressoCore = "3.2.0"

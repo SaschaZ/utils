@@ -6,9 +6,9 @@ import de.gapps.utils.time.duration.seconds
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import org.junit.Before
+import org.junit.jupiter.api.BeforeEach
 import org.junit.Ignore
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -18,7 +18,7 @@ class NodeTest : AnnotationSpec() {
     private val updatedInputValues = ArrayList<INodeValue<*>>()
     private val updatedIoPutValues = ArrayList<INodeValue<*>>()
 
-    @Before
+    @BeforeEach
     fun before() = runBlocking {
         updatedInputValues.clear()
         updatedIoPutValues.clear()

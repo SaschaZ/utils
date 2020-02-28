@@ -1,14 +1,14 @@
 package de.gapps.utils.core_testing.assertion
 
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertTrue
 
 class AssertEqualsScope<T : Any?>(
     override var expected: T,
     scope: ActualMessageScope<T>
 ) : IValidationScope<T, T>, IActualMessageScope<T> by scope {
     override fun validate() {
-        assertEquals(expected, actual, message())
+        assertEquals(message(), expected, actual)
     }
 }
 
@@ -18,6 +18,6 @@ class AssertRegexScope(
 ) : IValidationScope<String, String>, IActualMessageScope<String> by scope {
     override var expected: String = regex.pattern
     override fun validate() {
-        assertTrue(actual.matches(regex), message())
+        assertTrue(message(), actual.matches(regex))
     }
 }

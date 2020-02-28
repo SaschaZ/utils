@@ -6,7 +6,6 @@ import de.gapps.utils.misc.runEachIndexed
 import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
-import kotlin.test.assertTrue
 
 class ProcessorTest {
 
@@ -27,8 +26,7 @@ class ProcessorTest {
         }.run {
             testProducer.produce().process().toList()
         }
-
-        assertTrue(finished)
+        finished assert true
         processorResult.size assert 5
         processorResult.runEachIndexed { index ->
             value assert index

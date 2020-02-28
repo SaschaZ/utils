@@ -5,7 +5,6 @@ package de.gapps.utils.coroutines.channel.pipeline
 import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.core_testing.runTest
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
 
 class ParallelUniqueTest : ProcessorBaseTest(ParallelProcessingType.UNIQUE) {
 
@@ -15,9 +14,9 @@ class ParallelUniqueTest : ProcessorBaseTest(ParallelProcessingType.UNIQUE) {
 
         consumeValues.size assert testProducerAmount
         val idxGroups = consumeValues.groupBy { it.parallelIdx }
-        assertEquals(idxGroups.keys.size, numParallel)
+        idxGroups.keys.size assert numParallel
         idxGroups.values.forEach { list ->
-            assertEquals(list.size, testProducerAmount / numParallel)
+            list.size assert (testProducerAmount / numParallel)
         }
     }
 
@@ -31,9 +30,9 @@ class ParallelUniqueTest : ProcessorBaseTest(ParallelProcessingType.UNIQUE) {
 
         consumeValues.size assert testProducerAmount
         val idxGroups = consumeValues.groupBy { it.parallelIdx }
-        assertEquals(idxGroups.keys.size, numParallel)
+        idxGroups.keys.size assert numParallel
         idxGroups.values.forEach { list ->
-            assertEquals(list.size, testProducerAmount / numParallel)
+            list.size assert (testProducerAmount / numParallel)
         }
     }
 }

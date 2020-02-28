@@ -1,3 +1,5 @@
+package de.gapps.utils
+
 object Android {
 
     const val apiLevel = 29

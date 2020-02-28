@@ -1,13 +1,12 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
+import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.misc.asUnit
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class ProducerTest {
 
@@ -26,11 +25,11 @@ class ProducerTest {
         every { producer.pipeline.tick(any(), any(), any()) } returns Unit
         val producerResult = producer.produce().toList()
 
-        assertTrue(finished)
-        assertEquals(5, producerResult.size)
+        finished assert true
+        producerResult.size assert 5
         producerResult.forEachIndexed { index, i ->
-            assertEquals(index, i.value)
-            assertEquals(index, i.outIdx)
+            i.value assert index
+            i.outIdx assert index
         }
     }.asUnit()
 }

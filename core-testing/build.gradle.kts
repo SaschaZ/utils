@@ -1,5 +1,8 @@
 import de.gapps.utils.LibraryType.JAR
 import de.gapps.utils.configurePublishing
+import de.gapps.utils.Android
+import de.gapps.utils.Libs
+import de.gapps.utils.Dependencies
 
 plugins {
     kotlin("jvm")
@@ -13,20 +16,19 @@ dependencies {
 
         implementation(kotlin)
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.3")
-        implementation("org.jetbrains.kotlin:kotlin-test:1.3.61")
 
         implementation("com.squareup.okhttp3:mockwebserver:4.3.1")
         implementation("org.bouncycastle:bcprov-jdk16:1.46")
 
-        with(Dependencies) { kotlinTesting() }
+        with(Dependencies) { kotlinJunit5() }
     }
 }
 
-tasks {
-    test {
-        useJUnitPlatform()
-    }
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
 
+tasks {
     dokka {
         outputFormat = "html"
         outputDirectory = "$buildDir/javadoc"

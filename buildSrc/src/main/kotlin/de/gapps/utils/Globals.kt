@@ -1,3 +1,5 @@
+package de.gapps.utils
+
 object Globals {
 
     const val group = "dev.zieger.utils"

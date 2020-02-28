@@ -1,4 +1,7 @@
+import de.gapps.utils.Android
+import de.gapps.utils.Dependencies
 import de.gapps.utils.LibraryType.AAR
+import de.gapps.utils.Libs
 import de.gapps.utils.configurePublishing
 
 plugins {
@@ -40,11 +43,12 @@ dependencies {
         implementation(kotlin)
         implementation(coroutinesAndroid)
 
-        implementation(androidXtestEspressoCore)
-        implementation(androidXtestRunner)
-        implementation(androidXtestCore)
-        implementation(androidXtestRules)
+        with(Dependencies) { androidTesting() }
     }
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }
 
 tasks {

@@ -2,8 +2,9 @@
 
 package de.gapps.utils.misc
 
+import de.gapps.utils.core_testing.assertion.assert
+import de.gapps.utils.core_testing.assertion.onFail
 import org.junit.jupiter.api.Test
-import kotlin.test.assertTrue
 
 class CatchTest {
 
@@ -15,8 +16,8 @@ class CatchTest {
             throw RuntimeException("testException")
         }
 
-        assertTrue(caught, "caught should be true")
-        assertTrue(finally, "finally should be true")
-        assertTrue(!result, "result should be false")
+        caught onFail "caught should be true" assert true
+        finally onFail "finally should be true" assert true
+        !result onFail "result should be false" assert true
     }
 }

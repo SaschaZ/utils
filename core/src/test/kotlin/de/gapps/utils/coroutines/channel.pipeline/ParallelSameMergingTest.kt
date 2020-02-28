@@ -4,7 +4,6 @@ import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.time.duration.seconds
 import org.junit.jupiter.api.Test
-import kotlin.test.assertTrue
 
 class ParallelSameMergingTest : ProcessorBaseTest(ParallelProcessingType.SAME) {
 
@@ -17,10 +16,7 @@ class ParallelSameMergingTest : ProcessorBaseTest(ParallelProcessingType.SAME) {
         var prevConsumed: IPipeValue<String>? = null
         consumeValues.forEach {
 //            Log.v("$it")
-            assertTrue(
-                it.outIdx >= prevConsumed?.outIdx ?: 0,
-                "\ncurrent: $it\nprevious: $prevConsumed"
-            )
+            (it.outIdx >= prevConsumed?.outIdx ?: 0) assert true
             prevConsumed = it
         }
 

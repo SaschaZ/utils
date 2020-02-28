@@ -4,7 +4,6 @@ import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.time.duration.seconds
 import org.junit.jupiter.api.Test
-import kotlin.test.assertTrue
 
 class ParallelUniqueMergingTest : ProcessorBaseTest(ParallelProcessingType.UNIQUE) {
 
@@ -16,11 +15,8 @@ class ParallelUniqueMergingTest : ProcessorBaseTest(ParallelProcessingType.UNIQU
 
         var prevConsumed: IPipeValue<String>? = null
         consumeValues.forEach {
-            assertTrue(
-                prevConsumed == null
-                        || it.outIdx >= prevConsumed?.outIdx ?: Integer.MAX_VALUE,
-                "\ncurrent: $it\nprevious: $prevConsumed"
-            )
+            (prevConsumed == null
+                    || it.outIdx >= prevConsumed?.outIdx ?: Integer.MAX_VALUE) assert true
             prevConsumed = it
         }
 

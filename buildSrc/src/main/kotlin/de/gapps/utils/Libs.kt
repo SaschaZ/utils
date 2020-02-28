@@ -1,9 +1,11 @@
 @file:Suppress("SpellCheckingInspection")
 
+package de.gapps.utils
+
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.kotlin.dsl.project
 
-object Libs  {
+object Libs {
     val DependencyHandler.core
         get() = project(":core")
     val DependencyHandler.coreTesting
@@ -19,7 +21,7 @@ object Libs  {
 
     val kotlin = "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${Versions.kotlin}"
     val kotlinTest = "org.jetbrains.kotlin:kotlin-test:${Versions.kotlin}"
-    val kotlinTestRunnerJunit5 = "io.kotlintest:kotlintest-runner-junit5:${Versions.kotlinTestRunnerJunit5}"
+    val kotlinTestRunnerJunit5 = "io.kotlintest:kotlintest-runner-junit5:${Versions.kotest}"
 
     val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}"
     val coroutinesJdk = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${Versions.coroutines}"

@@ -2,7 +2,6 @@
 
 package de.gapps.utils
 
-import Globals
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.api.AndroidSourceSet
 import de.gapps.utils.LibraryType.AAR

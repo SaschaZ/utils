@@ -4,20 +4,20 @@ import de.gapps.utils.misc.asUnit
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import org.junit.After
-import org.junit.Before
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.Ignore
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
 class NetworkTest : AnnotationSpec() {
 
-    @Before
+    @BeforeEach
     fun before() = runBlocking {
 
     }.asUnit()
 
-    @After
+    @AfterEach
     fun after() = runBlocking {
 
     }.asUnit()

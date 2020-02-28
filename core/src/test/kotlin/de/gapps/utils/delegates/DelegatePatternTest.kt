@@ -4,7 +4,6 @@ package de.gapps.utils.delegates
 
 import de.gapps.utils.core_testing.assertion.assert
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
 
 class DelegatePatternTest {
 
@@ -53,8 +52,8 @@ class DelegatePatternTest {
         val child = Child()
         val parent = child as Parent
         val iParent = child as IParent
-        assertEquals(3, iParent.foo())
-        assertEquals(3, parent.foo())
-        assertEquals(3, child.foo())
+        iParent.foo() assert 3
+        parent.foo() assert 3
+        child.foo() assert 3
     }
 }

@@ -1,9 +1,9 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
+import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.time.duration.seconds
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
 
 class ParallelSameTest : ProcessorBaseTest(
     ParallelProcessingType.SAME
@@ -13,12 +13,12 @@ class ParallelSameTest : ProcessorBaseTest(
     fun testSamePiped() = runTest(10.seconds) {
         testProducer + testParallelProcessor + testConsumer
 
-        assertEquals(consumeValues.size, testProducerAmount * numParallel)
+        consumeValues.size assert testProducerAmount * numParallel
         val idxGroups =
             consumeValues.groupBy { it.parallelIdx }.map { it.key to it.value.sorted() }.toMap()
-        assertEquals(idxGroups.keys.size, numParallel)
+        idxGroups.keys.size assert numParallel
         idxGroups.values.forEach { list ->
-            assertEquals(list.size, testProducerAmount)
+            list.size assert testProducerAmount
         }
     }
 
@@ -30,12 +30,12 @@ class ParallelSameTest : ProcessorBaseTest(
             }
         }
 
-        assertEquals(consumeValues.size, testProducerAmount * numParallel)
+        consumeValues.size assert testProducerAmount * numParallel
         val idxGroups =
             consumeValues.groupBy { it.parallelIdx }.map { it.key to it.value.sorted() }.toMap()
-        assertEquals(idxGroups.keys.size, numParallel)
+        idxGroups.keys.size assert numParallel
         idxGroups.values.forEach { list ->
-            assertEquals(list.size, testProducerAmount)
+            list.size assert testProducerAmount
         }
     }
 }

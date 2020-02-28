@@ -1,10 +1,9 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
+import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.misc.asUnit
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class ConsumerTest {
 
@@ -22,10 +21,10 @@ class ConsumerTest {
                 finished = true
             }
         }).run { testProducer.produce().consume().join() }
-        assertTrue(finished)
-        assertEquals(5, consumerResult.size)
+        finished assert true
+        consumerResult.size assert 5
         consumerResult.forEachIndexed { index, i ->
-            assertEquals(index, i)
+            index assert i
         }
     }.asUnit()
 }
