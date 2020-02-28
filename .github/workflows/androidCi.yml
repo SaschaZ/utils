@@ -12,4 +12,4 @@ jobs:
     - name: setup-android
       uses: msfjarvis/setup-android@0.2
       with:
-        gradleTasks: clean assemble
+        gradleTasks: clean publishToMavenLocal
