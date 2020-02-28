@@ -1,4 +1,5 @@
 - name: Gradle Command
   uses: eskatos/gradle-command-action@v1
+  
     with:
       arguments: assemble
