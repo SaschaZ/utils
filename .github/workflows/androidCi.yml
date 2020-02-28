@@ -1,0 +1,15 @@
+name: Android CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: [ubuntu-latest]
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: setup-android
+      uses: msfjarvis/setup-android@0.2
+      with:
+        gradleTasks: clean publishToMavenLocal
