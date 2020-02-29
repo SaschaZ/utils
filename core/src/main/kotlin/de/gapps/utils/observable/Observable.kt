@@ -20,7 +20,7 @@ open class Observable<out T : Any?>(
  *
  * Example:
  * ```kotlin
- *  class Test : AnnotationSpec() {Class {
+ *  class Test {Class {
  *      val observable = ObservableDelegate("foo")
  *      private var internalVar by observable
  *  }

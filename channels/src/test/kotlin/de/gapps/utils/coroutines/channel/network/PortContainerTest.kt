@@ -5,7 +5,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class PortContainerTest : AnnotationSpec() {
+class PortContainerTest {
 
     private lateinit var input0: Port.Input<Int>
     private lateinit var output0: Port.Output<Int>

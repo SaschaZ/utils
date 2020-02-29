@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 
-class HostTest : AnnotationSpec() {
+class HostTest {
 
     private fun testNode(id: String) =
         Node(Input<Int>("${id}Input0") + Output<Int>("${id}Output0"), id) {

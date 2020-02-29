@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class NodeTest : AnnotationSpec() {
+class NodeTest {
 
     private lateinit var node: Node
     private val updatedInputValues = ArrayList<INodeValue<*>>()

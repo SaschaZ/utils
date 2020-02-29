@@ -15,15 +15,15 @@ object Dependencies {
             add("testImplementation", mockk)
             add("testImplementation", koinTest)
 
-            add("testImplementation", "io.kotest:kotest-runner-junit5-jvm:${Versions.kotest}")
-//            add("testImplementation", "org.junit.jupiter:junit-jupiter:5.6.0")
+//            add("testImplementation", "io.kotlintest:kotlintest-runner-junit5:${Versions.kotest}")
+            add("testImplementation", "org.junit.jupiter:junit-jupiter:5.6.0")
         }
     }
 
     fun DependencyHandler.androidTesting() {
         Libs.apply {
             add("testImplementation", coroutinesAndroid)
-            add("testImplementation", "io.kotest:kotest-runner-junit5-jvm:${Versions.kotest}")
+            add("testImplementation", "io.kotlintest:kotlintest-runner-junit5:${Versions.kotest}")
             add("testImplementation", androidXtestCore)
             add("testImplementation", androidXtestRules)
             add("testImplementation", androidXtestRunner)

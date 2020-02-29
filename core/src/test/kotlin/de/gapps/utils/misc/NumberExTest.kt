@@ -1,5 +1,5 @@
-package de.gapps.utils.misc
-
+import de.gapps.utils.misc.ex
+import de.gapps.utils.misc.times
 import org.junit.jupiter.api.Test
 
 class NumberExTest {

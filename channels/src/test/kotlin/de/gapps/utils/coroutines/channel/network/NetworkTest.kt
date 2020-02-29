@@ -10,7 +10,7 @@ import org.junit.Ignore
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
-class NetworkTest : AnnotationSpec() {
+class NetworkTest {
 
     @BeforeEach
     fun before() = runBlocking {

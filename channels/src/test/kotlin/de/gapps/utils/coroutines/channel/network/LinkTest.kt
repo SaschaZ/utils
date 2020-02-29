@@ -11,7 +11,7 @@ import org.junit.Ignore
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
-class LinkTest : AnnotationSpec() {
+class LinkTest {
 
     @BeforeEach
     fun before() = runBlocking {

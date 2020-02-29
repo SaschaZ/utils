@@ -1,8 +1,7 @@
-import de.gapps.utils.LibraryType.JAR
-import de.gapps.utils.configurePublishing
-import de.gapps.utils.Android
-import de.gapps.utils.Libs
 import de.gapps.utils.Dependencies
+import de.gapps.utils.LibraryType.JAR
+import de.gapps.utils.Libs
+import de.gapps.utils.configurePublishing
 
 plugins {
     kotlin("jvm")
@@ -23,8 +22,16 @@ dependencies {
     with(Dependencies) { kotlinJunit5() }
 }
 
-tasks.withType<Test> {
+tasks.test {
     useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
+}
+
+// config JVM target to 1.8 for kotlin compilation tasks
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    kotlinOptions.jvmTarget = "1.8"
 }
 
 tasks {
