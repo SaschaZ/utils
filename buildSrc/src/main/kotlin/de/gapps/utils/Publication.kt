@@ -4,8 +4,8 @@ package de.gapps.utils
 
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.api.AndroidSourceSet
-import de.gapps.utils.LibraryType.AAR
-import de.gapps.utils.LibraryType.JAR
+import de.gapps.utils.ModuleType.ANDROID
+import de.gapps.utils.ModuleType.JVM
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.publish.PublishingExtension
@@ -13,24 +13,15 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.*
 
-enum class LibraryType {
-    AAR,
-    JAR
-}
-
-fun Project.configurePublishing(type: LibraryType, name: String) {
+fun Project.configurePublishing(type: ModuleType, name: String) {
     when (type) {
-        AAR -> configureAarPublishing(name)
-        JAR -> configureJarPublishing(name)
+        ANDROID -> configureAarPublishing(name)
+        JVM -> configureJarPublishing(name)
     }
-
-//    tasks.findByName("assembleAndroidTest")?.also {
-//        tasks.replace("assembleAndroidTest")
-//    }
 }
 
 internal fun Project.configureJarPublishing(name: String) {
-    configurePublishTask(JAR)
+    configurePublishTask(JVM)
     configureLibraryJarPublication(name)
     addBuildDirRepository()
 }
@@ -43,14 +34,14 @@ internal fun Project.configureLibraryJarPublication(name: String) {
             version = Globals.version
 
             from(components["java"])
-            artifact(getSourcesJar(JAR))
+            artifact(getSourcesJar(JVM))
             artifact(getDokkaJar(name))
         }
     }
 }
 
 internal fun Project.configureAarPublishing(name: String) {
-    configurePublishTask(AAR)
+    configurePublishTask(ANDROID)
     configureLibraryAarPublication(name)
     addBuildDirRepository()
 }
@@ -63,16 +54,16 @@ internal fun Project.configureLibraryAarPublication(name: String) {
             version = Globals.version
 
             artifact(file("$buildDir/outputs/aar/$name-release.aar"))
-            artifact(getSourcesJar(AAR))
+            artifact(getSourcesJar(ANDROID))
             artifact(getDokkaJar(name))
         }
     }
 }
 
-internal fun Project.configurePublishTask(type: LibraryType) = afterEvaluate {
+internal fun Project.configurePublishTask(type: ModuleType) = afterEvaluate {
     val publish = tasks["publish"]
-    val assembleRelease = tasks["assemble${if (type == AAR) "Release" else ""}"]
-    val publishAarPublicationToMavenLocal = tasks[if (type == AAR) "publishAarPublicationToMavenLocal"
+    val assembleRelease = tasks["assemble${if (type == ANDROID) "Release" else ""}"]
+    val publishAarPublicationToMavenLocal = tasks[if (type == ANDROID) "publishAarPublicationToMavenLocal"
     else "publishMavenJavaPublicationToMavenLocal"]
 
     publishAarPublicationToMavenLocal.dependsOn(assembleRelease)
@@ -107,15 +98,15 @@ private val Project.`androidSourceSets`: AndroidSourceSet
     get() =
         (this as org.gradle.api.plugins.ExtensionAware).extensions.getByType(AndroidBaseExtension::class).sourceSets["main"] as AndroidSourceSet
 
-internal fun Project.getSourcesJar(type: LibraryType): Any {
+internal fun Project.getSourcesJar(type: ModuleType): Any {
     if (tasks.findByName("sourcesJar") != null) return tasks["sourcesJar"]
 
     return tasks.register<org.gradle.api.tasks.bundling.Jar>("sourcesJar") {
         archiveClassifier.set("sources")
         from(
             when (type) {
-                JAR -> sourceSets["main"].allSource
-                AAR -> androidSourceSets.java.srcDirs
+                JVM -> sourceSets["main"].allSource
+                ANDROID -> androidSourceSets.java.srcDirs
             }
         )
     }.get()

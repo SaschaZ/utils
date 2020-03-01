@@ -6,7 +6,7 @@ import de.gapps.utils.statemachine.IEvent
 import de.gapps.utils.statemachine.IState
 import de.gapps.utils.statemachine.scopes.definition.IEventHolder
 import de.gapps.utils.statemachine.scopes.definition.IEventTypeHolder
-import de.gapps.utils.statemachine.scopes.definition.SInputDataHolder
+import de.gapps.utils.statemachine.scopes.definition.InputDataHolder
 import de.gapps.utils.statemachine.scopes.definition.lvl0.IOnScope
 import kotlin.reflect.KClass
 
@@ -14,8 +14,8 @@ import kotlin.reflect.KClass
 interface IEventScope<out E : IEvent, out S : IState> :
     IOnScope<E, S>, IEventHolder<E> {
 
-    infix fun withState(states: List<@UnsafeVariance S>): SInputDataHolder<E, S> =
-        SInputDataHolder.SEventsWithStatesInput.DataWithData(events, states, this)
+    infix fun withState(states: List<@UnsafeVariance S>): InputDataHolder<E, S> =
+        InputDataHolder.EventsWithStatesInput.DataWithData(events, states, this)
 }
 
 class EventScope<out E : IEvent, out S : IState>(
@@ -29,6 +29,6 @@ interface IEventTypeScope<out E : IEvent, out S : IState> :
     val event
         get() = eventTypes.first()
 
-    infix fun withStates(states: List<@UnsafeVariance S>): SInputDataHolder<E, S> =
-        SInputDataHolder.SEventsWithStatesInput.TypeWithData(eventTypes, states, this)
+    infix fun withStates(states: List<@UnsafeVariance S>): InputDataHolder<E, S> =
+        InputDataHolder.EventsWithStatesInput.TypeWithData(eventTypes, states, this)
 }

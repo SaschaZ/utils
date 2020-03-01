@@ -6,7 +6,7 @@ import de.gapps.utils.coroutines.scope.CoroutineScopeEx
 import de.gapps.utils.statemachine.IEvent
 import de.gapps.utils.statemachine.IState
 import de.gapps.utils.statemachine.scopes.definition.IExecutionHolder
-import de.gapps.utils.statemachine.scopes.definition.SInputDataHolder
+import de.gapps.utils.statemachine.scopes.definition.InputDataHolder
 
 /**
  * Scope that provides easy dsl to define state machine behaviour.
@@ -16,13 +16,13 @@ interface IMachineExScope<out E : IEvent, out S : IState> {
     val scope: CoroutineScopeEx
 
     fun addMapping(
-        data: SInputDataHolder<@UnsafeVariance E, @UnsafeVariance S>,
+        data: InputDataHolder<@UnsafeVariance E, @UnsafeVariance S>,
         executionHolder: IExecutionHolder<@UnsafeVariance S>
     ) {
         dataToExecutionMap[data] = executionHolder
     }
 
-    val dataToExecutionMap: HashMap<SInputDataHolder<@UnsafeVariance E, @UnsafeVariance S>, IExecutionHolder<@UnsafeVariance S>>
+    val dataToExecutionMap: HashMap<InputDataHolder<@UnsafeVariance E, @UnsafeVariance S>, IExecutionHolder<@UnsafeVariance S>>
 }
 
 

@@ -1,8 +1,7 @@
 import de.gapps.utils.Android
-import de.gapps.utils.Dependencies
-import de.gapps.utils.LibraryType.AAR
-import de.gapps.utils.Libs
-import de.gapps.utils.configurePublishing
+import de.gapps.utils.ModuleType.ANDROID
+import de.gapps.utils.config
+import de.gapps.utils.core
 
 plugins {
     id("com.android.library")
@@ -10,6 +9,10 @@ plugins {
     id("kotlin-android-extensions")
     id("maven-publish")
     id("org.jetbrains.dokka")
+}
+
+config("android-testing", ANDROID) {
+    core
 }
 
 android {
@@ -33,30 +36,21 @@ android {
     }
 }
 
-
-dependencies {
-    Libs.run {
-        implementation(androidXappCompat)
-        implementation(androidXcoreKtx)
-        implementation(androidXconstraintLayout)
-
-        implementation(kotlin)
-        implementation(coroutinesAndroid)
-
-        with(Dependencies) { androidTesting() }
-    }
-}
-
-// config JVM target to 1.8 for kotlin compilation tasks
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions.jvmTarget = "1.8"
-}
-
 tasks {
+    //    test {
+//        useJUnitPlatform()
+//        testLogging {
+//            events("passed", "skipped", "failed")
+//        }
+//    }
+
+    // config JVM target to 1.8 for kotlin compilation tasks
+    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        kotlinOptions.jvmTarget = "1.8"
+    }
+
     dokka {
         outputFormat = "html"
         outputDirectory = "$buildDir/javadoc"
     }
 }
-
-configurePublishing(AAR, "android-testing")

@@ -29,7 +29,7 @@ class MachineExTest {
     }
 
     sealed class TestEvent : IEvent {
-        override fun toString(): String = "${this::class.name}(${this::class.name})"
+        override fun toString(): String = this::class.name
 
         object FIRST : TestEvent()
         object SECOND : TestEvent()
@@ -41,12 +41,12 @@ class MachineExTest {
     fun testBuilder() = runTest {
         var executed = false
         machineEx<TestEvent, TestState>(INITIAL) {
-            //            on eventTypes +FIRST withStates +INITIAL setState A
-            on event +FIRST withState +INITIAL setState A
+            on eventType +FIRST withStates +INITIAL setState A
+//            on event +FIRST withState +INITIAL setState A
             on event +FIRST + SECOND + THIRD withState +A + B setState C
             on event +THIRD withState +C executeAndSetStateS { D }
             on event +FOURTH withState +D setState B
-            on state +D execute { executed = true }
+            on stateEnter +D execute { executed = true }
         }.run {
             state assert INITIAL
 

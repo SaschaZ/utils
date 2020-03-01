@@ -1,24 +1,46 @@
 package de.gapps.utils
 
+import de.gapps.utils.ModuleType.ANDROID
+import de.gapps.utils.ModuleType.JVM
 import org.gradle.api.Project
+import org.gradle.kotlin.dsl.DependencyHandlerScope
 import org.gradle.kotlin.dsl.dependencies
 
-class ModuleConfig(project: Project) : Project by project {
+fun Project.config(
+    name: String,
+    type: ModuleType,
+    block: DependencyHandlerScope.() -> Unit = {}
+) {
+    configureDependencies(type, block)
+    configurePublishing(type, name)
+}
 
-    fun config(type: LibraryType, name: String) {
-        dependencies {
-            with(Libs) {
-                add("implementation", kotlin)
-                add("implementation", coroutinesJdk)
-
-                add("implementation", koin)
-                add("implementation", jackson)
-                add("implementation", slf4jSimple)
+private fun Project.configureDependencies(type: ModuleType, block: DependencyHandlerScope.() -> Unit) {
+    dependencies {
+        when (type) {
+            JVM -> {
+                coroutinesJdk
             }
+            ANDROID -> {
+                coroutinesAndroid
 
-            with(Dependencies) { kotlinJunit5() }
+                androidXappCompat
+                androidXcoreKtx
+                androidXconstraintLayout
+            }
         }
 
-        configurePublishing(type, name)
+        kotlin
+
+        koin
+        jackson
+        slf4jSimple
+
+
+        mockk
+        koinTest
+        junitJupiter
+
+        block()
     }
 }

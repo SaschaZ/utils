@@ -15,10 +15,13 @@ interface IOnScope<out E : IEvent, out S : IState> : IStateMachineHolder<E, S> {
     infix fun event(events: List<@UnsafeVariance E>) =
         OnScope.EventScope(this, events)
 
-    infix fun state(states: List<@UnsafeVariance S>): SInputDataHolder<IEvent, S> =
-        SInputDataHolder.SStatesInput.Value(states, this)
+    infix fun stateEnter(states: List<@UnsafeVariance S>): InputDataHolder<IEvent, S> =
+        InputDataHolder.StatesInput.Value(states, this)
 
-    infix fun eventTypes(eventTypes: List<@UnsafeVariance E>) =
+    infix fun stateExit(states: List<@UnsafeVariance S>): InputDataHolder<IEvent, S> =
+        InputDataHolder.StatesInput.Value(states, this)
+
+    infix fun eventType(eventTypes: List<@UnsafeVariance E>) =
         OnScope.EventTypeScope(
             this,
             eventTypes.map {
