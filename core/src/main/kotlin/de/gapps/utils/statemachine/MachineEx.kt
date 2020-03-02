@@ -15,8 +15,8 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * Base interface for an event of [MachineEx]
  */
-interface IEvent<out D : IData> {
-    var data: @UnsafeVariance D?
+interface IEvent {
+    var data: IData?
 }
 
 /**
@@ -33,33 +33,33 @@ interface IState
 /**
  * TODO
  */
-open class MachineEx<out D : IData, out E : IEvent<D>, out S : IState>(
-    private val initialState: S,
+open class MachineEx(
+    private val initialState: IState,
     override val scope: CoroutineScopeEx = DefaultCoroutineScope(),
-    builder: IMachineEx<D, E, S>.() -> Unit
-) : IMachineEx<D, E, S> {
+    builder: IMachineEx.() -> Unit
+) : IMachineEx {
 
-    override val mapper: IMachineExMapper<D, E, S> = MachineExMapper()
+    override val mapper: IMachineExMapper = MachineExMapper()
 
     private val finishedProcessingEvent = Channel<Boolean>()
 
     private val eventMutex = Mutex()
-    private val eventChannel = Channel<E>(Channel.BUFFERED)
+    private val eventChannel = Channel<IEvent>(Channel.BUFFERED)
 
-    override var event: @UnsafeVariance E?
+    override var event: IEvent?
         get() = previousEvents.lastOrNull()
         set(value) = value?.also {
             submittedEventCount.incrementAndGet()
             scope.launchEx(mutex = eventMutex) { eventChannel.send(value) }
         }.asUnit()
 
-    override val previousEvents: MutableList<@UnsafeVariance E>  = ArrayList()
+    override val previousEvents: MutableList<IEvent>  = ArrayList()
 
-    override val state: S
+    override val state: IState
         get() = previousStates.lastOrNull() ?: initialState
-    override val previousStates: MutableList<@UnsafeVariance S> = ArrayList()
+    override val previousStates: MutableList<IState> = ArrayList()
 
-    private val previousChanges: MutableSet<OnStateChanged<D, E, S>> = mutableSetOf()
+    private val previousChanges: MutableSet<OnStateChanged> = mutableSetOf()
 
     private val submittedEventCount = AtomicInteger(0)
     private val processedEventCount = AtomicInteger(0)
@@ -69,11 +69,11 @@ open class MachineEx<out D : IData, out E : IEvent<D>, out S : IState>(
     init {
         builder()
         scope.launchEx {
-            for (eventType in eventChannel) eventType.processEvent()
+            for (event in eventChannel) event.processEvent()
         }
     }
 
-    private suspend fun @UnsafeVariance E.processEvent() {
+    private suspend fun IEvent.processEvent() {
         mapper.findStateForEvent(this, state, previousChanges)?.also { targetState ->
             previousStates.add(targetState)
             event?.let {
@@ -93,7 +93,7 @@ open class MachineEx<out D : IData, out E : IEvent<D>, out S : IState>(
     override fun release() = scope.cancel().asUnit()
 }
 
-data class OnStateChanged<out D : IData, out E : IEvent<D>, out S : IState>(
-    val event: E,
-    val state: S
+data class OnStateChanged(
+    val event: IEvent,
+    val state: IState
 )

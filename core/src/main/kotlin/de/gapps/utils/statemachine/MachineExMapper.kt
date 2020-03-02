@@ -1,33 +1,35 @@
+@file:Suppress("unused")
+
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.log.Log
 import kotlin.random.Random
 
-interface IMachineExMapper<out D : IData, out E : IEvent<D>, out S : IState> {
+interface IMachineExMapper {
 
-    data class DataToActionEntry<out D : IData, out E : IEvent<D>, out S : IState>(
-        val possibleEvents: Set<E>,
-        val possibleStates: Set<S>,
-        val action: (event: @UnsafeVariance E, state: @UnsafeVariance S) -> S?
+    data class DataToActionEntry(
+        val possibleEvents: Set<IEvent>,
+        val possibleStates: Set<IState>,
+        val action: (event: IEvent, state: IState) -> IState?
     )
 
-    val dataToActionMap: MutableMap<Long, DataToActionEntry<@UnsafeVariance D, @UnsafeVariance E, @UnsafeVariance S>>
+    val dataToActionMap: MutableMap<Long, DataToActionEntry>
 
     fun addMapping(
-        events: Set<@UnsafeVariance E>,
-        states: Set<@UnsafeVariance S>,
-        action: (event: @UnsafeVariance E, state: @UnsafeVariance S) -> @UnsafeVariance S?
+        events: Set<IEvent>,
+        states: Set<IState>,
+        action: (event: IEvent, state: IState) -> IState?
     ): Long {
         val newId = dataToActionMap.newId
         dataToActionMap[newId] = DataToActionEntry(events, states, action)
         return newId
     }
 
-    val stateActionMap: MutableMap<Long, Pair<Set<@UnsafeVariance S>, (event: @UnsafeVariance E, state: @UnsafeVariance S) -> Unit>>
+    val stateActionMap: MutableMap<Long, Pair<Set<IState>, (event: IEvent, state: IState) -> Unit>>
 
     fun addMapping(
-        states: Set<@UnsafeVariance S>,
-        action: (event: @UnsafeVariance E, state: @UnsafeVariance S) -> Unit
+        states: Set<IState>,
+        action: (event: IEvent, state: IState) -> Unit
     ): Long {
         val newId = stateActionMap.newId
         stateActionMap[newId] = states to action
@@ -54,15 +56,14 @@ interface IMachineExMapper<out D : IData, out E : IEvent<D>, out S : IState> {
      * @return new state
      */
     suspend fun findStateForEvent(
-        event: @UnsafeVariance E,
-        state: @UnsafeVariance S,
-        previousChanges: Set<OnStateChanged<@UnsafeVariance D, @UnsafeVariance E, @UnsafeVariance S>>
-    ): S? {
+        event: @UnsafeVariance IEvent,
+        state: @UnsafeVariance IState,
+        previousChanges: Set<OnStateChanged>
+    ): IState? {
         val mapped = dataToActionMap.filter {
             it.value.possibleEvents.contains(event)
                     && it.value.possibleStates.contains(state)
-        }
-            .mapNotNull { it.value.action(event, state) }
+        }.mapNotNull { it.value.action(event, state) }
         return when {
             mapped.size < 2 -> mapped.firstOrNull()
             else -> {
@@ -75,12 +76,12 @@ interface IMachineExMapper<out D : IData, out E : IEvent<D>, out S : IState> {
     }
 }
 
-class MachineExMapper<out D : IData, out E : IEvent<D>, out S : IState> : IMachineExMapper<D, E, S> {
+class MachineExMapper : IMachineExMapper {
     override val dataToActionMap:
-            MutableMap<Long, IMachineExMapper.DataToActionEntry<@UnsafeVariance D, @UnsafeVariance E, @UnsafeVariance S>> =
+            MutableMap<Long, IMachineExMapper.DataToActionEntry> =
         HashMap()
 
-    override val stateActionMap: MutableMap<Long, Pair<Set<@UnsafeVariance S>, (event: @UnsafeVariance E, state: @UnsafeVariance S) -> Unit>> =
+    override val stateActionMap: MutableMap<Long, Pair<Set<IState>, (event: IEvent, state: IState) -> Unit>> =
         HashMap()
 
 }

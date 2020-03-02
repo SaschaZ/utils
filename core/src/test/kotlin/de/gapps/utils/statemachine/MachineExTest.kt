@@ -28,8 +28,8 @@ class MachineExTest {
 
     data class TestData(val foo: String) : IData
 
-    sealed class TestEvent : IEvent<TestData> {
-        override var data: TestData? = null
+    sealed class TestEvent : IEvent {
+        override var data: IData? = null
 
         override fun toString(): String = this::class.name
 
@@ -42,7 +42,7 @@ class MachineExTest {
     @Test
     fun testBuilder() = runTest {
         var executed = 0
-        MachineEx<TestData, TestEvent, TestState>(INITIAL) {
+        MachineEx(INITIAL) {
             on event FIRST andState INITIAL set A
             on event FIRST + SECOND + THIRD andState A + B set C
             on event THIRD andState C execAndSet {
@@ -77,7 +77,7 @@ class MachineExTest {
 
     @Test
     fun testBuilderSyncSet() = runTest {
-        MachineEx<IData, TestEvent, TestState>(INITIAL) {
+        MachineEx(INITIAL) {
             on event FIRST andState INITIAL set A
         }.run {
             state assert INITIAL
