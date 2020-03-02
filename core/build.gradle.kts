@@ -1,5 +1,5 @@
 import de.gapps.utils.ModuleType.JVM
-import de.gapps.utils.config
+import de.gapps.utils.configModule
 import de.gapps.utils.coreTesting
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -9,7 +9,7 @@ plugins {
     id("org.jetbrains.dokka")
 }
 
-config("core", JVM) {
+configModule("core", JVM) {
     coreTesting
 }
 

@@ -4,15 +4,11 @@ package de.gapps.utils.statemachine
 
 import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.core_testing.runTest
-import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import de.gapps.utils.misc.name
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
 import de.gapps.utils.statemachine.MachineExTest.TestState.*
-import de.gapps.utils.statemachine.scopes.MachineExScope
-import de.gapps.utils.statemachine.scopes.definition.lvl0.on
-import de.gapps.utils.statemachine.scopes.manipulation.set
-import de.gapps.utils.statemachine.scopes.plus
-import de.gapps.utils.statemachine.scopes.unaryPlus
+import de.gapps.utils.statemachine.scopes.on
+import de.gapps.utils.statemachine.scopes.set
 import org.junit.jupiter.api.Test
 
 
@@ -39,58 +35,44 @@ class MachineExTest {
 
     @Test
     fun testBuilder() = runTest {
-        var executed = false
-        machineEx<TestEvent, TestState>(INITIAL) {
-            on eventType +FIRST withStates +INITIAL setState A
-//            on event +FIRST withState +INITIAL setState A
-            on event +FIRST + SECOND + THIRD withState +A + B setState C
-            on event +THIRD withState +C executeAndSetStateS { D }
-            on event +FOURTH withState +D setState B
-            on stateEnter +D execute { executed = true }
+        var executed = 0
+        MachineEx<IData, TestEvent, TestState>(INITIAL) {
+            on event FIRST withState INITIAL set A
+            on event FIRST + SECOND + THIRD withState A + B set C
+            on event THIRD withState C execAndSet { executed++; D }
+            on event FOURTH withState D set B
+            on state D exec { executed++ }
         }.run {
             state assert INITIAL
 
             set eventSync FIRST
             state assert A
-            executed assert false
+            executed assert 0
 
             set eventSync SECOND
             state assert C
-            executed assert false
+            executed assert 0
 
             set eventSync THIRD
             state assert D
-            executed assert false
+            executed assert 1
 
             set eventSync FOURTH
             state assert B
+            executed assert 2
 
             set eventSync FIRST
             state assert C
-        }
-    }
-
-    @Test
-    fun testConstructor() = runTest {
-        MachineEx<TestEvent, TestState>(
-            INITIAL,
-            MachineExScope(DefaultCoroutineScope())
-        ) { e ->
-            (e == FIRST && state == INITIAL).let {
-                if (it) A else throw IllegalStateException("")
-            }
-        }.run {
-            set eventSync FIRST
-            state assert A
+            executed assert 2
         }
     }
 
     @Test
     fun testBuilderSyncSet() = runTest {
-        machineEx<TestEvent, TestState>(
+        MachineEx<IData, TestEvent, TestState>(
             INITIAL
         ) {
-            on event +FIRST withState +INITIAL setState A
+            on event +FIRST withState +INITIAL set A
         }.run {
             state assert INITIAL
 

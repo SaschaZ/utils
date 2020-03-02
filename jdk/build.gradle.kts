@@ -1,5 +1,5 @@
 import de.gapps.utils.ModuleType.JVM
-import de.gapps.utils.config
+import de.gapps.utils.configModule
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.dokka")
 }
 
-config("jdk", JVM)
+configModule("jdk", JVM)
 
 tasks {
     test {

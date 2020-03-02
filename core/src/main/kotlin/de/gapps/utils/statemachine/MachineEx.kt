@@ -1,4 +1,4 @@
-@file:Suppress("MemberVisibilityCanBePrivate")
+@file:Suppress("MemberVisibilityCanBePrivate", "LeakingThis")
 
 package de.gapps.utils.statemachine
 
@@ -6,7 +6,8 @@ import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.scope.CoroutineScopeEx
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import de.gapps.utils.misc.asUnit
-import de.gapps.utils.statemachine.scopes.IMachineExScope
+import de.gapps.utils.time.ITimeEx
+import de.gapps.utils.time.TimeEx
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -19,89 +20,67 @@ import java.util.concurrent.atomic.AtomicInteger
 interface IEvent
 
 /**
+ * Base interface for any event data of [MachineEx]
+ */
+interface IData
+
+/**
  * Base interface for a state of [MachineEx]
  */
 interface IState
 
-/**
- * TODO
- */
-interface IMachineEx<out EventType : IEvent, out StateType : IState> {
-
-    val machineExScope: IMachineExScope<EventType, StateType>
-
-    var event: @UnsafeVariance EventType?
-    val previousEvents: List<EventType>
-
-    val state: StateType
-    val previousStates: List<StateType>
-
-    val findStateForEvent: suspend IMachineEx<@UnsafeVariance EventType, @UnsafeVariance StateType>.(event: @UnsafeVariance EventType) -> StateType?
-
-    val previousChanges: List<Pair<@UnsafeVariance EventType, @UnsafeVariance StateType>>
-
-    val isProcessingActive: Boolean
-
-    suspend fun suspendUtilProcessingFinished()
-
-    fun release()
-}
 
 /**
  * TODO
  */
-open class MachineEx<out EventType : IEvent, out StateType : IState>(
-    private val initialState: StateType,
-    override val machineExScope: IMachineExScope<EventType, StateType>,
-    protected val scope: CoroutineScopeEx = DefaultCoroutineScope(),
-    override val findStateForEvent: suspend IMachineEx<@UnsafeVariance EventType, @UnsafeVariance StateType>.
-        (event: @UnsafeVariance EventType) -> StateType? = { null }
-) : IMachineEx<EventType, StateType> {
+open class MachineEx<out D : IData, out E : IEvent, out S : IState>(
+    private val initialState: S,
+    override val scope: CoroutineScopeEx = DefaultCoroutineScope(),
+    builder: IMachineEx<D, E, S>.() -> Unit
+) : IMachineEx<D, E, S> {
+
+    override val mapper: IMachineExMapper<D, E, S> = MachineExMapper()
+
+    private val finishedProcessingEvent = Channel<Boolean>()
 
     private val eventMutex = Mutex()
-    private val eventChannel = Channel<EventType>(Channel.BUFFERED)
-    override var event: @UnsafeVariance EventType?
+    private val eventChannel = Channel<E>(Channel.BUFFERED)
+
+    override var event: @UnsafeVariance E?
         get() = previousEvents.lastOrNull()
         set(value) = value?.also {
             submittedEventCount.incrementAndGet()
             scope.launchEx(mutex = eventMutex) { eventChannel.send(value) }
         }.asUnit()
-    override val previousEvents: List<EventType>
-        get() = mutablePreviousEvents
-    private val mutablePreviousEvents = ArrayList<EventType>()
+
+    override val previousEvents: MutableList<@UnsafeVariance E>  = ArrayList()
+
+    override val state: S
+        get() = previousStates.lastOrNull() ?: initialState
+    override val previousStates: MutableList<@UnsafeVariance S> = ArrayList()
+
+    private val previousChanges: MutableSet<OnStateChanged> = mutableSetOf()
 
     private val submittedEventCount = AtomicInteger(0)
     private val processedEventCount = AtomicInteger(0)
-    override val isProcessingActive: Boolean
+    private val isProcessingActive: Boolean
         get() = submittedEventCount.get() != processedEventCount.get()
 
-    override val state: StateType
-        get() = previousStates.lastOrNull() ?: initialState
-    override val previousStates: List<StateType>
-        get() = mutablePreviousStates
-    private val mutablePreviousStates = ArrayList<StateType>()
-
-    override val previousChanges: List<Pair<@UnsafeVariance EventType, @UnsafeVariance StateType>>
-        get() = mutablePreviousStateChanges
-    private val mutablePreviousStateChanges =
-        ArrayList<Pair<@UnsafeVariance EventType, @UnsafeVariance StateType>>()
-
-    private val finishedProcessingEvent = Channel<Boolean>()
-
     init {
+        builder()
         scope.launchEx {
             for (eventType in eventChannel) eventType.processEvent()
         }
     }
 
-    private suspend fun @UnsafeVariance EventType.processEvent() {
-        findStateForEvent(this)?.also { targetState ->
-            mutablePreviousStates.add(targetState)
+    private suspend fun @UnsafeVariance E.processEvent() {
+        mapper.findStateForEvent(this, state, previousChanges)?.also { targetState ->
+            previousStates.add(targetState)
             event?.let {
-                mutablePreviousStateChanges.add(
-                    Pair(it, state)
+                previousChanges.add(
+                    OnStateChanged(it, state, TimeEx())
                 ).asUnit()
-            }
+            }.asUnit()
         }
         processedEventCount.incrementAndGet()
         if (!isProcessingActive) scope.launch { finishedProcessingEvent.send(true) }
@@ -113,3 +92,9 @@ open class MachineEx<out EventType : IEvent, out StateType : IState>(
 
     override fun release() = scope.cancel().asUnit()
 }
+
+data class OnStateChanged(
+    val event: IEvent,
+    val state: IState,
+    val time: ITimeEx
+)

@@ -1,6 +1,6 @@
 import de.gapps.utils.Android
 import de.gapps.utils.ModuleType.ANDROID
-import de.gapps.utils.config
+import de.gapps.utils.configModule
 import de.gapps.utils.core
 
 plugins {
@@ -11,7 +11,7 @@ plugins {
     id("org.jetbrains.dokka")
 }
 
-config("android-testing", ANDROID) {
+configModule("android-testing", ANDROID) {
     core
 }
 
@@ -37,13 +37,6 @@ android {
 }
 
 tasks {
-    //    test {
-//        useJUnitPlatform()
-//        testLogging {
-//            events("passed", "skipped", "failed")
-//        }
-//    }
-
     // config JVM target to 1.8 for kotlin compilation tasks
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions.jvmTarget = "1.8"

@@ -1,5 +1,5 @@
 import de.gapps.utils.ModuleType.JVM
-import de.gapps.utils.config
+import de.gapps.utils.configModule
 import de.gapps.utils.core
 import de.gapps.utils.mockWebServer
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -10,7 +10,7 @@ plugins {
     id("org.jetbrains.dokka")
 }
 
-config("core-testing", JVM) {
+configModule("core-testing", JVM) {
     core
 
     mockWebServer
