@@ -1,8 +1,8 @@
 package de.gapps.utils.statemachine
 
 
-operator fun IEvent.unaryPlus(): Set<IEvent> = setOf(this)
-operator fun IEvent.plus(other: IEvent): Set<IEvent> = setOf(this, other)
+operator fun <D : IData, E : IEvent<D>> E.unaryPlus(): Set<E> = setOf(this)
+operator fun <D : IData, E : IEvent<D>> E.plus(other: E): Set<E> = setOf(this, other)
 
-operator fun IState.unaryPlus(): Set<IState> = setOf(this)
-operator fun IState.plus(other: IState): Set<IState> = setOf(this, other)
+operator fun <S : IState> S.unaryPlus(): Set<S> = setOf(this)
+operator fun <S : IState> S.plus(other: S): Set<S> = setOf(this, other)

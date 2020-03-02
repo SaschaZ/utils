@@ -27,6 +27,8 @@ val DependencyHandlerScope.coroutinesCore
     get() = "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
 val DependencyHandlerScope.coroutinesJdk
     get() = "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${Versions.coroutines}")
+val DependencyHandlerScope.testCoroutinesJdk
+    get() = "testImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${Versions.coroutines}")
 val DependencyHandlerScope.coroutinesAndroid
     get() = "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-android:${Versions.coroutines}")
 val DependencyHandlerScope.coroutinesSwing

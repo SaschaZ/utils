@@ -3,12 +3,14 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.core_testing.assertion.assert
+import de.gapps.utils.core_testing.assertion.onFail
 import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.misc.name
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
 import de.gapps.utils.statemachine.MachineExTest.TestState.*
 import de.gapps.utils.statemachine.scopes.on
 import de.gapps.utils.statemachine.scopes.set
+import de.gapps.utils.statemachine.scopes.withData
 import org.junit.jupiter.api.Test
 
 
@@ -24,7 +26,11 @@ class MachineExTest {
         object D : TestState()
     }
 
-    sealed class TestEvent : IEvent {
+    data class TestData(val foo: String) : IData
+
+    sealed class TestEvent : IEvent<TestData> {
+        override var data: TestData? = null
+
         override fun toString(): String = this::class.name
 
         object FIRST : TestEvent()
@@ -36,12 +42,15 @@ class MachineExTest {
     @Test
     fun testBuilder() = runTest {
         var executed = 0
-        MachineEx<IData, TestEvent, TestState>(INITIAL) {
+        val data: TestData? = null
+        MachineEx<TestData, TestEvent, TestState>(INITIAL) {
             on event FIRST withState INITIAL set A
             on event FIRST + SECOND + THIRD withState A + B set C
-            on event THIRD withState C execAndSet { executed++; D }
+            on event THIRD withState C execAndSet { event, _ ->
+                executed++; (event.data as? TestData)?.foo onFail "data test" assert "foo"; D
+            }
             on event FOURTH withState D set B
-            on state D exec { executed++ }
+            on state C exec { _, _ -> executed++ }
         }.run {
             state assert INITIAL
 
@@ -49,21 +58,21 @@ class MachineExTest {
             state assert A
             executed assert 0
 
-            set eventSync SECOND
+            set eventSync SECOND.withData(TestData("boo"))
             state assert C
-            executed assert 0
-
-            set eventSync THIRD
-            state assert D
             executed assert 1
+
+            set eventSync (THIRD withData TestData("foo"))
+            state assert D
+            executed onFail "first" assert 2
 
             set eventSync FOURTH
             state assert B
-            executed assert 2
+            executed onFail "second" assert 2
 
             set eventSync FIRST
             state assert C
-            executed assert 2
+            executed onFail "third" assert 3
         }
     }
 

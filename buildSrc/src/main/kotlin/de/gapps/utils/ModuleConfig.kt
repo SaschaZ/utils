@@ -35,6 +35,7 @@ private fun Project.configureDependencies(type: ModuleType, block: DependencyHan
         when (type) {
             JVM -> {
                 coroutinesJdk
+                testCoroutinesJdk
             }
             ANDROID -> {
                 coroutinesAndroid

@@ -6,8 +6,6 @@ import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.scope.CoroutineScopeEx
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import de.gapps.utils.misc.asUnit
-import de.gapps.utils.time.ITimeEx
-import de.gapps.utils.time.TimeEx
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -17,7 +15,9 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * Base interface for an event of [MachineEx]
  */
-interface IEvent
+interface IEvent<out D : IData> {
+    var data: @UnsafeVariance D?
+}
 
 /**
  * Base interface for any event data of [MachineEx]
@@ -33,7 +33,7 @@ interface IState
 /**
  * TODO
  */
-open class MachineEx<out D : IData, out E : IEvent, out S : IState>(
+open class MachineEx<out D : IData, out E : IEvent<D>, out S : IState>(
     private val initialState: S,
     override val scope: CoroutineScopeEx = DefaultCoroutineScope(),
     builder: IMachineEx<D, E, S>.() -> Unit
@@ -59,7 +59,7 @@ open class MachineEx<out D : IData, out E : IEvent, out S : IState>(
         get() = previousStates.lastOrNull() ?: initialState
     override val previousStates: MutableList<@UnsafeVariance S> = ArrayList()
 
-    private val previousChanges: MutableSet<OnStateChanged> = mutableSetOf()
+    private val previousChanges: MutableSet<OnStateChanged<D, E, S>> = mutableSetOf()
 
     private val submittedEventCount = AtomicInteger(0)
     private val processedEventCount = AtomicInteger(0)
@@ -78,7 +78,7 @@ open class MachineEx<out D : IData, out E : IEvent, out S : IState>(
             previousStates.add(targetState)
             event?.let {
                 previousChanges.add(
-                    OnStateChanged(it, state, TimeEx())
+                    OnStateChanged(it, state)
                 ).asUnit()
             }.asUnit()
         }
@@ -93,8 +93,7 @@ open class MachineEx<out D : IData, out E : IEvent, out S : IState>(
     override fun release() = scope.cancel().asUnit()
 }
 
-data class OnStateChanged(
-    val event: IEvent,
-    val state: IState,
-    val time: ITimeEx
+data class OnStateChanged<out D : IData, out E : IEvent<D>, out S : IState>(
+    val event: E,
+    val state: S
 )

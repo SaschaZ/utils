@@ -5,7 +5,7 @@ import de.gapps.utils.coroutines.scope.CoroutineScopeEx
 /**
  * TODO
  */
-interface IMachineEx<out D: IData, out E : IEvent, out S : IState> {
+interface IMachineEx<out D : IData, out E : IEvent<D>, out S : IState> {
 
     val scope: CoroutineScopeEx
 
