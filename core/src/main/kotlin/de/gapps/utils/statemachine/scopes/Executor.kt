@@ -1,6 +1,9 @@
 package de.gapps.utils.statemachine.scopes
 
-import de.gapps.utils.statemachine.*
+import de.gapps.utils.statemachine.IData
+import de.gapps.utils.statemachine.IEvent
+import de.gapps.utils.statemachine.IMachineEx
+import de.gapps.utils.statemachine.IState
 
 open class Executor<out D : IData, out E : IEvent<D>, out S : IState>(
     machine: IMachineEx<D, E, S>,
@@ -9,8 +12,8 @@ open class Executor<out D : IData, out E : IEvent<D>, out S : IState>(
     val isStateEnter: Boolean = false
 ) : IMachineEx<D, E, S> by machine {
 
-    infix fun exec(block: (event: @UnsafeVariance E, state: @UnsafeVariance S) -> Unit) =
-        mapper.addMapping(states) { p1, p2 -> block(p1, p2) }
+    infix fun exec(block: ExecutorScope<D, E, S>.() -> Unit) =
+        mapper.addMapping(states) { event, state -> ExecutorScope(event, state).block() }
 }
 
 open class FullExecutor<out D : IData, out E : IEvent<D>, out S : IState>(
@@ -19,15 +22,15 @@ open class FullExecutor<out D : IData, out E : IEvent<D>, out S : IState>(
     states: Set<S> = emptySet()
 ) : Executor<D, E, S>(machine, events, states) {
 
-    infix fun execAndSet(block: (event: @UnsafeVariance E, state: @UnsafeVariance S) -> @UnsafeVariance S) =
-        mapper.addMapping(events, states) { p1, p2 -> block(p1, p2) }
+    infix fun execAndSet(block: ExecutorScope<D, E, S>.() -> @UnsafeVariance S) =
+        mapper.addMapping(events, states) { event, state -> ExecutorScope(event, state).block() }
 
     infix fun set(state: @UnsafeVariance S) = mapper.addMapping(events, states) { _, _ -> state }
 }
 
 data class ExecutorScope<out D : IData, out E : IEvent<D>, out S : IState>(
-    val event: E?,
-    val state: S,
-    val data: D?,
-    val previousChanges: Set<OnStateChanged<D, E, S>>
-)
+    val event: E,
+    val state: S
+) {
+    val data: D? = event.data
+}

@@ -42,15 +42,14 @@ class MachineExTest {
     @Test
     fun testBuilder() = runTest {
         var executed = 0
-        val data: TestData? = null
         MachineEx<TestData, TestEvent, TestState>(INITIAL) {
-            on event FIRST withState INITIAL set A
-            on event FIRST + SECOND + THIRD withState A + B set C
-            on event THIRD withState C execAndSet { event, _ ->
-                executed++; (event.data as? TestData)?.foo onFail "data test" assert "foo"; D
+            on event FIRST andState INITIAL set A
+            on event FIRST + SECOND + THIRD andState A + B set C
+            on event THIRD andState C execAndSet {
+                executed++; (data as? TestData)?.foo onFail "data test" assert "foo"; D
             }
-            on event FOURTH withState D set B
-            on state C exec { _, _ -> executed++ }
+            on event FOURTH andState D set B
+            on state C exec { executed++ }
         }.run {
             state assert INITIAL
 
@@ -58,7 +57,7 @@ class MachineExTest {
             state assert A
             executed assert 0
 
-            set eventSync SECOND.withData(TestData("boo"))
+            set eventSync SECOND.withData(TestData("moo"))
             state assert C
             executed assert 1
 
@@ -78,10 +77,8 @@ class MachineExTest {
 
     @Test
     fun testBuilderSyncSet() = runTest {
-        MachineEx<IData, TestEvent, TestState>(
-            INITIAL
-        ) {
-            on event +FIRST withState +INITIAL set A
+        MachineEx<IData, TestEvent, TestState>(INITIAL) {
+            on event FIRST andState INITIAL set A
         }.run {
             state assert INITIAL
 

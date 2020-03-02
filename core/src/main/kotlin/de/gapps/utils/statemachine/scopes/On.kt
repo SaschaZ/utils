@@ -21,8 +21,8 @@ class OnScope<out D : IData, out E : IEvent<D>, out S : IState>(machine: IMachin
         events: Set<E>
     ) : FullExecutor<D, E, S>(onScope, events) {
 
-        infix fun withState(states: IState) = FullExecutor(this, events, setOf(states))
-        infix fun withState(states: Set<IState>) = FullExecutor(this, events, states)
+        infix fun andState(state: IState) = FullExecutor(this, events, setOf(state))
+        infix fun andState(states: Set<IState>) = FullExecutor(this, events, states)
     }
 
     infix fun state(states: @UnsafeVariance S) = stateEnter(states)
