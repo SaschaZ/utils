@@ -10,6 +10,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: setup-android
-      uses: msfjarvis/setup-android@0.2
-      with:
-        gradleTasks: clean publishToMavenLocal
+      run: ./gradlew clean publishToMavenLocal
