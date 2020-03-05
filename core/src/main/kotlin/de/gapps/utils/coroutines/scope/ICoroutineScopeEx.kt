@@ -6,7 +6,7 @@ interface ICoroutineScopeEx : CoroutineScope {
 
     companion object {
 
-        internal const val DEFAULT_NAME = "UNNAMED SCOPE"
+        const val DEFAULT_NAME = "UNNAMED SCOPE"
     }
 
     suspend fun cancelAndJoin()

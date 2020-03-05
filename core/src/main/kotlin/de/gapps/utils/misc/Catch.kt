@@ -3,7 +3,7 @@ package de.gapps.utils.misc
 import de.gapps.utils.UtilsSettings.LOG_EXCEPTIONS
 import de.gapps.utils.UtilsSettings.PRINT_EXCEPTIONS
 import de.gapps.utils.coroutines.logToFile
-import de.gapps.utils.coroutines.scope.MainCoroutineScope
+import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import kotlinx.coroutines.CancellationException
 
 @Suppress("UNCHECKED_CAST")
@@ -30,7 +30,7 @@ inline fun <T> catch(
                     System.err.println("${throwable.javaClass.simpleName}: ${throwable.message}")
                     throwable.printStackTrace()
                 }
-                if (logStackTrace) MainCoroutineScope().logToFile(throwable)
+                if (logStackTrace) DefaultCoroutineScope().logToFile(throwable)
             }
             returnOnCatch ?: null as T
         } finally {

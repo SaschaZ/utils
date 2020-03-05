@@ -8,10 +8,6 @@ open class DefaultCoroutineScope(
     scopeName: String = DEFAULT_NAME
 ) : CoroutineScopeEx(scopeName, Dispatchers.Default)
 
-open class MainCoroutineScope(
-    scopeName: String = DEFAULT_NAME
-) : CoroutineScopeEx(scopeName, Dispatchers.Main)
-
 open class IoCoroutineScope(
     scopeName: String = DEFAULT_NAME
 ) : CoroutineScopeEx(scopeName, Dispatchers.IO)

@@ -39,6 +39,7 @@ private fun Project.configureDependencies(type: ModuleType, block: DependencyHan
             }
             ANDROID -> {
                 coroutinesAndroid
+                testCoroutinesAndroid
 
                 androidXappCompat
                 androidXcoreKtx
