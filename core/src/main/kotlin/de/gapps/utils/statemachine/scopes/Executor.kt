@@ -1,39 +1,57 @@
 package de.gapps.utils.statemachine.scopes
 
-import de.gapps.utils.statemachine.IData
+import de.gapps.utils.misc.asUnit
 import de.gapps.utils.statemachine.IEvent
 import de.gapps.utils.statemachine.IMachineEx
 import de.gapps.utils.statemachine.IState
 
-open class Executor(
-    machine: IMachineEx,
-    val events: Set<IEvent> = emptySet(),
-    val states: Set<IState> = emptySet(),
+open class Executor<out D : Any>(
+    machine: IMachineEx<D>,
+    val events: Set<IEvent<D>> = emptySet(),
+    val states: Set<IState<D>> = emptySet(),
     val isStateEnter: Boolean = false
-) : IMachineEx by machine {
+) : IMachineEx<D> by machine {
 
-    infix fun exec(block: suspend ExecutorScope.() -> Unit) =
-        mapper.addMapping(states) { event, state -> ExecutorScope(event, state).block() }
+    operator fun plusAssign(state: IState<@UnsafeVariance D>?) =
+        mapper.addMapping(events, states) { _, _ -> state }.asUnit()
+
+    operator fun plusAssign(block: suspend ExecutorScope<D>.() -> IState<@UnsafeVariance D>?) =
+        mapper.addMapping(events, states) { _, _ -> ExecutorScope(event!!, state).block() ?: state }.asUnit()
+
+    operator fun minusAssign(block: suspend ExecutorScope<D>.() -> Unit) =
+        mapper.addMapping(events, states) { _, _ -> ExecutorScope(event!!, state).block(); state }.asUnit()
 }
 
-open class FullExecutor(
-    machine: IMachineEx,
-    events: Set<IEvent> = emptySet(),
-    states: Set<IState> = emptySet()
-) : Executor(machine, events, states) {
+open class FullExecutor<out D : Any>(
+    machine: IMachineEx<D>,
+    events: Set<IEvent<D>> = emptySet(),
+    states: Set<IState<D>> = emptySet()
+) : Executor<D>(machine, events, states)
 
-    infix fun execAndSet(block: suspend ExecutorScope.() -> IState) =
-        mapper.addMapping(events, states) { event, state -> ExecutorScope(event, state).block() }
-
-    infix fun set(state: IState) = mapper.addMapping(events, states) { _, _ -> state }
-}
-
-data class ExecutorScope(
-    val event: IEvent,
-    val state: IState
+data class ExecutorScope<out D : Any>(
+    val event: IEvent<D>,
+    val state: IState<D>
 ) {
-    val data: IData? = event.data
+    val eventData: D? = event.data
+    val stateData: D? = state.data
 
     @Suppress("UNCHECKED_CAST")
-    fun <D : IData> data() = data as D
+    fun <D : Any> eventData() = eventData as? D
+
+    @Suppress("UNCHECKED_CAST")
+    fun <D : Any> stateData() = stateData as? D
+}
+
+operator fun <D : Any> Set<IState<D>>.plus(data: D): Set<IState<D>> {
+    forEach { it.data = data }
+    return this
+}
+
+operator fun <D : Any> IState<D>.plus(data: D): IState<D> {
+    this.data = data
+    return this
+}
+
+operator fun <D : Any> IState<D>.plusAssign(other: Any) {
+
 }

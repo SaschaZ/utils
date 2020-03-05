@@ -9,14 +9,14 @@ import de.gapps.utils.misc.name
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
 import de.gapps.utils.statemachine.MachineExTest.TestState.*
 import de.gapps.utils.statemachine.scopes.on
+import de.gapps.utils.statemachine.scopes.plus
 import de.gapps.utils.statemachine.scopes.set
-import de.gapps.utils.statemachine.scopes.withData
 import org.junit.jupiter.api.Test
 
 
 class MachineExTest {
 
-    sealed class TestState : IState {
+    sealed class TestState : StateImpl<Any>() {
         override fun toString(): String = this::class.name
 
         object INITIAL : TestState()
@@ -26,10 +26,10 @@ class MachineExTest {
         object D : TestState()
     }
 
-    data class TestData(val foo: String) : IData
+    data class TestEventData(val foo: String)
+    data class TestStateData(val moo: Boolean)
 
-    sealed class TestEvent : IEvent {
-        override var data: IData? = null
+    sealed class TestEvent : EventImpl<Any>() {
 
         override fun toString(): String = this::class.name
 
@@ -43,25 +43,25 @@ class MachineExTest {
     fun testBuilder() = runTest {
         var executed = 0
         MachineEx(INITIAL) {
-            on event FIRST andState INITIAL set A
-            on event FIRST + SECOND + THIRD andState A + B set C
-            on event THIRD andState C execAndSet {
-                executed++; (data as? TestData)?.foo onFail "data test" assert "foo"; D
+            on event FIRST andState INITIAL += A + TestStateData(true)
+            on event FIRST * SECOND * THIRD + TestEventData("boo") andState A * B + TestStateData(true) += C
+            on event THIRD andState C += {
+                executed++; eventData<TestEventData>()?.foo onFail "data test" assert "foo"; D
             }
-            on event FOURTH andState D set B
-            on state C exec { executed++ }
+            on event FOURTH andState D += B
+            on state C -= { executed++ }
         }.run {
             state assert INITIAL
 
-            set eventSync FIRST
+            set eventSync FIRST + TestEventData("woo")
             state assert A
             executed assert 0
 
-            set eventSync SECOND.withData(TestData("moo"))
+            set eventSync SECOND + TestEventData("moo")
             state assert C
             executed assert 1
 
-            set eventSync (THIRD withData TestData("foo"))
+            set eventSync THIRD + TestEventData("foo")
             state assert D
             executed onFail "first" assert 2
 
@@ -78,7 +78,7 @@ class MachineExTest {
     @Test
     fun testBuilderSyncSet() = runTest {
         MachineEx(INITIAL) {
-            on event FIRST andState INITIAL set A
+            on event FIRST andState INITIAL += A
         }.run {
             state assert INITIAL
 
