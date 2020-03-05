@@ -65,19 +65,21 @@ interface IMachineExMapper<out D : Any> {
         previousChanges: Set<OnStateChanged<@UnsafeVariance D>>
     ): IState<D>? {
         val mappedEvents = dataToActionMap.filter {
-            it.value.possibleEvents.contains(event)
-                    && it.value.possibleStates.contains(state)
+            event isOneOf it.value.possibleEvents && state isOneOf it.value.possibleStates
         }.mapNotNull { it.value.action(event, state) }
 
-        return when {
-            mappedEvents.size < 2 -> mappedEvents.firstOrNull()
-            else -> {
+        val newState = when {
+            mappedEvents.size in 1..2 -> mappedEvents.firstOrNull()
+            mappedEvents.isEmpty() -> {
                 Log.v("No action defined for $event and $state with ${previousChanges.joinToString()}")
                 null
             }
-        }?.also { newState ->
-            stateActionMap.filter { it.value.first.contains(newState) }.values.forEach { it.second(event, state) }
+            else -> throw IllegalStateException("To much states defined for $event and $state")
         }
+
+        stateActionMap.filter { newState == it.value.first }.values.forEach { it.second(event, state) }
+
+        return newState
     }
 }
 
@@ -92,3 +94,5 @@ class MachineExMapper<out D : Any> : IMachineExMapper<D> {
         HashMap()
 
 }
+
+infix fun <T : Any> T.isOneOf(list: Collection<T>) = list.contains(this)

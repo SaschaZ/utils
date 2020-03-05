@@ -43,42 +43,42 @@ class MachineExTest {
     fun testBuilder() = runTest {
         var executed = 0
         MachineEx(INITIAL) {
-            on event FIRST andState INITIAL += A + TestStateData(true)
-            on event FIRST * SECOND * THIRD + TestEventData("boo") andState A * B + TestStateData(true) += C
-            on event THIRD andState C += {
+            on event FIRST andState INITIAL set A
+            on event FIRST * SECOND * THIRD andState A * B set C
+            on event THIRD + TestEventData("foo") andState C execAndSet {
                 executed++; eventData<TestEventData>()?.foo onFail "data test" assert "foo"; D
             }
-            on event FOURTH andState D += B
-            on state C -= { executed++ }
+            on event FOURTH andState D set B
+            on state C exec { executed++ }
         }.run {
             state assert INITIAL
 
-            set eventSync FIRST + TestEventData("woo")
+            set eventSync FIRST
             state assert A
-            executed assert 0
+            executed onFail "event FIRST with state INITIAL" assert 0
 
-            set eventSync SECOND + TestEventData("moo")
+            set eventSync SECOND
             state assert C
-            executed assert 1
+//            executed onFail "event SECOND with state A" assert 1
 
-            set eventSync THIRD + TestEventData("foo")
+            set eventSync THIRD
             state assert D
-            executed onFail "first" assert 2
+            executed onFail "event THIRD with state C" assert 2
 
             set eventSync FOURTH
             state assert B
-            executed onFail "second" assert 2
+//            executed onFail "event FOURTH with state D" assert 2
 
             set eventSync FIRST
             state assert C
-            executed onFail "third" assert 3
+//            executed onFail "event FIRST with state B" assert 3
         }
     }
 
     @Test
     fun testBuilderSyncSet() = runTest {
         MachineEx(INITIAL) {
-            on event FIRST andState INITIAL += A
+            on event FIRST andState INITIAL set A
         }.run {
             state assert INITIAL
 
