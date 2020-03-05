@@ -4,22 +4,7 @@ import de.gapps.utils.ModuleType.ANDROID
 import de.gapps.utils.ModuleType.JVM
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.DependencyHandlerScope
-import org.gradle.kotlin.dsl.PluginDependenciesSpecScope
 import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.kotlin
-
-fun PluginDependenciesSpecScope.importPlugins(type: ModuleType) {
-    when (type) {
-        JVM -> kotlin("jvm")
-        ANDROID -> {
-            id("com.android.library")
-            kotlin("android")
-            id("kotlin-android-extensions")
-        }
-    }
-    id("maven-publish")
-    id("org.jetbrains.dokka")
-}
 
 fun Project.configModule(
     name: String,

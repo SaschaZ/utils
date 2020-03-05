@@ -14,8 +14,6 @@ plugins {
 
 configModule("android", ANDROID) {
     core
-
-    "testImplementation"("org.junit.jupiter:junit-jupiter-api:5.6.0")
 }
 
 android {

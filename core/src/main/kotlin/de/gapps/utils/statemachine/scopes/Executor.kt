@@ -12,7 +12,7 @@ open class Executor(
     val isStateEnter: Boolean = false
 ) : IMachineEx by machine {
 
-    infix fun exec(block: ExecutorScope.() -> Unit) =
+    infix fun exec(block: suspend ExecutorScope.() -> Unit) =
         mapper.addMapping(states) { event, state -> ExecutorScope(event, state).block() }
 }
 
@@ -22,7 +22,7 @@ open class FullExecutor(
     states: Set<IState> = emptySet()
 ) : Executor(machine, events, states) {
 
-    infix fun execAndSet(block: ExecutorScope.() -> IState) =
+    infix fun execAndSet(block: suspend ExecutorScope.() -> IState) =
         mapper.addMapping(events, states) { event, state -> ExecutorScope(event, state).block() }
 
     infix fun set(state: IState) = mapper.addMapping(events, states) { _, _ -> state }
