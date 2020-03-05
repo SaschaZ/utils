@@ -3,7 +3,6 @@ package de.gapps.utils.statemachine.scopes
 import de.gapps.utils.statemachine.IData
 import de.gapps.utils.statemachine.IEvent
 import de.gapps.utils.statemachine.IMachineEx
-import de.gapps.utils.statemachine.IState
 
 val IMachineEx.set get() = SetScope(this)
 
@@ -19,7 +18,7 @@ class SetScope(machine: IMachineEx) : IMachineEx by machine {
     }
 }
 
-infix fun IEvent.withData(data: IData): IEvent {
+infix fun IEvent.withData(data: IData?): IEvent {
     this.data = data
     return this
 }
