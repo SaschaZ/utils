@@ -19,6 +19,8 @@ interface IEvent {
     var data: IData?
 }
 
+open class EventImpl(override var data: IData? = null) : IEvent
+
 /**
  * Base interface for any event data of [MachineEx]
  */

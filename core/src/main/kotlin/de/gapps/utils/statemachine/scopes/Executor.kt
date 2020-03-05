@@ -33,4 +33,7 @@ data class ExecutorScope(
     val state: IState
 ) {
     val data: IData? = event.data
+
+    @Suppress("UNCHECKED_CAST")
+    fun <D : IData> data() = data as D
 }
