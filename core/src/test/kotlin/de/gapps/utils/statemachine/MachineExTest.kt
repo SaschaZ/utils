@@ -5,12 +5,13 @@ package de.gapps.utils.statemachine
 import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.core_testing.assertion.onFail
 import de.gapps.utils.core_testing.runTest
+import de.gapps.utils.statemachine.BaseType.Event
+import de.gapps.utils.statemachine.BaseType.State
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
 import de.gapps.utils.statemachine.MachineExTest.TestState.*
 import de.gapps.utils.statemachine.scopes.set
 import de.gapps.utils.time.duration.minutes
 import org.junit.jupiter.api.Test
-
 
 class MachineExTest {
 
@@ -23,8 +24,8 @@ class MachineExTest {
         object D : TestState()
     }
 
-    data class TestEventData(val foo: String)
-    data class TestStateData(val moo: Boolean)
+    data class TestEventData(val foo: String) : Data()
+    data class TestStateData(val moo: Boolean) : Data()
 
     sealed class TestEvent : Event() {
 
@@ -38,13 +39,16 @@ class MachineExTest {
     fun testBuilder() = runTest(10.minutes) {
         var executed = 0
         MachineEx(INITIAL) {
-            - FIRST / INITIAL += A
-            - FIRST * SECOND * THIRD / A * B += C
-            - THIRD / C *= {
+            -FIRST + INITIAL += A
+            -FIRST + SECOND + THIRD + A + B += C
+            -THIRD + C *= {
+                throw IllegalStateException("This state should never be active")
+            }
+            -THIRD * TestEventData("foo") + C *= {
                 executed++; eventData<TestEventData>()?.foo onFail "data test" assert "foo"; D
             }
-            - FOURTH / D += B
-            - C -= { executed++ }
+            -FOURTH + D += B
+            -C -= { executed++ }
         }.run {
             state.value assert INITIAL
 
@@ -56,7 +60,7 @@ class MachineExTest {
             state.value assert C
             executed onFail "event SECOND with state A" assert 1
 
-            set eventSync THIRD + TestEventData("foo")
+            set eventSync THIRD * TestEventData("foo")
             state.value assert D
             executed onFail "event THIRD with state C" assert 2
 
@@ -73,7 +77,7 @@ class MachineExTest {
     @Test
     fun testBuilderSyncSet() = runTest {
         MachineEx(INITIAL) {
-            - FIRST / INITIAL += A
+            -FIRST + INITIAL += A
         }.run {
             state.value assert INITIAL
 

@@ -6,6 +6,7 @@ import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.scope.CoroutineScopeEx
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import de.gapps.utils.misc.asUnit
+import de.gapps.utils.statemachine.BaseType.State
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -27,20 +28,20 @@ open class MachineEx(
     private val finishedProcessingEvent = Channel<Boolean>()
 
     private val eventMutex = Mutex()
-    private val eventChannel = Channel<ValueDataHolder<Event>>(Channel.BUFFERED)
+    private val eventChannel = Channel<ValueDataHolder>(Channel.BUFFERED)
 
-    override var event: ValueDataHolder<Event>?
+    override var event: ValueDataHolder?
         get() = previousEvents.lastOrNull()
         set(value) = value?.also {
             submittedEventCount.incrementAndGet()
             scope.launchEx(mutex = eventMutex) { eventChannel.send(value) }
         }.asUnit()
 
-    override val previousEvents: MutableList<ValueDataHolder<Event>> = ArrayList()
+    override val previousEvents: MutableList<ValueDataHolder> = ArrayList()
 
-    override val state: ValueDataHolder<State>
+    override val state: ValueDataHolder
         get() = previousStates.lastOrNull() ?: ValueDataHolder(initialState)
-    override val previousStates: MutableList<ValueDataHolder<State>> = ArrayList()
+    override val previousStates: MutableList<ValueDataHolder> = ArrayList()
 
     private val previousChanges: MutableSet<OnStateChanged> = mutableSetOf()
 
@@ -56,7 +57,7 @@ open class MachineEx(
         }
     }
 
-    private suspend fun ValueDataHolder<Event>.processEvent() {
+    private suspend fun ValueDataHolder.processEvent() {
         val stateBefore = state
         mapper.findStateForEvent(this, stateBefore, previousChanges)?.also { targetState ->
             previousStates.add(targetState)
@@ -74,7 +75,7 @@ open class MachineEx(
 }
 
 data class OnStateChanged(
-    val event: ValueDataHolder<Event>,
-    val stateBefore: ValueDataHolder<State>,
-    val stateAfter: ValueDataHolder<State>
+    val event: ValueDataHolder,
+    val stateBefore: ValueDataHolder,
+    val stateAfter: ValueDataHolder
 )

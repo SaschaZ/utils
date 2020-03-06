@@ -8,17 +8,17 @@ import de.gapps.utils.misc.runEach
 interface IMachineExMapper {
 
     data class DataToActionEntry(
-        val possibleEvents: Set<ValueDataHolder<Event>>,
-        val possibleStates: Set<ValueDataHolder<State>>,
-        val action: suspend (event: ValueDataHolder<Event>, state: ValueDataHolder<State>) -> ValueDataHolder<State>?
+        val possibleEvents: Set<ValueDataHolder>,
+        val possibleStates: Set<ValueDataHolder>,
+        val action: suspend (event: ValueDataHolder, state: ValueDataHolder) -> ValueDataHolder?
     )
 
     val dataToActionMap: MutableMap<Long, DataToActionEntry>
 
     fun addMapping(
-        events: Set<ValueDataHolder<Event>>,
-        states: Set<ValueDataHolder<State>>,
-        action: suspend (event: ValueDataHolder<Event>, state: ValueDataHolder<State>) -> ValueDataHolder<State>?
+        events: Set<ValueDataHolder>,
+        states: Set<ValueDataHolder>,
+        action: suspend (event: ValueDataHolder, state: ValueDataHolder) -> ValueDataHolder?
     ): Long = if (events.isEmpty()) addMapping(states) { event, state -> action(event, state) }
     else {
         newId.also {
@@ -28,17 +28,17 @@ interface IMachineExMapper {
     }
 
     data class StateActionEntry(
-        val possibleStates: Set<ValueDataHolder<State>>,
-        val action: suspend (event: ValueDataHolder<Event>, state: ValueDataHolder<State>) -> Unit
+        val possibleStates: Set<ValueDataHolder>,
+        val action: suspend (event: ValueDataHolder, state: ValueDataHolder) -> Unit
     )
 
     val stateActionMap: MutableMap<Long, StateActionEntry>
 
     fun addMapping(
-        states: Set<ValueDataHolder<State>>,
+        states: Set<ValueDataHolder>,
         action: suspend (
-            event: ValueDataHolder<Event>,
-            state: ValueDataHolder<State>
+            event: ValueDataHolder,
+            state: ValueDataHolder
         ) -> Unit
     ): Long = newId.also {
         Log.v("$it =>\n\tstates=$states\n\taction=$action")
@@ -63,10 +63,10 @@ interface IMachineExMapper {
      * @return new state
      */
     suspend fun findStateForEvent(
-        event: ValueDataHolder<Event>,
-        state: ValueDataHolder<State>,
+        event: ValueDataHolder,
+        state: ValueDataHolder,
         previousChanges: Set<OnStateChanged>
-    ): ValueDataHolder<State>? {
+    ): ValueDataHolder? {
         Log.v("findStateForEvent()\n\tevent=$event; state=$state;\n\tpreviousChanges=${previousChanges.joinToString()}")
 
         val filteredDataActions = dataToActionMap.filter {

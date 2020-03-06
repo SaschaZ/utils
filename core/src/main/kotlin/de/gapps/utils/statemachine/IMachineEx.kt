@@ -9,11 +9,11 @@ interface IMachineEx {
 
     val scope: CoroutineScopeEx
 
-    var event: ValueDataHolder<Event>?
-    val previousEvents: List<ValueDataHolder<Event>>
+    var event: ValueDataHolder?
+    val previousEvents: List<ValueDataHolder>
 
-    val state: ValueDataHolder<State>
-    val previousStates: List<ValueDataHolder<State>>
+    val state: ValueDataHolder
+    val previousStates: List<ValueDataHolder>
 
     val mapper: IMachineExMapper
 
