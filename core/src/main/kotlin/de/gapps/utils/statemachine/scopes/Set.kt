@@ -2,29 +2,29 @@
 
 package de.gapps.utils.statemachine.scopes
 
-import de.gapps.utils.statemachine.IEvent
+import de.gapps.utils.statemachine.Event
 import de.gapps.utils.statemachine.IMachineEx
+import de.gapps.utils.statemachine.ValueDataHolder
 
-val <D : Any> IMachineEx<D>.set get() = SetScope(this)
+val IMachineEx.set get() = SetScope(this)
 
-class SetScope<out D : Any>(machine: IMachineEx<D>) : IMachineEx<D> by machine {
+class SetScope(machine: IMachineEx) : IMachineEx by machine {
 
-    infix fun event(event: IEvent<@UnsafeVariance D>) {
+    infix fun event(event: ValueDataHolder<Event>) {
         this.event = event
     }
 
-    suspend infix fun eventSync(event: IEvent<@UnsafeVariance D>) {
+    suspend infix fun eventSync(event: ValueDataHolder<Event>) {
         event(event)
         suspendUtilProcessingFinished()
     }
-}
 
-operator fun <D : Any> IEvent<@UnsafeVariance D>.plus(data: @UnsafeVariance D?): IEvent<D> {
-    this.data = data
-    return this
-}
+    infix fun event(event: Event) {
+        this.event = ValueDataHolder(event)
+    }
 
-operator fun <D : Any> Set<IEvent<@UnsafeVariance D>>.plus(data: D?): Set<IEvent<@UnsafeVariance D>> {
-    forEach { it.data = data }
-    return this
+    suspend infix fun eventSync(event: Event) {
+        event(event)
+        suspendUtilProcessingFinished()
+    }
 }
