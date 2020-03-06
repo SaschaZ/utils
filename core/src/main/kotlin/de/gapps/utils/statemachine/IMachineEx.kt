@@ -5,19 +5,20 @@ import de.gapps.utils.coroutines.scope.CoroutineScopeEx
 /**
  * TODO
  */
-interface IMachineEx<out D : Any> {
+interface IMachineEx {
 
     val scope: CoroutineScopeEx
 
-    var event: @UnsafeVariance IEvent<@UnsafeVariance D>?
-    val previousEvents: List<IEvent<@UnsafeVariance D>>
+    var event: ValueDataHolder<Event>?
+    val previousEvents: List<ValueDataHolder<Event>>
 
-    val state: IState<@UnsafeVariance D>
-    val previousStates: List<IState<@UnsafeVariance D>>
+    val state: ValueDataHolder<State>
+    val previousStates: List<ValueDataHolder<State>>
 
-    val mapper: IMachineExMapper<D>
+    val mapper: IMachineExMapper
 
     suspend fun suspendUtilProcessingFinished()
 
     fun release()
 }
+

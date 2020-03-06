@@ -1,5 +1,6 @@
 package de.gapps.utils.misc
 
+import de.gapps.utils.log.Log
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 
@@ -12,7 +13,7 @@ open class DataClass {
     }
 
     private fun Any?.compare(other: Any?): Boolean {
-        return when {
+        val result = when {
             this is Collection<Any?> && other is Collection<Any?> -> {
                 val results = ArrayList<Boolean>()
                 if (size == other.size) {
@@ -25,9 +26,16 @@ open class DataClass {
             }
             else -> this == other
         }
+        println("compare(): $this => $result")
+        return result
     }
 
-    override fun hashCode(): Int = properties().sumBy { it.hashCode() }
+    override fun hashCode(): Int {
+        val properties = properties()
+        val result = super.hashCode() + properties.sumBy { it.hashCode() }
+        println("hashCode() $this -> $result")
+        return result
+    }
 
     override fun toString(): String = "${this::class.name}(" +
             "${properties().map { it.name to it.getter.call(this) }
