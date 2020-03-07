@@ -66,7 +66,8 @@ open class MachineEx(
             applyNewState(targetState, state, this)
         }
         processedEventCount.incrementAndGet()
-        if (!isProcessingActive) scope.launch { finishedProcessingEvent.send(true) }
+        if (!isProcessingActive)
+            scope.launch { finishedProcessingEvent.send(true) }
     }
 
     private fun applyNewState(
