@@ -67,7 +67,11 @@ interface IMachineExMapper {
         state: ValueDataHolder,
         previousChanges: Set<OnStateChanged>
     ): ValueDataHolder? {
-        Log.v("findStateForEvent()\n\tevent=$event; state=$state;\n\tpreviousChanges=${previousChanges.joinToString()}")
+        Log.v(
+            "findStateForEvent()\n\tevent=$event; state=$state;\n\tpreviousChanges=${previousChanges.joinToStringTabbed(
+                2
+            )}"
+        )
 
         val filteredDataActions = dataToActionMap.filter {
             event isOneOf it.value.possibleEvents && state isOneOf it.value.possibleStates
@@ -84,8 +88,8 @@ interface IMachineExMapper {
 
         println(
             "\tnewState=$newState;" +
-                    "\n\tfilteredDataActions=${filteredDataActions.toList().joinToString()}" +
-                    "\n\tfilteredStates=${filteredStates.joinToString()}"
+                    "\n\tfilteredDataActions=t${filteredDataActions.toList().joinToStringTabbed(2)}" +
+                    "\n\tfilteredStates=${filteredStates.joinToStringTabbed(2)}"
         )
         return newState
     }

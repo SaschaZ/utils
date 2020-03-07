@@ -44,7 +44,7 @@ open class ValueDataHolder(
                 (ignoreData || data == (other as? ValueDataHolder)?.data)
 
     override fun hashCode(): Int = value.hashCode() + if (ignoreData) 0 else data.hashCode()
-    override fun toString(): String = "${value::class.simpleName}(data=$data)"
+    override fun toString(): String = "${value::class.name}(data=$data)"
 }
 
 val <T : BaseType> T.holder

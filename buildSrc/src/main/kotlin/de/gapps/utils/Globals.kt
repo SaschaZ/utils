@@ -3,6 +3,6 @@ package de.gapps.utils
 object Globals {
 
     const val group = "dev.zieger.utils"
-    const val version = "1.1.111"
-    const val versionNumber = 44
+    const val version = "1.1.112"
+    const val versionNumber = 45
 }
