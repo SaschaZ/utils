@@ -13,14 +13,14 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:3.4.2")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.70")
-        classpath("org.jetbrains.dokka:dokka-gradle-plugin:0.10.1")
+        classpath("org.jetbrains.dokka:dokka-gradle-plugin:0.9.17")
         classpath("de.mannodermaus.gradle.plugins:android-junit5:1.3.2.0")
     }
 }
 
 plugins {
     kotlin("jvm") version "1.3.70"
-    id("org.jetbrains.dokka") version "0.10.1"
+    id("org.jetbrains.dokka") version "0.9.17"
 }
 
 allprojects {
