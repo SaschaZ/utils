@@ -1,3 +1,5 @@
+@file:Suppress("MemberVisibilityCanBePrivate", "unused")
+
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.misc.name
@@ -5,7 +7,7 @@ import de.gapps.utils.statemachine.BaseType.*
 
 sealed class BaseType {
 
-    abstract class Event : BaseType() {
+    abstract class Event(var ignoreData: Boolean = false) : BaseType() {
         open fun OnStateChanged.fired(event: Event) = Unit
         override fun toString(): String = this::class.name
     }
@@ -27,6 +29,7 @@ open class ValueDataHolder(
         get() = value is State
     val hasEvent
         get() = value is Event
+    val ignoreData = (value as? Event)?.ignoreData ?: false
 
     @Suppress("UNCHECKED_CAST")
     fun <T : Event> event() = value as T
@@ -38,9 +41,9 @@ open class ValueDataHolder(
 
     override fun equals(other: Any?): Boolean =
         value == (other as? ValueDataHolder)?.value &&
-                data == (other as? ValueDataHolder)?.data
+                (ignoreData || data == (other as? ValueDataHolder)?.data)
 
-    override fun hashCode(): Int = value.hashCode() + data.hashCode()
+    override fun hashCode(): Int = value.hashCode() + if (ignoreData) 0 else data.hashCode()
     override fun toString(): String = "${value::class.simpleName}(data=$data)"
 }
 

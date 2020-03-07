@@ -26,10 +26,10 @@ class MachineExTest {
     data class TestEventData(val foo: String) : Data()
     data class TestStateData(val moo: Boolean) : Data()
 
-    sealed class TestEvent : Event() {
+    sealed class TestEvent(ignoreData: Boolean = false) : Event(ignoreData) {
 
         object FIRST : TestEvent()
-        object SECOND : TestEvent()
+        object SECOND : TestEvent(true)
         object THIRD : TestEvent()
         object FOURTH : TestEvent()
     }
@@ -55,7 +55,7 @@ class MachineExTest {
             state.value assert A
             executed onFail "event FIRST with state INITIAL" assert 0
 
-            set eventSync SECOND
+            set eventSync SECOND * TestEventData("moo")
             state.value assert C
             executed onFail "event SECOND with state A" assert 1
 
