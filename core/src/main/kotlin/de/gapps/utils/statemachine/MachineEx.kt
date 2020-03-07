@@ -6,6 +6,7 @@ import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.scope.CoroutineScopeEx
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import de.gapps.utils.misc.asUnit
+import de.gapps.utils.statemachine.BaseType.Event
 import de.gapps.utils.statemachine.BaseType.State
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
@@ -20,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger
 open class MachineEx(
     private val initialState: State,
     override val scope: CoroutineScopeEx = DefaultCoroutineScope(),
+    private val previousChangesCacheSize: Int = 128,
     builder: suspend IMachineOperators.() -> Unit
 ) : IMachineEx, IMachineOperators {
 
@@ -43,7 +45,7 @@ open class MachineEx(
         get() = previousStates.lastOrNull() ?: ValueDataHolder(initialState)
     override val previousStates: MutableList<ValueDataHolder> = ArrayList()
 
-    private val previousChanges: MutableSet<OnStateChanged> = mutableSetOf()
+    private val previousChanges: MutableSet<OnStateChanged> = HashSet()
 
     private val submittedEventCount = AtomicInteger(0)
     private val processedEventCount = AtomicInteger(0)
@@ -59,12 +61,31 @@ open class MachineEx(
 
     private suspend fun ValueDataHolder.processEvent() {
         val stateBefore = state
-        mapper.findStateForEvent(this, stateBefore, previousChanges)?.also { targetState ->
+        mapper.findStateForEvent(this, stateBefore, previousChanges.toSet())?.also { targetState ->
             previousStates.add(targetState)
-            previousChanges.add(OnStateChanged(this, stateBefore, targetState))
+            applyNewState(targetState, state, this)
         }
         processedEventCount.incrementAndGet()
         if (!isProcessingActive) scope.launch { finishedProcessingEvent.send(true) }
+    }
+
+    private fun applyNewState(
+        newState: ValueDataHolder?,
+        state: ValueDataHolder,
+        event: ValueDataHolder
+    ) = newState?.let {
+        val stickyStateData = state.data.filter { f -> f.isSticky }
+        newState.data = setOf(*newState.data.toTypedArray(), *stickyStateData.toTypedArray())
+
+        previousChanges.add(
+            OnStateChanged(event, state, newState, previousChanges.take(previousChangesCacheSize).toSet()).apply {
+                state.state<State>().run { activeStateChanged(false) }
+                event.event<Event>().run { fired(event.event()) }
+                newState.state<State>().run { activeStateChanged(true) }
+            }
+        )
+        if (previousChanges.size > previousChangesCacheSize)
+            previousChanges.remove(previousChanges.first())
     }
 
     override suspend fun suspendUtilProcessingFinished() {
@@ -74,8 +95,3 @@ open class MachineEx(
     override fun release() = scope.cancel().asUnit()
 }
 
-data class OnStateChanged(
-    val event: ValueDataHolder,
-    val stateBefore: ValueDataHolder,
-    val stateAfter: ValueDataHolder
-)

@@ -28,4 +28,6 @@ object Versions {
 
     const val mockWebServer = "4.3.1"
     const val bouncyCastle = "1.46"
+
+    const val dokka = "0.10.1"
 }

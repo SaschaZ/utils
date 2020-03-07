@@ -5,8 +5,7 @@ package de.gapps.utils.statemachine
 import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.core_testing.assertion.onFail
 import de.gapps.utils.core_testing.runTest
-import de.gapps.utils.statemachine.BaseType.Event
-import de.gapps.utils.statemachine.BaseType.State
+import de.gapps.utils.statemachine.BaseType.*
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
 import de.gapps.utils.statemachine.MachineExTest.TestState.*
 import de.gapps.utils.statemachine.scopes.set

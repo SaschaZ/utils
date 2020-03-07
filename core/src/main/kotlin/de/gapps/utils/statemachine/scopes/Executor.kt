@@ -1,17 +1,18 @@
 package de.gapps.utils.statemachine.scopes
 
+import de.gapps.utils.statemachine.BaseType.Data
 import de.gapps.utils.statemachine.ValueDataHolder
 
 data class ExecutorScope(
     val event: ValueDataHolder,
     val state: ValueDataHolder
 ) {
-    val eventData: Any? = event.data
-    val stateData: Any? = state.data
+    val eventData: Set<Data> = event.data
+    val stateData: Set<Data> = state.data
 
     @Suppress("UNCHECKED_CAST")
-    fun <D : Any> eventData() = eventData as? D
+    inline fun <reified D : Data> eventData(idx: Int = 0) = eventData.filterIsInstance<D>()[idx] as? D
 
     @Suppress("UNCHECKED_CAST")
-    fun <D : Any> stateData() = stateData as? D
+    inline fun <reified D : Data> stateData(idx: Int = 0) = stateData.filterIsInstance<D>()[idx] as? D
 }
