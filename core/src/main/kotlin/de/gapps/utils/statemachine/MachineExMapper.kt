@@ -29,8 +29,13 @@ interface IMachineExMapper {
          *
          */
         fun match(event: ValueDataHolder, state: ValueDataHolder): Boolean {
-            val result = (isStateCondition || event isOneOf possibleEvents.wanted)
-                    && state isOneOf possibleStates.wanted
+            val isEventCondition = !isStateCondition
+            val areWantedEventsEmpty = possibleEvents.wanted.isEmpty()
+            val areWantedStatesEmpty = possibleStates.wanted.isEmpty()
+            val result = (isStateCondition && areWantedEventsEmpty
+                    || event isOneOf possibleEvents.wanted)
+                    && (isEventCondition && areWantedStatesEmpty
+                    || state isOneOf possibleStates.wanted)
                     && event isNoneOf possibleEvents.unwanted
                     && state isNoneOf possibleStates.unwanted
             return result
