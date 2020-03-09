@@ -17,6 +17,11 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * TODO
+ *
+ * @property initialState [State] that is activated initially in the state machine.
+ * @property scope [CoroutineScopeEx] that is used for all Coroutine operations.
+ * @property previousChangesCacheSize Size of the cache that store the state changes.
+ * @param builder Lambda that defines all state machine conditions. See [IMachineOperators] for more details.
  */
 open class MachineEx(
     private val initialState: State,
@@ -81,7 +86,7 @@ open class MachineEx(
         previousChanges.add(
             OnStateChanged(event, state, newState, previousChanges.take(previousChangesCacheSize).toSet()).apply {
                 state.state<State>().run { activeStateChanged(false) }
-                event.event<Event>().run { fired(event.event()) }
+                event.event<Event>().run { fired() }
                 newState.state<State>().run { activeStateChanged(true) }
             }
         )

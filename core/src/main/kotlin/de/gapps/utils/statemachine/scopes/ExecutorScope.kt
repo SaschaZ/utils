@@ -1,6 +1,6 @@
 package de.gapps.utils.statemachine.scopes
 
-import de.gapps.utils.statemachine.BaseType.Data
+import de.gapps.utils.statemachine.Data
 import de.gapps.utils.statemachine.ValueDataHolder
 
 data class ExecutorScope(
