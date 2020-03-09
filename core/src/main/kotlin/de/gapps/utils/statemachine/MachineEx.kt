@@ -15,6 +15,7 @@ import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.atomic.AtomicInteger
 
 
+
 /**
  * State machine with the following features:
  * - maps actions to incoming events (event condition) and state changes (state condition)
@@ -61,16 +62,58 @@ import java.util.concurrent.atomic.AtomicInteger
  * conditions:
  * ```
  * MachineEx(INITIAL) {
- *   // When the current state is INITIAL and the FIRST event is received change the state to A.
+ *   // All conditions start with a - (minus) sign.
+ *   // If the first parameter is an event the condition becomes an event condition.
+ *   // If the first parameter is a state the condition becomes a state condition.
+ *   // Some examples for event conditions:
+ *
+ *   // When the current [State] is [INITIAL] and the [FIRST] event is received change the [State] to [A].
  *   -FIRST + INITIAL += A
  *
- *   // When event SECOND is received change state to B.
+ *   // When the [SECOND] [Event] is received change [State] to [B].
  *   -SECOND += B
  *
- *   // When the current state is A or B and the incoming EVENT is FIRST, SECOND or THIRD change the state to C.
+ *   // When the current [State] is [A] or [B] and the [FIRST], [SECOND] or [THIRD] [Event] is received change the
+ *   // [State] to [C].
  *   -FIRST + SECOND + THIRD + A + B += C
+ *
+ *   // When the current [State] is [C] and the {THIRD] [Event] is received execute the provided lambda and set the
+ *   // new [State] to [D]-
+ *   -THIRD + C *= {
+ *     // do something
+ *     D // return the new state that should be activated for the provided event condition.
+ *   }
+ *
+ *   // You can see that event conditions must contain at least one [Event] and optional [State](s).
+ *   // Because there can only be one incoming [Event] and one existing [State] only one [Event] or [State] of the
+ *   // condition need to be equal. BUT keep in mind when providing no optional [State](s) the event condition will
+ *   // react on all [State]s.
+ *
+ *   // To react on [State]s when they get activated by an event condition you can use state conditions:
+ *
+ *   // When [C] gets activated execute the provided lambda.
+ *   -C -= {
+ *       // do something
+ *    } // [State] conditions can not set a new [State].
+ *
+ *   // When [C] gets activated with the incoming [Event] [FIRST] execute the provided lambda.
+ *   -C + FIRST -= {
+ *       // do something
+ *    }
+ *
+ *   // Summarize difference between [Event] and [State] conditions:
+ *   // - First parameter of an [Event] condition must be an [Event] -> First parameter of a [State] condition must be
+ *   //   a [State].
+ *   // - [Event] conditions are triggered on incoming [Event]s -> [State] conditions are triggered by the any state
+ *   //   that gets activated by an [Event] condition
+ *   // - [State] conditions can not activate a new [State]. One [Event] condition per incoming [Event] can activate a
+ *   //   new [State].
+ *   // - [Event] conditions match against all [State]s when the condition does not contain [State] parameter ->
+ *   //   [State] conditions match against all [Event]s when the condition does not contain an [Event] parameter
  * }
  * ```
+ * TODO [Data] usage
+ *
  *
  * @property initialState [State] that is activated initially in the state machine.
  * @property scope [CoroutineScopeEx] that is used for all Coroutine operations.
@@ -154,4 +197,3 @@ open class MachineEx(
 
     override fun release() = scope.cancel().asUnit()
 }
-
