@@ -16,7 +16,61 @@ import java.util.concurrent.atomic.AtomicInteger
 
 
 /**
- * TODO
+ * State machine with the following features:
+ * - maps actions to incoming events (event condition) and state changes (state condition)
+ * - events and states can contain dynamic data instances that can be referenced in any condition
+ * - DSL for defining event and state conditions
+ * - full Coroutine support
+ *
+ * Usage:
+ * First you need to define the events, states and data classes that should be used in the state machine:
+ * Because event and state instances are not allowed to change it makes sense to use objects for them. Any dynamic data
+ * can be attached with a [Data] class.
+ *
+ * States need to implement the [State] class. :
+ * ```
+ * sealed class TestState : State() {
+ *
+ *  object INITIAL : TestState()
+ *  object A : TestState()
+ *  object B : TestState()
+ *  object C : TestState()
+ *  object D : TestState()
+ * }
+ * ```
+ * Events need to implement the [Event] class:
+ * ```
+ * sealed class TestEvent(ignoreData: Boolean = false) : Event(ignoreData) {
+ *
+ *  object FIRST : TestEvent()
+ *  object SECOND : TestEvent(true)
+ *  object THIRD : TestEvent()
+ *  object FOURTH : TestEvent()
+ * }
+ * ```
+ * Data classes need to implement the [Data] class:
+ * ```
+ * sealed class TestData : Data() {
+ *
+ *  data class TestEventData(val foo: String) : TestData()
+ *  data class TestStateData(val moo: Boolean) : TestData()
+ * }
+ * ```
+ *
+ * After you have defined the needed events, states and possible data you can start defining the event and state
+ * conditions:
+ * ```
+ * MachineEx(INITIAL) {
+ *   // When the current state is INITIAL and the FIRST event is received change the state to A.
+ *   -FIRST + INITIAL += A
+ *
+ *   // When event SECOND is received change state to B.
+ *   -SECOND += B
+ *
+ *   // When the current state is A or B and the incoming EVENT is FIRST, SECOND or THIRD change the state to C.
+ *   -FIRST + SECOND + THIRD + A + B += C
+ * }
+ * ```
  *
  * @property initialState [State] that is activated initially in the state machine.
  * @property scope [CoroutineScopeEx] that is used for all Coroutine operations.
