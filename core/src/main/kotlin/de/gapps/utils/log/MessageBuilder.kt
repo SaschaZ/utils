@@ -13,7 +13,7 @@ object MessageBuilder {
     fun wrapMessage(cc: CoroutineContext? = null, lvl: String, msg: String, addTime: Boolean = true) =
         "${if (addTime) "$time - " else ""}$lvl:${cc.parentComponentString}-> $msg"
 
-    private val time
+    private val time // FIXME fix time printing on Android systems
         get() = ""//TimeEx().formatTime(DateFormat.TIME_ONLY)
 
     private val CoroutineContext?.parentComponentString
@@ -32,10 +32,10 @@ object MessageBuilder {
         get() = firstOrNull {
             it.fileName?.let { fn ->
                 listOf(
-                    "Log.kt", "MessageBuilder.kt", "LogContext.kt", "Controllable.kt", "Observable.kt",
-                    "ExecuteExInternal.kt"
+                    "Controllable.kt", "Observable.kt", "ExecuteExInternal.kt"
                 ).contains(fn)
             } == false
+                    && !it.className.startsWith(("de.gapps.utils.log"))
                     && !it.className.startsWith("kotlin")
                     && it.fixedMethodName != "wrapMessage"
         }
@@ -44,6 +44,6 @@ object MessageBuilder {
         get() = className.split(".").last().split("$").firstOrNull()
 
     private val StackTraceElement.fixedMethodName
-        get() = (className.split(".").last().split("$").getOrNull(1)
-            ?: methodName).nullWhen { it == "DefaultImpls" }
+        get() = ((className.split(".").last().split("$").getOrNull(1)
+            ?: methodName).nullWhen { it == "DefaultImpls" } ?: "").also { println("fixedMethodName=$it") }
 }

@@ -3,7 +3,7 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.log.Log
-import de.gapps.utils.statemachine.scopes.ExecutorScope
+import de.gapps.utils.statemachine.BaseType.*
 
 /**
  * Responsible to map the incoming [Event]s to their [State]s defined by provided mappings.
@@ -32,13 +32,12 @@ interface IMachineExMapper {
             val isEventCondition = !isStateCondition
             val areWantedEventsEmpty = possibleEvents.wanted.isEmpty()
             val areWantedStatesEmpty = possibleStates.wanted.isEmpty()
-            val result = (isStateCondition && areWantedEventsEmpty
+            return ((isStateCondition && areWantedEventsEmpty
                     || event isOneOf possibleEvents.wanted)
                     && (isEventCondition && areWantedStatesEmpty
                     || state isOneOf possibleStates.wanted)
                     && event isNoneOf possibleEvents.unwanted
-                    && state isNoneOf possibleStates.unwanted
-            return result
+                    && state isNoneOf possibleStates.unwanted)
         }
     }
 
@@ -48,7 +47,7 @@ interface IMachineExMapper {
      *
      */
     fun addMapping(
-        entryBuilder: EntryBuilder,
+        entryBuilder: ConditionBuilder,
         action: suspend ExecutorScope.() -> ValueDataHolder?
     ): Long = newId.also { id ->
         entryBuilder.run {
@@ -88,7 +87,7 @@ interface IMachineExMapper {
                     "previousChanges=${previousChanges.joinToStringTabbed(2)}"
         )
 
-        return ExecutorScope(event, state).run {
+        return ExecutorScope(event, state, previousChanges).run {
             val filteredDataActions = conditionToActionMap
                 .filter { !it.value.isStateCondition && it.value.match(event, state) }
             val mappedEvents = filteredDataActions.mapNotNull { it.value.run { action() } }

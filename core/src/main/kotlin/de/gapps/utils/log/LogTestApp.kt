@@ -1,7 +1,7 @@
 package de.gapps.utils.log
 
 import de.gapps.utils.coroutines.builder.launchEx
-import de.gapps.utils.log.Filter.Companion.GENERIC
+import de.gapps.utils.log.LogFilter.Companion.GENERIC
 import de.gapps.utils.misc.asUnit
 import de.gapps.utils.time.delay
 import de.gapps.utils.time.duration.milliseconds

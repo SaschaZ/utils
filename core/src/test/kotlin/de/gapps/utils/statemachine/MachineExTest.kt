@@ -5,12 +5,11 @@ package de.gapps.utils.statemachine
 import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.core_testing.assertion.onFail
 import de.gapps.utils.core_testing.runTest
-import de.gapps.utils.statemachine.BaseType.Event
-import de.gapps.utils.statemachine.BaseType.State
+import de.gapps.utils.statemachine.BaseType.*
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
 import de.gapps.utils.statemachine.MachineExTest.TestState.*
 import de.gapps.utils.statemachine.scopes.set
-import de.gapps.utils.time.duration.minutes
+import de.gapps.utils.time.duration.seconds
 import org.junit.jupiter.api.Test
 
 class MachineExTest {
@@ -36,21 +35,21 @@ class MachineExTest {
     }
 
     @Test
-    fun testBuilder() = runTest(10.minutes) {
+    fun testBuilder() = runTest(10.seconds) {
         var executed = 0
         var executed2 = 0
         MachineEx(INITIAL) {
             -FIRST + INITIAL += A
-            -FIRST + SECOND + THIRD + A + B += C
-            -THIRD + C *= {
+            -FIRST + SECOND + THIRD + A + B set C
+            -THIRD + C execAndSet {
                 throw IllegalStateException("This state should never be active")
             }
-            -THIRD * TestEventData("foo") + C *= {
-                executed++; eventData<TestEventData>()?.foo onFail "data test" assert "foo"; D
+            -THIRD * TestEventData("foo") + C execAndSet {
+                executed++; eventData<TestEventData>().foo onFail "data test" assert "foo"; D
             }
-            -FOURTH + D += B
-            -C -= { executed++ }
-            -C - FIRST -= { executed2++ }
+            -FOURTH + D set B
+            -C exec { executed++ }
+            -C - FIRST exec { executed2++ }
         }.run {
             state.value assert INITIAL
 
@@ -84,7 +83,7 @@ class MachineExTest {
     @Test
     fun testBuilderSyncSet() = runTest {
         MachineEx(INITIAL) {
-            -FIRST + INITIAL += A
+            -FIRST + INITIAL set A
         }.run {
             state.value assert INITIAL
 

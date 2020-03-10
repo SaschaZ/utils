@@ -2,16 +2,16 @@
 
 package de.gapps.utils.log
 
-import de.gapps.utils.log.Filter.Companion.NONE
+import de.gapps.utils.log.LogFilter.Companion.NONE
 
 open class LogContext(
-    var filter: Filter = NONE,
+    var logFilter: LogFilter = NONE,
     var message: String = ""
 ) {
-    var f: Filter
-        get() = filter
+    var f: LogFilter
+        get() = logFilter
         set(value) {
-            filter = value
+            logFilter = value
         }
 
     var m: String
@@ -61,8 +61,8 @@ infix fun <T : Any?> T.logI(msg: String) = apply { Log.i(msg) }
 infix fun <T : Any?> T.logW(msg: String) = apply { Log.w(msg) }
 infix fun <T : Any?> T.logE(msg: String) = apply { Log.e(msg) }
 
-fun <T : Any?> T.logV(msg: String, filter: Filter = NONE) = apply { Log.v(msg, filter) }
-fun <T : Any?> T.logD(msg: String, filter: Filter = NONE) = apply { Log.d(msg, filter) }
-fun <T : Any?> T.logI(msg: String, filter: Filter = NONE) = apply { Log.i(msg, filter) }
-fun <T : Any?> T.logW(msg: String, filter: Filter = NONE) = apply { Log.w(msg, filter) }
-fun <T : Any?> T.logE(msg: String, filter: Filter = NONE) = apply { Log.e(msg, filter) }
+fun <T : Any?> T.logV(msg: String, logFilter: LogFilter = NONE) = apply { Log.v(msg, logFilter) }
+fun <T : Any?> T.logD(msg: String, logFilter: LogFilter = NONE) = apply { Log.d(msg, logFilter) }
+fun <T : Any?> T.logI(msg: String, logFilter: LogFilter = NONE) = apply { Log.i(msg, logFilter) }
+fun <T : Any?> T.logW(msg: String, logFilter: LogFilter = NONE) = apply { Log.w(msg, logFilter) }
+fun <T : Any?> T.logE(msg: String, logFilter: LogFilter = NONE) = apply { Log.e(msg, logFilter) }

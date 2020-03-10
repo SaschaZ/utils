@@ -3,20 +3,18 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.misc.name
-import de.gapps.utils.statemachine.BaseType.Event
-import de.gapps.utils.statemachine.BaseType.State
-import de.gapps.utils.statemachine.scopes.ExecutorScope
+import de.gapps.utils.statemachine.BaseType.*
 
-data class EntryBuilder(
+data class ConditionBuilder(
     val events: MutableSet<ValueDataHolder>,
     val states: MutableSet<ValueDataHolder>,
     val isStateCondition: Boolean
 )
 
-interface IMachineOperators : IMachineEx {
+abstract class MachineDsl : IMachineEx {
 
-    // start entry with +
-    suspend operator fun BaseType.unaryMinus(): EntryBuilder = EntryBuilder(
+    // start entry with -
+    suspend operator fun BaseType.unaryMinus(): ConditionBuilder = ConditionBuilder(
         (this as? Event)?.let { mutableSetOf(ValueDataHolder(it)) } ?: HashSet(),
         (this as? State)?.let { mutableSetOf(ValueDataHolder(it)) } ?: HashSet(),
         this is State
@@ -24,29 +22,23 @@ interface IMachineOperators : IMachineEx {
 
 
     // link items with + operator
-    suspend operator fun EntryBuilder.plus(other: BaseType): EntryBuilder {
+    suspend operator fun ConditionBuilder.plus(other: BaseType): ConditionBuilder {
         when (other) {
             is State -> states.add(ValueDataHolder(other))
             is Event -> events.add(ValueDataHolder(other))
-            else -> throw IllegalArgumentException(
-                "Invalid type. Only states and events can be linked together. (is ${this::class.name})"
-            )
         }
         return this
     }
 
-    suspend operator fun EntryBuilder.plus(other: ValueDataHolder): EntryBuilder {
+    suspend operator fun ConditionBuilder.plus(other: ValueDataHolder): ConditionBuilder {
         when {
             other.value is State -> states.add(other)
             other.value is Event -> events.add(other)
-            else -> throw IllegalArgumentException(
-                "Invalid type. Only states and events can be linked together. (is ${other::class.name})"
-            )
         }
         return this
     }
 
-    suspend operator fun EntryBuilder.minus(other: BaseType): EntryBuilder {
+    suspend operator fun ConditionBuilder.minus(other: BaseType): ConditionBuilder {
         when (other) {
             is State -> states.add(ValueDataHolder(other, exclude = true))
             is Event -> events.add(ValueDataHolder(other, exclude = true))
@@ -65,7 +57,7 @@ interface IMachineOperators : IMachineEx {
     suspend operator fun ValueDataHolder.times(data: Data?) =
         apply { this.data = data.toSet }
 
-    suspend operator fun EntryBuilder.times(data: Data?) = apply {
+    suspend operator fun ConditionBuilder.times(data: Data?) = apply {
         (events + states).map {
             it.apply { this.data = data.toSet }
         }
@@ -78,41 +70,71 @@ interface IMachineOperators : IMachineEx {
     operator fun ValueDataHolder.div(data: Data?) =
         apply { this.data = data.toSet }
 
-    operator fun EntryBuilder.div(data: Data?) = apply {
+    operator fun ConditionBuilder.div(data: Data?) = apply {
         (events + states).map {
             it.apply { this.data = data.toSet }
         }.toSet()
     }
 
-    // define action and/or new state with assign operators
+    // define action and/or new state with assign operators:
+
     // action wih new state +=
-    suspend operator fun EntryBuilder.plusAssign(state: State) {
+    suspend operator fun ConditionBuilder.plusAssign(state: State) {
         this += ValueDataHolder(state)
     }
 
+    // Same as += but with more proper name
+    suspend infix fun ConditionBuilder.set(state: State) {
+        this += state
+    }
+
     // action with new state and data +=
-    suspend operator fun EntryBuilder.plusAssign(state: ValueDataHolder) {
+    suspend operator fun ConditionBuilder.plusAssign(state: ValueDataHolder) {
         this += { state }
     }
 
-    // suspended with optional new state and data +=
-    suspend operator fun EntryBuilder.plusAssign(block: suspend ExecutorScope.() -> ValueDataHolder?) {
-        mapper.addMapping(this) { block() }
+    suspend infix fun ConditionBuilder.set(state: ValueDataHolder) {
+        this += state
     }
 
-    // suspended action with optional new state *=
-    suspend operator fun EntryBuilder.timesAssign(block: suspend ExecutorScope.() -> State?) {
+    // with optional new state and data +=
+    suspend operator fun <T : BaseType> ConditionBuilder.plusAssign(block: suspend ExecutorScope.() -> T?) {
+        this execAndSet block
+    }
+
+    suspend infix fun ConditionBuilder.exec(block: suspend ExecutorScope.() -> Unit) {
+        mapper.addMapping(this) {
+            block()
+            null
+        }
+    }
+
+    suspend infix fun <T : BaseType> ConditionBuilder.execAndSet(block: suspend ExecutorScope.() -> T?) {
+        mapper.addMapping(this) {
+            when (val result = block()) {
+                is State -> {
+                    ValueDataHolder(result)
+                }
+                is ValueDataHolder -> {
+                    result
+                }
+                else -> throw IllegalArgumentException("Unknown type ${result?.let { it::class.name }}")
+            }
+        }
+    }
+
+    // action with optional new state *=
+    suspend operator fun ConditionBuilder.timesAssign(block: suspend ExecutorScope.() -> State?) {
         mapper.addMapping(this) {
             ValueDataHolder(block() as State)
         }
     }
 
-    // suspended action only
-    suspend operator fun EntryBuilder.minusAssign(block: suspend ExecutorScope.() -> Unit) {
+    // action only
+    suspend operator fun ConditionBuilder.minusAssign(block: suspend ExecutorScope.() -> Unit) {
         mapper.addMapping(this) { block(); state }
     }
 }
-
 @Suppress("UNCHECKED_CAST")
 private val Set<ValueDataHolder>.events
     get() = filter { it.value is Event }.map { it }.toSet()

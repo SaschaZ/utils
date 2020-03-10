@@ -1,6 +1,7 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.coroutines.scope.CoroutineScopeEx
+import de.gapps.utils.statemachine.BaseType.ValueDataHolder
 
 /**
  * TODO

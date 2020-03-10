@@ -13,7 +13,7 @@ internal class LogFilterProxyTest {
         println("before test")
 
         repeat(100) {
-            Log.v("das ist ein test $it", filter = Filter.Companion.GENERIC("someId", 1.seconds, false, false))
+            Log.v("das ist ein test $it", logFilter = LogFilter.Companion.GENERIC("someId", 1.seconds, false, false))
             delay(100.milliseconds)
         }
     }

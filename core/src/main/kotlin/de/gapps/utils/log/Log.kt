@@ -2,190 +2,98 @@
 
 package de.gapps.utils.log
 
-import de.gapps.utils.coroutines.builder.launchEx
-import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
-import de.gapps.utils.log.Filter.Companion.EXTERNAL
-import de.gapps.utils.log.Filter.Companion.EXTERNAL.Companion.ExternalReturn.OK
-import de.gapps.utils.log.Filter.Companion.EXTERNAL.Companion.ExternalReturn.RECHECK
-import de.gapps.utils.log.Filter.Companion.GENERIC
-import de.gapps.utils.log.Filter.Companion.NONE
-import de.gapps.utils.misc.nullWhen
-import de.gapps.utils.time.ITimeEx
-import de.gapps.utils.time.TimeEx
-import de.gapps.utils.time.base.minus
-import de.gapps.utils.time.base.plus
-import de.gapps.utils.time.duration.IDurationEx
-import de.gapps.utils.time.duration.milliseconds
+import de.gapps.utils.log.LogFilter.Companion.NONE
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 
-
-sealed class Filter {
-    open val id: String = ""
-    open val minInterval: IDurationEx? = null
-    open val resend: Boolean = true
-
-    companion object {
-        object NONE : Filter()
-
-        data class GENERIC(
-            override val id: String,
-            override val minInterval: IDurationEx? = null,
-            override val resend: Boolean = true,
-            val onlyOnContentChange: Boolean = true
-        ) : Filter()
-
-        data class EXTERNAL(
-            override val id: String,
-            val callback: (LogLevel?, String) -> ExternalReturn
-        ) : Filter() {
-            companion object {
-                sealed class ExternalReturn {
-                    object OK : ExternalReturn()
-                    object DENY : ExternalReturn()
-                    class RECHECK(val duration: IDurationEx) : ExternalReturn()
-                }
-            }
-        }
-    }
-}
-
-internal class LogFilterProxy(private val scope: DefaultCoroutineScope = DefaultCoroutineScope()) {
-
-    private val previousContentMessages = HashMap<String, Pair<LogLevel?, String>>()
-    private val previousIntervalMessages = HashMap<String, Triple<ITimeEx, LogLevel?, String>>()
-    private val previousIntervalMessagesResend = HashMap<String, Triple<Job, LogLevel?, String>>()
-
-    fun filterMessage(level: LogLevel?, msg: String, filter: Filter = NONE, action: (LogLevel?, String) -> Unit) {
-        when (filter) {
-            NONE -> action(level, msg)
-            is GENERIC -> {
-                val contentChanged = !filter.onlyOnContentChange
-                        || previousContentMessages[filter.id]?.second?.let { it != msg } != false
-
-                val now = TimeEx()
-                val minInterval = filter.minInterval ?: 1.milliseconds
-                val toWait = previousIntervalMessages[filter.id]?.first.let { last ->
-                    last?.let { last - now + minInterval }
-                }
-
-                fun act(level: LogLevel?, msg: String) {
-                    action(level, msg)
-                    previousContentMessages[filter.id] = level to msg
-                    previousIntervalMessages[filter.id] = now to level to msg
-                    previousIntervalMessagesResend.remove(filter.id)
-                }
-
-                if (contentChanged) {
-                    if (toWait?.negative != false) act(level, msg)
-                    else if (filter.resend) {
-                        previousIntervalMessagesResend[filter.id]?.first?.cancel()
-                        previousIntervalMessagesResend[filter.id] =
-                            scope.launchEx(delayed = toWait) { act(level, msg) } to level to msg
-                    }
-                }
-            }
-            is EXTERNAL -> {
-                when (val externalReturn = filter.callback(level, msg)) {
-                    OK -> action(level, msg)
-                    is RECHECK -> scope.launchEx(delayed = externalReturn.duration) {
-                        filterMessage(level, msg, filter, action)
-                    }
-                    else -> Unit
-                }
-            }
-        }
-    }
-}
 
 object Log {
 
-    fun CoroutineScope.v(msg: String = "", filter: Filter = NONE) = out(
+    fun CoroutineScope.v(msg: String = "", logFilter: LogFilter = NONE) = out(
         LogLevel.VERBOSE,
         msg,
-        filter
+        logFilter
     )
 
-    fun v(msg: String = "", filter: Filter = NONE) = out(
+    fun v(msg: String = "", logFilter: LogFilter = NONE) = out(
         LogLevel.VERBOSE,
         msg,
-        filter
+        logFilter
     )
 
-    fun CoroutineScope.d(msg: String = "", filter: Filter = NONE) = out(
+    fun CoroutineScope.d(msg: String = "", logFilter: LogFilter = NONE) = out(
         LogLevel.DEBUG,
         msg,
-        filter
+        logFilter
     )
 
-    fun d(msg: String = "", filter: Filter = NONE) = out(
+    fun d(msg: String = "", logFilter: LogFilter = NONE) = out(
         LogLevel.DEBUG,
         msg,
-        filter
+        logFilter
     )
 
-    fun CoroutineScope.i(msg: String = "", filter: Filter = NONE) = out(
+    fun CoroutineScope.i(msg: String = "", logFilter: LogFilter = NONE) = out(
         LogLevel.INFO,
         msg,
-        filter
+        logFilter
     )
 
-    fun i(msg: String = "", filter: Filter = NONE) = out(
+    fun i(msg: String = "", logFilter: LogFilter = NONE) = out(
         LogLevel.INFO,
         msg,
-        filter
+        logFilter
     )
 
-    fun CoroutineScope.w(msg: String = "", filter: Filter = NONE) = out(
+    fun CoroutineScope.w(msg: String = "", logFilter: LogFilter = NONE) = out(
         LogLevel.WARNING,
         msg,
-        filter
+        logFilter
     )
 
-    fun w(msg: String = "", filter: Filter = NONE) = out(
+    fun w(msg: String = "", logFilter: LogFilter = NONE) = out(
         LogLevel.WARNING,
         msg,
-        filter
+        logFilter
     )
 
-    fun CoroutineScope.e(msg: String = "", filter: Filter = NONE) = out(
+    fun CoroutineScope.e(msg: String = "", logFilter: LogFilter = NONE) = out(
         LogLevel.EXCEPTION,
         msg,
-        filter
+        logFilter
     )
 
-    fun e(msg: String = "", filter: Filter = NONE) = out(
+    fun e(msg: String = "", logFilter: LogFilter = NONE) = out(
         LogLevel.EXCEPTION,
         msg,
-        filter
+        logFilter
     )
 
-    fun CoroutineScope.e(t: Throwable, msg: String = "", filter: Filter = NONE) = out(
+    fun CoroutineScope.e(t: Throwable, msg: String = "", logFilter: LogFilter = NONE) = out(
         LogLevel.EXCEPTION,
         msg,
-        filter,
+        logFilter,
         t
     )
 
-    fun e(t: Throwable, msg: String = "", filter: Filter = NONE) = out(
+    fun e(t: Throwable, msg: String = "", logFilter: LogFilter = NONE) = out(
         LogLevel.EXCEPTION,
         msg,
-        filter,
+        logFilter,
         t
     )
 
-    fun r(msg: String = "", filter: Filter = NONE) = out(null, msg, filter)
+    fun r(msg: String = "", logFilter: LogFilter = NONE) = out(null, msg, logFilter)
 
     var logLevel: LogLevel = LogLevel.VERBOSE
 
     private val filterProxy = LogFilterProxy()
 
-    private fun out(level: LogLevel?, msg: String, filter: Filter, throwable: Throwable? = null) =
-        null.out(level, msg, filter, throwable)
+    private fun out(level: LogLevel?, msg: String, logFilter: LogFilter, throwable: Throwable? = null) =
+        null.out(level, msg, logFilter, throwable)
 
-    private fun CoroutineScope?.out(level: LogLevel?, msg: String, filter: Filter, throwable: Throwable? = null) {
+    private fun CoroutineScope?.out(level: LogLevel?, msg: String, logFilter: LogFilter, throwable: Throwable? = null) {
         var lastMessage: String? = null
-        filterProxy.filterMessage(level, msg, filter) { l, m ->
+        filterProxy.filterMessage(level, msg, logFilter) { l, m ->
             elements.all {
                 lastMessage = it.log(l, lastMessage ?: m)
                 lastMessage != null
@@ -213,28 +121,6 @@ object Log {
         if (addWrapper) this + WrapMessage(addTime)
         if (addLevelFilter) this + LogLevelFilter
         if (addStdOut) this + PrintLn
-    }
-}
-
-interface LogElement {
-    fun log(level: LogLevel?, msg: String): String?
-}
-
-open class WrapMessage(val addTime: Boolean = true,
-                  private val builder: MessageBuilder = MessageBuilder) : LogElement {
-    override fun log(level: LogLevel?, msg: String) =
-        builder.wrapMessage(null, level?.short ?: "", msg, addTime)
-}
-
-object LogLevelFilter : LogElement {
-    override fun log(level: LogLevel?, msg: String) =
-        msg.nullWhen { level?.let { it >= Log.logLevel } == false }
-}
-
-object PrintLn : LogElement {
-    override fun log(level: LogLevel?, msg: String): String? {
-        println(msg)
-        return msg
     }
 }
 
