@@ -8,7 +8,6 @@ import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.statemachine.BaseType.*
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
 import de.gapps.utils.statemachine.MachineExTest.TestState.*
-import de.gapps.utils.statemachine.scopes.set
 import de.gapps.utils.time.duration.seconds
 import org.junit.jupiter.api.Test
 
