@@ -26,7 +26,6 @@ sealed class BaseType {
     sealed class Primary : BaseType() {
 
         /**,
-        open var ignoreForMatching: Boolean = false
          * All events need to implement this class.
          *
          * @property ignoreData  Set to `true` when the data of this event should have no influence when events get mapped.
@@ -60,8 +59,10 @@ sealed class BaseType {
      * @property isSticky Only relevant for data that is attached to states. When `true` the data of an active state is
      *                    attached to the next state that will get activated. Default is `false`.
      */
-    abstract class Data(open var isSticky: Boolean = false,
-                        override var ignoreData: Boolean = false) : BaseType()
+    abstract class Data(
+        open var isSticky: Boolean = false,
+        override var ignoreData: Boolean = false
+    ) : BaseType()
 
     /**
      * Container class for [Event]s or [State]s and their attached [Data].
@@ -95,7 +96,7 @@ sealed class BaseType {
         /**
          * `true` when the [Data] of a provided [Event] should be ignored when matching.
          */
-        override var ignoreData = (value as? Event)?.ignoreData ?: false
+        override var ignoreData = value.ignoreData
 
         /**
          * Returns an event as the provided type [T]. (unsafe)
@@ -117,14 +118,18 @@ sealed class BaseType {
          */
         inline fun <reified T : Data> data(idx: Int = 0): T = data.toList().filterIsInstance<T>()[idx]
 
-        override fun equals(other: Any?): Boolean =
-            value == (other as? ValueDataHolder)?.value &&
-                    (ignoreData
-                            || (other as? ValueDataHolder)?.ignoreData == true
-                            || data == (other as? ValueDataHolder)?.data)
+        override fun equals(other: Any?): Boolean = (other as? ValueDataHolder)?.let { holder ->
+            value == holder.value
+                    && (ignoreData || holder.ignoreData
+                    || (data.size == holder.data.size
+                    && data.mapIndexed { idx, value -> holder.data.toList()[idx].let { it.ignoreData || it == value } }.all { true }))
+        } ?: false
 
-        override fun hashCode(): Int = value.hashCode() + if (ignoreData) 0 else data.hashCode()
+        override fun hashCode(): Int =
+            value.hashCode() + if (ignoreData) 0 else data.sumBy { if (it.ignoreData) 0 else it.hashCode() }
+
         override fun toString(): String = "${value::class.name}(previousIdx=$previousIdx; data=$data)"
+
     }
 }
 
