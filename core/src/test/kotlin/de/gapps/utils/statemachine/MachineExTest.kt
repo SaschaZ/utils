@@ -6,6 +6,7 @@ import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.core_testing.assertion.onFail
 import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.statemachine.BaseType.*
+import de.gapps.utils.statemachine.BaseType.Primary.*
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
 import de.gapps.utils.statemachine.MachineExTest.TestState.*
 import de.gapps.utils.time.duration.seconds
@@ -20,6 +21,7 @@ class MachineExTest {
         object B : TestState()
         object C : TestState()
         object D : TestState()
+        object E : TestState()
     }
 
     data class TestEventData(val foo: String) : Data()
@@ -31,6 +33,7 @@ class MachineExTest {
         object SECOND : TestEvent(true)
         object THIRD : TestEvent()
         object FOURTH : TestEvent()
+        object FIFTH : TestEvent()
     }
 
     @Test
@@ -38,8 +41,9 @@ class MachineExTest {
         var executed = 0
         var executed2 = 0
         MachineEx(INITIAL) {
-            -FIRST + INITIAL += A
-            -FIRST + SECOND + THIRD + A + B set C
+            -FIRST + INITIAL set A
+            -FIFTH + INITIAL[1] set E
+            -FIRST + SECOND * TestEventData("moo") + THIRD + A + B + E set C
             -THIRD + C execAndSet {
                 throw IllegalStateException("This state should never be active")
             }
@@ -52,27 +56,32 @@ class MachineExTest {
         }.run {
             state.value assert INITIAL
 
-            set eventSync FIRST
+            fire eventSync FIRST
             state.value assert A
             executed onFail "event FIRST with state INITIAL" assert 0
             executed2 onFail "event FIRST with state INITIAL" assert 0
 
-            set eventSync SECOND * TestEventData("moo")
+            fire eventSync FIFTH
+            state.value assert E
+            executed onFail "event FIFTH with state A" assert 0
+            executed2 onFail "event FIFTH with state A" assert 0
+
+            fire eventSync SECOND * TestEventData("moo")
             state.value assert C
             executed onFail "event SECOND with state A" assert 1
             executed2 onFail "event SECOND with state A#2" assert 1
 
-            set eventSync THIRD * TestEventData("foo")
+            fire eventSync THIRD * TestEventData("foo")
             state.value assert D
             executed onFail "event THIRD with state C" assert 2
             executed2 onFail "event THIRD with state C#2" assert 1
 
-            set eventSync FOURTH
+            fire eventSync FOURTH
             state.value assert B
             executed onFail "event FOURTH with state D" assert 2
             executed2 onFail "event FOURTH with state D#2" assert 1
 
-            set eventSync FIRST
+            fire eventSync FIRST
             state.value assert C
             executed onFail "event FIRST with state B" assert 3
             executed2 onFail "event FIRST with state B#2" assert 1
@@ -86,14 +95,14 @@ class MachineExTest {
         }.run {
             state.value assert INITIAL
 
-            set event FOURTH
-            set event THIRD
-            set event FOURTH
-            set event THIRD
-            set event FOURTH
-            set event THIRD
-            set event FOURTH
-            set eventSync FIRST
+            fire event FOURTH
+            fire event THIRD
+            fire event FOURTH
+            fire event THIRD
+            fire event FOURTH
+            fire event THIRD
+            fire event FOURTH
+            fire eventSync FIRST
             state.value assert A
         }
     }

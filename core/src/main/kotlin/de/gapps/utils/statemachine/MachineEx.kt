@@ -7,6 +7,7 @@ import de.gapps.utils.coroutines.scope.CoroutineScopeEx
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import de.gapps.utils.misc.asUnit
 import de.gapps.utils.statemachine.BaseType.*
+import de.gapps.utils.statemachine.BaseType.Primary.*
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -170,25 +171,23 @@ open class MachineEx(
 
     override val mapper: IMachineExMapper = MachineExMapper()
 
+    private val previousChanges: MutableList<OnStateChanged> = ArrayList()
+
     private val finishedProcessingEvent = Channel<Boolean>()
 
     private val eventMutex = Mutex()
     private val eventChannel = Channel<ValueDataHolder>(Channel.BUFFERED)
 
-    override var event: ValueDataHolder?
-        get() = previousEvents.lastOrNull()
-        set(value) = value?.also {
+    override var event: ValueDataHolder
+        get() = currentEvent
+        set(value) {
             submittedEventCount.incrementAndGet()
             scope.launchEx(mutex = eventMutex) { eventChannel.send(value) }
-        }.asUnit()
+        }
 
-    override val previousEvents: MutableList<ValueDataHolder> = ArrayList()
+    private lateinit var currentEvent: ValueDataHolder
 
-    override val state: ValueDataHolder
-        get() = previousStates.lastOrNull() ?: ValueDataHolder(initialState)
-    override val previousStates: MutableList<ValueDataHolder> = ArrayList()
-
-    private val previousChanges: MutableSet<OnStateChanged> = HashSet()
+    override var state: ValueDataHolder = ValueDataHolder(initialState)
 
     private val submittedEventCount = AtomicInteger(0)
     private val processedEventCount = AtomicInteger(0)
@@ -203,10 +202,10 @@ open class MachineEx(
     }
 
     private suspend fun ValueDataHolder.processEvent() {
+        currentEvent = this
         val stateBefore = state
         mapper.findStateForEvent(this, stateBefore, previousChanges.toSet())?.also { targetState ->
-            previousStates.add(targetState)
-            applyNewState(targetState, state, this)
+            applyNewState(targetState, stateBefore, this)
         }
         processedEventCount.incrementAndGet()
         if (!isProcessingActive)
@@ -215,15 +214,16 @@ open class MachineEx(
 
     private fun applyNewState(
         newState: ValueDataHolder?,
-        state: ValueDataHolder,
+        stateBefore: ValueDataHolder,
         event: ValueDataHolder
     ) = newState?.let {
-        val stickyStateData = state.data.filter { f -> f.isSticky }
+        val stickyStateData = stateBefore.data.filter { f -> f.isSticky }
         newState.data = setOf(*newState.data.toTypedArray(), *stickyStateData.toTypedArray())
 
+        state = newState
         previousChanges.add(
-            OnStateChanged(event, state, newState).apply {
-                state.state<State>().run { activeStateChanged(false) }
+            OnStateChanged(event, stateBefore, newState).apply {
+                stateBefore.state<State>().run { activeStateChanged(false) }
                 event.event<Event>().run { fired() }
                 newState.state<State>().run { activeStateChanged(true) }
             }

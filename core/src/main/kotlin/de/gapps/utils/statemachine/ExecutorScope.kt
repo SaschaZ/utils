@@ -1,6 +1,7 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.statemachine.BaseType.*
+import de.gapps.utils.statemachine.BaseType.Primary.*
 
 data class ExecutorScope(
     val eventHolder: ValueDataHolder,

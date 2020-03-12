@@ -3,7 +3,9 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.log.Log
+import de.gapps.utils.misc.whenNotNull
 import de.gapps.utils.statemachine.BaseType.*
+import de.gapps.utils.statemachine.BaseType.Primary.*
 
 /**
  * Responsible to map the incoming [Event]s to their [State]s defined by provided mappings.
@@ -28,16 +30,49 @@ interface IMachineExMapper {
         /**
          *
          */
-        fun match(event: ValueDataHolder, state: ValueDataHolder): Boolean {
+        fun match(
+            event: ValueDataHolder,
+            state: ValueDataHolder,
+            previousChanges: Set<OnStateChanged>
+        ): Boolean {
             val isEventCondition = !isStateCondition
             val areWantedEventsEmpty = possibleEvents.wanted.isEmpty()
             val areWantedStatesEmpty = possibleStates.wanted.isEmpty()
-            return ((isStateCondition && areWantedEventsEmpty
-                    || event isOneOf possibleEvents.wanted)
-                    && (isEventCondition && areWantedStatesEmpty
-                    || state isOneOf possibleStates.wanted)
-                    && event isNoneOf possibleEvents.unwanted
-                    && state isNoneOf possibleStates.unwanted)
+            val pc = previousChanges.toList()
+
+            val wantedEventMatch = isStateCondition && areWantedEventsEmpty || possibleEvents.wanted.any { holder ->
+                when (holder.previousIdx) {
+                    0 -> event
+                    else -> pc.getOrNull(holder.previousIdx - 1)?.event
+                } == holder
+            }
+
+            val wantedStateMatch = isEventCondition && areWantedStatesEmpty || possibleStates.wanted.any { holder ->
+                val s = when (holder.previousIdx) {
+                    0 -> state
+                    else -> pc.getOrNull(holder.previousIdx - 1)?.stateBefore
+                }
+                s == holder
+            }
+
+            val unwantedEventMatch = possibleEvents.unwanted.all { holder ->
+                when (holder.previousIdx) {
+                    0 -> event
+                    else -> pc.getOrNull(holder.previousIdx - 1)?.event
+                } != holder
+            }
+
+            val unwantedStateMatch = possibleStates.unwanted.all { holder ->
+                when (holder.previousIdx) {
+                    0 -> state
+                    else -> pc.getOrNull(holder.previousIdx - 1)?.stateBefore
+                } != holder
+            }
+
+            return wantedEventMatch
+                    && wantedStateMatch
+                    && unwantedEventMatch
+                    && unwantedStateMatch
         }
     }
 
@@ -89,7 +124,9 @@ interface IMachineExMapper {
 
         return ExecutorScope(event, state, previousChanges).run {
             val filteredDataActions = conditionToActionMap
-                .filter { !it.value.isStateCondition && it.value.match(event, state) }
+                .filter {
+                    !it.value.isStateCondition && it.value.match(event, state, previousChanges)
+                }
             val mappedEvents = filteredDataActions.mapNotNull { it.value.run { action() } }
 
             val newState = when (mappedEvents.size) {
@@ -100,7 +137,7 @@ interface IMachineExMapper {
             newState?.also {
                 conditionToActionMap.filter {
                     it.value.isStateCondition
-                            && it.value.match(event, newState)
+                            && it.value.match(event, newState, previousChanges)
                             && it.value.run { action() } != null
                 }
             }

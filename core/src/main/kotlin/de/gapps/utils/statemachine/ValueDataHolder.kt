@@ -4,41 +4,54 @@ package de.gapps.utils.statemachine
 
 import de.gapps.utils.misc.name
 import de.gapps.utils.statemachine.BaseType.*
+import de.gapps.utils.statemachine.BaseType.Primary.Event
+import de.gapps.utils.statemachine.BaseType.Primary.State
 
 /**
- * Base class for [Event]s and [State]s.
+ * Base class for [Event]s, [State]s, [Data] and [ValueDataHolder].
  */
 sealed class BaseType {
 
     /**
-     * All events need to implement this class.
-     *
-     * @property ignoreData  Set to `true` when the data of this event should have no influence when events get mapped.
-     *                       Default is `false`.
+     * `True` when [Data] should be ignored for matching.
+     * Default is `false`.
      */
-    abstract class Event(var ignoreData: Boolean = false) : BaseType() {
+    abstract var ignoreData: Boolean
 
-        /**
-         * Is called when this event is applied to the state machine.
-         */
-        open fun OnStateChanged.fired() = Unit
-
-        override fun toString(): String = this::class.name
-    }
+    override fun toString(): String = this::class.name
 
     /**
-     * All states need to implement this class.
+     * Base class for [Event]s and [State]s.
      */
-    abstract class State : BaseType() {
+    sealed class Primary : BaseType() {
+
+        /**,
+        open var ignoreForMatching: Boolean = false
+         * All events need to implement this class.
+         *
+         * @property ignoreData  Set to `true` when the data of this event should have no influence when events get mapped.
+         *                       Default is `false`.
+         */
+        abstract class Event(override var ignoreData: Boolean = false) : Primary() {
+
+            /**
+             * Is called when this event is applied to the state machine.
+             */
+            open fun OnStateChanged.fired() = Unit
+        }
 
         /**
-         * Is called when this state gets activated an deactivated.
-         *
-         * @param isActive `true` when this states gets activated. `false` when it gets deactivated.
+         * All states need to implement this class.
          */
-        open fun OnStateChanged.activeStateChanged(isActive: Boolean) = Unit
+        abstract class State(override var ignoreData: Boolean = false) : Primary() {
 
-        override fun toString(): String = this::class.name
+            /**
+             * Is called when this state gets activated an deactivated.
+             *
+             * @param isActive `true` when this states gets activated. `false` when it gets deactivated.
+             */
+            open fun OnStateChanged.activeStateChanged(isActive: Boolean) = Unit
+        }
     }
 
     /**
@@ -47,7 +60,8 @@ sealed class BaseType {
      * @property isSticky Only relevant for data that is attached to states. When `true` the data of an active state is
      *                    attached to the next state that will get activated. Default is `false`.
      */
-    abstract class Data(var isSticky: Boolean = false) : BaseType()
+    abstract class Data(open var isSticky: Boolean = false,
+                        override var ignoreData: Boolean = false) : BaseType()
 
     /**
      * Container class for [Event]s or [State]s and their attached [Data].
@@ -56,11 +70,14 @@ sealed class BaseType {
      * @property data [Set] of [Data] that is attached to the provided [BaseType].
      * @property exclude When `true` the provided value and data should not be part of a match.
      *                        Default is `false`.
+     * @property previousIdx Index to match against. 0 is the current item. 1 the previous item and so on..
+     *                       Default is 0.
      */
     open class ValueDataHolder(
-        val value: BaseType,
+        val value: Primary,
         var data: Set<Data> = emptySet(),
-        var exclude: Boolean = false
+        var exclude: Boolean = false,
+        var previousIdx: Int = 0
     ) : BaseType() {
 
         /**
@@ -78,7 +95,7 @@ sealed class BaseType {
         /**
          * `true` when the [Data] of a provided [Event] should be ignored when matching.
          */
-        val ignoreData = (value as? Event)?.ignoreData ?: false
+        override var ignoreData = (value as? Event)?.ignoreData ?: false
 
         /**
          * Returns an event as the provided type [T]. (unsafe)
@@ -107,14 +124,14 @@ sealed class BaseType {
                             || data == (other as? ValueDataHolder)?.data)
 
         override fun hashCode(): Int = value.hashCode() + if (ignoreData) 0 else data.hashCode()
-        override fun toString(): String = "${value::class.name}(data=$data)"
+        override fun toString(): String = "${value::class.name}(previousIdx=$previousIdx; data=$data)"
     }
 }
 
 /**
  * Creates a new [ValueDataHolder] instance with the [BaseType].
  */
-val <T : BaseType> T.holder
+val <T : Primary> T.holder
     get() = ValueDataHolder(this)
 
 /**

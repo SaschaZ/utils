@@ -4,6 +4,7 @@ package de.gapps.utils.statemachine
 
 import de.gapps.utils.misc.name
 import de.gapps.utils.statemachine.BaseType.*
+import de.gapps.utils.statemachine.BaseType.Primary.*
 
 data class ConditionBuilder(
     val events: MutableSet<ValueDataHolder>,
@@ -51,7 +52,7 @@ abstract class MachineDsl : IMachineEx {
 
 
     // apply Data with * operator SUSPENDED
-    suspend operator fun BaseType.times(data: Data?) =
+    suspend operator fun Primary.times(data: Data?) =
         ValueDataHolder(this, data.toSet)
 
     suspend operator fun ValueDataHolder.times(data: Data?) =
@@ -64,7 +65,7 @@ abstract class MachineDsl : IMachineEx {
     }
 
     // apply Data with / operator UNSUSPENDED
-    operator fun BaseType.div(data: Data?) =
+    operator fun Primary.div(data: Data?) =
         ValueDataHolder(this, data.toSet)
 
     operator fun ValueDataHolder.div(data: Data?) =
@@ -75,6 +76,13 @@ abstract class MachineDsl : IMachineEx {
             it.apply { this.data = data.toSet }
         }.toSet()
     }
+
+    /**
+     * Use the [Int] operator to match against one of the previous items. For example [State][3] will not try to match against the current state, it will try to match against the third last [State] instead.
+     * This works for all [BaseType]s.
+     */
+    operator fun Primary.get(idx: Int): ValueDataHolder = ValueDataHolder(this)[idx]
+    operator fun <T: ValueDataHolder> T.get(idx: Int): T = apply { previousIdx = idx }
 
     // define action and/or new state with assign operators:
 
@@ -134,7 +142,22 @@ abstract class MachineDsl : IMachineEx {
     suspend operator fun ConditionBuilder.minusAssign(block: suspend ExecutorScope.() -> Unit) {
         mapper.addMapping(this) { block(); state }
     }
+
+
+    /**
+     * Non DSL helper method to fire an [Event] with optional [Data] and suspend until it was processed by the state
+     * machine.
+     */
+    suspend fun fire(event: Event, data: Data? = null) = fire eventSync (event * data)
+
+    /**
+     * Non DSL helper method to add an [Event] with optional [Data] to the [Event] processing queue and return
+     * immediately.
+     */
+    fun fireAndForget(event: Event, data: Data? = null) = fire event (event / data)
+
 }
+
 @Suppress("UNCHECKED_CAST")
 private val Set<ValueDataHolder>.events
     get() = filter { it.value is Event }.map { it }.toSet()

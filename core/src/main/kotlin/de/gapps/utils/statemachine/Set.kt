@@ -2,10 +2,10 @@
 
 package de.gapps.utils.statemachine
 
-import de.gapps.utils.statemachine.BaseType.Event
+import de.gapps.utils.statemachine.BaseType.Primary.Event
 import de.gapps.utils.statemachine.BaseType.ValueDataHolder
 
-val IMachineEx.set get() = SetScope(this)
+val IMachineEx.fire get() = SetScope(this)
 
 class SetScope(machine: IMachineEx) : IMachineEx by machine {
 

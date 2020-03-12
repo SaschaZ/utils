@@ -44,6 +44,6 @@ object MessageBuilder {
         get() = className.split(".").last().split("$").firstOrNull()
 
     private val StackTraceElement.fixedMethodName
-        get() = ((className.split(".").last().split("$").getOrNull(1)
-            ?: methodName).nullWhen { it == "DefaultImpls" } ?: "").also { println("fixedMethodName=$it") }
+        get() = (className.split(".").last().split("$").getOrNull(1)
+            ?: methodName).nullWhen { it == "DefaultImpls" } ?: ""
 }
