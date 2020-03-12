@@ -18,6 +18,9 @@ interface IMachineEx {
 
     suspend fun suspendUtilProcessingFinished()
 
+    suspend fun fire(event: Event, data: Data? = null)
+    fun fireAndForget(event: Event, data: Data? = null)
+
     fun release()
 }
 

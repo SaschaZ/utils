@@ -3,9 +3,9 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.log.Log
-import de.gapps.utils.misc.whenNotNull
-import de.gapps.utils.statemachine.BaseType.*
-import de.gapps.utils.statemachine.BaseType.Primary.*
+import de.gapps.utils.statemachine.BaseType.Primary.Event
+import de.gapps.utils.statemachine.BaseType.Primary.State
+import de.gapps.utils.statemachine.BaseType.ValueDataHolder
 
 /**
  * Responsible to map the incoming [Event]s to their [State]s defined by provided mappings.

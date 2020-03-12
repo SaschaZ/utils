@@ -56,11 +56,9 @@ sealed class BaseType {
     /**
      * Every data needs to implement this class.
      *
-     * @property isSticky Only relevant for data that is attached to states. When `true` the data of an active state is
-     *                    attached to the next state that will get activated. Default is `false`.
+     * @property ignoreData If `true` this data does not need a match. Default is `false`.
      */
     abstract class Data(
-        open var isSticky: Boolean = false,
         override var ignoreData: Boolean = false
     ) : BaseType()
 

@@ -26,6 +26,7 @@ class MachineExTest {
 
     data class TestEventData(val foo: String) : Data()
     data class TestStateData(val moo: Boolean) : Data()
+    data class StickyTestData(val testVal: Boolean = true) : Data()
 
     sealed class TestEvent(ignoreData: Boolean = false) : Event(ignoreData) {
 

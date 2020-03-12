@@ -149,13 +149,11 @@ import java.util.concurrent.atomic.AtomicInteger
  * }
  * ```
  *
- * # **Sticky [Data]**
  * # **Previous [Event]s and [State]s**
  * # **Applying [Event]s to the state machine**
  * # **Benefits of using operators for defining conditions**
  * # **Coroutine support**
  *
- * ghghghg
  *
  * @property initialState [State] that is activated initially in the state machine.
  * @property scope [CoroutineScopeEx] that is used for all Coroutine operations.
@@ -217,9 +215,6 @@ open class MachineEx(
         stateBefore: ValueDataHolder,
         event: ValueDataHolder
     ) = newState?.let {
-        val stickyStateData = stateBefore.data.filter { f -> f.isSticky }
-        newState.data = setOf(*newState.data.toTypedArray(), *stickyStateData.toTypedArray())
-
         state = newState
         previousChanges.add(
             OnStateChanged(event, stateBefore, newState).apply {

@@ -15,7 +15,7 @@ data class ConditionBuilder(
 abstract class MachineDsl : IMachineEx {
 
     // start entry with -
-    suspend operator fun BaseType.unaryMinus(): ConditionBuilder = ConditionBuilder(
+    operator fun BaseType.unaryMinus(): ConditionBuilder = ConditionBuilder(
         (this as? Event)?.let { mutableSetOf(ValueDataHolder(it)) } ?: HashSet(),
         (this as? State)?.let { mutableSetOf(ValueDataHolder(it)) } ?: HashSet(),
         this is State
@@ -23,7 +23,7 @@ abstract class MachineDsl : IMachineEx {
 
 
     // link items with + operator
-    suspend operator fun ConditionBuilder.plus(other: BaseType): ConditionBuilder {
+    operator fun ConditionBuilder.plus(other: BaseType): ConditionBuilder {
         when (other) {
             is State -> states.add(ValueDataHolder(other))
             is Event -> events.add(ValueDataHolder(other))
@@ -31,15 +31,15 @@ abstract class MachineDsl : IMachineEx {
         return this
     }
 
-    suspend operator fun ConditionBuilder.plus(other: ValueDataHolder): ConditionBuilder {
-        when {
-            other.value is State -> states.add(other)
-            other.value is Event -> events.add(other)
+    operator fun ConditionBuilder.plus(other: ValueDataHolder): ConditionBuilder {
+        when (other.value) {
+            is State -> states.add(other)
+            is Event -> events.add(other)
         }
         return this
     }
 
-    suspend operator fun ConditionBuilder.minus(other: BaseType): ConditionBuilder {
+    operator fun ConditionBuilder.minus(other: BaseType): ConditionBuilder {
         when (other) {
             is State -> states.add(ValueDataHolder(other, exclude = true))
             is Event -> events.add(ValueDataHolder(other, exclude = true))
@@ -52,29 +52,14 @@ abstract class MachineDsl : IMachineEx {
 
 
     // apply Data with * operator SUSPENDED
-    suspend operator fun Primary.times(data: Data?) =
-        ValueDataHolder(this, data.toSet)
+    operator fun Primary.times(data: Data?) = ValueDataHolder(this, data.toSet)
 
-    suspend operator fun ValueDataHolder.times(data: Data?) =
-        apply { this.data = data.toSet }
+    operator fun ValueDataHolder.times(data: Data?) = apply { this.data = data.toSet }
 
-    suspend operator fun ConditionBuilder.times(data: Data?) = apply {
+    operator fun ConditionBuilder.times(data: Data?) = apply {
         (events + states).map {
             it.apply { this.data = data.toSet }
         }
-    }
-
-    // apply Data with / operator UNSUSPENDED
-    operator fun Primary.div(data: Data?) =
-        ValueDataHolder(this, data.toSet)
-
-    operator fun ValueDataHolder.div(data: Data?) =
-        apply { this.data = data.toSet }
-
-    operator fun ConditionBuilder.div(data: Data?) = apply {
-        (events + states).map {
-            it.apply { this.data = data.toSet }
-        }.toSet()
     }
 
     /**
@@ -148,13 +133,15 @@ abstract class MachineDsl : IMachineEx {
      * Non DSL helper method to fire an [Event] with optional [Data] and suspend until it was processed by the state
      * machine.
      */
-    suspend fun fire(event: Event, data: Data? = null) = fire eventSync (event * data)
+    override suspend fun fire(event: Event, data: Data?) =
+        fire eventSync (event * data)
 
     /**
      * Non DSL helper method to add an [Event] with optional [Data] to the [Event] processing queue and return
      * immediately.
      */
-    fun fireAndForget(event: Event, data: Data? = null) = fire event (event / data)
+    override fun fireAndForget(event: Event, data: Data?) =
+        fire event (event * data)
 
 }
 

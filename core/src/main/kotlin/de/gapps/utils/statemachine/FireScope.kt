@@ -5,9 +5,9 @@ package de.gapps.utils.statemachine
 import de.gapps.utils.statemachine.BaseType.Primary.Event
 import de.gapps.utils.statemachine.BaseType.ValueDataHolder
 
-val IMachineEx.fire get() = SetScope(this)
+val IMachineEx.fire get() = FireScope(this)
 
-class SetScope(machine: IMachineEx) : IMachineEx by machine {
+class FireScope(machine: IMachineEx) : IMachineEx by machine {
 
     infix fun event(event: BaseType) {
         when (event) {
