@@ -26,17 +26,21 @@ object MessageBuilder {
         get() = get(CoroutineName.Key)
 
     private val codePosition
-        get() = Exception().stackTrace.validTrace?.run { "[(${fileName}:${lineNumber})#${fixedMethodName}]" } ?: ""
+        get() = Exception().stackTrace.validTrace?.run { "[(${fileName}:${lineNumber})#${fixedMethodName}]" }
+            ?: ""
 
-    private val Array<StackTraceElement>.validTrace
-        get() = firstOrNull { trace ->
-            trace.fileName?.let { fn ->
-                listOf(
-                    "Controllable.kt", "Observable.kt", "ExecuteExInternal.kt"
-                ).contains(fn)
-            } == false
-                    && !trace.className.startsWith("de.gapp.utils.log")
-                    && !trace.className.startsWith("kotlin")
+    private val Array<StackTraceElement>.validTrace: StackTraceElement?
+        get() {
+            return firstOrNull { trace ->
+                !trace.className.startsWith("de.gapps.utils.log.")
+                        && !trace.className.startsWith("de.gapps.utils.coroutines.")
+                        && !trace.className.startsWith("kotlin")
+                        && trace.fileName?.let { fn ->
+                    listOf(
+                        "Controllable.kt", "Observable.kt", "ExecuteExInternal.kt"
+                    ).contains(fn)
+                } == false
+            }
         }
 
     private val StackTraceElement.fixedClassName
