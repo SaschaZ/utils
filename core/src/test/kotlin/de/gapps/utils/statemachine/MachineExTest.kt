@@ -5,8 +5,9 @@ package de.gapps.utils.statemachine
 import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.core_testing.assertion.onFail
 import de.gapps.utils.core_testing.runTest
-import de.gapps.utils.statemachine.BaseType.*
-import de.gapps.utils.statemachine.BaseType.Primary.*
+import de.gapps.utils.statemachine.BaseType.Data
+import de.gapps.utils.statemachine.BaseType.Primary.Event
+import de.gapps.utils.statemachine.BaseType.Primary.State
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
 import de.gapps.utils.statemachine.MachineExTest.TestState.*
 import de.gapps.utils.time.duration.seconds
@@ -51,7 +52,7 @@ class MachineExTest {
             -THIRD * TestEventData("foo") + C execAndSet {
                 executed++; eventData<TestEventData>().foo onFail "data test" assert "foo"; D
             }
-            -FOURTH + D set B
+            -FOURTH + D + C[1] set B
             -C exec { executed++ }
             -C - FIRST exec { executed2++ }
         }.run {

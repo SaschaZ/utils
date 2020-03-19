@@ -4,7 +4,8 @@ package de.gapps.utils.statemachine
 
 import de.gapps.utils.misc.name
 import de.gapps.utils.statemachine.BaseType.*
-import de.gapps.utils.statemachine.BaseType.Primary.*
+import de.gapps.utils.statemachine.BaseType.Primary.Event
+import de.gapps.utils.statemachine.BaseType.Primary.State
 
 data class ConditionBuilder(
     val events: MutableSet<ValueDataHolder>,
@@ -96,14 +97,14 @@ abstract class MachineDsl : IMachineEx {
     }
 
     suspend infix fun ConditionBuilder.exec(block: suspend ExecutorScope.() -> Unit) {
-        mapper.addMapping(this) {
+        mapper.addCondition(this) {
             block()
             null
         }
     }
 
     suspend infix fun <T : BaseType> ConditionBuilder.execAndSet(block: suspend ExecutorScope.() -> T?) {
-        mapper.addMapping(this) {
+        mapper.addCondition(this) {
             when (val result = block()) {
                 is State -> {
                     ValueDataHolder(result)
@@ -118,14 +119,14 @@ abstract class MachineDsl : IMachineEx {
 
     // action with optional new state *=
     suspend operator fun ConditionBuilder.timesAssign(block: suspend ExecutorScope.() -> State?) {
-        mapper.addMapping(this) {
+        mapper.addCondition(this) {
             ValueDataHolder(block() as State)
         }
     }
 
     // action only
     suspend operator fun ConditionBuilder.minusAssign(block: suspend ExecutorScope.() -> Unit) {
-        mapper.addMapping(this) { block(); state }
+        mapper.addCondition(this) { block(); state }
     }
 
 

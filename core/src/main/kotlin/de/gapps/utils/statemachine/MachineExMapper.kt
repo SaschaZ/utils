@@ -81,14 +81,14 @@ interface IMachineExMapper {
     /**
      *
      */
-    fun addMapping(
+    fun addCondition(
         entryBuilder: ConditionBuilder,
         action: suspend ExecutorScope.() -> ValueDataHolder?
     ): Long = newId.also { id ->
         entryBuilder.run {
             Log.v(
-                "$id => isStateCondition=$isStateCondition" +
-                        "\n\tevents=$events\n\tstates=$states\n\taction=$action"
+                "add condition: $id => isStateCondition=$isStateCondition" +
+                        "\n\tevents=$events\n\tstates=$states"
             )
             conditionToActionMap[id] = ConditionToActionEntry(events, states, isStateCondition, action)
         }
@@ -118,7 +118,7 @@ interface IMachineExMapper {
         previousChanges: Set<OnStateChanged>
     ): ValueDataHolder? {
         Log.v(
-            "findStateForEvent()\n\tevent=$event; state=$state;\n\t" +
+            "findStateForEvent()\n\tevent=$event;\n\tstate=$state;\n\t" +
                     "previousChanges=${previousChanges.joinToStringTabbed(2)}"
         )
 
@@ -142,7 +142,7 @@ interface IMachineExMapper {
                 }
             }
 
-            println(
+            Log.v(
                 "\tnewState=$newState;" +
                         "\n\tfilteredDataActions=t${filteredDataActions.toList().joinToStringTabbed(2)}"
             )
