@@ -29,15 +29,14 @@ object MessageBuilder {
         get() = Exception().stackTrace.validTrace?.run { "[(${fileName}:${lineNumber})#${fixedMethodName}]" } ?: ""
 
     private val Array<StackTraceElement>.validTrace
-        get() = firstOrNull {
-            it.fileName?.let { fn ->
+        get() = firstOrNull { trace ->
+            trace.fileName?.let { fn ->
                 listOf(
                     "Controllable.kt", "Observable.kt", "ExecuteExInternal.kt"
                 ).contains(fn)
             } == false
-                    && !it.className.startsWith(("de.gapps.utils.log"))
-                    && !it.className.startsWith("kotlin")
-                    && it.fixedMethodName != "wrapMessage"
+                    && !trace.className.startsWith("de.gapp.utils.log")
+                    && !trace.className.startsWith("kotlin")
         }
 
     private val StackTraceElement.fixedClassName
