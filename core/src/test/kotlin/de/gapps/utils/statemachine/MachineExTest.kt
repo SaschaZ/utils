@@ -108,4 +108,32 @@ class MachineExTest {
             state.value assert A
         }
     }
+
+    @Test
+    fun testPrev() = runTest {
+        MachineEx(INITIAL) {
+            -FIRST + INITIAL set A
+            -SECOND + A + INITIAL[1] set B
+            -THIRD + B + A[1] + INITIAL[2] set C
+            -FOURTH + C + B[1] + A[2] + INITIAL[3] set D
+            -FIFTH + D + C[1] + B[2] + A[3] + INITIAL[3] set E
+        }.run {
+            state.value assert INITIAL
+
+            fire eventSync FIRST
+            state.value assert A
+
+            fire eventSync SECOND
+            state.value assert B
+
+            fire eventSync THIRD
+            state.value assert C
+
+            fire eventSync FOURTH
+            state.value assert D
+
+            fire eventSync FIFTH
+            state.value assert D // because INITIAL[3] is false
+        }
+    }
 }

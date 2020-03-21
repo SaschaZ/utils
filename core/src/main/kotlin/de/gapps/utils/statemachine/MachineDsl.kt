@@ -40,13 +40,23 @@ abstract class MachineDsl : IMachineEx {
         return this
     }
 
-    operator fun ConditionBuilder.minus(other: BaseType): ConditionBuilder {
-        when (other) {
-            is State -> states.add(ValueDataHolder(other, exclude = true))
-            is Event -> events.add(ValueDataHolder(other, exclude = true))
-            else -> throw IllegalArgumentException(
-                "Invalid type. Only states and events can be linked together. (is ${this::class.name})"
-            )
+    // link unwanted items with - operator
+    operator fun ConditionBuilder.minus(other: State): ConditionBuilder {
+        states.add(ValueDataHolder(other, exclude = true))
+        return this
+    }
+
+    operator fun ConditionBuilder.minus(other: Event): ConditionBuilder {
+        events.add(ValueDataHolder(other, exclude = true))
+        return this
+    }
+
+    operator fun ConditionBuilder.minus(other: ValueDataHolder): ConditionBuilder {
+        other.value.let { v ->
+            when (v) {
+                is State -> states.add(ValueDataHolder(v, other.data))
+                is Event -> events.add(ValueDataHolder(v, other.data))
+            }
         }
         return this
     }
