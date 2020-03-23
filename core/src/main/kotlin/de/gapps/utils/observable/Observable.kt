@@ -10,7 +10,7 @@ open class Observable<out T : Any?>(
     storeRecentValues: Boolean = false,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
     onChanged: Observer<T> = {}
-) : Observable2<Any?, T>(
+) : IObservable<@UnsafeVariance T>, Observable2<Any?, T>(
     initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, subscriberStateChanged,
     onChanged
 )
