@@ -10,6 +10,7 @@ import de.gapps.utils.statemachine.ConditionElement.Master.Event
 import de.gapps.utils.statemachine.ConditionElement.Master.State
 import de.gapps.utils.statemachine.IConditionElement.ICombinedConditionElement
 import de.gapps.utils.statemachine.IConditionElement.ICombinedConditionElement.UsedAs.DEFINITION
+import de.gapps.utils.statemachine.IConditionElement.IMaster.IEvent
 
 /**
  * Responsible to map the incoming [Event]s to their [State]s defined by provided mappings.
@@ -54,10 +55,11 @@ interface IMachineExMapper {
         state: ICombinedConditionElement,
         previousChanges: Set<OnStateChanged>
     ): ICombinedConditionElement? {
-        Log.v(
-            "findStateForEvent()\n\tevent=$event;\n\tstate=$state;\n\t" +
-                    "previousChanges=${previousChanges.joinToStringTabbed(2)}"
-        )
+        if ((event.master as? IEvent)?.noLogging != true)
+            Log.v(
+                "findStateForEvent()\n\tevent=$event;\n\tstate=$state;\n\t" +
+                        "previousChanges=${previousChanges.joinToStringTabbed(2)}"
+            )
 
         val newState = ExecutorScope(event, state, previousChanges).run {
             MatchScope(event, state, previousChanges).run {
@@ -73,10 +75,11 @@ interface IMachineExMapper {
                     )
                 }
 
-                Log.v(
-                    "\tnewState=$newState;" +
-                            "\n\tmatchingEventConditions=t${matchingEventConditions.toList().joinToStringTabbed(2)}"
-                )
+                if ((event.master as? IEvent)?.noLogging != true)
+                    Log.v(
+                        "\tnewState=$newState;" +
+                                "\n\tmatchingEventConditions=t${matchingEventConditions.toList().joinToStringTabbed(2)}"
+                    )
 
                 newState
             }
@@ -88,7 +91,14 @@ interface IMachineExMapper {
                     val matchingStateConditions = conditions.filter {
                         it.value.isStateCondition && it.value.run { match() }
                     }
-                    Log.v("executing matching state conditions: \n${matchingStateConditions.entries.joinToStringTabbed(2)}")
+
+                    if ((event.master as? IEvent)?.noLogging != true)
+                        Log.v(
+                            "executing matching state conditions: \n${matchingStateConditions.entries.joinToStringTabbed(
+                                2
+                            )}"
+                        )
+
                     matchingStateConditions.forEach { it.value.run { action() } }
                 }
             }

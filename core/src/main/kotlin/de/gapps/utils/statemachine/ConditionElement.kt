@@ -21,6 +21,7 @@ interface IConditionElement {
 
     interface IMaster : IConditionElement {
         interface IEvent : IMaster {
+            val noLogging: Boolean
             fun OnStateChanged.fired() = Unit
         }
 
@@ -138,8 +139,12 @@ abstract class ConditionElement : IConditionElement {
          *
          * @property ignoreSlave  Set to `true` when the data of this event should have no influence when events get mapped.
          *                       Default is `false`.
+         * @property noLogging When `true` log messages for this [Event] are not printed. Default is `false`.
          */
-        abstract class Event(override var ignoreSlave: Boolean = false) : Master(), IEvent
+        abstract class Event(
+            override var ignoreSlave: Boolean = false,
+            override val noLogging: Boolean = false
+        ) : Master(), IEvent
 
         /**
          * All states need to implement this class.
