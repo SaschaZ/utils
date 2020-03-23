@@ -6,8 +6,10 @@ import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.scope.CoroutineScopeEx
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import de.gapps.utils.misc.asUnit
-import de.gapps.utils.statemachine.BaseType.*
-import de.gapps.utils.statemachine.BaseType.Primary.*
+import de.gapps.utils.statemachine.ConditionElement.CombinedConditionElement
+import de.gapps.utils.statemachine.ConditionElement.Master.Event
+import de.gapps.utils.statemachine.ConditionElement.Master.State
+import de.gapps.utils.statemachine.IConditionElement.ICombinedConditionElement
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -174,18 +176,18 @@ open class MachineEx(
     private val finishedProcessingEvent = Channel<Boolean>()
 
     private val eventMutex = Mutex()
-    private val eventChannel = Channel<ValueDataHolder>(Channel.BUFFERED)
+    private val eventChannel = Channel<ICombinedConditionElement>(Channel.BUFFERED)
 
-    override var event: ValueDataHolder
+    override var event: ICombinedConditionElement
         get() = currentEvent
         set(value) {
             submittedEventCount.incrementAndGet()
             scope.launchEx(mutex = eventMutex) { eventChannel.send(value) }
         }
 
-    private lateinit var currentEvent: ValueDataHolder
+    private lateinit var currentEvent: ICombinedConditionElement
 
-    override var state: ValueDataHolder = ValueDataHolder(initialState)
+    override var state: ICombinedConditionElement = CombinedConditionElement(initialState)
 
     private val submittedEventCount = AtomicInteger(0)
     private val processedEventCount = AtomicInteger(0)
@@ -199,7 +201,7 @@ open class MachineEx(
         }
     }
 
-    private suspend fun ValueDataHolder.processEvent() {
+    private suspend fun ICombinedConditionElement.processEvent() {
         currentEvent = this
         val stateBefore = state
         mapper.findStateForEvent(this, stateBefore, previousChanges.toSet())?.also { targetState ->
@@ -211,9 +213,9 @@ open class MachineEx(
     }
 
     private fun applyNewState(
-        newState: ValueDataHolder?,
-        stateBefore: ValueDataHolder,
-        event: ValueDataHolder
+        newState: ICombinedConditionElement?,
+        stateBefore: ICombinedConditionElement,
+        event: ICombinedConditionElement
     ) = newState?.let {
         state = newState
         previousChanges.add(

@@ -3,123 +3,90 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.misc.name
-import de.gapps.utils.statemachine.BaseType.*
-import de.gapps.utils.statemachine.BaseType.Primary.Event
-import de.gapps.utils.statemachine.BaseType.Primary.State
+import de.gapps.utils.statemachine.ConditionElement.*
+import de.gapps.utils.statemachine.ConditionElement.Master.Event
+import de.gapps.utils.statemachine.ConditionElement.Master.State
+import de.gapps.utils.statemachine.IConditionElement.ICombinedConditionElement.UsedAs.DEFINITION
 
-data class ConditionBuilder(
-    val events: MutableSet<ValueDataHolder>,
-    val states: MutableSet<ValueDataHolder>,
-    val isStateCondition: Boolean
-)
 
 abstract class MachineDsl : IMachineEx {
 
     // start entry with -
-    operator fun BaseType.unaryMinus(): ConditionBuilder = ConditionBuilder(
-        (this as? Event)?.let { mutableSetOf(ValueDataHolder(it)) } ?: HashSet(),
-        (this as? State)?.let { mutableSetOf(ValueDataHolder(it)) } ?: HashSet(),
-        this is State
-    )
+    operator fun Master.unaryMinus(): Condition = Condition(holder(DEFINITION))
 
+    // link wanted items with + operator
+    operator fun Condition.plus(other: Master): Condition =
+        copy(wanted = wanted + other.holder(DEFINITION).toSet)
 
-    // link items with + operator
-    operator fun ConditionBuilder.plus(other: BaseType): ConditionBuilder {
-        when (other) {
-            is State -> states.add(ValueDataHolder(other))
-            is Event -> events.add(ValueDataHolder(other))
-        }
-        return this
-    }
-
-    operator fun ConditionBuilder.plus(other: ValueDataHolder): ConditionBuilder {
-        when (other.value) {
-            is State -> states.add(other)
-            is Event -> events.add(other)
-        }
-        return this
-    }
+    operator fun Condition.plus(other: CombinedConditionElement): Condition =
+        copy(wanted = wanted + other.toSet)
 
     // link unwanted items with - operator
-    operator fun ConditionBuilder.minus(other: State): ConditionBuilder {
-        states.add(ValueDataHolder(other, exclude = true))
-        return this
-    }
+    operator fun Condition.minus(other: Master): Condition =
+        copy(unwanted = unwanted + other.holder(DEFINITION).toSet)
 
-    operator fun ConditionBuilder.minus(other: Event): ConditionBuilder {
-        events.add(ValueDataHolder(other, exclude = true))
-        return this
-    }
-
-    operator fun ConditionBuilder.minus(other: ValueDataHolder): ConditionBuilder {
-        other.value.let { v ->
-            when (v) {
-                is State -> states.add(ValueDataHolder(v, other.data))
-                is Event -> events.add(ValueDataHolder(v, other.data))
-            }
-        }
-        return this
-    }
+    operator fun Condition.minus(other: CombinedConditionElement): Condition =
+        copy(unwanted = unwanted + other.toSet)
 
 
-    // apply Data with * operator SUSPENDED
-    operator fun Primary.times(data: Data?) = ValueDataHolder(this, data.toSet)
+    // apply Data with * operator
+    operator fun <M : Master, S : Slave> M.times(data: S?) =
+        CombinedConditionElement(this, data.toSet)
 
-    operator fun ValueDataHolder.times(data: Data?) = apply { this.data = data.toSet }
+    operator fun <S : Slave> CombinedConditionElement.times(data: S?) =
+        copy(slaves = slaves.apply { addAll(data.toSet) })
 
-    operator fun ConditionBuilder.times(data: Data?) = apply {
-        (events + states).map {
-            it.apply { this.data = data.toSet }
-        }
-    }
+    // Only the case when slave is added to first item. unary operators are processed before.
+    operator fun <S : Slave> Condition.times(slave: S?) =
+        apply { slave?.also { start.slaves.add(slave) } }
 
     /**
      * Use the [Int] operator to match against one of the previous items. For example [State][3] will not try to match against the current state, it will try to match against the third last [State] instead.
-     * This works for all [BaseType]s.
+     * This works for all [ConditionElement]s.
      */
-    operator fun Primary.get(idx: Int): ValueDataHolder = ValueDataHolder(this)[idx]
-    operator fun <T: ValueDataHolder> T.get(idx: Int): T = apply { previousIdx = idx }
+    operator fun Master.get(idx: Int): CombinedConditionElement = CombinedConditionElement(this)[idx]
+    operator fun CombinedConditionElement.get(idx: Int): CombinedConditionElement = copy(idx = idx)
 
     // define action and/or new state with assign operators:
 
     // action wih new state +=
-    suspend operator fun ConditionBuilder.plusAssign(state: State) {
-        this += ValueDataHolder(state)
+    suspend operator fun Condition.plusAssign(state: State) {
+        this += CombinedConditionElement(state)
     }
 
     // Same as += but with more proper name
-    suspend infix fun ConditionBuilder.set(state: State) {
+    suspend infix fun Condition.set(state: State) {
         this += state
     }
 
     // action with new state and data +=
-    suspend operator fun ConditionBuilder.plusAssign(state: ValueDataHolder) {
+    suspend operator fun Condition.plusAssign(state: CombinedConditionElement) {
         this += { state }
     }
 
-    suspend infix fun ConditionBuilder.set(state: ValueDataHolder) {
+    suspend infix fun Condition.set(state: CombinedConditionElement) {
         this += state
     }
 
     // with optional new state and data +=
-    suspend operator fun <T : BaseType> ConditionBuilder.plusAssign(block: suspend ExecutorScope.() -> T?) {
+    suspend operator fun <T : ConditionElement> Condition.plusAssign(block: suspend ExecutorScope.() -> T?) {
         this execAndSet block
     }
 
-    suspend infix fun ConditionBuilder.exec(block: suspend ExecutorScope.() -> Unit) {
+    suspend infix fun Condition.exec(block: suspend ExecutorScope.() -> Unit) {
         mapper.addCondition(this) {
             block()
             null
         }
     }
 
-    suspend infix fun <T : BaseType> ConditionBuilder.execAndSet(block: suspend ExecutorScope.() -> T?) {
+    suspend infix fun <T : ConditionElement> Condition.execAndSet(block: suspend ExecutorScope.() -> T?) {
         mapper.addCondition(this) {
             when (val result = block()) {
                 is State -> {
-                    ValueDataHolder(result)
+                    CombinedConditionElement(result)
                 }
-                is ValueDataHolder -> {
+                is CombinedConditionElement -> {
                     result
                 }
                 else -> throw IllegalArgumentException("Unknown type ${result?.let { it::class.name }}")
@@ -128,38 +95,38 @@ abstract class MachineDsl : IMachineEx {
     }
 
     // action with optional new state *=
-    suspend operator fun ConditionBuilder.timesAssign(block: suspend ExecutorScope.() -> State?) {
+    suspend operator fun Condition.timesAssign(block: suspend ExecutorScope.() -> State?) {
         mapper.addCondition(this) {
-            ValueDataHolder(block() as State)
+            CombinedConditionElement(block() as State)
         }
     }
 
     // action only
-    suspend operator fun ConditionBuilder.minusAssign(block: suspend ExecutorScope.() -> Unit) {
+    suspend operator fun Condition.minusAssign(block: suspend ExecutorScope.() -> Unit) {
         mapper.addCondition(this) { block(); state }
     }
 
 
     /**
-     * Non DSL helper method to fire an [Event] with optional [Data] and suspend until it was processed by the state
+     * Non DSL helper method to fire an [Event] with optional [Slave] and suspend until it was processed by the state
      * machine.
      */
-    override suspend fun fire(event: Event, data: Data?) =
+    override suspend fun fire(event: Event, data: Slave?) =
         fire eventSync (event * data)
 
     /**
-     * Non DSL helper method to add an [Event] with optional [Data] to the [Event] processing queue and return
+     * Non DSL helper method to add an [Event] with optional [Slave] to the [Event] processing queue and return
      * immediately.
      */
-    override fun fireAndForget(event: Event, data: Data?) =
+    override fun fireAndForget(event: Event, data: Slave?) =
         fire event (event * data)
 
 }
 
 @Suppress("UNCHECKED_CAST")
-private val Set<ValueDataHolder>.events
-    get() = filter { it.value is Event }.map { it }.toSet()
+private val Set<CombinedConditionElement>.events
+    get() = filter { it.master is Event }.map { it }.toSet()
 
 @Suppress("UNCHECKED_CAST")
-private val Set<ValueDataHolder>.states
-    get() = filter { it.value is State }.map { it }.toSet()
+private val Set<CombinedConditionElement>.states
+    get() = filter { it.master is State }.map { it }.toSet()

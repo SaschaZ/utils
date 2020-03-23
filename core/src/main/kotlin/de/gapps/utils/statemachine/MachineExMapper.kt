@@ -3,95 +3,32 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.log.Log
-import de.gapps.utils.statemachine.BaseType.Primary.Event
-import de.gapps.utils.statemachine.BaseType.Primary.State
-import de.gapps.utils.statemachine.BaseType.ValueDataHolder
+import de.gapps.utils.misc.runEach
+import de.gapps.utils.statemachine.ConditionElement.CombinedConditionElement
+import de.gapps.utils.statemachine.ConditionElement.Condition
+import de.gapps.utils.statemachine.ConditionElement.Master.Event
+import de.gapps.utils.statemachine.ConditionElement.Master.State
+import de.gapps.utils.statemachine.IConditionElement.ICombinedConditionElement
+import de.gapps.utils.statemachine.IConditionElement.ICombinedConditionElement.UsedAs.DEFINITION
 
 /**
  * Responsible to map the incoming [Event]s to their [State]s defined by provided mappings.
  */
 interface IMachineExMapper {
 
-    /**
-     *
-     *
-     * @property possibleEvents
-     * @property possibleStates
-     * @property isStateCondition
-     * @property action
-     */
-    data class ConditionToActionEntry(
-        val possibleEvents: Set<ValueDataHolder>,
-        val possibleStates: Set<ValueDataHolder>,
-        val isStateCondition: Boolean = false,
-        val action: suspend ExecutorScope.() -> ValueDataHolder?
-    ) {
-
-        /**
-         *
-         */
-        fun match(
-            event: ValueDataHolder,
-            state: ValueDataHolder,
-            previousChanges: Set<OnStateChanged>
-        ): Boolean {
-            val isEventCondition = !isStateCondition
-            val areWantedEventsEmpty = possibleEvents.wanted.isEmpty()
-            val areWantedStatesEmpty = possibleStates.wanted.isEmpty()
-            val pc = previousChanges.toList()
-
-            val wantedEventMatch = isStateCondition && areWantedEventsEmpty || possibleEvents.wanted.any { holder ->
-                when (holder.previousIdx) {
-                    0 -> event
-                    else -> pc.getOrNull(holder.previousIdx - 1)?.event
-                } == holder
-            }
-
-            val wantedStateMatch = isEventCondition && areWantedStatesEmpty || possibleStates.wanted.any { holder ->
-                val s = when (holder.previousIdx) {
-                    0 -> state
-                    else -> pc.getOrNull(holder.previousIdx - 1)?.stateBefore
-                }
-                s == holder
-            }
-
-            val unwantedEventMatch = possibleEvents.unwanted.all { holder ->
-                when (holder.previousIdx) {
-                    0 -> event
-                    else -> pc.getOrNull(holder.previousIdx - 1)?.event
-                } != holder
-            }
-
-            val unwantedStateMatch = possibleStates.unwanted.all { holder ->
-                when (holder.previousIdx) {
-                    0 -> state
-                    else -> pc.getOrNull(holder.previousIdx - 1)?.stateBefore
-                } != holder
-            }
-
-            return wantedEventMatch
-                    && wantedStateMatch
-                    && unwantedEventMatch
-                    && unwantedStateMatch
-        }
-    }
-
-    val conditionToActionMap: MutableMap<Long, ConditionToActionEntry>
+    val conditions: MutableMap<Long, Condition>
 
     /**
      *
      */
     fun addCondition(
-        entryBuilder: ConditionBuilder,
-        action: suspend ExecutorScope.() -> ValueDataHolder?
+        condition: Condition,
+        action: suspend ExecutorScope.() -> ICombinedConditionElement?
     ): Long = newId.also { id ->
-        entryBuilder.run {
-            Log.v(
-                "add condition: $id => isStateCondition=$isStateCondition" +
-                        "\n\tevents=$events\n\tstates=$states"
-            )
-            conditionToActionMap[id] = ConditionToActionEntry(events, states, isStateCondition, action)
-        }
+        Log.v("add condition: $id => $condition")
+        condition.wanted.runEach { usedAs = DEFINITION }
+        condition.unwanted.runEach { usedAs = DEFINITION }
+        conditions[id] = condition.copy(action = action)
     }
 
     var lastId: Long
@@ -102,7 +39,7 @@ interface IMachineExMapper {
     /**
      *
      */
-    fun removeMapping(id: Long) = conditionToActionMap.remove(id)
+    fun removeMapping(id: Long) = conditions.remove(id)
 
     /**
      * Is called to determine the next state when a new event is processed.
@@ -113,58 +50,60 @@ interface IMachineExMapper {
      * @return new state
      */
     suspend fun findStateForEvent(
-        event: ValueDataHolder,
-        state: ValueDataHolder,
+        event: ICombinedConditionElement,
+        state: ICombinedConditionElement,
         previousChanges: Set<OnStateChanged>
-    ): ValueDataHolder? {
+    ): ICombinedConditionElement? {
         Log.v(
             "findStateForEvent()\n\tevent=$event;\n\tstate=$state;\n\t" +
                     "previousChanges=${previousChanges.joinToStringTabbed(2)}"
         )
 
-        return ExecutorScope(event, state, previousChanges).run {
-            val filteredDataActions = conditionToActionMap
-                .filter {
-                    !it.value.isStateCondition && it.value.match(event, state, previousChanges)
+        val newState = ExecutorScope(event, state, previousChanges).run {
+            MatchScope(event, state, previousChanges).run {
+                val matchingEventConditions =
+                    conditions.filter { it.value.isEventCondition && it.value.run { match() } }
+                val matchedResults = matchingEventConditions.mapNotNull { it.value.run { action() } }
+
+                val newState = when (matchedResults.size) {
+                    in 0..1 -> matchedResults.firstOrNull()
+                    else -> throw IllegalStateException(
+                        "To much states defined for $event and $state " +
+                                "with mappedEvents=${matchedResults.joinToStringTabbed()}"
+                    )
                 }
-            val mappedEvents = filteredDataActions.mapNotNull { it.value.run { action() } }
 
-            val newState = when (mappedEvents.size) {
-                in 0..1 -> mappedEvents.firstOrNull()
-                else -> throw IllegalStateException("To much states defined for $event and $state")
+                Log.v(
+                    "\tnewState=$newState;" +
+                            "\n\tmatchingEventConditions=t${matchingEventConditions.toList().joinToStringTabbed(2)}"
+                )
+
+                newState
             }
+        }
 
-            newState?.also {
-                conditionToActionMap.filter {
-                    it.value.isStateCondition
-                            && it.value.match(event, newState, previousChanges)
-                            && it.value.run { action() } != null
+        return newState?.also {
+            ExecutorScope(event, newState, previousChanges).run {
+                MatchScope(event, newState, previousChanges).run {
+                    val matchingStateConditions = conditions.filter {
+                        it.value.isStateCondition && it.value.run { match() }
+                    }
+                    Log.v("executing matching state conditions: \n${matchingStateConditions.entries.joinToStringTabbed(2)}")
+                    matchingStateConditions.forEach { it.value.run { action() } }
                 }
             }
-
-            Log.v(
-                "\tnewState=$newState;" +
-                        "\n\tfilteredDataActions=t${filteredDataActions.toList().joinToStringTabbed(2)}"
-            )
-            newState
         }
     }
 }
 
 class MachineExMapper : IMachineExMapper {
 
-    override val conditionToActionMap: MutableMap<Long, IMachineExMapper.ConditionToActionEntry> = HashMap()
+    override val conditions: MutableMap<Long, Condition> = HashMap()
     override var lastId: Long = -1L
 }
 
-infix fun <T : ValueDataHolder> T?.isOneOf(list: Collection<T>): Boolean =
+infix fun CombinedConditionElement?.isOneOf(list: Collection<CombinedConditionElement>): Boolean =
     list.contains(this)
 
-infix fun <T : ValueDataHolder> T?.isNoneOf(list: Collection<T>): Boolean =
+infix fun CombinedConditionElement?.isNoneOf(list: Collection<CombinedConditionElement>): Boolean =
     !list.contains(this)
-
-val <T : ValueDataHolder> Set<T>.wanted: Set<T>
-    get() = filter { !it.exclude }.toSet()
-
-val <T : ValueDataHolder> Set<T>.unwanted: Set<T>
-    get() = filter { it.exclude }.toSet()

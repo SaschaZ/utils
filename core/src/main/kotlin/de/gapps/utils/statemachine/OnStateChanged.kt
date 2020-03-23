@@ -1,12 +1,12 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.misc.name
-import de.gapps.utils.statemachine.BaseType.ValueDataHolder
+import de.gapps.utils.statemachine.IConditionElement.ICombinedConditionElement
 
 data class OnStateChanged(
-    val event: ValueDataHolder,
-    val stateBefore: ValueDataHolder,
-    val stateAfter: ValueDataHolder
+    val event: ICombinedConditionElement,
+    val stateBefore: ICombinedConditionElement,
+    val stateAfter: ICombinedConditionElement
 ) {
     override fun toString(): String =
         "${this::class.name}(event=$event, stateBefore=$stateBefore, stateAfter=$stateAfter)"
