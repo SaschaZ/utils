@@ -2,7 +2,6 @@
 
 package de.gapps.utils.statemachine
 
-import de.gapps.utils.misc.name
 import de.gapps.utils.statemachine.ConditionElement.*
 import de.gapps.utils.statemachine.ConditionElement.Master.Event
 import de.gapps.utils.statemachine.ConditionElement.Master.State
@@ -89,7 +88,7 @@ abstract class MachineDsl : IMachineEx {
                 is CombinedConditionElement -> {
                     result
                 }
-                else -> throw IllegalArgumentException("Unknown type ${result?.let { it::class.name }}")
+                else -> null
             }
         }
     }
