@@ -102,6 +102,8 @@ interface IMachineExMapper {
                     matchingStateConditions.forEach { it.value.run { action() } }
                 }
             }
+
+            Log.d("state changed from $state to $newState with event $event")
         }
     }
 }
