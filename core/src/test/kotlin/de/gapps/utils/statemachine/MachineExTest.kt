@@ -9,28 +9,43 @@ import de.gapps.utils.statemachine.ConditionElement.Master.Event
 import de.gapps.utils.statemachine.ConditionElement.Master.State
 import de.gapps.utils.statemachine.ConditionElement.Slave.Data
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
+import de.gapps.utils.statemachine.MachineExTest.TestEvent.TestEventGroup.FIFTH
+import de.gapps.utils.statemachine.MachineExTest.TestEvent.TestEventGroup.FOURTH
 import de.gapps.utils.statemachine.MachineExTest.TestState.*
+import de.gapps.utils.statemachine.MachineExTest.TestState.TestStateGroup.D
+import de.gapps.utils.statemachine.MachineExTest.TestState.TestStateGroup.E
 import de.gapps.utils.time.duration.seconds
 import org.junit.jupiter.api.Test
 
 class MachineExTest {
 
-    sealed class TestState : State() {
+    sealed class TestState(ignoreSlave: Boolean = false) : State(ignoreSlave) {
 
         object INITIAL : TestState()
         object A : TestState()
         object B : TestState()
         object C : TestState()
-        object D : TestState()
-        object E : TestState()
+
+        sealed class TestStateGroup : TestState() {
+            object D : TestStateGroup()
+            object E : TestStateGroup()
+
+            companion object : StateGroup()
+        }
+
+        companion object : StateGroup()
     }
 
     data class TestEventData(val foo: String) : Data() {
-        companion object : Type()
+        companion object : Type<TestEventData>(TestEventData::class)
+    }
+
+    data class TestEventData2(val foo: String) : Data() {
+        companion object : Type<TestEventData2>(TestEventData2::class)
     }
 
     data class TestStateData(val moo: Boolean) : Data() {
-        companion object : Type()
+        companion object : Type<TestStateData>(TestStateData::class)
     }
 
     sealed class TestEvent(ignoreData: Boolean = false) : Event(ignoreData) {
@@ -38,23 +53,30 @@ class MachineExTest {
         object FIRST : TestEvent()
         object SECOND : TestEvent(true)
         object THIRD : TestEvent()
-        object FOURTH : TestEvent()
-        object FIFTH : TestEvent()
+
+        sealed class TestEventGroup : TestEvent() {
+            object FOURTH : TestEvent()
+            object FIFTH : TestEvent()
+
+            companion object : EventGroup()
+        }
+
+        companion object : EventGroup()
     }
 
     @Test
-    fun testBuilder() = runTest(10.seconds) {
+    fun testComplex() = runTest(10.seconds) {
         var executed = 0
         var executed2 = 0
         MachineEx(INITIAL) {
             -FIRST + INITIAL set A * TestStateData(true)
-            -SECOND * TestEventData set C
+            -SECOND set C
             -FIFTH + A * TestStateData set E
             -FIRST + SECOND + THIRD + A + B + E set C
             -THIRD + C execAndSet {
                 throw IllegalStateException("This state should never be active")
             }
-            -THIRD * TestEventData("foo") + C execAndSet {
+            -THIRD * TestEventData + C execAndSet {
                 executed++; eventData<TestEventData>().foo onFail "data test" assert "foo"; D
             }
             -FOURTH + D set B
@@ -139,6 +161,50 @@ class MachineExTest {
 
             fire eventSync FIFTH
             state.master assert D // because INITIAL[3] is false
+        }
+    }
+
+    @Test
+    fun testData() = runTest {
+        MachineEx(INITIAL) {
+            -FIRST + INITIAL * TestEventData set A
+            -SECOND + INITIAL set A * TestStateData(false)
+            -THIRD + A[1] * TestStateData(true) set C
+            -FOURTH + A * TestStateData set B
+            -FIFTH * TestEventData("foo") + C set D
+            -FOURTH * TestEventData("moo") + D set E
+        }.run {
+            state.master assert INITIAL
+
+            fire eventSync FIRST
+            state.master assert INITIAL
+
+            fire eventSync SECOND
+            state.master assert A
+
+            fire eventSync THIRD
+            state.master assert A
+
+            fire eventSync FOURTH
+            state.master assert B
+
+            fire eventSync THIRD
+            state.master assert C
+
+            fire eventSync FIFTH
+            state.master assert C
+
+            fire eventSync FIFTH * TestEventData2("foo")
+            state.master onFail "FIFTH with TestEventData2" assert C
+
+            fire eventSync FIFTH * TestEventData("foo")
+            state.master onFail "FIFTH with TestEventData" assert D
+
+            fire eventSync FOURTH * TestEventData("foo")
+            state.master onFail "FOURTH with TestEventData" assert D
+
+            fire eventSync FOURTH * TestEventData("moo")
+            state.master assert E
         }
     }
 }

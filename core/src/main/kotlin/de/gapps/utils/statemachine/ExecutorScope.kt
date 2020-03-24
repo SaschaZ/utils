@@ -28,7 +28,7 @@ data class ExecutorScope(
     inline fun <reified D : Data> eventData(idx: Int = 0) =
         eventData.filterIsInstance<D>()[idx]
 
-    @Suppress("UNCHECKED_CAST")
+        @Suppress("UNCHECKED_CAST")
     inline fun <reified D : Data> stateData(idx: Int = 0) =
         stateData.filterIsInstance<D>()[idx]
 }

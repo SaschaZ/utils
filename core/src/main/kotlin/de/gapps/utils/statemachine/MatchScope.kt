@@ -1,7 +1,9 @@
 package de.gapps.utils.statemachine
 
+import de.gapps.utils.statemachine.IConditionElement.ICombinedConditionElement
+
 data class MatchScope(
-    val event: IConditionElement.ICombinedConditionElement,
-    val state: IConditionElement.ICombinedConditionElement,
+    val event: ICombinedConditionElement,
+    val state: ICombinedConditionElement,
     val previousChanges: Set<OnStateChanged>
 )

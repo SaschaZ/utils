@@ -2,6 +2,7 @@
 
 package de.gapps.utils.statemachine
 
+import de.gapps.utils.log.Log
 import de.gapps.utils.misc.name
 import de.gapps.utils.statemachine.ConditionElement.*
 import de.gapps.utils.statemachine.ConditionElement.Master.Event
@@ -11,13 +12,23 @@ import de.gapps.utils.statemachine.IConditionElement.*
 import de.gapps.utils.statemachine.IConditionElement.ICombinedConditionElement.UsedAs
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.EVENT
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.STATE
-import de.gapps.utils.statemachine.IConditionElement.IMaster.IEvent
-import de.gapps.utils.statemachine.IConditionElement.IMaster.IState
+import de.gapps.utils.statemachine.IConditionElement.IMaster.*
 import de.gapps.utils.statemachine.IConditionElement.ISlave.IData
 import de.gapps.utils.statemachine.IConditionElement.ISlave.IType
+import kotlin.reflect.KClass
+import kotlin.reflect.full.isSuperclassOf
 
-interface IConditionElement {
+interface IMatcher {
+
     val ignoreSlave: Boolean
+
+    /**
+     * Return `true` when [other] matches against this or when [other] is `null` against the [MatchScope].
+     */
+    fun MatchScope.match(other: IConditionElement? = null): Boolean = this@IMatcher == other
+}
+
+interface IConditionElement : IMatcher {
 
     interface IMaster : IConditionElement {
         interface IEvent : IMaster {
@@ -25,14 +36,28 @@ interface IConditionElement {
             fun OnStateChanged.fired() = Unit
         }
 
+        interface IEventGroup : IMaster {
+            override val ignoreSlave: Boolean get() = false
+            override fun MatchScope.match(other: IConditionElement?): Boolean =
+                other != null && this@IEventGroup::class.isSuperclassOf(other::class)
+        }
+
         interface IState : IMaster {
             fun OnStateChanged.activeStateChanged(isActive: Boolean) = Unit
+        }
+
+        interface IStateGroup : IMaster {
+            override val ignoreSlave: Boolean get() = false
+            override fun MatchScope.match(other: IConditionElement?): Boolean =
+                other != null && this@IStateGroup::class.isSuperclassOf(other::class)
         }
     }
 
     interface ISlave : IConditionElement {
         interface IData : ISlave
-        interface IType : ISlave {
+
+        interface IType<out T : IData> : ISlave {
+            val type: KClass<@UnsafeVariance T>
             override val ignoreSlave: Boolean get() = false
         }
     }
@@ -46,7 +71,7 @@ interface IConditionElement {
         }
 
         val master: IMaster
-        val slaves: MutableSet<ISlave>
+        val slaves: Set<ISlave>
         var usedAs: UsedAs
         val idx: Int
 
@@ -106,8 +131,6 @@ interface IConditionElement {
                 start.hasEvent -> EVENT
                 else -> throw IllegalArgumentException("Unknown start type ${start::class}")
             }
-
-        fun MatchScope.match(): Boolean
     }
 
 }
@@ -146,10 +169,14 @@ abstract class ConditionElement : IConditionElement {
             override val noLogging: Boolean = false
         ) : Master(), IEvent
 
+        abstract class EventGroup : Master(), IEventGroup
+
         /**
          * All states need to implement this class.
          */
         abstract class State(override var ignoreSlave: Boolean = false) : Master(), IState
+
+        abstract class StateGroup : Master(), IStateGroup
     }
 
     /**
@@ -169,9 +196,9 @@ abstract class ConditionElement : IConditionElement {
         /**
          * Every [Data] class should implement this companion.
          */
-        abstract class Type : Slave(), IType {
-            override fun equals(other: Any?): Boolean = this::class.isInstance(other)
-            override fun hashCode(): Int = this::class.qualifiedName.hashCode()
+        abstract class Type<out T : Data>(override val type: KClass<@UnsafeVariance T>) : Slave(), IType<T> {
+            override fun MatchScope.match(other: IConditionElement?): Boolean =
+                (other?.let { it::class == type } == true).also { Log.w("Type.match() ${other!!::class} == $type -> $it") }
         }
     }
 
@@ -186,43 +213,43 @@ abstract class ConditionElement : IConditionElement {
      * @property usedAs
      */
     data class CombinedConditionElement(
-        override val master: Master,
-        override val slaves: MutableSet<ISlave> = HashSet(),
+        override val master: IMaster,
+        override val slaves: Set<ISlave> = HashSet(),
         override val idx: Int = 0,
         override var usedAs: UsedAs = UsedAs.UNDEFINED
     ) : ConditionElement(), ICombinedConditionElement {
 
-        override fun equals(other: Any?): Boolean = (other as? CombinedConditionElement)?.let { element ->
-            matchesEmptySlaves(element)
-                    || matchesExistingSlaves(element)
-        } ?: false
+        override fun MatchScope.match(other: IConditionElement?): Boolean =
+            (other as? ICombinedConditionElement)?.let { element ->
+                master.run { match(other.master) } && (ignoreSlave || other.ignoreSlave || matchesExistingSlaves(element))
+            } ?: false
 
-        private fun matchesEmptySlaves(other: ICombinedConditionElement) =
-            master == other.master && (ignoreSlave || other.ignoreSlave || (isRuntime && slaves.isEmpty()))
-
-        private fun matchesExistingSlaves(other: ICombinedConditionElement) =
-            master == other.master && (slaves.size == other.slaves.size
-                    && other.slaves.sortedBy { it::class.name }.let { otherSortedSlaves ->
+        private fun MatchScope.matchesExistingSlaves(other: ICombinedConditionElement) =
+            slaves.size == other.slaves.size && other.slaves.sortedBy { it::class.name }.let { otherSortedSlaves ->
                 slaves.sortedBy { it::class.name }.mapIndexed { i, value ->
-                    value.ignoreSlave || otherSortedSlaves[i].let { it.ignoreSlave || it == value }
+                    value.ignoreSlave || otherSortedSlaves[i].let { it.ignoreSlave || it.run { match(value) } }
                 }
-            }.all { true })
+            }.all { true }
 
-        override fun hashCode(): Int =
-            master.hashCode() + if (ignoreSlave) 0 else slaves.sumBy { if (it.ignoreSlave) 0 else it.hashCode() }
-
-        override fun toString(): String = "${master::class.name}(previousIdx=$idx; data=$slaves)"
+        override fun toString(): String {
+            val params = listOfNotNull(
+                if (idx > 0) "idx=$idx" else null,
+                if (usedAs != UsedAs.UNDEFINED) usedAs.name else null,
+                if (slaves.isNotEmpty()) "data=$slaves" else null
+            ).joinToString("; ")
+            return "${master::class.name}($params)"
+        }
 
     }
 
     data class Condition(
-        override val start: ICombinedConditionElement,
-        override val wanted: Set<ICombinedConditionElement> = emptySet(),
-        override val unwanted: Set<ICombinedConditionElement> = emptySet(),
+        override val start: CombinedConditionElement,
+        override val wanted: Set<CombinedConditionElement> = emptySet(),
+        override val unwanted: Set<CombinedConditionElement> = emptySet(),
         override val action: suspend ExecutorScope.() -> ICombinedConditionElement? = { null }
     ) : ICondition {
 
-        override fun MatchScope.match(): Boolean {
+        override fun MatchScope.match(other: IConditionElement?): Boolean {
             val pc = previousChanges.toList()
 
             fun List<OnStateChanged>.event(idx: Int = 0): ICombinedConditionElement? = when (idx) {
@@ -241,14 +268,14 @@ abstract class ConditionElement : IConditionElement {
             val wantedEventsAny = wantedEvents.filter { it.idx == 0 }
 
             return when (type) {
-                EVENT -> start == event
-                        && (wantedStatesAny.isEmpty() || wantedStatesAny.any { it == state })
-                        && (wantedStatesAll.isEmpty() || wantedStatesAll.all { it == pc.state(it.idx) })
-                        && (unwantedStates.isEmpty() || unwantedStates.all { it != pc.state(it.idx) })
-                STATE -> start == state
-                        && (wantedEventsAny.isEmpty() || wantedEventsAny.any { it == event })
-                        && (wantedEventsAll.isEmpty() || wantedEventsAll.all { it == pc.event(it.idx) })
-                        && (unwantedEvents.isEmpty() || unwantedEvents.all { it != pc.event(it.idx) })
+                EVENT -> start.run { match(event) }
+                        && (wantedStatesAny.isEmpty() || wantedStatesAny.any { it.run { match(state) } })
+                        && (wantedStatesAll.isEmpty() || wantedStatesAll.all { it.run { match(pc.state(it.idx)) } })
+                        && (unwantedStates.isEmpty() || unwantedStates.all { it.run { !match(pc.state(it.idx)) } })
+                STATE -> start.run { match(state) }
+                        && (wantedEventsAny.isEmpty() || wantedEventsAny.any { it.run { match(event) } })
+                        && (wantedEventsAll.isEmpty() || wantedEventsAll.all { it.run { match(pc.event(it.idx)) } })
+                        && (unwantedEvents.isEmpty() || unwantedEvents.all { it.run { !match(pc.event(it.idx)) } })
             }
         }
     }
@@ -263,10 +290,10 @@ val CombinedConditionElement.isRuntime get() = usedAs == UsedAs.RUNTIME
 /**
  * Creates a new [CombinedConditionElement] instance with the [ConditionElement].
  */
-fun <T : Master> T.holder(
+fun <T : IMaster> T.holder(
     usedAs: UsedAs,
     idx: Int = 0
-): ICombinedConditionElement = CombinedConditionElement(this, idx = idx, usedAs = usedAs)
+): CombinedConditionElement = CombinedConditionElement(this, idx = idx, usedAs = usedAs)
 
 /**
  * Creates a new [Set] with the [ConditionElement].
