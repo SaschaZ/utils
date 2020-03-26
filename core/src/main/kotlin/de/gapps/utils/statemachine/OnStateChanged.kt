@@ -1,8 +1,8 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.misc.name
-import de.gapps.utils.statemachine.IConditionElement.IMaster.IEvent
-import de.gapps.utils.statemachine.IConditionElement.IMaster.IState
+import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
+import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
 
 data class OnStateChanged(
     val event: IEvent,

@@ -5,7 +5,9 @@ package de.gapps.utils.statemachine
 import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.core_testing.assertion.onFail
 import de.gapps.utils.core_testing.runTest
-import de.gapps.utils.statemachine.ConditionElement.Master.*
+import de.gapps.utils.statemachine.ConditionElement.Master.Group.StateGroup
+import de.gapps.utils.statemachine.ConditionElement.Master.Single.Event
+import de.gapps.utils.statemachine.ConditionElement.Master.Single.State
 import de.gapps.utils.statemachine.ConditionElement.Slave.Data
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.TestEventGroup.FIFTH
@@ -57,10 +59,10 @@ class MachineExTest {
             object FOURTH : TestEvent()
             object FIFTH : TestEvent()
 
-            companion object : EventGroup()
+            companion object : Group.EventGroup()
         }
 
-        companion object : EventGroup()
+        companion object : Group.EventGroup()
     }
 
     @Test

@@ -1,8 +1,8 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.coroutines.scope.ICoroutineScopeEx
-import de.gapps.utils.statemachine.IConditionElement.IMaster.IEvent
-import de.gapps.utils.statemachine.IConditionElement.IMaster.IState
+import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
+import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
 import de.gapps.utils.statemachine.IConditionElement.ISlave
 
 /**

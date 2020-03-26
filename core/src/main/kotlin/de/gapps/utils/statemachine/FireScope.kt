@@ -2,7 +2,7 @@
 
 package de.gapps.utils.statemachine
 
-import de.gapps.utils.statemachine.IConditionElement.IMaster.IEvent
+import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
 import de.gapps.utils.statemachine.IConditionElement.UsedAs.RUNTIME
 
 val IMachineEx.fire get() = FireScope(this)

@@ -3,16 +3,12 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.log.Log
-import de.gapps.utils.misc.runEach
 import de.gapps.utils.statemachine.ConditionElement.Condition
-import de.gapps.utils.statemachine.ConditionElement.Master.Event
-import de.gapps.utils.statemachine.ConditionElement.Master.State
-import de.gapps.utils.statemachine.IConditionElement.IMaster.IEvent
-import de.gapps.utils.statemachine.IConditionElement.IMaster.IState
-import de.gapps.utils.statemachine.IConditionElement.UsedAs.DEFINITION
+import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
+import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
 
 /**
- * Responsible to map the incoming [Event]s to their [State]s defined by provided mappings.
+ * Responsible to map the incoming [IEvent]s to their [IState]s defined by provided mappings.
  */
 interface IMachineExMapper {
 
@@ -26,9 +22,6 @@ interface IMachineExMapper {
         action: suspend ExecutorScope.() -> IState?
     ): Long = newId.also { id ->
         Log.v("add condition: $id => $condition")
-        condition.start.usedAs = DEFINITION
-        condition.wanted.runEach { usedAs = DEFINITION }
-        condition.unwanted.runEach { usedAs = DEFINITION }
         conditions[id] = condition.copy(action = action)
     }
 
