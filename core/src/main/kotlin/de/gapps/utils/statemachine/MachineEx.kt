@@ -6,10 +6,10 @@ import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.scope.CoroutineScopeEx
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import de.gapps.utils.misc.asUnit
-import de.gapps.utils.statemachine.ConditionElement.CombinedConditionElement
 import de.gapps.utils.statemachine.ConditionElement.Master.Event
 import de.gapps.utils.statemachine.ConditionElement.Master.State
-import de.gapps.utils.statemachine.IConditionElement.ICombinedConditionElement
+import de.gapps.utils.statemachine.IConditionElement.IMaster.IEvent
+import de.gapps.utils.statemachine.IConditionElement.IMaster.IState
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -176,18 +176,18 @@ open class MachineEx(
     private val finishedProcessingEvent = Channel<Boolean>()
 
     private val eventMutex = Mutex()
-    private val eventChannel = Channel<ICombinedConditionElement>(Channel.BUFFERED)
+    private val eventChannel = Channel<IEvent>(Channel.BUFFERED)
 
-    override var event: ICombinedConditionElement
+    override var event: IEvent
         get() = currentEvent
         set(value) {
             submittedEventCount.incrementAndGet()
             scope.launchEx(mutex = eventMutex) { eventChannel.send(value) }
         }
 
-    private lateinit var currentEvent: ICombinedConditionElement
+    private lateinit var currentEvent: IEvent
 
-    override var state: ICombinedConditionElement = CombinedConditionElement(initialState)
+    override var state: IState = initialState
 
     private val submittedEventCount = AtomicInteger(0)
     private val processedEventCount = AtomicInteger(0)
@@ -201,10 +201,10 @@ open class MachineEx(
         }
     }
 
-    private suspend fun ICombinedConditionElement.processEvent() {
+    private suspend fun IEvent.processEvent() {
         currentEvent = this
         val stateBefore = state
-        mapper.findStateForEvent(this, stateBefore, previousChanges.toSet())?.also { targetState ->
+        mapper.findStateForEvent(this, stateBefore, previousChanges)?.also { targetState ->
             applyNewState(targetState, stateBefore, this)
         }
         processedEventCount.incrementAndGet()
@@ -213,16 +213,16 @@ open class MachineEx(
     }
 
     private fun applyNewState(
-        newState: ICombinedConditionElement?,
-        stateBefore: ICombinedConditionElement,
-        event: ICombinedConditionElement
+        newState: IState?,
+        stateBefore: IState,
+        event: IEvent
     ) = newState?.let {
         state = newState
         previousChanges.add(
             OnStateChanged(event, stateBefore, newState).apply {
-                stateBefore.state<State>().run { activeStateChanged(false) }
-                event.event<Event>().run { fired() }
-                newState.state<State>().run { activeStateChanged(true) }
+                stateBefore.run { activeStateChanged(false) }
+                event.run { fired() }
+                newState.run { activeStateChanged(true) }
             }
         )
         if (previousChanges.size > previousChangesCacheSize)

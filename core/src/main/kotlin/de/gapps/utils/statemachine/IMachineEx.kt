@@ -1,8 +1,8 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.coroutines.scope.ICoroutineScopeEx
-import de.gapps.utils.statemachine.IConditionElement.ICombinedConditionElement
 import de.gapps.utils.statemachine.IConditionElement.IMaster.IEvent
+import de.gapps.utils.statemachine.IConditionElement.IMaster.IState
 import de.gapps.utils.statemachine.IConditionElement.ISlave
 
 /**
@@ -12,8 +12,8 @@ interface IMachineEx {
 
     val scope: ICoroutineScopeEx
 
-    var event: ICombinedConditionElement
-    val state: ICombinedConditionElement
+    var event: IEvent
+    val state: IState
 
     val mapper: IMachineExMapper
 
