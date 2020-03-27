@@ -174,16 +174,11 @@ sealed class ConditionElement : IConditionElement {
         override var usedAs: UsedAs = DEFINITION,
         override val ignoreSlave: Boolean = false
     ) : IComboElement {
-        override fun toString() = "${this::class.name}(${when (master) {
+        override fun toString() = "CE($master|$slave|$idx|$ignoreSlave|${when (master) {
             is IEvent -> "E"
             is IState -> "S"
             else -> "X"
-        }}${usedAs.name[0]} | ${listOfNotNull(
-            "master=$master",
-            slave?.let { "slave=$it" },
-            idx.nullWhen { it == 0 }?.let { "idx=$it" },
-            ignoreSlave.nullWhen { !it }?.let { "ignoreSlave=$it" }
-        ).joinToString(" | ")})"
+        }}${usedAs.name[0]}"
     }
 
     data class Condition(
@@ -217,17 +212,10 @@ sealed class ConditionElement : IConditionElement {
         override val wantedEventsAll = wantedEvents.filter { it.idx > 0 }
         override val wantedEventsAny = wantedEvents.filter { it.idx == 0 }
 
-        fun match(
-            event: IComboElement,
-            state: IComboElement,
-            previousChanges: List<OnStateChanged>
-        ): Boolean = Matcher.match(this, event, state, previousChanges)
-
         override fun toString(): String =
-            "${this::class.name}(${listOfNotNull("start=$start",
-                wanted.nullWhen { it.isEmpty() }?.let { "wanted=$it" },
-                unwanted.nullWhen { it.isEmpty() }?.let { "unwanted=$it" }
-            ).joinToString("; ")})"
+            "C(${listOfNotNull(wanted.nullWhen { it.isEmpty() }?.let { "$it" },
+                unwanted.nullWhen { it.isEmpty() }?.let { "$it" }
+            ).joinToString(" || ")})"
     }
 }
 

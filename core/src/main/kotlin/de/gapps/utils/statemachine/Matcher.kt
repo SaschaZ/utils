@@ -4,6 +4,7 @@ package de.gapps.utils.statemachine
 
 import de.gapps.utils.log.Log
 import de.gapps.utils.log.logV
+import de.gapps.utils.misc.ifNull
 import de.gapps.utils.statemachine.IConditionElement.*
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.EVENT
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.STATE
@@ -69,7 +70,15 @@ object Matcher {
 
             matchingStateConditions.forEach { it.value.action?.invoke(execScope) }
 
-            Log.d("state changed from $state to $newState with event $event")
+            if (!event.noLogging)
+                Log.d("state changed from $state to $newState with event $event")
+        } ifNull {
+            if (!event.noLogging)
+                Log.i(
+                    "No new state for event $event and $state. Had ${matchingEventConditions.size}" +
+                            " matches:${matchingEventConditions.values.joinToStringTabbed(2)}"
+                )
+            null
         }
     }
 
@@ -92,7 +101,7 @@ object Matcher {
                     else -> throw IllegalArgumentException("Unknown ISlave subtype $definition.")
                 }
                 else -> throw IllegalArgumentException("Unknown ISlave subtype $runtime.")
-            } logV { m = "#3 $it => $runtime <==> $definition" }
+            }
         }
 
         fun match(runtime: IComboElement, definition: IComboElement): Boolean {
@@ -101,7 +110,7 @@ object Matcher {
                     || (runtime.slave != null && definition.slave != null && match(
                 runtime.slave!!,
                 definition.slave!!
-            ))) logV { m = "#2 $it => $runtime <==> $definition" }
+            )))
         }
 
         fun List<IComboElement>.matchAny(runtime: IComboElement) = isEmpty() || any { match(runtime, it) }
@@ -120,12 +129,14 @@ object Matcher {
                     && condition.wantedEventsAny.matchAny(event)
                     && condition.wantedEventsAll.matchAll(event)
                     && condition.unwantedEvents.matchNone(event)
-        } logV {
-            @Suppress("RemoveCurlyBracesFromTemplate")
-            m = "#1 $it => $condition <==> ${when (condition.type) {
-                EVENT -> state
-                STATE -> event
-            }}"
+        }.also {
+            if (!event.noLogging) logV {
+                @Suppress("RemoveCurlyBracesFromTemplate")
+                m = "#1 $it => $condition <==> ${when (condition.type) {
+                    EVENT -> state
+                    STATE -> event
+                }}"
+            }
         }
     }
 }
