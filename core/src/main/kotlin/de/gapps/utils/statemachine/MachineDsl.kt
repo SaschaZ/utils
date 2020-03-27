@@ -13,7 +13,10 @@ import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
 abstract class MachineDsl : IMachineEx {
 
     // start entry with -
-    operator fun IMaster.unaryMinus() = Condition(this)
+    operator fun ISingle.unaryMinus() = Condition(this)
+
+    // master to combo with +
+    operator fun ISingle.unaryPlus() = combo
 
     // link wanted items with + operator
     operator fun Condition.plus(other: IMaster): Condition = plus(other.combo)
@@ -27,11 +30,11 @@ abstract class MachineDsl : IMachineEx {
 
 
     // apply Data with * operator
-    operator fun <M : ISingle, S : ISlave> M.times(slave: S?) = combo.also { it.slave = slave }
-    operator fun <M : IComboElement, S : ISlave> M.times(slave: S?) = also { it.slave = slave }
+    operator fun ISingle.times(slave: ISlave?) = combo.also { it.slave = slave }
+    operator fun IComboElement.times(slave: ISlave?) = also { it.slave = slave }
 
     // Only the case when slave is added to first item. unary operators are processed before.
-    operator fun <S : ISlave> Condition.times(slave: S?) = apply { start.also { it.slave = slave } }
+    operator fun Condition.times(slave: ISlave?) = apply { start.also { it.slave = slave } }
 
     /**
      * Use the [Int] operator to match against one of the previous items. For example [State][3] will not try to match against the current state, it will try to match against the third last [State] instead.
