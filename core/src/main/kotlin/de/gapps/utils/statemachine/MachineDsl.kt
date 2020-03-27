@@ -5,6 +5,7 @@ package de.gapps.utils.statemachine
 import de.gapps.utils.statemachine.ConditionElement.Condition
 import de.gapps.utils.statemachine.ConditionElement.Slave
 import de.gapps.utils.statemachine.IConditionElement.*
+import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle
 import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
 import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
 
@@ -26,7 +27,7 @@ abstract class MachineDsl : IMachineEx {
 
 
     // apply Data with * operator
-    operator fun <M : IMaster, S : ISlave> M.times(slave: S?) = combo.also { it.slave = slave }
+    operator fun <M : ISingle, S : ISlave> M.times(slave: S?) = combo.also { it.slave = slave }
     operator fun <M : IComboElement, S : ISlave> M.times(slave: S?) = also { it.slave = slave }
 
     // Only the case when slave is added to first item. unary operators are processed before.
