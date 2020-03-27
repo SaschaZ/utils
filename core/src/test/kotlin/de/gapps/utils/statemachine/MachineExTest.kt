@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test
 
 class MachineExTest {
 
-    sealed class TestState(ignoreSlave: Boolean = false) : State(ignoreSlave = ignoreSlave) {
+    sealed class TestState(ignoreSlave: Boolean = false) : State() {
 
         object INITIAL : TestState()
         object A : TestState()
@@ -31,10 +31,10 @@ class MachineExTest {
             object D : TestStateGroup()
             object E : TestStateGroup()
 
-            companion object : StateGroup()
+            companion object : StateGroup<TestStateGroup>(TestStateGroup::class)
         }
 
-        companion object : StateGroup()
+        companion object : StateGroup<TestState>(TestState::class)
     }
 
     data class TestEventData(val foo: String) : Data() {
@@ -49,20 +49,20 @@ class MachineExTest {
         companion object : Type<TestStateData>(TestStateData::class)
     }
 
-    sealed class TestEvent(ignoreData: Boolean = false) : Event(ignoreSlave = ignoreData) {
+    sealed class TestEvent(ignoreData: Boolean = false) : Event() {
 
         object FIRST : TestEvent()
-        object SECOND : TestEvent(true)
+        object SECOND : TestEvent()
         object THIRD : TestEvent()
 
         sealed class TestEventGroup : TestEvent() {
             object FOURTH : TestEvent()
             object FIFTH : TestEvent()
 
-            companion object : Group.EventGroup()
+            companion object : Group.EventGroup<TestEventGroup>(TestEventGroup::class)
         }
 
-        companion object : Group.EventGroup()
+        companion object : Group.EventGroup<TestEvent>(TestEvent::class)
     }
 
     @Test
@@ -71,48 +71,48 @@ class MachineExTest {
         var executed2 = 0
         MachineEx(INITIAL) {
             -FIRST + INITIAL set A * TestStateData(true)
-            -SECOND set C
+            -SECOND * TestEventData set C
             -FIFTH + A * TestStateData set E
             -FIRST + SECOND + THIRD + A + B + E set C
             -THIRD + C execAndSet {
                 throw IllegalStateException("This state should never be active")
             }
-            -THIRD * TestEventData + C execAndSet {
+            -THIRD * TestEventData("foo") + C execAndSet {
                 executed++; eventData<TestEventData>().foo onFail "data test" assert "foo"; D
             }
             -FOURTH + D set B
             -C exec { executed++ }
             -C - FIRST exec { executed2++ }
         }.run {
-            state assert INITIAL
+            state.master assert INITIAL
 
             fire eventSync FIRST
-            state assert A
+            state.master assert A
             executed onFail "event FIRST with state INITIAL" assert 0
             executed2 onFail "event FIRST with state INITIAL2" assert 0
 
             fire eventSync FIFTH
-            state assert E
+            state.master assert E
             executed onFail "event FIFTH with state A" assert 0
             executed2 onFail "event FIFTH with state A2" assert 0
 
             fire eventSync SECOND * TestEventData("moo")
-            state assert C
+            state.master assert C
             executed onFail "event SECOND with state A" assert 1
             executed2 onFail "event SECOND with state A#2" assert 1
 
             fire eventSync THIRD * TestEventData("foo")
-            state assert D
+            state.master assert D
             executed onFail "event THIRD with state C" assert 2
             executed2 onFail "event THIRD with state C#2" assert 1
 
             fire eventSync FOURTH
-            state assert B
+            state.master assert B
             executed onFail "event FOURTH with state D" assert 2
             executed2 onFail "event FOURTH with state D#2" assert 1
 
             fire eventSync FIRST
-            state assert C
+            state.master assert C
             executed onFail "event FIRST with state B" assert 3
             executed2 onFail "event FIRST with state B#2" assert 1
         }
@@ -123,7 +123,7 @@ class MachineExTest {
         MachineEx(INITIAL) {
             -FIRST + INITIAL set A
         }.run {
-            state assert INITIAL
+            state.master assert INITIAL
 
             fire event FOURTH
             fire event THIRD
@@ -133,7 +133,7 @@ class MachineExTest {
             fire event THIRD
             fire event FOURTH
             fire eventSync FIRST
-            state assert A
+            state.master assert A
         }
     }
 
@@ -146,22 +146,22 @@ class MachineExTest {
             -FOURTH + C + B[1] + A[2] + INITIAL[3] set D
             -FIFTH + D + C[1] + B[2] + A[3] + INITIAL[3] set E
         }.run {
-            state assert INITIAL
+            state.master assert INITIAL
 
             fire eventSync FIRST
-            state assert A
+            state.master assert A
 
             fire eventSync SECOND
-            state assert B
+            state.master assert B
 
             fire eventSync THIRD
-            state assert C
+            state.master assert C
 
             fire eventSync FOURTH
-            state assert D
+            state.master assert D
 
             fire eventSync FIFTH
-            state assert D // because INITIAL[3] is false
+            state.master assert D // because INITIAL[3] is false
         }
     }
 
@@ -175,37 +175,37 @@ class MachineExTest {
             -FIFTH * TestEventData("foo") + C set D
             -FOURTH * TestEventData("moo") + D set E
         }.run {
-            state assert INITIAL
+            state.master assert INITIAL
 
             fire eventSync FIRST
-            state assert INITIAL
+            state.master assert INITIAL
 
             fire eventSync SECOND
-            state assert A
+            state.master assert A
 
             fire eventSync THIRD
-            state assert A
+            state.master assert A
 
             fire eventSync FOURTH
-            state assert B
+            state.master assert B
 
             fire eventSync THIRD
-            state onFail "THIRD" assert C
+            state.master onFail { "THIRD" } assert C
 
             fire eventSync FIFTH
-            state onFail "FIFTH" assert C
+            state.master assert C
 
             fire eventSync FIFTH * TestEventData2("foo")
-            state onFail "FIFTH with TestEventData2" assert C
+            state.master onFail { "FIFTH with TestEventData2" } assert C
 
             fire eventSync FIFTH * TestEventData("foo")
-            state onFail "FIFTH with TestEventData" assert D
+            state.master onFail { "FIFTH with TestEventData" } assert D
 
             fire eventSync FOURTH * TestEventData("foo")
-            state onFail "FOURTH with TestEventData" assert D
+            state.master onFail "FOURTH with TestEventData" assert D
 
             fire eventSync FOURTH * TestEventData("moo")
-            state assert E
+            state.master assert E
         }
     }
 }

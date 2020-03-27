@@ -1,17 +1,12 @@
 package de.gapps.utils.statemachine
 
-import de.gapps.utils.misc.name
-import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
-import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
+import de.gapps.utils.statemachine.IConditionElement.IComboElement
 
 data class OnStateChanged(
-    val event: IEvent,
-    val stateBefore: IState,
-    val stateAfter: IState
-) {
-    override fun toString(): String =
-        "${this::class.name}(event=$event, stateBefore=$stateBefore, stateAfter=$stateAfter)"
-}
+    val event: IComboElement,
+    val stateBefore: IComboElement,
+    val stateAfter: IComboElement
+)
 
 fun Collection<Any>.joinToStringTabbed(tabCount: Int = 1): String {
     fun newLineTapped(tabCount: Int): String {

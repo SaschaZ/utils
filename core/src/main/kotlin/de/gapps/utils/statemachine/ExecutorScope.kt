@@ -1,13 +1,14 @@
+@file:Suppress("MemberVisibilityCanBePrivate", "unused")
+
 package de.gapps.utils.statemachine
 
-import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
-import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
+import de.gapps.utils.statemachine.IConditionElement.IComboElement
 import de.gapps.utils.statemachine.IConditionElement.ISlave
 import de.gapps.utils.statemachine.IConditionElement.ISlave.IData
 
 data class ExecutorScope(
-    val event: IEvent,
-    val state: IState,
+    val event: IComboElement,
+    val state: IComboElement,
     val previousChanges: List<OnStateChanged>
 ) {
 

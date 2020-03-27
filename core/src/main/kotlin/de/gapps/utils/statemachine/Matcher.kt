@@ -4,20 +4,11 @@ package de.gapps.utils.statemachine
 
 import de.gapps.utils.log.Log
 import de.gapps.utils.log.logV
-import de.gapps.utils.statemachine.IConditionElement.ICondition
-import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType
+import de.gapps.utils.statemachine.IConditionElement.*
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.EVENT
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.STATE
-import de.gapps.utils.statemachine.IConditionElement.IMaster
-import de.gapps.utils.statemachine.IConditionElement.IMaster.IGroup
-import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle
-import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
-import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
 import de.gapps.utils.statemachine.IConditionElement.ISlave.IData
 import de.gapps.utils.statemachine.IConditionElement.ISlave.IType
-import de.gapps.utils.statemachine.IConditionElement.UsedAs.RUNTIME
-import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.full.isSuperclassOf
 
 /**
  * Holds methods that are used for matching the incoming events to a new state and/or action and to match the new state to actions.
@@ -34,13 +25,11 @@ object Matcher {
      * @return new state
      */
     suspend fun findStateForEvent(
-        event: IEvent,
-        state: IState,
+        event: IComboElement,
+        state: IComboElement,
         previousChanges: List<OnStateChanged>,
         conditions: Map<Long, ICondition>
-    ): IState? {
-        event.usedAs = RUNTIME
-
+    ): IComboElement? {
         if (!event.noLogging)
             Log.v(
                 "findStateForEvent()\n\tevent=$event;\n\tstate=$state;\n\t" +
@@ -86,99 +75,57 @@ object Matcher {
 
     fun match(
         condition: ICondition,
-        event: IEvent,
-        state: IState,
+        event: IComboElement,
+        state: IComboElement,
         previousChanges: List<OnStateChanged>
     ): Boolean {
-        fun List<IMaster>.matchAny() = isEmpty() || any { match(it, event, state, condition.type, previousChanges) }
-        fun List<IMaster>.matchAll() = isEmpty() || any { match(it, event, state, condition.type, previousChanges) }
+        fun match(runtime: ISlave, definition: ISlave): Boolean {
+            return when (runtime) {
+                is IType<*> -> when (definition) {
+                    is IType<*> -> runtime.type == definition.type
+                    is IData -> runtime.type.isInstance(definition)
+                    else -> throw IllegalArgumentException("Unknown ISlave subtype $definition.")
+                }
+                is IData -> when (definition) {
+                    is IType<*> -> definition.type.isInstance(runtime)
+                    is IData -> runtime == definition
+                    else -> throw IllegalArgumentException("Unknown ISlave subtype $definition.")
+                }
+                else -> throw IllegalArgumentException("Unknown ISlave subtype $runtime.")
+            } logV { m = "#3 $it => $runtime <==> $definition" }
+        }
+
+        fun match(runtime: IComboElement, definition: IComboElement): Boolean {
+            return runtime.master == definition.master
+                    && ((runtime.slave == null && definition.slave == null) || runtime.ignoreSlave || definition.ignoreSlave
+                    || (runtime.slave != null && definition.slave != null && match(
+                runtime.slave!!,
+                definition.slave!!
+            ))) logV { m = "#2 $it => $runtime <==> $definition" }
+        }
+
+        fun List<IComboElement>.matchAny(runtime: IComboElement) = isEmpty() || any { match(runtime, it) }
+        fun List<IComboElement>.matchAll(runtime: IComboElement) = isEmpty() || all { match(runtime, it) }
+        fun List<IComboElement>.matchNone(runtime: IComboElement) = isEmpty() || none { match(runtime, it) }
 
         return when (condition.type) {
-            EVENT -> match(condition.start, event, state, condition.type, previousChanges)
-                    && condition.wantedStatesAny.matchAny()
-                    && condition.wantedStatesAll.matchAll()
-                    && condition.unwantedStates.matchAll()
+            EVENT -> condition.wantedEventsAny.matchAny(event)
+                    && condition.unwantedEvents.matchNone(event)
+                    && condition.wantedStatesAny.matchAny(state)
+                    && condition.wantedStatesAll.matchAll(state)
+                    && condition.unwantedStates.matchNone(state)
 
-            STATE -> match(condition.start, event, state, condition.type, previousChanges)
-                    && condition.wantedEventsAny.matchAny()
-                    && condition.wantedEventsAll.matchAll()
-                    && condition.unwantedEvents.matchAll()
+            STATE -> condition.wantedStatesAny.matchAny(state)
+                    && condition.unwantedStates.matchNone(state)
+                    && condition.wantedEventsAny.matchAny(event)
+                    && condition.wantedEventsAll.matchAll(event)
+                    && condition.unwantedEvents.matchNone(event)
         } logV {
             @Suppress("RemoveCurlyBracesFromTemplate")
-            m = "$it => $condition <==> ${when (condition.type) {
+            m = "#1 $it => $condition <==> ${when (condition.type) {
                 EVENT -> state
                 STATE -> event
             }}"
         }
     }
-
-    private fun match(
-        primary: IMaster,
-        event: IEvent,
-        state: IState,
-        type: ConditionType,
-        previousChanges: List<OnStateChanged>,
-        secondary: IMaster = when (type) {
-            EVENT -> state
-            STATE -> event
-        }
-    ): Boolean = when {
-        primary.isRuntime && secondary.isDefinition -> matchInternal(
-            primary,
-            event,
-            state,
-            type,
-            previousChanges,
-            secondary
-        )
-        primary.isDefinition && secondary.isRuntime -> matchInternal(
-            secondary,
-            event,
-            state,
-            type,
-            previousChanges,
-            primary
-        )
-        else -> throw IllegalArgumentException(
-            "Invalid matching master=$primary; " +
-                    "slave=$secondary; event=$event;  state=$state; combination: $type"
-        )
-    }
-
-    @Suppress("RemoveCurlyBracesFromTemplate")
-    private fun matchInternal(
-        runtime: IMaster,
-        event: IEvent,
-        state: IState,
-        type: ConditionType,
-        previousChanges: List<OnStateChanged>,
-        definition: IMaster
-    ): Boolean {
-        if (runtime.isDefinition) throw IllegalStateException("RUNTIME type must be first item in match.")
-
-        return when (runtime) {
-            is ISingle -> when (definition) {
-                is IEvent,
-                is IState -> runtime == definition
-                is IData -> runtime == definition
-                is IGroup,
-                is IType<*> -> matchClass(definition)
-                else -> throw IllegalArgumentException("Unknown type to match. first=$runtime; second=$definition")
-            }
-            is IGroup -> matchClass(definition)
-            else -> throw IllegalArgumentException("Unknown type to match. first=$this; second=$this")
-        } logV { m = "$it => $runtime <==> $definition" }
-    }
-}
-
-internal fun Any?.matchClass(other: Any?) = this != null && other != null && run {
-    val oClazz = other::class
-
-    @Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
-    val tClazz = this!!::class
-
-    oClazz.isInstance(this)
-            || tClazz.isInstance(other)
-            || oClazz.isSubclassOf(tClazz)
-            || oClazz.isSuperclassOf(tClazz)
 }

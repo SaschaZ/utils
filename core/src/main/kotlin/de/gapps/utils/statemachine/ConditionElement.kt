@@ -17,6 +17,7 @@ import de.gapps.utils.statemachine.IConditionElement.ISlave.IData
 import de.gapps.utils.statemachine.IConditionElement.ISlave.IType
 import de.gapps.utils.statemachine.IConditionElement.UsedAs.DEFINITION
 import kotlin.reflect.KClass
+import kotlin.reflect.full.isSuperclassOf
 
 interface IConditionElement {
 
@@ -26,13 +27,8 @@ interface IConditionElement {
     }
 
     interface IMaster : IConditionElement {
-        var usedAs: UsedAs
 
         interface ISingle : IMaster {
-
-            var slave: ISlave?
-            var idx: Int
-            val ignoreSlave: Boolean
 
             interface IEvent : ISingle {
                 val noLogging: Boolean
@@ -44,10 +40,11 @@ interface IConditionElement {
             }
         }
 
-        interface IGroup : IMaster {
+        interface IGroup<out T : ISingle> : IMaster {
+            val type: KClass<@UnsafeVariance T>
 
-            interface IEventGroup : IGroup
-            interface IStateGroup : IGroup
+            interface IEventGroup<out T : ISingle> : IGroup<T>
+            interface IStateGroup<out T : ISingle> : IGroup<T>
         }
     }
 
@@ -60,12 +57,27 @@ interface IConditionElement {
         }
     }
 
+    interface IComboElement : IConditionElement {
+
+        val master: IMaster
+        var slave: ISlave?
+        var idx: Int
+        var usedAs: UsedAs
+        val ignoreSlave: Boolean
+
+        val event: IEvent? get() = master as? IEvent
+        val state: IState? get() = master as? IState
+
+        val hasEvent get() = event != null
+        val hasState get() = state != null
+    }
+
     interface ICondition : IConditionElement {
 
-        val start: IMaster
-        val wanted: Set<IMaster>
-        val unwanted: Set<IMaster>
-        val action: (suspend ExecutorScope.() -> IState?)?
+        val start: IComboElement
+        val wanted: List<IComboElement>
+        val unwanted: List<IComboElement>
+        val action: (suspend ExecutorScope.() -> IComboElement?)?
 
         enum class ConditionType {
             STATE,
@@ -74,14 +86,14 @@ interface IConditionElement {
 
         val type: ConditionType
 
-        val wantedEvents: List<IEvent>
-        val wantedStates: List<IState>
-        val unwantedStates: List<IState>
-        val unwantedEvents: List<IEvent>
-        val wantedStatesAll: List<IState>
-        val wantedStatesAny: List<IState>
-        val wantedEventsAll: List<IEvent>
-        val wantedEventsAny: List<IEvent>
+        val wantedEvents: List<IComboElement>
+        val wantedStates: List<IComboElement>
+        val unwantedStates: List<IComboElement>
+        val unwantedEvents: List<IComboElement>
+        val wantedStatesAll: List<IComboElement>
+        val wantedStatesAny: List<IComboElement>
+        val wantedEventsAll: List<IComboElement>
+        val wantedEventsAny: List<IComboElement>
     }
 
 }
@@ -98,52 +110,34 @@ sealed class ConditionElement : IConditionElement {
      * Base class for [IEvent]s and [IState]s.
      */
     sealed class Master : ConditionElement(), IMaster {
-        override var usedAs: UsedAs = DEFINITION
+
+        override fun equals(other: Any?) = this === other
+        override fun hashCode(): Int = this::class.hashCode()
+        override fun toString(): String = this::class.name
 
         sealed class Single : Master(), ISingle {
 
-            override fun equals(other: Any?) =
-                matchClass(other) && slave == (other as? ISingle)?.slave
-
-            override fun hashCode(): Int = this::class.hashCode() + (slave?.hashCode() ?: 0)
-
-            override fun toString(): String = "${this::class.name}(" +
-                    "${listOfNotNull("${usedAs.name[0]}", slave?.let { "slave=$it" },
-                        idx.nullWhen { it == 0 }?.let { "idx=$it" },
-                        if (ignoreSlave) "ignoreSlave=true" else null
-                    ).joinToString("; ")})"
-
             /**,
              * All events need to implement this class.
-             *
-             * @property ignoreSlave  Set to `true` when the data of this event should have no influence when events get mapped.
-             *                       Default is `false`.
              * @property noLogging When `true` log messages for this [Event] are not printed. Default is `false`.
              */
             abstract class Event(
-                override var slave: ISlave? = null,
-                override var idx: Int = 0,
-                override var usedAs: UsedAs = DEFINITION,
-                override var ignoreSlave: Boolean = false,
                 override val noLogging: Boolean = false
             ) : Single(), IEvent
 
             /**
              * All states need to implement this class.
              */
-            abstract class State(
-                override var slave: ISlave? = null,
-                override var idx: Int = 0,
-                override var usedAs: UsedAs = DEFINITION,
-                override val ignoreSlave: Boolean = false
-            ) : Single(), IState
+            abstract class State : Single(), IState
         }
 
-        sealed class Group : Master(), IGroup {
+        sealed class Group<out T : ISingle>(override val type: KClass<@UnsafeVariance T>) : Master(), IGroup<T> {
 
-            abstract class EventGroup(override var usedAs: UsedAs = DEFINITION) : Group(), IEventGroup
+            abstract class EventGroup<out T : IEvent>(type: KClass<T>) :
+                Group<@UnsafeVariance T>(type), IEventGroup<T>
 
-            abstract class StateGroup(override var usedAs: UsedAs = DEFINITION) : Group(), IStateGroup
+            abstract class StateGroup<out T : IState>(type: KClass<T>) :
+                Group<@UnsafeVariance T>(type), IStateGroup<T>
         }
     }
 
@@ -160,27 +154,63 @@ sealed class ConditionElement : IConditionElement {
         /**
          * Every [Data] class should implement this companion.
          */
-        abstract class Type<out T : Data>(override val type: KClass<@UnsafeVariance T>) : Slave(), IType<T>
+        abstract class Type<out T : IData>(override val type: KClass<@UnsafeVariance T>) : Slave(), IType<T> {
+
+            override fun equals(other: Any?): Boolean = when (other) {
+                is IType<*> -> other.type == type
+                is IData -> type.isInstance(other) || type.isSuperclassOf(other::class)
+                else -> false
+            }
+
+            override fun hashCode(): Int = type.hashCode()
+            override fun toString(): String = type.name
+        }
+    }
+
+    data class ComboElement(
+        override val master: IMaster,
+        override var slave: ISlave? = null,
+        override var idx: Int = 0,
+        override var usedAs: UsedAs = DEFINITION,
+        override val ignoreSlave: Boolean = false
+    ) : IComboElement {
+        override fun toString() = "${this::class.name}(${when (master) {
+            is IEvent -> "E"
+            is IState -> "S"
+            else -> "X"
+        }}${usedAs.name[0]} | ${listOfNotNull(
+            "master=$master",
+            slave?.let { "slave=$it" },
+            idx.nullWhen { it == 0 }?.let { "idx=$it" },
+            ignoreSlave.nullWhen { !it }?.let { "ignoreSlave=$it" }
+        ).joinToString(" | ")})"
     }
 
     data class Condition(
-        override val start: IMaster,
-        override val wanted: Set<IMaster> = emptySet(),
-        override val unwanted: Set<IMaster> = emptySet(),
-        override val action: (suspend ExecutorScope.() -> IState?)? = null
+        override val wanted: List<IComboElement> = emptyList(),
+        override val unwanted: List<IComboElement> = emptyList(),
+        override val action: (suspend ExecutorScope.() -> IComboElement?)? = null
     ) : ICondition {
 
-        override val type = when (start) {
-            is IState -> STATE
-            is IEvent -> EVENT
+        constructor(master: IMaster) : this(listOf(master.combo))
+
+        override val start: IComboElement get() = wanted.first()
+
+        override val type = when {
+            start.hasState -> STATE
+            start.hasEvent -> EVENT
             else -> throw IllegalArgumentException("Unknown start type ${start::class}")
         }
 
-        override val wantedEvents = wanted.filterIsInstance<IEvent>()
-        override val wantedStates = wanted.filterIsInstance<IState>()
+        override val wantedEvents =
+            mutableListOf(if (start.hasEvent) start else null).apply { addAll(wanted.filter { it.hasEvent }) }
+                .filterNotNull()
+        override val wantedStates =
+            mutableListOf(if (start.hasState) start else null).apply { addAll(wanted.filter { it.hasState }) }
+                .filterNotNull()
 
-        override val unwantedEvents = unwanted.filterIsInstance<IEvent>()
-        override val unwantedStates = unwanted.filterIsInstance<IState>()
+        override val unwantedEvents = unwanted.filter { it.hasEvent }
+        override val unwantedStates = unwanted.filter { it.hasState }
 
         override val wantedStatesAll = wantedStates.filter { it.idx > 0 }
         override val wantedStatesAny = wantedStates.filter { it.idx == 0 }
@@ -188,22 +218,25 @@ sealed class ConditionElement : IConditionElement {
         override val wantedEventsAny = wantedEvents.filter { it.idx == 0 }
 
         fun match(
-            event: IEvent,
-            state: IState,
+            event: IComboElement,
+            state: IComboElement,
             previousChanges: List<OnStateChanged>
-        ): Boolean = Matcher.run { match(event, state, previousChanges) }
+        ): Boolean = Matcher.match(this, event, state, previousChanges)
 
         override fun toString(): String =
             "${this::class.name}(${listOfNotNull("start=$start",
                 wanted.nullWhen { it.isEmpty() }?.let { "wanted=$it" },
-                unwanted.nullWhen { it.isEmpty() }?.let { "unwanted=$it" },
-                "type=$type"
-            ).joinToString("; ")}"
+                unwanted.nullWhen { it.isEmpty() }?.let { "unwanted=$it" }
+            ).joinToString("; ")})"
     }
 }
 
 val ICondition.isStateCondition get() = type == STATE
 val ICondition.isEventCondition get() = type == EVENT
 
-val IMaster.isDefinition get() = usedAs == DEFINITION
-val IMaster.isRuntime get() = usedAs == UsedAs.RUNTIME
+val IComboElement.isDefinition get() = usedAs == DEFINITION
+val IComboElement.isRuntime get() = usedAs == UsedAs.RUNTIME
+
+val IComboElement.noLogging: Boolean get() = (master as? IEvent)?.noLogging == true
+
+val IMaster.combo get() = ConditionElement.ComboElement(this)

@@ -6,9 +6,11 @@ import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.scope.CoroutineScopeEx
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
 import de.gapps.utils.misc.asUnit
+import de.gapps.utils.statemachine.IConditionElement.IComboElement
 import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
 import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
 import de.gapps.utils.statemachine.IConditionElement.ISlave.IData
+import de.gapps.utils.statemachine.IConditionElement.UsedAs.RUNTIME
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -175,18 +177,18 @@ open class MachineEx(
     private val finishedProcessingEvent = Channel<Boolean>()
 
     private val eventMutex = Mutex()
-    private val eventChannel = Channel<IEvent>(Channel.BUFFERED)
+    private val eventChannel = Channel<IComboElement>(Channel.BUFFERED)
 
-    override var event: IEvent
+    override var event: IComboElement
         get() = currentEvent
         set(value) {
             submittedEventCount.incrementAndGet()
             scope.launchEx(mutex = eventMutex) { eventChannel.send(value) }
         }
 
-    private lateinit var currentEvent: IEvent
+    private lateinit var currentEvent: IComboElement
 
-    override var state: IState = initialState
+    override var state: IComboElement = initialState.combo
 
     private val submittedEventCount = AtomicInteger(0)
     private val processedEventCount = AtomicInteger(0)
@@ -200,9 +202,10 @@ open class MachineEx(
         }
     }
 
-    private suspend fun IEvent.processEvent() {
+    private suspend fun IComboElement.processEvent() {
         currentEvent = this
-        val stateBefore = state
+        currentEvent.usedAs = RUNTIME
+        val stateBefore = this@MachineEx.state
         applyNewState(mapper.findStateForEvent(this, stateBefore, previousChanges), stateBefore, this)
         processedEventCount.incrementAndGet()
         if (!isProcessingActive)
@@ -210,16 +213,16 @@ open class MachineEx(
     }
 
     private fun applyNewState(
-        newState: IState?,
-        stateBefore: IState,
-        event: IEvent
+        newState: IComboElement?,
+        stateBefore: IComboElement,
+        event: IComboElement
     ) = newState?.let {
         state = newState
         previousChanges.add(
             OnStateChanged(event, stateBefore, newState).apply {
-                stateBefore.run { activeStateChanged(false) }
-                event.run { fired() }
-                newState.run { activeStateChanged(true) }
+                stateBefore.state?.run { activeStateChanged(false) }
+                event.event?.run { fired() }
+                newState.state?.run { activeStateChanged(true) }
             }
         )
         if (previousChanges.size > previousChangesCacheSize)

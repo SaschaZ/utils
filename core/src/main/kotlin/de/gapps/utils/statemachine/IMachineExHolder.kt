@@ -1,15 +1,14 @@
 package de.gapps.utils.statemachine
 
-import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle
-import de.gapps.utils.statemachine.IConditionElement.ISlave
+import de.gapps.utils.statemachine.IConditionElement.IComboElement
 
 interface IMachineExHolder {
 
     val machine: MachineEx
 
-    suspend fun fire(event: ISingle.IEvent, data: ISlave? = null) =
-        machine.fire(event, data)
+    suspend fun fire(combo: IComboElement) =
+        machine.fire(combo)
 
-    fun fireAndForget(event: ISingle.IEvent, data: ISlave? = null) =
-        machine.fireAndForget(event, data)
+    fun fireAndForget(combo: IComboElement) =
+        machine.fireAndForget(combo)
 }
