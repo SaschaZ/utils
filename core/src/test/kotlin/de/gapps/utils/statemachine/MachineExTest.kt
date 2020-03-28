@@ -208,4 +208,16 @@ class MachineExTest {
             state.master assert E
         }
     }
+
+    @Test
+    fun testGroup() = runTest {
+        MachineEx(INITIAL) {
+            -TestEventGroup + INITIAL set A
+        }.run {
+            state.master assert INITIAL
+
+            fire eventSync FOURTH
+            state.master assert A
+        }
+    }
 }

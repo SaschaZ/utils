@@ -8,6 +8,8 @@ import de.gapps.utils.misc.ifNull
 import de.gapps.utils.statemachine.IConditionElement.*
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.EVENT
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.STATE
+import de.gapps.utils.statemachine.IConditionElement.IMaster.IGroup
+import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle
 import de.gapps.utils.statemachine.IConditionElement.ISlave.IData
 import de.gapps.utils.statemachine.IConditionElement.ISlave.IType
 
@@ -53,7 +55,7 @@ object Matcher {
 
         if (!event.noLogging)
             Log.v(
-                "\tnewState=$newState;" +
+                "\n\tnewState=$newState" +
                         "\n\tmatchingEventConditions=${matchingEventConditions.toList().joinToStringTabbed(2)}"
             )
 
@@ -88,8 +90,25 @@ object Matcher {
         state: IComboElement,
         previousChanges: List<OnStateChanged>
     ): Boolean {
-        fun match(runtime: ISlave, definition: ISlave): Boolean {
+        fun match(runtime: IMaster, definition: IMaster): Boolean {
             return when (runtime) {
+                is ISingle -> when (definition) {
+                    is ISingle -> runtime === definition
+                    is IGroup<*> -> definition.type.isInstance(runtime)
+                    else -> throw IllegalArgumentException("Unknown IMaster subtype $definition.")
+                }
+                is IGroup<*> -> when (definition) {
+                    is ISingle -> runtime.type.isInstance(definition)
+                    is IGroup<*> -> runtime.type == definition.type
+                    else -> throw IllegalArgumentException("Unknown IMaster subtype $definition.")
+                }
+                else -> throw IllegalArgumentException("Unknown IMaster subtype $runtime.")
+            } logV { m = "#3 $it => $runtime <||> $condition" }
+        }
+
+        fun match(runtime: ISlave?, definition: ISlave?): Boolean {
+            return runtime == null && definition == null
+                    || runtime != null && definition != null && when (runtime) {
                 is IType<*> -> when (definition) {
                     is IType<*> -> runtime.type == definition.type
                     is IData -> runtime.type.isInstance(definition)
@@ -101,16 +120,13 @@ object Matcher {
                     else -> throw IllegalArgumentException("Unknown ISlave subtype $definition.")
                 }
                 else -> throw IllegalArgumentException("Unknown ISlave subtype $runtime.")
-            }
+            } logV { m = "#4 $it => $runtime <||> $condition" }
         }
 
         fun match(runtime: IComboElement, definition: IComboElement): Boolean {
-            return runtime.master == definition.master
-                    && ((runtime.slave == null && definition.slave == null) || runtime.ignoreSlave || definition.ignoreSlave
-                    || (runtime.slave != null && definition.slave != null && match(
-                runtime.slave!!,
-                definition.slave!!
-            )))
+            return match(runtime.master, definition.master)
+                    && (runtime.ignoreSlave || definition.ignoreSlave
+                    || match(runtime.slave, definition.slave)) logV { m = "#2 $it => $runtime <||> $condition" }
         }
 
         fun List<IComboElement>.matchAny(runtime: IComboElement) = isEmpty() || any { match(runtime, it) }
@@ -129,10 +145,9 @@ object Matcher {
                     && condition.wantedEventsAny.matchAny(event)
                     && condition.wantedEventsAll.matchAll(event)
                     && condition.unwantedEvents.matchNone(event)
-        }.also {
+        }.also { result ->
             if (!event.noLogging) logV {
-                @Suppress("RemoveCurlyBracesFromTemplate")
-                m = "#1 $it => $condition <==> ${when (condition.type) {
+                m = "#1 $result => $condition <||> ${when (condition.type) {
                     EVENT -> state
                     STATE -> event
                 }}"

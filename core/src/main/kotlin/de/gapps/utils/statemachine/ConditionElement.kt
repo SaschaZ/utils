@@ -4,6 +4,8 @@ package de.gapps.utils.statemachine
 
 import de.gapps.utils.misc.name
 import de.gapps.utils.misc.nullWhen
+import de.gapps.utils.statemachine.ConditionElement.Master.Group.EventGroup
+import de.gapps.utils.statemachine.ConditionElement.Master.Group.StateGroup
 import de.gapps.utils.statemachine.IConditionElement.*
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.EVENT
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.STATE
@@ -17,7 +19,6 @@ import de.gapps.utils.statemachine.IConditionElement.ISlave.IData
 import de.gapps.utils.statemachine.IConditionElement.ISlave.IType
 import de.gapps.utils.statemachine.IConditionElement.UsedAs.DEFINITION
 import kotlin.reflect.KClass
-import kotlin.reflect.full.isSuperclassOf
 
 interface IConditionElement {
 
@@ -65,11 +66,19 @@ interface IConditionElement {
         var usedAs: UsedAs
         val ignoreSlave: Boolean
 
-        val event: IEvent? get() = master as? IEvent
-        val state: IState? get() = master as? IState
+        val single get() = master as? ISingle
+        val event get() = master as? IEvent
+        val state get() = master as? IState
+        val group get() = master as? IGroup<*>
+        val eventGroup get() = master as? EventGroup<*>
+        val stateGroup get() = master as? StateGroup<*>
 
+        val hasSingle get() = single != null
         val hasEvent get() = event != null
         val hasState get() = state != null
+        val hasGroup get() = group != null
+        val hasStateGroup get() = stateGroup != null
+        val hasEventGroup get() = eventGroup != null
     }
 
     interface ICondition : IConditionElement {
@@ -100,7 +109,7 @@ interface IConditionElement {
 
 
 /**
- * Base class for [IEvent]s, [IState]s, [IData].
+ * Base class for [IMaster]s, [ISlave]s, [IComboElement] and [ICondition].
  */
 sealed class ConditionElement : IConditionElement {
 
@@ -111,8 +120,6 @@ sealed class ConditionElement : IConditionElement {
      */
     sealed class Master : ConditionElement(), IMaster {
 
-        override fun equals(other: Any?) = this === other
-        override fun hashCode(): Int = this::class.hashCode()
         override fun toString(): String = this::class.name
 
         sealed class Single : Master(), ISingle {
@@ -134,10 +141,14 @@ sealed class ConditionElement : IConditionElement {
         sealed class Group<out T : ISingle>(override val type: KClass<@UnsafeVariance T>) : Master(), IGroup<T> {
 
             abstract class EventGroup<out T : IEvent>(type: KClass<T>) :
-                Group<@UnsafeVariance T>(type), IEventGroup<T>
+                Group<@UnsafeVariance T>(type), IEventGroup<T> {
+                override fun toString(): String = type.name
+            }
 
             abstract class StateGroup<out T : IState>(type: KClass<T>) :
-                Group<@UnsafeVariance T>(type), IStateGroup<T>
+                Group<@UnsafeVariance T>(type), IStateGroup<T> {
+                override fun toString(): String = type.name
+            }
         }
     }
 
@@ -156,13 +167,6 @@ sealed class ConditionElement : IConditionElement {
          */
         abstract class Type<out T : IData>(override val type: KClass<@UnsafeVariance T>) : Slave(), IType<T> {
 
-            override fun equals(other: Any?): Boolean = when (other) {
-                is IType<*> -> other.type == type
-                is IData -> type.isInstance(other) || type.isSuperclassOf(other::class)
-                else -> false
-            }
-
-            override fun hashCode(): Int = type.hashCode()
             override fun toString(): String = type.name
         }
     }
@@ -178,7 +182,7 @@ sealed class ConditionElement : IConditionElement {
             is IEvent -> "E"
             is IState -> "S"
             else -> "X"
-        }}${usedAs.name[0]}"
+        }}${usedAs.name[0]})"
     }
 
     data class Condition(
@@ -192,8 +196,8 @@ sealed class ConditionElement : IConditionElement {
         override val start: IComboElement get() = wanted.first()
 
         override val type = when {
-            start.hasState -> STATE
-            start.hasEvent -> EVENT
+            start.hasState || start.hasStateGroup -> STATE
+            start.hasEvent || start.hasEventGroup -> EVENT
             else -> throw IllegalArgumentException("Unknown start type ${start::class}")
         }
 
