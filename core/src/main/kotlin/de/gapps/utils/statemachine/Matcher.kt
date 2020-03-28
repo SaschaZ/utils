@@ -6,6 +6,7 @@ import de.gapps.utils.log.Log
 import de.gapps.utils.log.logV
 import de.gapps.utils.misc.ifNull
 import de.gapps.utils.statemachine.IConditionElement.*
+import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.EVENT
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.STATE
 import de.gapps.utils.statemachine.IConditionElement.IMaster.IGroup
@@ -103,7 +104,7 @@ object Matcher {
                     else -> throw IllegalArgumentException("Unknown IMaster subtype $definition.")
                 }
                 else -> throw IllegalArgumentException("Unknown IMaster subtype $runtime.")
-            } logV { m = "#3 $it => $runtime <||> $condition" }
+            } logV { m = "#3 $it => $runtime <||> $definition" }
         }
 
         fun match(runtime: ISlave?, definition: ISlave?): Boolean {
@@ -123,15 +124,35 @@ object Matcher {
             } logV { m = "#4 $it => $runtime <||> $condition" }
         }
 
-        fun match(runtime: IComboElement, definition: IComboElement): Boolean {
-            return match(runtime.master, definition.master)
-                    && (runtime.ignoreSlave || definition.ignoreSlave
-                    || match(runtime.slave, definition.slave)) logV { m = "#2 $it => $runtime <||> $condition" }
+        operator fun IComboElement.invoke(idx: Int, type: ConditionType): IComboElement = when (idx) {
+            0 -> this
+            else -> previousChanges.getOrNull(previousChanges.size - idx)?.let { stateChanged ->
+                when {
+                    hasEvent -> stateChanged.event
+                    hasState -> when (type) {
+                        EVENT -> stateChanged.stateBefore
+                        STATE -> stateChanged.stateAfter
+                    }
+                    else -> throw IllegalArgumentException("Unknown IComboElement $this.")
+                }
+            } ?: this
         }
 
-        fun List<IComboElement>.matchAny(runtime: IComboElement) = isEmpty() || any { match(runtime, it) }
-        fun List<IComboElement>.matchAll(runtime: IComboElement) = isEmpty() || all { match(runtime, it) }
-        fun List<IComboElement>.matchNone(runtime: IComboElement) = isEmpty() || none { match(runtime, it) }
+        fun match(runtime: IComboElement, definition: IComboElement, type: ConditionType): Boolean {
+            val r = runtime(definition.idx, type)
+            return match(r.master, definition.master)
+                    && (r.ignoreSlave || definition.ignoreSlave
+                    || match(r.slave, definition.slave)) logV { m = "#2 $it => $runtime <||> $condition" }
+        }
+
+        fun List<IComboElement>.matchAny(runtime: IComboElement) =
+            isEmpty() || any { match(runtime, it, condition.type) }
+
+        fun List<IComboElement>.matchAll(runtime: IComboElement) =
+            isEmpty() || all { match(runtime, it, condition.type) }
+
+        fun List<IComboElement>.matchNone(runtime: IComboElement) =
+            isEmpty() || none { match(runtime, it, condition.type) }
 
         return when (condition.type) {
             EVENT -> condition.wantedEventsAny.matchAny(event)
@@ -147,10 +168,7 @@ object Matcher {
                     && condition.unwantedEvents.matchNone(event)
         }.also { result ->
             if (!event.noLogging) logV {
-                m = "#1 $result => $condition <||> ${when (condition.type) {
-                    EVENT -> state
-                    STATE -> event
-                }}"
+                m = "#1 $result => $condition"
             }
         }
     }
