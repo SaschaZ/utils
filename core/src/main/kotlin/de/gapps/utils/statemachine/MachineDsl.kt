@@ -12,11 +12,8 @@ import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
 
 abstract class MachineDsl : IMachineEx {
 
-    // start entry with -
-    operator fun IMaster.unaryMinus() = Condition(this)
-
-    // master to combo with +
-    operator fun ISingle.unaryPlus() = combo
+    // start entry with unary +
+    operator fun IMaster.unaryPlus() = Condition(this)
 
     // link wanted items with + operator
     operator fun Condition.plus(other: IMaster): Condition = plus(other.combo)

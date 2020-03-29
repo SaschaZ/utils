@@ -70,19 +70,19 @@ class MachineExTest {
         var executed = 0
         var executed2 = 0
         MachineEx(INITIAL) {
-            -FIRST + INITIAL set A * TestStateData(true)
-            -SECOND * TestEventData set C
-            -FIFTH + A * TestStateData set E
-            -FIRST + SECOND + THIRD + A + B + E set C
-            -THIRD + C execAndSet {
+            +FIRST + INITIAL set A * TestStateData(true)
+            +SECOND * TestEventData set C
+            +FIFTH + A * TestStateData set E
+            +FIRST + SECOND + THIRD + A + B + E set C
+            +THIRD + C execAndSet {
                 throw IllegalStateException("This state should never be active")
             }
-            -THIRD * TestEventData("foo") + C execAndSet {
+            +THIRD * TestEventData("foo") + C execAndSet {
                 executed++; eventData<TestEventData>().foo onFail "data test" assert "foo"; D
             }
-            -FOURTH + D set B
-            -C exec { executed++ }
-            -C - FIRST exec { executed2++ }
+            +FOURTH + D set B
+            +C exec { executed++ }
+            +C - FIRST exec { executed2++ }
         }.run {
             state() assert INITIAL
 
@@ -121,7 +121,7 @@ class MachineExTest {
     @Test
     fun testBuilderSyncSet() = runTest {
         MachineEx(INITIAL) {
-            -FIRST + INITIAL set A
+            +FIRST + INITIAL set A
         }.run {
             state() assert INITIAL
 
@@ -140,11 +140,11 @@ class MachineExTest {
     @Test
     fun testPrev() = runTest {
         MachineEx(INITIAL) {
-            -FIRST + INITIAL set A
-            -SECOND + A + INITIAL[1] set B
-            -THIRD + B + A[1] + INITIAL[2] set C
-            -FOURTH + C + B[1] + A[2] + INITIAL[3] set D
-            -FIFTH + D + C[1] + B[2] + A[3] + INITIAL[3] set E
+            +FIRST + INITIAL set A
+            +SECOND + A + INITIAL[1] set B
+            +THIRD + B + A[1] + INITIAL[2] set C
+            +FOURTH + C + B[1] + A[2] + INITIAL[3] set D
+            +FIFTH + D + C[1] + B[2] + A[3] + INITIAL[3] set E
         }.run {
             state() assert INITIAL
 
@@ -168,12 +168,12 @@ class MachineExTest {
     @Test
     fun testData() = runTest {
         MachineEx(INITIAL) {
-            -FIRST + INITIAL * TestEventData set A
-            -SECOND + INITIAL set A * TestStateData(false)
-            -THIRD + A[1] * TestStateData(false) set C
-            -FOURTH + A * TestStateData set B
-            -FIFTH * TestEventData("foo") + C set D
-            -FOURTH * TestEventData("moo") + D set E
+            +FIRST + INITIAL * TestEventData set A
+            +SECOND + INITIAL set A * TestStateData(false)
+            +THIRD + A[1] * TestStateData(false) set C
+            +FOURTH + A * TestStateData set B
+            +FIFTH * TestEventData("foo") + C set D
+            +FOURTH * TestEventData("moo") + D set E
         }.run {
             state() assert INITIAL
 
@@ -212,7 +212,7 @@ class MachineExTest {
     @Test
     fun testGroup() = runTest {
         MachineEx(INITIAL) {
-            -TestEventGroup + INITIAL set A
+            +TestEventGroup + INITIAL set A
         }.run {
             state() assert INITIAL
 

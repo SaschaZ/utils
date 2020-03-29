@@ -108,7 +108,7 @@ object Matcher {
                     else -> throw IllegalArgumentException("Unknown IMaster subtype $definition.")
                 }
                 else -> throw IllegalArgumentException("Unknown IMaster subtype $runtime.")
-            }.also { if (!event.noLogging) logV { m = "#3 $it => $runtime <||> $definition" } }
+            }.also { result -> if (!event.noLogging) logV { m = "#3 $result => $runtime <||> $definition" } }
         }
 
         fun match(runtime: ISlave?, definition: ISlave?): Boolean {
@@ -146,9 +146,9 @@ object Matcher {
             val r = runtime(definition.idx, type)
             return match(r.master, definition.master)
                     && (r.ignoreSlave || definition.ignoreSlave
-                    || match(r.slave, definition.slave)).also {
+                    || match(r.slave, definition.slave)).also { result ->
                 if (!event.noLogging) logV {
-                    m = "#2 $it => $runtime <||> $condition"
+                    m = "#2 $result => $runtime <||> $condition"
                 }
             }
         }
