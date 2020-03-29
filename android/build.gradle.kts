@@ -26,6 +26,9 @@ android {
         versionName = Android.versionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    lintOptions {
+        isAbortOnError = false
+    }
 
     sourceSets {
         getByName("main").java.setSrcDirs(listOf("src/main/kotlin"))
