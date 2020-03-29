@@ -44,6 +44,10 @@ object Matcher {
 
         val matchingEventConditions =
             conditions.filter { it.value.isEventCondition && match(it.value, event, state, previousChanges) }
+        if (matchingEventConditions.isEmpty() && !event.noLogging) {
+            Log.i("No event condition matches for $event and $state.")
+            return null
+        }
         val matchedResults = matchingEventConditions.mapNotNull { it.value.action?.invoke(execScope) }
 
         val newState = when (matchedResults.size) {
@@ -76,9 +80,9 @@ object Matcher {
             if (!event.noLogging)
                 Log.d("state changed from $state to $newState with event $event")
         } ifNull {
-            if (!event.noLogging)
+            if (!event.noLogging && matchingEventConditions.values.isEmpty())
                 Log.i(
-                    "No new state for event $event and $state. Had ${matchingEventConditions.size}" +
+                    "No event condition matches for $event and $state. Had ${matchingEventConditions.size}" +
                             " matches:${matchingEventConditions.values.joinToStringTabbed(2)}"
                 )
             null
