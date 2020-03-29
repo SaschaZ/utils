@@ -19,3 +19,10 @@ jobs:
         java-version: 1.8
     - name: Build with Gradle
       run: ./gradlew publishToMavenLocal
+    - name: FTP-Deploy-Action
+      uses: SamKirkland/FTP-Deploy-Action@3.0.0
+      with:
+        ftp-server: ftp://zieger.dev/
+        ftp-username: user
+        ftp-password: ${{ secrets.FTP_PASSWORD }}
+        local-dir: build
