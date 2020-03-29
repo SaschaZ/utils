@@ -26,3 +26,5 @@ jobs:
         ftp-username: user
         ftp-password: ${{ secrets.FTP_PASSWORD }}
         local-dir: build
+        git-ftp-args: --insecure
+        
