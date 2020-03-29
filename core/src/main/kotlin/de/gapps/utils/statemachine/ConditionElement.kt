@@ -213,6 +213,7 @@ sealed class ConditionElement : IConditionElement {
 
         override val wantedStatesAll = wantedStates.filter { it.idx > 0 }
         override val wantedStatesAny = wantedStates.filter { it.idx == 0 }
+
         override val wantedEventsAll = wantedEvents.filter { it.idx > 0 }
         override val wantedEventsAny = wantedEvents.filter { it.idx == 0 }
 
