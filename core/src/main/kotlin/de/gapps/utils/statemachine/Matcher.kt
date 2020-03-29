@@ -104,7 +104,7 @@ object Matcher {
                     else -> throw IllegalArgumentException("Unknown IMaster subtype $definition.")
                 }
                 else -> throw IllegalArgumentException("Unknown IMaster subtype $runtime.")
-            } logV { m = "#3 $it => $runtime <||> $definition" }
+            }.also { if (!event.noLogging) logV { m = "#3 $it => $runtime <||> $definition" } }
         }
 
         fun match(runtime: ISlave?, definition: ISlave?): Boolean {
@@ -121,7 +121,7 @@ object Matcher {
                     else -> throw IllegalArgumentException("Unknown ISlave subtype $definition.")
                 }
                 else -> throw IllegalArgumentException("Unknown ISlave subtype $runtime.")
-            } logV { m = "#4 $it => $runtime <||> $condition" }
+            }.also { if (!event.noLogging) logV { m = "#4 $it => $runtime <||> $condition" } }
         }
 
         operator fun IComboElement.invoke(idx: Int, type: ConditionType): IComboElement = when (idx) {
@@ -142,7 +142,11 @@ object Matcher {
             val r = runtime(definition.idx, type)
             return match(r.master, definition.master)
                     && (r.ignoreSlave || definition.ignoreSlave
-                    || match(r.slave, definition.slave)) logV { m = "#2 $it => $runtime <||> $condition" }
+                    || match(r.slave, definition.slave)).also {
+                if (!event.noLogging) logV {
+                    m = "#2 $it => $runtime <||> $condition"
+                }
+            }
         }
 
         fun List<IComboElement>.matchAny(runtime: IComboElement) =

@@ -7,9 +7,6 @@ ENV ANDROID_BUILD_TOOLS_VERSION="29.0.3"
 
 ENV ANDROID_HOME /opt/android-sdk
 
-ARG aws_access_key_id
-ARG aws_secret_access_key
-
 WORKDIR /tmp
 
 # Installing packages
@@ -59,5 +56,5 @@ ENV GRADLE_OPTS "-XX:+UseG1GC -XX:MaxGCPauseMillis=1000"
 ADD . /project
 WORKDIR /project
 RUN rm ./local.properties
-RUN ./gradlew clean
+RUN ./gradlew assemble
 CMD ["./gradlew", "publishToMavenLocal"]
