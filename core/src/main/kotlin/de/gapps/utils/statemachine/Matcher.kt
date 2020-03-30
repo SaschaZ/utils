@@ -95,21 +95,6 @@ object Matcher {
         state: IComboElement,
         previousChanges: List<OnStateChanged>
     ): Boolean {
-        fun match(runtime: IMaster, definition: IMaster): Boolean {
-            return when (runtime) {
-                is ISingle -> when (definition) {
-                    is ISingle -> runtime === definition
-                    is IGroup<*> -> definition.type.isInstance(runtime)
-                    else -> throw IllegalArgumentException("Unknown IMaster subtype $definition.")
-                }
-                is IGroup<*> -> when (definition) {
-                    is ISingle -> runtime.type.isInstance(definition)
-                    is IGroup<*> -> runtime.type == definition.type
-                    else -> throw IllegalArgumentException("Unknown IMaster subtype $definition.")
-                }
-                else -> throw IllegalArgumentException("Unknown IMaster subtype $runtime.")
-            }.also { result -> if (!event.noLogging) logV { m = "#3 $result => $runtime <||> $definition" } }
-        }
 
         fun match(runtime: ISlave?, definition: ISlave?): Boolean {
             return runtime == null && definition == null
@@ -126,6 +111,22 @@ object Matcher {
                 }
                 else -> throw IllegalArgumentException("Unknown ISlave subtype $runtime.")
             }.also { result -> if (!event.noLogging) logV { m = "#4 $result => $runtime <||> $definition" } }
+        }
+
+        fun match(runtime: IMaster, definition: IMaster): Boolean {
+            return when (runtime) {
+                is ISingle -> when (definition) {
+                    is ISingle -> runtime === definition
+                    is IGroup<*> -> definition.type.isInstance(runtime)
+                    else -> throw IllegalArgumentException("Unknown IMaster subtype $definition.")
+                }
+                is IGroup<*> -> when (definition) {
+                    is ISingle -> runtime.type.isInstance(definition)
+                    is IGroup<*> -> runtime.type == definition.type
+                    else -> throw IllegalArgumentException("Unknown IMaster subtype $definition.")
+                }
+                else -> throw IllegalArgumentException("Unknown IMaster subtype $runtime.")
+            }.also { result -> if (!event.noLogging) logV { m = "#3 $result => $runtime <||> $definition" } }
         }
 
         operator fun IComboElement.invoke(idx: Int, type: ConditionType): IComboElement = when (idx) {
@@ -148,7 +149,7 @@ object Matcher {
                     && (r.ignoreSlave || definition.ignoreSlave
                     || match(r.slave, definition.slave)).also { result ->
                 if (!event.noLogging) logV {
-                    m = "#2 $result => $runtime <||> $definition"
+                    m = "#2 $result => $r <||> $definition"
                 }
             }
         }
@@ -176,7 +177,7 @@ object Matcher {
                     && condition.unwantedEvents.matchNone(event)
         }.also { result ->
             if (!event.noLogging) logV {
-                m = "#1 $result => $condition"
+                m = "#1 $result => $condition for event=$event and state=$state"
             }
         }
     }
