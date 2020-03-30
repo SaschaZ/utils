@@ -34,8 +34,9 @@ dependencies {
     implementation "dev.zieger.utils:console:$utilsVersion"
 }
 ```
+
 Where `utilsVersion` is the latest from
-[![](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core)
+[![](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core) [![](https://github.com/SaschaZ/utils/workflows/Android%20CI/badge.svg)](https://github.com/SaschaZ/utils/workflows/Android%20CI/badge.svg)
 #
 
 ## TimeEx, DurationEx

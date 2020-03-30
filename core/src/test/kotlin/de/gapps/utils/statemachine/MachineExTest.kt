@@ -1,4 +1,4 @@
-@file:Suppress("unused")
+@file:Suppress("unused", "ClassName")
 
 package de.gapps.utils.statemachine
 
@@ -9,12 +9,13 @@ import de.gapps.utils.statemachine.ConditionElement.Master.Group.StateGroup
 import de.gapps.utils.statemachine.ConditionElement.Master.Single.Event
 import de.gapps.utils.statemachine.ConditionElement.Master.Single.State
 import de.gapps.utils.statemachine.ConditionElement.Slave.Data
+import de.gapps.utils.statemachine.MachineExTest.TestData.*
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
-import de.gapps.utils.statemachine.MachineExTest.TestEvent.TestEventGroup.FIFTH
-import de.gapps.utils.statemachine.MachineExTest.TestEvent.TestEventGroup.FOURTH
+import de.gapps.utils.statemachine.MachineExTest.TestEvent.TEST_EVENT_GROUP.FIFTH
+import de.gapps.utils.statemachine.MachineExTest.TestEvent.TEST_EVENT_GROUP.FOURTH
 import de.gapps.utils.statemachine.MachineExTest.TestState.*
-import de.gapps.utils.statemachine.MachineExTest.TestState.TestStateGroup.D
-import de.gapps.utils.statemachine.MachineExTest.TestState.TestStateGroup.E
+import de.gapps.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP.D
+import de.gapps.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP.E
 import de.gapps.utils.time.duration.seconds
 import org.junit.jupiter.api.Test
 
@@ -27,26 +28,31 @@ class MachineExTest {
         object B : TestState()
         object C : TestState()
 
-        sealed class TestStateGroup : TestState() {
-            object D : TestStateGroup()
-            object E : TestStateGroup()
+        sealed class TEST_STATE_GROUP : TestState() {
+            object D : TEST_STATE_GROUP()
+            object E : TEST_STATE_GROUP()
 
-            companion object : StateGroup<TestStateGroup>(TestStateGroup::class)
+            companion object : StateGroup<TEST_STATE_GROUP>(TEST_STATE_GROUP::class)
         }
 
         companion object : StateGroup<TestState>(TestState::class)
     }
 
-    data class TestEventData(val foo: String) : Data() {
-        companion object : Type<TestEventData>(TestEventData::class)
-    }
+    sealed class TestData : Data() {
 
-    data class TestEventData2(val foo: String) : Data() {
-        companion object : Type<TestEventData2>(TestEventData2::class)
-    }
+        data class TestEventData(val foo: String) : TestData() {
+            companion object : Type<TestEventData>(TestEventData::class)
+        }
 
-    data class TestStateData(val moo: Boolean) : Data() {
-        companion object : Type<TestStateData>(TestStateData::class)
+        data class TestEventData2(val foo: String) : TestData() {
+            companion object : Type<TestEventData2>(TestEventData2::class)
+        }
+
+        data class TestStateData(val moo: Boolean) : TestData() {
+            companion object : Type<TestStateData>(TestStateData::class)
+        }
+
+        companion object : Type<TestData>(TestData::class)
     }
 
     sealed class TestEvent(ignoreData: Boolean = false) : Event() {
@@ -55,11 +61,12 @@ class MachineExTest {
         object SECOND : TestEvent()
         object THIRD : TestEvent()
 
-        sealed class TestEventGroup : TestEvent() {
+        sealed class TEST_EVENT_GROUP : TestEvent() {
             object FOURTH : TestEvent()
             object FIFTH : TestEvent()
+            object SIXTH : TestEvent()
 
-            companion object : Group.EventGroup<TestEventGroup>(TestEventGroup::class)
+            companion object : Group.EventGroup<TEST_EVENT_GROUP>(TEST_EVENT_GROUP::class)
         }
 
         companion object : Group.EventGroup<TestEvent>(TestEvent::class)
@@ -71,8 +78,8 @@ class MachineExTest {
         var executed2 = 0
         MachineEx(INITIAL) {
             +FIRST + INITIAL set A * TestStateData(true)
-            +SECOND * TestEventData set C
-            +FIFTH + A * TestStateData set E
+            +SECOND * TestData.TestEventData set C
+            +FIFTH + A * TestData.TestStateData set E
             +FIRST + SECOND + THIRD + A + B + E set C
             +THIRD + C execAndSet {
                 throw IllegalStateException("This state should never be active")
@@ -168,10 +175,10 @@ class MachineExTest {
     @Test
     fun testData() = runTest {
         MachineEx(INITIAL) {
-            +FIRST + INITIAL * TestEventData set A
+            +FIRST + INITIAL * TestData.TestEventData set A
             +SECOND + INITIAL set A * TestStateData(false)
             +THIRD + A[1] * TestStateData(false) set C
-            +FOURTH + A * TestStateData set B
+            +FOURTH + A * TestData.TestStateData set B
             +FIFTH * TestEventData("foo") + C set D
             +FOURTH * TestEventData("moo") + D set E
         }.run {
@@ -212,11 +219,19 @@ class MachineExTest {
     @Test
     fun testGroup() = runTest {
         MachineEx(INITIAL) {
-            +TestEventGroup + INITIAL set A
+            +TEST_EVENT_GROUP + INITIAL set D
+            +FIFTH + TEST_STATE_GROUP set C
+            +FIRST * TestData + C set A
         }.run {
             state() assert INITIAL
 
             fire eventSync FOURTH
+            state() assert D
+
+            fire eventSync FIFTH
+            state() assert C
+
+            fire eventSync FIRST * TestEventData2("bam")
             state() assert A
         }
     }
