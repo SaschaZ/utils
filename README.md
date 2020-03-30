@@ -1,6 +1,6 @@
 # utilsEx
 Kotlin Jvm Utilities 
-[![](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core)
+[![](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core) ![](https://github.com/SaschaZ/utils/workflows/Android%20CI/badge.svg)
 
 ## Contains utilities for
 - [utilsEx](#utilsex)
@@ -36,7 +36,7 @@ dependencies {
 ```
 
 Where `utilsVersion` is the latest from
-[![](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core) [![](https://github.com/SaschaZ/utils/workflows/Android%20CI/badge.svg)](https://github.com/SaschaZ/utils/workflows/Android%20CI/badge.svg)
+[![](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core) ![](https://github.com/SaschaZ/utils/workflows/Android%20CI/badge.svg)
 #
 
 ## TimeEx, DurationEx
@@ -87,7 +87,8 @@ sealed class TestState : State() {
  object C : TestState()
  object D : TestState()
 }
-```kotlin
+```
+
 Events need to implement the `Event` class:
 ```
 sealed class TestEvent(ignoreData: Boolean = false) : Event(ignoreData) {
