@@ -125,7 +125,7 @@ object Matcher {
                     else -> throw IllegalArgumentException("Unknown ISlave subtype $definition.")
                 }
                 else -> throw IllegalArgumentException("Unknown ISlave subtype $runtime.")
-            }.also { if (!event.noLogging) logV { m = "#4 $it => $runtime <||> $condition" } }
+            }.also { result -> if (!event.noLogging) logV { m = "#4 $result => $runtime <||> $definition" } }
         }
 
         operator fun IComboElement.invoke(idx: Int, type: ConditionType): IComboElement = when (idx) {
@@ -148,7 +148,7 @@ object Matcher {
                     && (r.ignoreSlave || definition.ignoreSlave
                     || match(r.slave, definition.slave)).also { result ->
                 if (!event.noLogging) logV {
-                    m = "#2 $result => $runtime <||> $condition"
+                    m = "#2 $result => $runtime <||> $definition"
                 }
             }
         }
