@@ -69,13 +69,13 @@ State machine with the following features:
 - full Coroutine support
 
 
-### **Usage**
+#### **Usage**
 
 First you need to define the events, states and data classes that should be used in the state machine:
 Because event and state instances are not allowed to change it makes sense to use objects for them. Any dynamic data
 can be attached with a `Data` class.
 
-### **Define `Event`s, `State`s and `Data`**
+#### **Define `Event`s, `State`s and `Data`**
 
 States need to implement the `State` class. :
 ```kotlin
@@ -98,7 +98,7 @@ sealed class TestEvent(ignoreData: Boolean = false) : Event(ignoreData) {
  object THIRD : TestEvent()
  object FOURTH : TestEvent()
 }
-```kotlin
+```
 Data classes need to implement the `Data` class:
 ```
 sealed class TestData : Data() {
@@ -108,7 +108,7 @@ sealed class TestData : Data() {
 }
 ```
 
-### **`Event` conditions**
+#### **`Event` conditions**
 
 After you have defined the needed events, states and possible data you can start defining the event and state
 conditions:
@@ -120,18 +120,18 @@ MachineEx(INITIAL) {
   // Some examples for event conditions:
 
   // When the current `State` is `INITIAL` and the `FIRST` event is received change the `State` to `A`.
-  -FIRST + INITIAL set A
+  +FIRST + INITIAL set A
 
   // When the `SECOND` `Event` is received change `State` to `B`.
-  -SECOND set B
+  +SECOND set B
 
   // When the current `State` is `A` or `B` and the `FIRST`, `SECOND` or `THIRD` `Event` is received change the
   // `State` to `C`.
-  -FIRST + SECOND + THIRD + A + B set C
+  +FIRST + SECOND + THIRD + A + B set C
 
   // When the current `State` is `C` and the {THIRD] `Event` is received execute the provided lambda and set the
   // new `State` to `D`-
-  -THIRD + C execAndSet {
+  +THIRD + C execAndSet {
     // do something
     D // return the new state that should be activated for the provided event condition.
   }
@@ -143,20 +143,19 @@ Because there can only be one incoming `Event` and one existing `State` only one
 condition need to be equal. BUT keep in mind when providing no optional `State`(s) the event condition will
 react on all `State`s.
 
-### **`State` conditions**
+#### **`State` conditions**
 
 To react on `State`s when they get activated by an event condition you can use state conditions:
 
 ```kotlin
-  // When `C` gets activated execute the provided lambda.
-  -C exec {
-      // do something
-   } // `State` conditions can not set a new `State`.
+// When `C` gets activated execute the provided lambda.
++C exec {
+  // do something
+} // `State` conditions can not set a new `State`.
 
-  // When `C` gets activated with the incoming `Event` `FIRST` execute the provided lambda.
-  -C + FIRST exec {
-      // do something
-   }
+// When `C` gets activated with the incoming `Event` `FIRST` execute the provided lambda.
++C + FIRST exec {
+  // do something
 }
 ```
 
@@ -170,14 +169,14 @@ Summarize difference between `Event` and `State` conditions:
 - `Event` conditions match against all `State`s when the condition does not contain `State` parameter ->
   `State` conditions match against all `Event`s when the condition does not contain an `Event` parameter
 
-### **`Data`**
- *
+#### **`Data`**
+
 `Data` instances can be attached to any `Event` or `State` with the * operator.
 Attached `Data` is than included when matching conditions.
 ```kotlin
 // When `State` is `C` and the incoming `Event` of `THIRD` has attached `TestEventData` with the content
 "foo" the `State` `D` gets activated.
--THIRD TestEventData("foo") + C execAndSet {
++THIRD TestEventData("foo") + C execAndSet {
   eventData<TestEventData>().foo onFail "foo String is not \"foo\"" assert "foo"
   D
 }
@@ -185,22 +184,21 @@ Attached `Data` is than included when matching conditions.
 There are several methods and properties to access current and previous `Event`s, `State`s and `Data`.
 See `ExecutorScope` for more details.
 
-### **Exclude**
+#### **Exclude**
 
 You can also exclude specific `Event`(s) or `State`s that must not be matching.
 Also works with attached `Data`.
 ```kotlin
 // When `State` `C` gets activated not by `Event` `FIRST` execute provided lambda.
--C - FIRST exec {
++C - FIRST exec {
   // do something
 }
 ```
 
-### **Sticky `Data`**
-### **Previous `Event`s and `State`s**
-### **Applying `Event`s to the state machine**
-### **Benefits of using operators for defining conditions**
-### **Coroutine support**
+##### **Previous `State` changes**
+##### **Applying `Event`s to the state machine**
+##### **Benefits of using operators for defining conditions**
+##### **Coroutine support**
 
 
 ## CoroutineEx
