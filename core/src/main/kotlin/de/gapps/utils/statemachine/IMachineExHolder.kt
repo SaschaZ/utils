@@ -4,7 +4,7 @@ import de.gapps.utils.statemachine.IConditionElement.IComboElement
 
 interface IMachineExHolder {
 
-    val machine: MachineEx
+    val machine: IMachineEx
 
     suspend fun fire(combo: IComboElement) =
         machine.fire(combo)

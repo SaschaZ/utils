@@ -181,7 +181,9 @@ sealed class ConditionElement : IConditionElement {
         override fun toString() = "CE($master|$slave|$idx|$ignoreSlave|${when (master) {
             is IEvent -> "E"
             is IState -> "S"
-            else -> "X"
+            is IEventGroup<*> -> "Eg"
+            is IStateGroup<*> -> "Sg"
+            else -> "X[${master::class}]"
         }}${usedAs.name[0]})"
     }
 

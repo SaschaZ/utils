@@ -12,6 +12,8 @@ import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
 
 abstract class MachineDsl : IMachineEx {
 
+    infix fun on(master: IMaster): Condition = +master
+
     // start entry with unary +
     operator fun IMaster.unaryPlus() = Condition(this)
 
