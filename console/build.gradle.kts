@@ -1,5 +1,3 @@
-import de.gapps.utils.configurePublishing
-
 plugins {
     kotlin("jvm")
     id("maven-publish")

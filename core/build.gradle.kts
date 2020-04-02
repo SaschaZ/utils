@@ -1,6 +1,6 @@
-import de.gapps.utils.ModuleType.JVM
-import de.gapps.utils.configModule
-import de.gapps.utils.coreTesting
+import dev.zieger.utils.ModuleType.JVM
+import dev.zieger.utils.configModule
+import dev.zieger.utils.coreTesting
 
 plugins {
     kotlin("jvm")
