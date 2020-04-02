@@ -5,14 +5,12 @@ package de.gapps.utils.statemachine
 import de.gapps.utils.log.Log
 import de.gapps.utils.log.logV
 import de.gapps.utils.misc.ifNull
-import de.gapps.utils.statemachine.IConditionElement.*
+import de.gapps.utils.statemachine.ConditionElement.InputElement
+import de.gapps.utils.statemachine.IConditionElement.IComboElement
+import de.gapps.utils.statemachine.IConditionElement.ICondition
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.EVENT
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.STATE
-import de.gapps.utils.statemachine.IConditionElement.IMaster.IGroup
-import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle
-import de.gapps.utils.statemachine.IConditionElement.ISlave.IData
-import de.gapps.utils.statemachine.IConditionElement.ISlave.IType
 
 /**
  * Holds methods that are used for matching the incoming events to a new state and/or action and to match the new state to actions.
@@ -43,7 +41,7 @@ object Matcher {
         val execScope = ExecutorScope(event, state, previousChanges)
 
         val matchingEventConditions =
-            conditions.filter { it.value.isEventCondition && match(it.value, event, state, previousChanges) }
+            conditions.filter { match(it.value, event, state, previousChanges, EVENT) }
         if (matchingEventConditions.isEmpty() && !event.noLogging) {
             Log.i("No event condition matches for $event and $state.")
             return null
@@ -66,7 +64,7 @@ object Matcher {
 
         return newState?.also {
             val matchingStateConditions = conditions.filter {
-                it.value.isStateCondition && match(it.value, event, newState, previousChanges)
+                match(it.value, event, newState, previousChanges, STATE)
             }
 
             if (!event.noLogging)
@@ -89,96 +87,12 @@ object Matcher {
         }
     }
 
-    fun match(
+    private fun match(
         condition: ICondition,
         event: IComboElement,
         state: IComboElement,
-        previousChanges: List<OnStateChanged>
-    ): Boolean {
-
-        fun match(runtime: ISlave?, definition: ISlave?): Boolean {
-            return runtime == null && definition == null
-                    || runtime != null && definition != null && when (runtime) {
-                is IType<*> -> when (definition) {
-                    is IType<*> -> runtime.type == definition.type
-                    is IData -> runtime.type.isInstance(definition)
-                    else -> throw IllegalArgumentException("Unknown ISlave subtype $definition.")
-                }
-                is IData -> when (definition) {
-                    is IType<*> -> definition.type.isInstance(runtime)
-                    is IData -> runtime == definition
-                    else -> throw IllegalArgumentException("Unknown ISlave subtype $definition.")
-                }
-                else -> throw IllegalArgumentException("Unknown ISlave subtype $runtime.")
-            }.also { result -> if (!event.noLogging) logV { m = "#4 $result => $runtime <||> $definition" } }
-        }
-
-        fun match(runtime: IMaster, definition: IMaster): Boolean {
-            return when (runtime) {
-                is ISingle -> when (definition) {
-                    is ISingle -> runtime === definition
-                    is IGroup<*> -> definition.type.isInstance(runtime)
-                    else -> throw IllegalArgumentException("Unknown IMaster subtype $definition.")
-                }
-                is IGroup<*> -> when (definition) {
-                    is ISingle -> runtime.type.isInstance(definition)
-                    is IGroup<*> -> runtime.type == definition.type
-                    else -> throw IllegalArgumentException("Unknown IMaster subtype $definition.")
-                }
-                else -> throw IllegalArgumentException("Unknown IMaster subtype $runtime.")
-            }.also { result -> if (!event.noLogging) logV { m = "#3 $result => $runtime <||> $definition" } }
-        }
-
-        operator fun IComboElement.invoke(idx: Int, type: ConditionType): IComboElement = when (idx) {
-            0 -> this
-            else -> previousChanges.getOrNull(previousChanges.size - idx)?.let { stateChanged ->
-                when {
-                    hasEvent -> stateChanged.event
-                    hasState -> when (type) {
-                        EVENT -> stateChanged.stateBefore
-                        STATE -> stateChanged.stateAfter
-                    }
-                    else -> throw IllegalArgumentException("Unknown IComboElement $this.")
-                }
-            } ?: this
-        }
-
-        fun match(runtime: IComboElement, definition: IComboElement, type: ConditionType): Boolean {
-            val r = runtime(definition.idx, type)
-            return match(r.master, definition.master)
-                    && (r.ignoreSlave || definition.ignoreSlave
-                    || match(r.slave, definition.slave)).also { result ->
-                if (!event.noLogging) logV {
-                    m = "#2 $result => $r <||> $definition"
-                }
-            }
-        }
-
-        fun List<IComboElement>.matchAny(runtime: IComboElement) =
-            isEmpty() || any { match(runtime, it, condition.type) }
-
-        fun List<IComboElement>.matchAll(runtime: IComboElement) =
-            isEmpty() || all { match(runtime, it, condition.type) }
-
-        fun List<IComboElement>.matchNone(runtime: IComboElement) =
-            isEmpty() || none { match(runtime, it, condition.type) }
-
-        return when (condition.type) {
-            EVENT -> condition.wantedEventsAny.matchAny(event)
-                    && condition.unwantedEvents.matchNone(event)
-                    && condition.wantedStatesAny.matchAny(state)
-                    && condition.wantedStatesAll.matchAll(state)
-                    && condition.unwantedStates.matchNone(state)
-
-            STATE -> condition.wantedStatesAny.matchAny(state)
-                    && condition.unwantedStates.matchNone(state)
-                    && condition.wantedEventsAny.matchAny(event)
-                    && condition.wantedEventsAll.matchAll(event)
-                    && condition.unwantedEvents.matchNone(event)
-        }.also { result ->
-            if (!event.noLogging) logV {
-                m = "#1 $result => $condition for event=$event and state=$state"
-            }
-        }
-    }
+        previousChanges: List<OnStateChanged>,
+        type: ConditionType
+    ) = (condition.type == type && condition.match(InputElement(event, state), previousChanges)) logV
+            { m = "#R $it => ${type.name[0]} $condition <||> $event, $state" }
 }

@@ -10,6 +10,9 @@ plugins {
 
 configModule("core", JVM) {
     coreTesting
+
+    testImplementation("org.hamcrest:hamcrest-core:2.1")
+    testImplementation("org.hamcrest:hamcrest-library:2.1")
 }
 
 tasks {

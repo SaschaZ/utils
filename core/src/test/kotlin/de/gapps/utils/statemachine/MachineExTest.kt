@@ -5,6 +5,7 @@ package de.gapps.utils.statemachine
 import de.gapps.utils.core_testing.assertion.assert
 import de.gapps.utils.core_testing.assertion.onFail
 import de.gapps.utils.core_testing.runTest
+import de.gapps.utils.statemachine.ConditionElement.Master.Group.EventGroup
 import de.gapps.utils.statemachine.ConditionElement.Master.Group.StateGroup
 import de.gapps.utils.statemachine.ConditionElement.Master.Single.Event
 import de.gapps.utils.statemachine.ConditionElement.Master.Single.State
@@ -62,14 +63,14 @@ class MachineExTest {
         object THIRD : TestEvent()
 
         sealed class TEST_EVENT_GROUP : TestEvent() {
-            object FOURTH : TestEvent()
-            object FIFTH : TestEvent()
-            object SIXTH : TestEvent()
+            object FOURTH : TEST_EVENT_GROUP()
+            object FIFTH : TEST_EVENT_GROUP()
+            object SIXTH : TEST_EVENT_GROUP()
 
-            companion object : Group.EventGroup<TEST_EVENT_GROUP>(TEST_EVENT_GROUP::class)
+            companion object : EventGroup<TEST_EVENT_GROUP>(TEST_EVENT_GROUP::class)
         }
 
-        companion object : Group.EventGroup<TestEvent>(TestEvent::class)
+        companion object : EventGroup<TestEvent>(TestEvent::class)
     }
 
     @Test
@@ -234,5 +235,14 @@ class MachineExTest {
             fire eventSync FIRST * TestEventData2("bam")
             state() assert A
         }
+    }
+
+    @Test
+    fun testSubclassOf() = runTest {
+        val event = FOURTH
+        val eventGroup = TEST_EVENT_GROUP
+
+        eventGroup.match(event, emptyList()) assert true
+        event.match(eventGroup, emptyList()) assert true
     }
 }

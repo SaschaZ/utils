@@ -5,6 +5,7 @@ package de.gapps.utils.statemachine
 import de.gapps.utils.statemachine.ConditionElement.Condition
 import de.gapps.utils.statemachine.ConditionElement.Slave
 import de.gapps.utils.statemachine.IConditionElement.*
+import de.gapps.utils.statemachine.IConditionElement.IConditionElementGroup.MatchType.*
 import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle
 import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
 import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
@@ -19,13 +20,17 @@ abstract class MachineDsl : IMachineEx {
 
     // link wanted items with + operator
     operator fun Condition.plus(other: IMaster): Condition = plus(other.combo)
-    operator fun Condition.plus(other: IComboElement): Condition =
-        copy(wanted = wanted + listOf(other))
+    operator fun Condition.plus(other: IComboElement): Condition {
+        items.first { it.matchType == if (other.idx > 0) ALL else ANY }.elements.add(other)
+        return this
+    }
 
     // link unwanted items with - operator
     operator fun Condition.minus(other: IMaster): Condition = minus(other.combo)
-    operator fun Condition.minus(other: IComboElement): Condition =
-        copy(unwanted = unwanted + other)
+    operator fun Condition.minus(other: IComboElement): Condition {
+        items.first { it.matchType == NONE }.elements.add(other.apply { exclude = true })
+        return this
+    }
 
 
     // apply Data with * operator
@@ -36,7 +41,8 @@ abstract class MachineDsl : IMachineEx {
     operator fun Condition.times(slave: ISlave?) = apply { start.also { it.slave = slave } }
 
     /**
-     * Use the [Int] operator to match against one of the previous items. For example [State][3] will not try to match against the current state, it will try to match against the third last [State] instead.
+     * Use the [Int] operator to match against one of the previous items. For example [State][3] will not try to match
+     * against the current state, it will try to match against the third last [IState] instead.
      * This works for all [ConditionElement]s.
      */
     operator fun IMaster.get(idx: Int): IComboElement = combo[idx]
