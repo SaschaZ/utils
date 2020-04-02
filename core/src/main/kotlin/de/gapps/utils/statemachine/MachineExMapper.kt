@@ -3,10 +3,12 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.log.Log
+import de.gapps.utils.log.LogFilter.Companion.GENERIC
 import de.gapps.utils.statemachine.ConditionElement.Condition
 import de.gapps.utils.statemachine.IConditionElement.IComboElement
 import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
 import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
+import de.gapps.utils.statemachine.MachineEx.Companion.DebugLevel.ERROR
 
 /**
  * Responsible to map the incoming [IEvent]s to their [IState]s defined by provided mappings.
@@ -22,7 +24,7 @@ interface IMachineExMapper {
         condition: Condition,
         action: suspend ExecutorScope.() -> IComboElement?
     ): Long = newId.also { id ->
-        Log.v("add condition: $id => $condition")
+        Log.v("add condition: $id => $condition", logFilter = GENERIC(disableLog = MachineEx.debugLevel == ERROR))
         conditions[id] = condition.copy(action = action)
     }
 

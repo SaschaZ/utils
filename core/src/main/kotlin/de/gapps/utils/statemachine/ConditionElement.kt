@@ -2,6 +2,7 @@
 
 package de.gapps.utils.statemachine
 
+import de.gapps.utils.log.LogFilter.Companion.GENERIC
 import de.gapps.utils.log.logV
 import de.gapps.utils.misc.name
 import de.gapps.utils.misc.whenNotNull
@@ -20,8 +21,12 @@ import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
 import de.gapps.utils.statemachine.IConditionElement.ISlave.IData
 import de.gapps.utils.statemachine.IConditionElement.ISlave.IType
 import de.gapps.utils.statemachine.IConditionElement.UsedAs.DEFINITION
+import de.gapps.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSuperclassOf
+
+val IConditionElement?.disableLogging
+    get() = (this as? IEvent)?.noLogging == true
 
 interface IConditionElement {
 
@@ -51,7 +56,10 @@ interface IConditionElement {
                         is IEvent -> this === other
                         is IEventGroup<IEvent> -> other.type.isSuperclassOf(this::class)
                         else -> false
-                    } logV { m = "#E $it => ${this@IEvent} <||> $other" }
+                    } logV {
+                        f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                        m = "#E $it => ${this@IEvent} <||> $other"
+                    }
                 }
             }
 
@@ -66,7 +74,10 @@ interface IConditionElement {
                         is IState -> this === other
                         is IStateGroup<IState> -> other.type.isSuperclassOf(this::class)
                         else -> false
-                    } logV { m = "#ST $it => ${this@IState} <||> $other" }
+                    } logV {
+                        f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                        m = "#ST $it => ${this@IState} <||> $other"
+                    }
                 }
             }
         }
@@ -85,7 +96,10 @@ interface IConditionElement {
                         is IEventGroup<*> -> other.type == type
                         null -> false
                         else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
-                    } logV { m = "#EG $it => ${this@IEventGroup} <||> $other" }
+                    } logV {
+                        f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                        m = "#EG $it => ${this@IEventGroup} <||> $other"
+                    }
                 }
             }
 
@@ -100,7 +114,10 @@ interface IConditionElement {
                         is IStateGroup<*> -> other.type == type
                         null -> false
                         else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
-                    } logV { m = "#SG $it => ${this@IStateGroup} <||> $other" }
+                    } logV {
+                        f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                        m = "#SG $it => ${this@IStateGroup} <||> $other"
+                    }
                 }
             }
         }
@@ -119,7 +136,10 @@ interface IConditionElement {
                     is IType<*> -> other.type.isInstance(this)
                     null -> false
                     else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
-                } logV { m = "#D $it => ${this@IData} <||> $other" }
+                } logV {
+                    f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                    m = "#D $it => ${this@IData} <||> $other"
+                }
             }
         }
 
@@ -135,7 +155,10 @@ interface IConditionElement {
                     is IType<*> -> other.type == type
                     null -> false
                     else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
-                } logV { m = "#T $it => ${this@IType} <||> $other" }
+                } logV {
+                    f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                    m = "#T $it => ${this@IType} <||> $other"
+                }
             }
         }
     }
@@ -202,6 +225,7 @@ interface IConditionElement {
                 null -> false
                 else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
             } logV {
+                f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
                 m = "#CE $it => ${this@IComboElement.get((other as? IComboElement)?.idx ?: 0)} <||> ${other?.get(idx)}"
             }
         }
@@ -234,7 +258,7 @@ interface IConditionElement {
                         ALL -> filtered.all { it.match(other, previousStateChanges) }
                         ANY -> filtered.any { it.match(other, previousStateChanges) }
                         NONE -> filtered.none { it.match(other, previousStateChanges) }
-                    } logV { m = "#CG $it => ${this@IConditionElementGroup} <||> $other" }
+                    }
                 }
                 is IComboElement -> {
                     val filtered = elements.filter {
@@ -245,10 +269,13 @@ interface IConditionElement {
                         ALL -> filtered.all { it.match(other, previousStateChanges) }
                         ANY -> filtered.any { it.match(other, previousStateChanges) }
                         NONE -> filtered.none { it.match(other, previousStateChanges) }
-                    } logV { m = "#CG $it => ${this@IConditionElementGroup} <||> $other" }
+                    }
                 }
                 null -> false
                 else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
+            } logV {
+                f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                m = "#CG $it => ${this@IConditionElementGroup} <||> $other"
             }
         }
     }
@@ -295,7 +322,10 @@ interface IConditionElement {
                 is IInputElement -> other.match(this, previousStateChanges)
                 null -> false
                 else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
-            } logV { m = "#C $it => ${this@ICondition} <||> $other" }
+            } logV {
+                f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                m = "#C $it => ${this@ICondition} <||> $other"
+            }
         }
     }
 
@@ -322,7 +352,10 @@ interface IConditionElement {
                 }
                 null -> false
                 else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
-            } logV { m = "#IE $it => ${this@IInputElement} <||> $other" }
+            } logV {
+                f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                m = "#IE $it => ${this@IInputElement} <||> $other"
+            }
         }
     }
 }

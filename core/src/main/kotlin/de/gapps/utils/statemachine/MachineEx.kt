@@ -11,6 +11,8 @@ import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
 import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
 import de.gapps.utils.statemachine.IConditionElement.ISlave.IData
 import de.gapps.utils.statemachine.IConditionElement.UsedAs.RUNTIME
+import de.gapps.utils.statemachine.MachineEx.Companion.DebugLevel
+import de.gapps.utils.statemachine.MachineEx.Companion.debugLevel
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -161,14 +163,29 @@ import java.util.concurrent.atomic.AtomicInteger
  * @property initialState [IState] that is activated initially in the state machine.
  * @property scope [CoroutineScopeEx] that is used for all Coroutine operations.
  * @property previousChangesCacheSize Size of the cache that store the state changes.
+ * @property debugLevel [DebugLevel] for log messages used in the whole state machine.
  * @param builder Lambda that defines all state machine conditions. See [MachineDsl] for more details.
  */
 open class MachineEx(
     private val initialState: IState,
     override val scope: CoroutineScopeEx = DefaultCoroutineScope(),
     private val previousChangesCacheSize: Int = 128,
+    debugLevel: DebugLevel = DebugLevel.ERROR,
     builder: suspend MachineDsl.() -> Unit
 ) : MachineDsl() {
+
+    companion object {
+
+        @Suppress("unused")
+        enum class DebugLevel {
+            ERROR,
+            INFO,
+            DEBUG
+        }
+
+        internal var debugLevel: DebugLevel = DebugLevel.ERROR
+            private set
+    }
 
     override val mapper: IMachineExMapper = MachineExMapper()
 
@@ -196,8 +213,9 @@ open class MachineEx(
         get() = submittedEventCount.get() != processedEventCount.get()
 
     init {
+        MachineEx.debugLevel = debugLevel
         scope.launchEx {
-            builder()
+            this@MachineEx.builder()
             for (event in eventChannel) event.processEvent()
         }
     }

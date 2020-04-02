@@ -3,6 +3,7 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.log.Log
+import de.gapps.utils.log.LogFilter.Companion.GENERIC
 import de.gapps.utils.log.logV
 import de.gapps.utils.misc.ifNull
 import de.gapps.utils.statemachine.ConditionElement.InputElement
@@ -11,6 +12,8 @@ import de.gapps.utils.statemachine.IConditionElement.ICondition
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.EVENT
 import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.STATE
+import de.gapps.utils.statemachine.MachineEx.Companion.DebugLevel.ERROR
+import de.gapps.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
 
 /**
  * Holds methods that are used for matching the incoming events to a new state and/or action and to match the new state to actions.
@@ -32,18 +35,23 @@ object Matcher {
         previousChanges: List<OnStateChanged>,
         conditions: Map<Long, ICondition>
     ): IComboElement? {
-        if (!event.noLogging)
-            Log.v(
-                "findStateForEvent()\n\tevent=$event;\n\tstate=$state;\n\t" +
-                        "previousChanges=${previousChanges.toList().takeLast(3).joinToStringTabbed(2)}"
+        Log.v(
+            "findStateForEvent()\n\tevent=$event;\n\tstate=$state;\n\t" +
+                    "previousChanges=${previousChanges.toList().takeLast(3).joinToStringTabbed(2)}",
+            logFilter = GENERIC(
+                disableLog = event.disableLogging || MachineEx.debugLevel >= INFO
             )
+        )
 
         val execScope = ExecutorScope(event, state, previousChanges)
 
         val matchingEventConditions =
             conditions.filter { match(it.value, event, state, previousChanges, EVENT) }
-        if (matchingEventConditions.isEmpty() && !event.noLogging) {
-            Log.i("No event condition matches for $event and $state.")
+        if (matchingEventConditions.isEmpty()) {
+            Log.i(
+                "No event condition matches for $event and $state.",
+                GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel == ERROR)
+            )
             return null
         }
         val matchedResults = matchingEventConditions.mapNotNull { it.value.action?.invoke(execScope) }
@@ -56,33 +64,38 @@ object Matcher {
             )
         }
 
-        if (!event.noLogging)
-            Log.v(
-                "\n\tnewState=$newState" +
-                        "\n\tmatchingEventConditions=${matchingEventConditions.toList().joinToStringTabbed(2)}"
-            )
+        Log.v(
+            "\n\tnewState=$newState" +
+                    "\n\tmatchingEventConditions=${matchingEventConditions.toList().joinToStringTabbed(2)}",
+            GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel >= INFO)
+        )
 
         return newState?.also {
             val matchingStateConditions = conditions.filter {
                 match(it.value, event, newState, previousChanges, STATE)
             }
 
-            if (!event.noLogging)
-                Log.v(
-                    "executing matching state conditions: \n" +
-                            matchingStateConditions.entries.joinToStringTabbed(2)
-                )
+            Log.v(
+                "executing matching state conditions: \n" +
+                        matchingStateConditions.entries.joinToStringTabbed(2),
+                GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel >= INFO)
+            )
 
             matchingStateConditions.forEach { it.value.action?.invoke(execScope) }
 
-            if (!event.noLogging)
-                Log.d("state changed from $state to $newState with event $event")
+            Log.d(
+                "state changed from $state to $newState with event $event",
+                GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel >= INFO)
+            )
         } ifNull {
-            if (!event.noLogging && matchingEventConditions.values.isEmpty())
-                Log.i(
-                    "No event condition matches for $event and $state. Had ${matchingEventConditions.size}" +
-                            " matches:${matchingEventConditions.values.joinToStringTabbed(2)}"
+            Log.i(
+                "No event condition matches for $event and $state. Had ${matchingEventConditions.size}" +
+                        " matches:${matchingEventConditions.values.joinToStringTabbed(2)}",
+                GENERIC(
+                    disableLog = matchingEventConditions.values.isNotEmpty() || event.disableLogging
+                            || MachineEx.debugLevel >= INFO
                 )
+            )
             null
         }
     }
@@ -94,5 +107,8 @@ object Matcher {
         previousChanges: List<OnStateChanged>,
         type: ConditionType
     ) = (condition.type == type && condition.match(InputElement(event, state), previousChanges)) logV
-            { m = "#R $it => ${type.name[0]} $condition <||> $event, $state" }
+            {
+                f = GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel >= INFO)
+                m = "#R $it => ${type.name[0]} $condition <||> $event, $state"
+            }
 }
