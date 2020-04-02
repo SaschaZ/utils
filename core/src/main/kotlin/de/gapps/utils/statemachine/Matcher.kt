@@ -39,7 +39,7 @@ object Matcher {
             "findStateForEvent()\n\tevent=$event;\n\tstate=$state;\n\t" +
                     "previousChanges=${previousChanges.toList().takeLast(3).joinToStringTabbed(2)}",
             logFilter = GENERIC(
-                disableLog = event.disableLogging || MachineEx.debugLevel >= INFO
+                disableLog = event.disableLogging || MachineEx.debugLevel <= INFO
             )
         )
 
@@ -67,7 +67,7 @@ object Matcher {
         Log.v(
             "\n\tnewState=$newState" +
                     "\n\tmatchingEventConditions=${matchingEventConditions.toList().joinToStringTabbed(2)}",
-            GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel >= INFO)
+            GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel <= INFO)
         )
 
         return newState?.also {
@@ -78,14 +78,14 @@ object Matcher {
             Log.v(
                 "executing matching state conditions: \n" +
                         matchingStateConditions.entries.joinToStringTabbed(2),
-                GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel >= INFO)
+                GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel <= INFO)
             )
 
             matchingStateConditions.forEach { it.value.action?.invoke(execScope) }
 
             Log.d(
                 "state changed from $state to $newState with event $event",
-                GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel >= INFO)
+                GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel <= INFO)
             )
         } ifNull {
             Log.i(
@@ -93,7 +93,7 @@ object Matcher {
                         " matches:${matchingEventConditions.values.joinToStringTabbed(2)}",
                 GENERIC(
                     disableLog = matchingEventConditions.values.isNotEmpty() || event.disableLogging
-                            || MachineEx.debugLevel >= INFO
+                            || MachineEx.debugLevel <= INFO
                 )
             )
             null
@@ -108,7 +108,7 @@ object Matcher {
         type: ConditionType
     ) = (condition.type == type && condition.match(InputElement(event, state), previousChanges)) logV
             {
-                f = GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel >= INFO)
+                f = GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel <= INFO)
                 m = "#R $it => ${type.name[0]} $condition <||> $event, $state"
             }
 }

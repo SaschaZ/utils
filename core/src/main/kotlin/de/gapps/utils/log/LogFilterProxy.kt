@@ -2,8 +2,11 @@ package de.gapps.utils.log
 
 import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.scope.DefaultCoroutineScope
+import de.gapps.utils.log.LogFilter.Companion.EXTERNAL
 import de.gapps.utils.log.LogFilter.Companion.EXTERNAL.Companion.ExternalReturn.OK
 import de.gapps.utils.log.LogFilter.Companion.EXTERNAL.Companion.ExternalReturn.RECHECK
+import de.gapps.utils.log.LogFilter.Companion.GENERIC
+import de.gapps.utils.log.LogFilter.Companion.NONE
 import de.gapps.utils.time.ITimeEx
 import de.gapps.utils.time.TimeEx
 import de.gapps.utils.time.base.minus
@@ -20,12 +23,12 @@ internal class LogFilterProxy(private val scope: DefaultCoroutineScope = Default
     fun filterMessage(
         level: LogLevel?,
         msg: String,
-        logFilter: LogFilter = LogFilter.Companion.NONE,
+        logFilter: LogFilter = NONE,
         action: (LogLevel?, String) -> Unit
     ) {
         when (logFilter) {
-            LogFilter.Companion.NONE -> action(level, msg)
-            is LogFilter.Companion.GENERIC -> {
+            NONE -> action(level, msg)
+            is GENERIC -> {
                 if (logFilter.disableLog) return
 
                 val contentChanged = !logFilter.onlyOnContentChange
@@ -53,7 +56,7 @@ internal class LogFilterProxy(private val scope: DefaultCoroutineScope = Default
                     }
                 }
             }
-            is LogFilter.Companion.EXTERNAL -> {
+            is EXTERNAL -> {
                 when (val externalReturn = logFilter.callback(level, msg)) {
                     OK -> action(level, msg)
                     is RECHECK -> scope.launchEx(delayed = externalReturn.duration) {

@@ -57,7 +57,7 @@ interface IConditionElement {
                         is IEventGroup<IEvent> -> other.type.isSuperclassOf(this::class)
                         else -> false
                     } logV {
-                        f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                        f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel <= INFO)
                         m = "#E $it => ${this@IEvent} <||> $other"
                     }
                 }
@@ -75,7 +75,7 @@ interface IConditionElement {
                         is IStateGroup<IState> -> other.type.isSuperclassOf(this::class)
                         else -> false
                     } logV {
-                        f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                        f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel <= INFO)
                         m = "#ST $it => ${this@IState} <||> $other"
                     }
                 }
@@ -97,7 +97,7 @@ interface IConditionElement {
                         null -> false
                         else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
                     } logV {
-                        f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                        f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel <= INFO)
                         m = "#EG $it => ${this@IEventGroup} <||> $other"
                     }
                 }
@@ -115,7 +115,7 @@ interface IConditionElement {
                         null -> false
                         else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
                     } logV {
-                        f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                        f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel <= INFO)
                         m = "#SG $it => ${this@IStateGroup} <||> $other"
                     }
                 }
@@ -137,7 +137,7 @@ interface IConditionElement {
                     null -> false
                     else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
                 } logV {
-                    f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                    f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel <= INFO)
                     m = "#D $it => ${this@IData} <||> $other"
                 }
             }
@@ -156,7 +156,7 @@ interface IConditionElement {
                     null -> false
                     else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
                 } logV {
-                    f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                    f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel <= INFO)
                     m = "#T $it => ${this@IType} <||> $other"
                 }
             }
@@ -225,7 +225,7 @@ interface IConditionElement {
                 null -> false
                 else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
             } logV {
-                f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel <= INFO)
                 m = "#CE $it => ${this@IComboElement.get((other as? IComboElement)?.idx ?: 0)} <||> ${other?.get(idx)}"
             }
         }
@@ -274,7 +274,7 @@ interface IConditionElement {
                 null -> false
                 else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
             } logV {
-                f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel <= INFO)
                 m = "#CG $it => ${this@IConditionElementGroup} <||> $other"
             }
         }
@@ -323,7 +323,7 @@ interface IConditionElement {
                 null -> false
                 else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
             } logV {
-                f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel <= INFO)
                 m = "#C $it => ${this@ICondition} <||> $other"
             }
         }
@@ -353,7 +353,7 @@ interface IConditionElement {
                 null -> false
                 else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
             } logV {
-                f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel >= INFO)
+                f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel <= INFO)
                 m = "#IE $it => ${this@IInputElement} <||> $other"
             }
         }
