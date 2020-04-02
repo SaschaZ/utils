@@ -85,7 +85,7 @@ object Matcher {
 
             Log.d(
                 "state changed from $state to $newState with event $event",
-                GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel <= INFO)
+                GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel == ERROR)
             )
         } ifNull {
             Log.i(
