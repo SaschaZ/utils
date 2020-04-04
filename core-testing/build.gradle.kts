@@ -1,4 +1,4 @@
-import de.gapps.utils.ModuleType.JVM
+import de.gapps.utils.ModuleType.JVM_LIB
 import de.gapps.utils.configModule
 import de.gapps.utils.core
 import de.gapps.utils.mockWebServer
@@ -9,7 +9,7 @@ plugins {
     id("org.jetbrains.dokka")
 }
 
-configModule("core-testing", JVM) {
+configModule("core-testing", JVM_LIB) {
     core
 
     mockWebServer

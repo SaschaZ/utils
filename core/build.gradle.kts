@@ -1,4 +1,4 @@
-import de.gapps.utils.ModuleType.JVM
+import de.gapps.utils.ModuleType.JVM_LIB
 import de.gapps.utils.configModule
 import de.gapps.utils.coreTesting
 
@@ -8,11 +8,8 @@ plugins {
     id("org.jetbrains.dokka")
 }
 
-configModule("core", JVM) {
+configModule("core", JVM_LIB) {
     coreTesting
-
-    testImplementation("org.hamcrest:hamcrest-core:2.1")
-    testImplementation("org.hamcrest:hamcrest-library:2.1")
 }
 
 tasks {

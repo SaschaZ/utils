@@ -46,6 +46,8 @@ val DependencyHandlerScope.androidXcoreKtx
     get() = "implementation"("androidx.core:core-ktx:${Versions.androidXcoreKtx}")
 val DependencyHandlerScope.androidXconstraintLayout
     get() = "implementation"("androidx.constraintlayout:constraintlayout:${Versions.androidXconstraintLayout}")
+val DependencyHandlerScope.androidXrecyclerView
+    get() = "implementation"("androidx.recyclerview:recyclerview:${Versions.androidXrecyclerView}")
 
 val DependencyHandlerScope.koin
     get() = "implementation"("org.koin:koin-core:2.0.1")

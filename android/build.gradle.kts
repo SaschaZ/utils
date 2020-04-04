@@ -1,5 +1,6 @@
 import de.gapps.utils.Android
-import de.gapps.utils.ModuleType.ANDROID
+import de.gapps.utils.ModuleType.ANDROID_LIB
+import de.gapps.utils.androidXrecyclerView
 import de.gapps.utils.configModule
 import de.gapps.utils.core
 
@@ -12,8 +13,9 @@ plugins {
     id("de.mannodermaus.android-junit5")
 }
 
-configModule("android", ANDROID) {
+configModule("android", ANDROID_LIB) {
     core
+    androidXrecyclerView
 }
 
 android {

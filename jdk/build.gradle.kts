@@ -1,4 +1,4 @@
-import de.gapps.utils.ModuleType.JVM
+import de.gapps.utils.ModuleType.JVM_LIB
 import de.gapps.utils.configModule
 import de.gapps.utils.core
 
@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.dokka")
 }
 
-configModule("jdk", JVM) {
+configModule("jdk", JVM_LIB) {
     core
 }
 

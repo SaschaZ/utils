@@ -4,8 +4,9 @@ package de.gapps.utils
 
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.api.AndroidSourceSet
-import de.gapps.utils.ModuleType.ANDROID
-import de.gapps.utils.ModuleType.JVM
+import de.gapps.utils.ModuleType.ANDROID_APP
+import de.gapps.utils.ModuleType.ANDROID_LIB
+import de.gapps.utils.ModuleType.JVM_LIB
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.publish.PublishingExtension
@@ -15,13 +16,14 @@ import org.gradle.kotlin.dsl.*
 
 fun Project.configurePublishing(type: ModuleType, name: String) {
     when (type) {
-        ANDROID -> configureAarPublishing(name)
-        JVM -> configureJarPublishing(name)
+        ANDROID_LIB -> configureAarPublishing(name)
+        JVM_LIB -> configureJarPublishing(name)
+        ANDROID_APP -> Unit
     }
 }
 
 internal fun Project.configureJarPublishing(name: String) {
-    configurePublishTask(JVM)
+    configurePublishTask(JVM_LIB)
     configureLibraryJarPublication(name)
     addBuildDirRepository()
 }
@@ -34,14 +36,14 @@ internal fun Project.configureLibraryJarPublication(name: String) {
             version = Globals.version
 
             from(components["java"])
-            artifact(getSourcesJar(JVM))
+            artifact(getSourcesJar(JVM_LIB))
             artifact(getDokkaJar(name))
         }
     }
 }
 
 internal fun Project.configureAarPublishing(name: String) {
-    configurePublishTask(ANDROID)
+    configurePublishTask(ANDROID_LIB)
     configureLibraryAarPublication(name)
     addBuildDirRepository()
 }
@@ -54,7 +56,7 @@ internal fun Project.configureLibraryAarPublication(name: String) {
             version = Globals.version
 
             artifact(file("$buildDir/outputs/aar/$name-release.aar"))
-            artifact(getSourcesJar(ANDROID))
+            artifact(getSourcesJar(ANDROID_LIB))
             artifact(getDokkaJar(name))
         }
     }
@@ -62,8 +64,8 @@ internal fun Project.configureLibraryAarPublication(name: String) {
 
 internal fun Project.configurePublishTask(type: ModuleType) = afterEvaluate {
     val publish = tasks["publish"]
-    val assembleRelease = tasks["assemble${if (type == ANDROID) "Release" else ""}"]
-    val publishAarPublicationToMavenLocal = tasks[if (type == ANDROID) "publishAarPublicationToMavenLocal"
+    val assembleRelease = tasks["assemble${if (type == ANDROID_LIB) "Release" else ""}"]
+    val publishAarPublicationToMavenLocal = tasks[if (type == ANDROID_LIB) "publishAarPublicationToMavenLocal"
     else "publishMavenJavaPublicationToMavenLocal"]
 
     publishAarPublicationToMavenLocal.dependsOn(assembleRelease)
@@ -105,8 +107,9 @@ internal fun Project.getSourcesJar(type: ModuleType): Any {
         archiveClassifier.set("sources")
         from(
             when (type) {
-                JVM -> sourceSets["main"].allSource
-                ANDROID -> androidSourceSets.java.srcDirs
+                JVM_LIB -> sourceSets["main"].allSource
+                ANDROID_APP,
+                ANDROID_LIB -> androidSourceSets.java.srcDirs
             }
         )
     }.get()

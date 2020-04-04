@@ -1,4 +1,4 @@
-import de.gapps.utils.ModuleType.JVM
+import de.gapps.utils.ModuleType.JVM_LIB
 import de.gapps.utils.configModule
 import de.gapps.utils.jdk
 
@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.dokka")
 }
 
-configModule("jdk-testing", JVM) {
+configModule("jdk-testing", JVM_LIB) {
     jdk
 }
 

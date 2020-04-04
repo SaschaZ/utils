@@ -9,6 +9,7 @@ object Versions {
     const val androidXappCompat = "1.1.0"
     const val androidXcoreKtx = "1.1.0"
     const val androidXconstraintLayout = "1.1.3"
+    const val androidXrecyclerView = "1.1.0"
 
     const val koin = "2.0.1"
     const val jackson = "2.10.1"

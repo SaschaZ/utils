@@ -1,5 +1,5 @@
 import de.gapps.utils.Android
-import de.gapps.utils.ModuleType.ANDROID
+import de.gapps.utils.ModuleType.ANDROID_LIB
 import de.gapps.utils.configModule
 import de.gapps.utils.core
 
@@ -11,7 +11,7 @@ plugins {
     id("org.jetbrains.dokka")
 }
 
-configModule("android-testing", ANDROID) {
+configModule("android-testing", ANDROID_LIB) {
     core
 }
 

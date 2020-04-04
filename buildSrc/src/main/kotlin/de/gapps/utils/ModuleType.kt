@@ -1,6 +1,6 @@
 package de.gapps.utils
 
 enum class ModuleType {
-    ANDROID,
-    JVM
+    ANDROID_LIB,
+    JVM_LIB
 }
