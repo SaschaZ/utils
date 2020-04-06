@@ -10,7 +10,10 @@ interface IPipelineStorage {
     fun <T> read(key: String): T
 }
 
-interface IPipeline<out I : Any, out O : Any> : IProcessor<I, O>, IPipelineStorage, IPipelineObserver
+interface IPipeline<out I : Any, out O : Any> : IProcessor<I, O>, IPipelineStorage, IPipelineObserver {
+    override val block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(@UnsafeVariance I) -> Unit
+        get() = {}
+}
 
 abstract class AbsPipeline<out I : Any, out O : Any>(
     override var params: IProcessingParams,

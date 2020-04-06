@@ -1,5 +1,6 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
+import de.gapps.utils.coroutines.channel.parallel.ParallelProcessor
 import de.gapps.utils.misc.catch
 
 data class PipelineBuilderScope<out I : Any>(
@@ -35,6 +36,14 @@ operator fun <I : Any, T : Any> PipelineBuilderScope<I>.plus(processor: IProcess
     }
 
     return PipelineBuilderScope(producer, listOf(*this@plus.processors.toTypedArray(), processor))
+}
+
+operator fun <I : Any, O : Any> IProducer<I>.times(processorFactory: (idx: Int) -> IProcessor<I, O>): PipelineBuilderScope<I> {
+    return this + ParallelProcessor(params, processorFactory = processorFactory)
+}
+
+operator fun <I : Any, O : Any> PipelineBuilderScope<I>.times(processorFactory: (idx: Int) -> IProcessor<I, O>): PipelineBuilderScope<I> {
+    return this + ParallelProcessor(producer.params, processorFactory = processorFactory)
 }
 
 suspend operator fun <I : Any, O : Any> PipelineBuilderScope<I>.plus(consumer: IConsumer<O>) {

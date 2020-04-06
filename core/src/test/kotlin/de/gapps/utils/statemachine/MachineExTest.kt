@@ -7,8 +7,7 @@ import de.gapps.utils.core_testing.assertion.onFail
 import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.statemachine.ConditionElement.Master.Group.EventGroup
 import de.gapps.utils.statemachine.ConditionElement.Master.Group.StateGroup
-import de.gapps.utils.statemachine.ConditionElement.Master.Single.Event
-import de.gapps.utils.statemachine.ConditionElement.Master.Single.State
+import de.gapps.utils.statemachine.ConditionElement.Master.Single.*
 import de.gapps.utils.statemachine.ConditionElement.Slave.Data
 import de.gapps.utils.statemachine.MachineExTest.TestData.*
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
@@ -244,5 +243,34 @@ class MachineExTest {
 
         eventGroup.match(event, emptyList()) assert true
         event.match(eventGroup, emptyList()) assert true
+    }
+
+    @Test
+    fun testExternal() = runTest {
+        var isActive = false
+        MachineEx(INITIAL) {
+            +FIRST + INITIAL + External { isActive } set A
+            +SECOND + C + External { !isActive } set B
+            +THIRD + A + B + External { isActive } set C
+        }.run {
+            state() assert INITIAL
+
+            fire eventSync FIRST
+            state() assert INITIAL
+
+            isActive = true
+            fire eventSync FIRST
+            state() assert A
+
+            fire eventSync THIRD
+            state() assert C
+
+            fire eventSync SECOND
+            state() assert C
+
+            isActive = false
+            fire eventSync SECOND
+            state() assert B
+        }
     }
 }

@@ -4,7 +4,6 @@ package de.gapps.utils
 
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.api.AndroidSourceSet
-import de.gapps.utils.ModuleType.ANDROID_APP
 import de.gapps.utils.ModuleType.ANDROID_LIB
 import de.gapps.utils.ModuleType.JVM_LIB
 import org.gradle.api.Project
@@ -18,7 +17,6 @@ fun Project.configurePublishing(type: ModuleType, name: String) {
     when (type) {
         ANDROID_LIB -> configureAarPublishing(name)
         JVM_LIB -> configureJarPublishing(name)
-        ANDROID_APP -> Unit
     }
 }
 
@@ -108,7 +106,6 @@ internal fun Project.getSourcesJar(type: ModuleType): Any {
         from(
             when (type) {
                 JVM_LIB -> sourceSets["main"].allSource
-                ANDROID_APP,
                 ANDROID_LIB -> androidSourceSets.java.srcDirs
             }
         )

@@ -16,11 +16,13 @@ interface IConsumer<out I : Any> : IPipelineElement<I, Any?> {
     fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.consume(): Job
 
     suspend fun IConsumerScope<@UnsafeVariance I>.onConsumingFinished() = Unit
+
+    val block: suspend IConsumerScope<@UnsafeVariance I>.(value: @UnsafeVariance I) -> Unit
 }
 
 open class Consumer<out I : Any>(
     override var params: IProcessingParams = ProcessingParams(),
-    protected open val block: (suspend IConsumerScope<@UnsafeVariance I>.(value: @UnsafeVariance I) -> Unit) =
+    override val block: suspend IConsumerScope<@UnsafeVariance I>.(value: @UnsafeVariance I) -> Unit =
         { throw IllegalArgumentException("No consumer block defined") }
 ) : IConsumer<I>, Identity by Id("Consumer") {
 

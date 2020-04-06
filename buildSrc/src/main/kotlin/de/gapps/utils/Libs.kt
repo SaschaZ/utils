@@ -20,6 +20,8 @@ val DependencyHandlerScope.androidTesting
 
 val DependencyHandlerScope.kotlin
     get() = "implementation"("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${Versions.kotlin}")
+val DependencyHandlerScope.kotlinReflect
+    get() = "implementation"("org.jetbrains.kotlin:kotlin-reflect:${Versions.kotlin}")
 val DependencyHandlerScope.kotlinTest
     get() = "implementation"("org.jetbrains.kotlin:kotlin-test:${Versions.kotlin}")
 
@@ -54,7 +56,12 @@ val DependencyHandlerScope.koin
 val DependencyHandlerScope.koinTest
     get() = "implementation"("org.koin:koin-test:${Versions.koin}")
 
+
+val DependencyHandlerScope.kotlinSerialization
+    get() = "implementation"("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.20.0")
 val DependencyHandlerScope.jackson
+    get() = "implementation"("com.fasterxml.jackson.core:jackson-core:2.10.1")
+val DependencyHandlerScope.jacksonModule
     get() = "implementation"("com.fasterxml.jackson.module:jackson-module-kotlin:2.10.1")
 val DependencyHandlerScope.slf4jSimple
     get() = "implementation"("org.slf4j:slf4j-simple:1.7.29")

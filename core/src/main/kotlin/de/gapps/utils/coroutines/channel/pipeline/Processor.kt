@@ -15,6 +15,8 @@ interface IProcessor<out I : Any, out O : Any> : IPipelineElement<I, O> {
 
     fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IPipeValue<O>>
 
+    val block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit
+
     suspend fun IProducerScope<@UnsafeVariance O>.onProcessingFinished() = Unit
 }
 
@@ -22,7 +24,7 @@ open class Processor<out I : Any, out O : Any>(
     override var params: IProcessingParams = ProcessingParams(),
     override val inOutRelation: ProcessorValueRelation = ProcessorValueRelation.Unspecified,
     override var outputChannel: Channel<out IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
-    protected open val block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit =
+    override val block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit =
         { throw IllegalArgumentException("No processor block defined") }
 ) : IProcessor<I, O>, Identity by Id("Processor") {
 

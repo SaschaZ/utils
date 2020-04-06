@@ -1,28 +1,24 @@
 package de.gapps.utils.json
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.module.SimpleModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import de.gapps.utils.misc.catch
-import de.gapps.utils.time.ITimeEx
-import de.gapps.utils.time.TimeExDeserializer
-import de.gapps.utils.time.duration.DurationExDeserializer
-import de.gapps.utils.time.duration.IDurationEx
-import kotlin.reflect.KClass
+import kotlinx.serialization.ImplicitReflectionSerializer
+import kotlinx.serialization.builtins.list
+import kotlinx.serialization.json.Json.Default.parse
+import kotlinx.serialization.json.Json.Default.stringify
+import kotlinx.serialization.serializer
 
-open class JsonConverter(val config: SimpleModule.() -> Unit = {}) {
+@ImplicitReflectionSerializer
+open class JsonConverter {
 
-    val mapper: ObjectMapper = jacksonObjectMapper().registerModule(SimpleModule().apply {
-        addDeserializer(ITimeEx::class.java, TimeExDeserializer())
-        addDeserializer(IDurationEx::class.java, DurationExDeserializer())
-        config()
-    })
+    inline fun <reified T : Any> T.toJson(): String? =
+        catch(null) { stringify(T::class.serializer(), this) }
 
-    fun <T : Any> T.toJson(): String? = catch(null) { mapper.writeValueAsString(this) }
+    inline fun <reified T : Any> List<T>.toJson(): String? =
+        catch(null) { stringify(T::class.serializer().list, this) }
 
-    inline fun <reified T : Any> String.fromJson(): T? = catch(null) { mapper.readValue<T>(this) }
-    fun <T : Any> String.fromJson(type: KClass<T>): T? = catch(null) { mapper.readValue<T>(this, type.java) }
-    inline fun <reified T : Any> String.fromJsonList(): List<T>? = catch(null) { mapper.readValue<List<T>>(this) }
+    inline fun <reified T : Any> String.fromJson(): T? =
+        catch(null) { parse(T::class.serializer(), this) }
 
+    inline fun <reified T : Any> String.fromJsonList(): List<T>? =
+        catch(null) { parse(T::class.serializer().list, this) }
 }

@@ -1,25 +1,25 @@
 import de.gapps.utils.ModuleType.JVM_LIB
 import de.gapps.utils.configModule
-import de.gapps.utils.coreTesting
-import de.gapps.utils.kotlinReflect
-import de.gapps.utils.kotlinSerialization
+import de.gapps.utils.core
+import de.gapps.utils.coroutinesSwing
 
 plugins {
     kotlin("jvm")
-    kotlin("plugin.serialization") version "1.3.71"
     id("maven-publish")
     id("org.jetbrains.dokka")
 }
 
-configModule("core", JVM_LIB) {
-    coreTesting
-    kotlinReflect
-    kotlinSerialization
+configModule("swing", JVM_LIB) {
+    core
+    coroutinesSwing
 }
 
 tasks {
     test {
         useJUnitPlatform()
+        testLogging {
+            events("passed", "skipped", "failed")
+        }
     }
 
     dokka {

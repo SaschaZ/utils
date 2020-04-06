@@ -9,6 +9,8 @@ import de.gapps.utils.misc.runEach
 import de.gapps.utils.misc.runEachIndexed
 import kotlinx.coroutines.channels.Channel
 
+typealias Parallel<I, O> = ParallelProcessor<I, O>
+
 open class ParallelProcessor<out I : Any, out O : Any>(
     params: IProcessingParams,
     inOutRelation: ProcessorValueRelation = ProcessorValueRelation.Unspecified,

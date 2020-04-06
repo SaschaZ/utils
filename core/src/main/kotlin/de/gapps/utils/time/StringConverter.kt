@@ -1,10 +1,9 @@
 package de.gapps.utils.time
 
-import de.gapps.utils.misc.formatQuery
 import de.gapps.utils.time.DateFormat.*
-import java.time.LocalDateTime
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
+import de.gapps.utils.time.base.IMillisecondHolder
+import de.gapps.utils.time.zone.ITimeZoneHolder
+import java.text.SimpleDateFormat
 import java.util.*
 
 
@@ -19,16 +18,16 @@ enum class DateFormat {
     EXCHANGE
 }
 
-interface StringConverter : ZoneDateTimeHolder {
+interface StringConverter : IMillisecondHolder, ITimeZoneHolder {
 
     fun formatTime(format: DateFormat = COMPLETE): String =
-        StringConverterDelegate.formatTime(format, zoneDateTime, localDateTime)
+        StringConverterDelegate.formatTime(format, millis, zone)
 }
 
 object StringConverterDelegate {
 
-    var formatTime: (DateFormat, ZonedDateTime, LocalDateTime) -> String = { format, zoneDateTime, localDateTime ->
-        val formatter = DateTimeFormatter.ofPattern(
+    var formatTime: (DateFormat, Long, TimeZone) -> String = { format, millis, zone ->
+        val formatter = SimpleDateFormat(
             when (format) {
                 COMPLETE -> "dd.MM.yyyy-HH:mm:ss"
                 DATE_ONLY -> "dd.MM.yyyy"
@@ -37,11 +36,11 @@ object StringConverterDelegate {
                 PLOT -> "yyyy-MM-dd HH:mm:ss"
                 FILENAME -> "yyyy-MM-dd-HH-mm-ss"
                 EXCHANGE -> "yyyy-MM-dd HH:mm:ss"
-            }
+            }, Locale.getDefault()
         )
 
-        if (format == EXCHANGE) {
-            zoneDateTime.withZoneSameInstant(TimeZone.getTimeZone("UTC").toZoneId()).format(formatter).formatQuery()
-        } else localDateTime.format(formatter)!!
+        if (format == EXCHANGE)
+            formatter.timeZone = zone
+        formatter.format(Date(millis))
     }
 }

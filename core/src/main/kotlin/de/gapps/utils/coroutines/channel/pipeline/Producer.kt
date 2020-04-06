@@ -18,12 +18,14 @@ interface IProducer<out T : Any> : IPipelineElement<Any?, T> {
     fun produce(): ReceiveChannel<IPipeValue<@UnsafeVariance T>>
 
     suspend fun IProducerScope<@UnsafeVariance T>.onProducingFinished() = Unit
+
+    val block: suspend IProducerScope<@UnsafeVariance T>.() -> Unit
 }
 
 open class Producer<out T : Any>(
     override var params: IProcessingParams = ProcessingParams(),
     private val outputChannel: Channel<IPipeValue<@UnsafeVariance T>> = Channel(params.channelCapacity),
-    protected open val block: suspend IProducerScope<@UnsafeVariance T>.() -> Unit =
+    override val block: suspend IProducerScope<@UnsafeVariance T>.() -> Unit =
         { throw IllegalArgumentException("No producer block defined") }
 ) : IProducer<T>, Identity by Id("Producer") {
 
