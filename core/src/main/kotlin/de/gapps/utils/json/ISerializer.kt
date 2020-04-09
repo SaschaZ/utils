@@ -1,8 +1,5 @@
 package de.gapps.utils.json
 
-import kotlinx.serialization.ImplicitReflectionSerializer
-
-
 interface ISerializer<T : Any> {
 
     fun T.serialize(): String?
@@ -12,7 +9,6 @@ interface ISerializer<T : Any> {
 }
 
 @Suppress("FunctionName")
-@ImplicitReflectionSerializer
 inline fun <reified T : Any> DefaultSerializer(): ISerializer<T> = object : JsonConverter(), ISerializer<T> {
     override fun T.serialize(): String? = toJson()
     override fun List<T>.serialize(): String? = toJson()

@@ -2,7 +2,6 @@ import de.gapps.utils.ModuleType.JVM_LIB
 import de.gapps.utils.configModule
 import de.gapps.utils.coreTesting
 import de.gapps.utils.kotlinReflect
-import de.gapps.utils.kotlinSerialization
 
 plugins {
     kotlin("jvm")
@@ -14,7 +13,6 @@ plugins {
 configModule("core", JVM_LIB) {
     coreTesting
     kotlinReflect
-    kotlinSerialization
 }
 
 tasks {

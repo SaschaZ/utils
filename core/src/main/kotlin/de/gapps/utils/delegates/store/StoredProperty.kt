@@ -7,14 +7,12 @@ import de.gapps.utils.delegates.OnChanged
 import de.gapps.utils.json.DefaultSerializer
 import de.gapps.utils.json.ISerializer
 import de.gapps.utils.misc.asUnit
-import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 /**
  * Uses the provided [serializer] to write and read the property from the holding [IStoreContext] ([P])
  */
-@OptIn(ImplicitReflectionSerializer::class)
 @Suppress("FunctionName")
 inline fun <reified P : IStoreContext, reified T : Any> StoredProperty(
     initial: T,

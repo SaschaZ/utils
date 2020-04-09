@@ -12,7 +12,7 @@ object Versions {
     const val androidXrecyclerView = "1.1.0"
 
     const val koin = "2.0.1"
-    const val jackson = "2.10.1"
+    const val moshi = "1.9.2"
     const val slf4jSimple = "1.7.29"
     const val mordant = "1.2.1"
     const val progressbar = "0.8.0"

@@ -251,5 +251,7 @@ open class MachineEx(
         while (isProcessingActive) finishedProcessingEvent.receive()
     }
 
+    fun clearPreviousChanges() = previousChanges.clear()
+
     override fun release() = scope.cancel().asUnit()
 }

@@ -5,9 +5,7 @@ import de.gapps.utils.time.base.IMillisecondHolder
 import de.gapps.utils.time.base.TimeUnit
 import de.gapps.utils.time.base.TimeUnit.MS
 import de.gapps.utils.time.base.toMillis
-import kotlinx.serialization.Serializable
 
-@Serializable
 open class DurationEx(override val millis: Long = 0L) : IDurationEx {
 
     companion object : TimeParseHelper()

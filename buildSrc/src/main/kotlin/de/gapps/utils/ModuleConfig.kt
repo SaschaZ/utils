@@ -35,7 +35,8 @@ private fun Project.configureDependencies(type: ModuleType, block: DependencyHan
         kotlin
 
         koin
-        jackson
+        moshi
+        moshiKotlin
         slf4jSimple
 
 
