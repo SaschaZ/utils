@@ -254,7 +254,7 @@ class MachineExTest {
             +FIRST + INITIAL + { isActive } set A * TestStateData(true)
             +SECOND + C + E + { !isActive } set B
             +THIRD + A * TestStateData + B - D[X] + { isActive } set C
-            +FOURTH + A[X] * TestStateData + B set D
+            +FOURTH + A[0..10] * TestStateData + B set D
         }.run {
             state() assert INITIAL % "Initial"
 

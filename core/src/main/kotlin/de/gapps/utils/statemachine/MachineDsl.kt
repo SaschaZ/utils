@@ -65,14 +65,16 @@ abstract class MachineDsl : IMachineEx {
 
     operator fun Condition.plus(other: IPrevElement): Condition {
         this + {
-            when (other.range) {
-                X -> previousChanges.any {
-                    InputElement(it.event, it.stateBefore).match(other.combo, previousChanges)
+            when {
+                other.range.last > 0 -> other.range.any { idx ->
+                    previousChanges.getOrNull(previousChanges.size - idx)?.let {
+                        InputElement(it.event, it.stateBefore).match(other.combo, previousChanges)
+                    } ?: false
                 }
                 else -> other.range.all { idx ->
                     previousChanges.getOrNull(previousChanges.size - idx)?.let {
                         InputElement(it.event, it.stateBefore).match(other.combo, previousChanges)
-                    } ?: false
+                    } ?: true
                 }
             }
         }
@@ -81,15 +83,10 @@ abstract class MachineDsl : IMachineEx {
 
     operator fun Condition.minus(other: IPrevElement): Condition {
         this + {
-            when (other.range) {
-                X -> previousChanges.none {
+            other.range.none { idx ->
+                previousChanges.getOrNull(previousChanges.size - idx)?.let {
                     InputElement(it.event, it.stateBefore).match(other.combo, previousChanges)
-                }
-                else -> other.range.none { idx ->
-                    previousChanges.getOrNull(previousChanges.size - idx)?.let {
-                        InputElement(it.event, it.stateBefore).match(other.combo, previousChanges)
-                    } ?: false
-                }
+                } ?: false
             }
         }
         return this
