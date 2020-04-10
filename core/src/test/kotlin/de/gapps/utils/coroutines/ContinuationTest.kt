@@ -3,7 +3,7 @@
 package de.gapps.utils.coroutines
 
 import de.gapps.utils.core_testing.assertion.assert
-import de.gapps.utils.core_testing.assertion.onFail
+import de.gapps.utils.core_testing.assertion.rem
 import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.time.delay
@@ -31,9 +31,9 @@ class ContinuationTest {
         }
 
         delay(2.seconds)
-        continued onFail "0" assert false
+        continued assert false % "0"
         continuation.trigger()
         delay(1.seconds)
-        continued onFail "1" assert true
+        continued assert true % "1"
     }
 }

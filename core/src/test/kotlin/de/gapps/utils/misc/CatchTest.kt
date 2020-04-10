@@ -3,7 +3,7 @@
 package de.gapps.utils.misc
 
 import de.gapps.utils.core_testing.assertion.assert
-import de.gapps.utils.core_testing.assertion.onFail
+import de.gapps.utils.core_testing.assertion.rem
 import org.junit.jupiter.api.Test
 
 class CatchTest {
@@ -16,8 +16,8 @@ class CatchTest {
             throw RuntimeException("testException")
         }
 
-        caught onFail "caught should be true" assert true
-        finally onFail "finally should be true" assert true
-        !result onFail "result should be false" assert true
+        caught assert true % "caught should be true"
+        finally assert true % "finally should be true"
+        !result assert true % "result should be false"
     }
 }

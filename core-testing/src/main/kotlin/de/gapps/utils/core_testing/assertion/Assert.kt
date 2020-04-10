@@ -4,29 +4,27 @@ package de.gapps.utils.core_testing.assertion
 infix fun String.assert(expected: Regex) =
     AssertRegexScope(expected, ActualMessageScope(this)).apply { validate() }
 
-infix fun <T : Any?> T.onFail(message: String) = onFail { message }
-infix fun <T : Any?> T.onFail(message: IValidationScope<T, T>.() -> String) = ActualMessageScope(this, message)
+operator fun <A : Any?, E : Any?> E.rem(other: String): Pair<E, IValidationScope<A, E>.() -> String> = rem { other }
+operator fun <A : Any?, E : Any?> E.rem(other: IValidationScope<A, E>.() -> String) = this to other
 
-operator fun <T : Any?> T.times(other: T) = this to other
-
-infix fun <T : Any?> T.assert(expected: T) =
+infix fun <A : Any?, E : Any?> A.assert(expected: E) =
     AssertEqualsScope(expected, ActualMessageScope(this)).apply { validate() }
 
-infix fun <T : Any?> ActualMessageScope<T>.assert(expected: T) =
-    AssertEqualsScope(expected, this).validate()
+infix fun <A : Any?, E : Any?> A.assert(expected: Pair<E, IValidationScope<A, E>.() -> String>) =
+    AssertEqualsScope(expected.first, ActualMessageScope(this, expected.second)).apply { validate() }
 
 object Tester {
     @JvmStatic
     fun main(args: Array<String>) {
         val test = 6
         test assert 6
-        test onFail "foo" assert 45
-        test onFail { "foo$expected$actual" } assert 5
+        test assert 45 % "foo"
+        test assert 5 % { "foo$expected$actual" }
 
         val str = "foo"
         str assert Regex("boo")
         str assert "foo"
-        str onFail "moo" assert Regex("")
-        str onFail "moo" assert "foo"
+        str assert Regex("") % "moo"
+        str assert "foo" % "moo"
     }
 }

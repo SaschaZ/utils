@@ -3,10 +3,10 @@ package de.gapps.utils.core_testing.assertion
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
 
-class AssertEqualsScope<T : Any?>(
-    override var expected: T,
-    scope: ActualMessageScope<T>
-) : IValidationScope<T, T>, IActualMessageScope<T> by scope {
+class AssertEqualsScope<A : Any?, E : Any?>(
+    override var expected: E,
+    scope: ActualMessageScope<A, E>
+) : IValidationScope<A, E>, IActualMessageScope<A, E> by scope {
     override fun validate() {
         assertEquals(message(), expected, actual)
     }
@@ -14,9 +14,9 @@ class AssertEqualsScope<T : Any?>(
 
 class AssertRegexScope(
     private val regex: Regex,
-    scope: ActualMessageScope<String>
-) : IValidationScope<String, String>, IActualMessageScope<String> by scope {
-    override var expected: String = regex.pattern
+    scope: ActualMessageScope<String, Regex>
+) : IValidationScope<String, Regex>, IActualMessageScope<String, Regex> by scope {
+    override var expected: Regex = regex
     override fun validate() {
         assertTrue(message(), actual.matches(regex))
     }

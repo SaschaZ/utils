@@ -5,10 +5,9 @@ package de.gapps.utils.statemachine
 import de.gapps.utils.log.LogFilter.Companion.GENERIC
 import de.gapps.utils.log.logV
 import de.gapps.utils.misc.name
-import de.gapps.utils.misc.whenNotNull
 import de.gapps.utils.statemachine.IConditionElement.*
-import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.*
-import de.gapps.utils.statemachine.IConditionElement.IConditionElementGroup.MatchType
+import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.EVENT
+import de.gapps.utils.statemachine.IConditionElement.ICondition.ConditionType.EXTERNAL
 import de.gapps.utils.statemachine.IConditionElement.IConditionElementGroup.MatchType.*
 import de.gapps.utils.statemachine.IConditionElement.IMaster.IGroup
 import de.gapps.utils.statemachine.IConditionElement.IMaster.IGroup.IEventGroup
@@ -27,7 +26,7 @@ val IConditionElement?.disableLogging
 
 interface IConditionElement {
 
-    fun match(
+    suspend fun match(
         other: IConditionElement?,
         previousStateChanges: List<OnStateChanged>
     ): Boolean
@@ -37,6 +36,8 @@ interface IConditionElement {
         RUNTIME
     }
 
+    interface IActionResult
+
     interface IMaster : IConditionElement {
 
         interface ISingle : IMaster {
@@ -45,7 +46,7 @@ interface IConditionElement {
                 val noLogging: Boolean
                 fun OnStateChanged.fired() = Unit
 
-                override fun match(
+                override suspend fun match(
                     other: IConditionElement?,
                     previousStateChanges: List<OnStateChanged>
                 ): Boolean {
@@ -60,10 +61,10 @@ interface IConditionElement {
                 }
             }
 
-            interface IState : ISingle {
+            interface IState : ISingle, IActionResult {
                 fun OnStateChanged.activeStateChanged(isActive: Boolean) = Unit
 
-                override fun match(
+                override suspend fun match(
                     other: IConditionElement?,
                     previousStateChanges: List<OnStateChanged>
                 ): Boolean {
@@ -80,10 +81,16 @@ interface IConditionElement {
 
             interface IExternal : ISingle {
 
-                val condition: () -> Boolean
+                val condition: suspend MatchScope.() -> Boolean
 
-                override fun match(other: IConditionElement?, previousStateChanges: List<OnStateChanged>): Boolean =
-                    condition()
+                override suspend fun match(
+                    other: IConditionElement?,
+                    previousStateChanges: List<OnStateChanged>
+                ): Boolean =
+                    MatchScope(previousStateChanges).condition() logV {
+                        f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel <= INFO)
+                        m = "#EX $it => ${this@IExternal} <||> $other"
+                    }
             }
         }
 
@@ -92,7 +99,7 @@ interface IConditionElement {
 
             interface IEventGroup<out T : IEvent> : IGroup<T> {
 
-                override fun match(
+                override suspend fun match(
                     other: IConditionElement?,
                     previousStateChanges: List<OnStateChanged>
                 ): Boolean {
@@ -110,7 +117,7 @@ interface IConditionElement {
 
             interface IStateGroup<out T : IState> : IGroup<T> {
 
-                override fun match(
+                override suspend fun match(
                     other: IConditionElement?,
                     previousStateChanges: List<OnStateChanged>
                 ): Boolean {
@@ -132,7 +139,7 @@ interface IConditionElement {
 
         interface IData : ISlave {
 
-            override fun match(
+            override suspend fun match(
                 other: IConditionElement?,
                 previousStateChanges: List<OnStateChanged>
             ): Boolean {
@@ -151,7 +158,7 @@ interface IConditionElement {
         interface IType<out T : IData> : ISlave {
             val type: KClass<@UnsafeVariance T>
 
-            override fun match(
+            override suspend fun match(
                 other: IConditionElement?,
                 previousStateChanges: List<OnStateChanged>
             ): Boolean {
@@ -168,11 +175,10 @@ interface IConditionElement {
         }
     }
 
-    interface IComboElement : IConditionElement {
+    interface IComboElement : IConditionElement, IActionResult {
 
         val master: IMaster
         var slave: ISlave?
-        var idx: Int
         var usedAs: UsedAs
         val ignoreSlave: Boolean
         var exclude: Boolean
@@ -183,6 +189,7 @@ interface IConditionElement {
         val group get() = master as? IGroup<*>
         val eventGroup get() = master as? IEventGroup<*>
         val stateGroup get() = master as? IStateGroup<*>
+        val external get() = single as? IExternal
 
         val hasSingle get() = single != null
         val hasEvent get() = event != null
@@ -190,49 +197,29 @@ interface IConditionElement {
         val hasGroup get() = group != null
         val hasStateGroup get() = stateGroup != null
         val hasEventGroup get() = eventGroup != null
-        val hasExternal get() = single is IExternal
+        val hasExternal get() = external != null
 
-        override fun match(
+        override suspend fun match(
             other: IConditionElement?,
             previousStateChanges: List<OnStateChanged>
         ): Boolean {
-            @Suppress("UNCHECKED_CAST")
-            fun <T : IConditionElement> T.get(idx: Int): T? {
-                return when (idx) {
-                    0 -> this
-                    else -> previousStateChanges.getOrNull(previousStateChanges.size - idx)?.let { result ->
-                        when (this) {
-                            is IEvent -> result.event.master as T
-                            is IState -> result.stateBefore.master as T
-                            is IComboElement -> when {
-                                hasEvent || hasEventGroup -> ConditionElement.ComboElement(
-                                    result.event.master,
-                                    result.event.slave
-                                ) as T
-                                hasState || hasStateGroup -> ConditionElement.ComboElement(
-                                    result.stateBefore.master,
-                                    result.stateBefore.slave
-                                ) as T
-                                else -> throw IllegalArgumentException("Unsupported type ${this::class.name}")
-                            }
-                            else -> throw IllegalArgumentException("Unsupported type ${this::class.name}")
-                        }
+            return when {
+                hasExternal -> external?.match(other, previousStateChanges) ?: false
+                other is IComboElement -> {
+                    when {
+                        other.hasExternal -> other.external?.match(this, previousStateChanges) ?: false
+                        else -> master.match(other.master, previousStateChanges)
+                                && (slave == null && other.slave == null
+                                || ignoreSlave || other.ignoreSlave
+                                || slave?.match(other.slave, previousStateChanges) == true)
                     }
                 }
-            }
-
-            return when (other) {
-                is IComboElement -> whenNotNull(get(other.idx), other.get(idx)) { t, o ->
-                    t.master.match(o.master, previousStateChanges)
-                            && (t.slave == null && o.slave == null || t.ignoreSlave || o.ignoreSlave
-                            || t.slave?.match(o.slave, previousStateChanges) == true)
-                } ?: false
-                is IInputElement -> other.match(this, previousStateChanges)
-                null -> false
+                other is IInputElement -> other.match(this, previousStateChanges)
+                other == null -> false
                 else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
             } logV {
                 f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel <= INFO)
-                m = "#CE $it => ${this@IComboElement.get((other as? IComboElement)?.idx ?: 0)} <||> ${other?.get(idx)}"
+                m = "#CE $it => ${this@IComboElement} <||> $other"
             }
         }
     }
@@ -248,7 +235,7 @@ interface IConditionElement {
         val matchType: MatchType
         val elements: MutableList<IComboElement>
 
-        override fun match(
+        override suspend fun match(
             other: IConditionElement?,
             previousStateChanges: List<OnStateChanged>
         ): Boolean {
@@ -259,8 +246,9 @@ interface IConditionElement {
                                 || it.hasState && other.state.hasState
                                 || it.hasEventGroup && other.event.hasEventGroup
                                 || it.hasStateGroup && other.state.hasStateGroup
+                                || it.hasExternal && matchType == ALL
                     }
-                    when (matchType) {
+                    filtered.isEmpty() || when (matchType) {
                         ALL -> filtered.all { it.match(other, previousStateChanges) }
                         ANY -> filtered.any { it.match(other, previousStateChanges) }
                         NONE -> filtered.none { it.match(other, previousStateChanges) }
@@ -268,10 +256,13 @@ interface IConditionElement {
                 }
                 is IComboElement -> {
                     val filtered = elements.filter {
-                        it.hasEvent && other.hasEvent || it.hasState && other.hasState
-                                || it.hasEventGroup && other.hasEventGroup || it.hasStateGroup && other.hasStateGroup
+                        it.hasEvent && other.hasEvent
+                                || it.hasState && other.hasState
+                                || it.hasEventGroup && other.hasEventGroup
+                                || it.hasStateGroup && other.hasStateGroup
+                                || it.hasExternal && matchType == ALL
                     }
-                    when (matchType) {
+                    filtered.isEmpty() || when (matchType) {
                         ALL -> filtered.all { it.match(other, previousStateChanges) }
                         ANY -> filtered.any { it.match(other, previousStateChanges) }
                         NONE -> filtered.none { it.match(other, previousStateChanges) }
@@ -289,26 +280,12 @@ interface IConditionElement {
     interface ICondition : IConditionElement {
 
         val items: List<IConditionElementGroup>
+        val any: IConditionElementGroup get() = items.first { it.matchType == ANY }
+        val all: IConditionElementGroup get() = items.first { it.matchType == ALL }
+        val none: IConditionElementGroup get() = items.first { it.matchType == NONE }
         val action: (suspend ExecutorScope.() -> IComboElement?)?
 
-        val start: IComboElement get() = items.first().elements.first()
-
-        val eventsAny
-            get() = items.flatMap { f -> f.elements.filter { !it.exclude && it.idx == 0 && (it.hasEvent || it.hasEventGroup) } }
-        val statesAny
-            get() = items.flatMap { f -> f.elements.filter { !it.exclude && it.idx == 0 && (it.hasState || it.hasStateGroup) } }
-        val eventsAll
-            get() = items.flatMap { f -> f.elements.filter { !it.exclude && it.idx > 0 && (it.hasEvent || it.hasEventGroup) } }
-        val statesAll
-            get() = items.flatMap { f -> f.elements.filter { !it.exclude && it.idx > 0 && (it.hasState || it.hasStateGroup) } }
-        val externalAll
-            get() = items.flatMap { f -> f.elements.filter { !it.exclude && it.hasExternal }.map { it.master } }
-        val eventsNone
-            get() = items.flatMap { f -> f.elements.filter { it.exclude && (it.hasEvent || it.hasEventGroup) } }
-        val statesNone
-            get() = items.flatMap { f -> f.elements.filter { it.exclude && (it.hasState || it.hasStateGroup) } }
-        val externalNone
-            get() = items.flatMap { f -> f.elements.filter { it.exclude && it.hasExternal }.map { it.master } }
+        val start: IComboElement get() = items.first { it.matchType == ALL }.elements.first()
 
         enum class ConditionType {
             STATE,
@@ -321,17 +298,21 @@ interface IConditionElement {
                 is IEvent,
                 is IEventGroup<IEvent> -> EVENT
                 is IState,
-                is IStateGroup<IState> -> STATE
+                is IStateGroup<IState> -> ConditionType.STATE
                 is IExternal -> EXTERNAL
                 else -> throw IllegalArgumentException("Unexpected first element $start")
             }
 
-        override fun match(
+        override suspend fun match(
             other: IConditionElement?,
             previousStateChanges: List<OnStateChanged>
         ): Boolean {
             return when (other) {
-                is IInputElement -> other.match(this, previousStateChanges)
+                is IInputElement -> {
+                    any.match(other, previousStateChanges)
+                            && all.match(other, previousStateChanges)
+                            && none.match(other, previousStateChanges)
+                }
                 null -> false
                 else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
             } logV {
@@ -346,29 +327,9 @@ interface IConditionElement {
         val event: IComboElement
         val state: IComboElement
 
-        override fun match(other: IConditionElement?, previousStateChanges: List<OnStateChanged>): Boolean {
+        override suspend fun match(other: IConditionElement?, previousStateChanges: List<OnStateChanged>): Boolean {
             return when (other) {
-                is ICondition -> {
-                    (other.eventsAny.isEmpty() || other.eventsAny.any { match(it, previousStateChanges) })
-                            && (other.eventsAll.isEmpty() || other.eventsAll.all { match(it, previousStateChanges) })
-                            && (other.statesAny.isEmpty() || other.statesAny.any { match(it, previousStateChanges) })
-                            && (other.statesAll.isEmpty() || other.statesAll.all { match(it, previousStateChanges) })
-                            && (other.eventsNone.isEmpty() || other.eventsNone.none { match(it, previousStateChanges) })
-                            && (other.statesNone.isEmpty() || other.statesNone.none { match(it, previousStateChanges) })
-                            && (other.externalAll.isEmpty() || other.externalAll.all {
-                        match(
-                            it,
-                            previousStateChanges
-                        )
-                    })
-                            && (other.externalNone.isEmpty() || other.externalNone.none {
-                        match(
-                            it,
-                            previousStateChanges
-                        )
-                    })
-                }
-                is IConditionElementGroup -> other.match(this, previousStateChanges)
+                is ICondition -> other.match(this, previousStateChanges)
                 is IComboElement -> when {
                     other.hasEvent || other.hasEventGroup -> event.match(other, previousStateChanges)
                     other.hasState || other.hasStateGroup -> state.match(other, previousStateChanges)
@@ -416,9 +377,12 @@ sealed class ConditionElement : IConditionElement {
             abstract class State : Single(), IState
 
             /**
-             * External condition. Is checked at runtime.
+             * External condition.
              */
-            open class External(override val condition: () -> Boolean) : Single(), IExternal
+            open class External internal constructor(override val condition: suspend MatchScope.() -> Boolean) :
+                Single(), IExternal {
+                override fun toString(): String = "External"
+            }
         }
 
         sealed class Group<out T : ISingle>(override val type: KClass<@UnsafeVariance T>) : Master(), IGroup<T> {
@@ -459,22 +423,22 @@ sealed class ConditionElement : IConditionElement {
     data class ComboElement(
         override val master: IMaster,
         override var slave: ISlave? = null,
-        override var idx: Int = 0,
         override var usedAs: UsedAs = DEFINITION,
         override val ignoreSlave: Boolean = false,
         override var exclude: Boolean = false
     ) : IComboElement {
-        override fun toString() = "CE($master|$slave|$idx|$ignoreSlave|$exclude|${when (master) {
+        override fun toString() = "CE($master|$slave|$ignoreSlave|$exclude|${when (master) {
             is IEvent -> "E"
             is IState -> "S"
             is IEventGroup<*> -> "Eg"
             is IStateGroup<*> -> "Sg"
-            else -> "X[${master::class}]"
+            is IExternal -> "X"
+            else -> "?[${master::class}]"
         }}${usedAs.name[0]})"
     }
 
     data class ConditionElementGroup(
-        override val matchType: MatchType,
+        override val matchType: IConditionElementGroup.MatchType,
         override val elements: MutableList<IComboElement>
     ) : IConditionElementGroup {
         override fun toString(): String = "CG($matchType; $elements)"
@@ -486,7 +450,7 @@ sealed class ConditionElement : IConditionElement {
     ) : ICondition {
 
         constructor(master: IMaster) :
-                this(INITIAL_ITEMS.apply { first { it.matchType == ANY }.elements.add(master.combo) })
+                this(INITIAL_ITEMS.apply { first { it.matchType == ALL }.elements.add(master.combo) })
 
         companion object {
             private val INITIAL_ITEMS
@@ -508,7 +472,7 @@ sealed class ConditionElement : IConditionElement {
     }
 }
 
-val ICondition.isStateCondition get() = type == STATE
+val ICondition.isStateCondition get() = type == ICondition.ConditionType.STATE
 val ICondition.isEventCondition get() = type == EVENT
 
 val IComboElement.isDefinition get() = usedAs == DEFINITION

@@ -1,14 +1,14 @@
 package de.gapps.utils.core_testing.assertion
 
-interface IActualScope<A : Any?> {
-    var actual: A
+interface IActualScope<out A : Any?> {
+    var actual: @UnsafeVariance A
 }
 
-interface IActualMessageScope<A : Any?> : IActualScope<A> {
-    val message: IValidationScope<A, A>.() -> String
+interface IActualMessageScope<out A : Any?, out E : Any?> : IActualScope<A> {
+    val message: IValidationScope<@UnsafeVariance A, @UnsafeVariance E>.() -> String
 }
 
-class ActualMessageScope<A : Any?>(
-    override var actual: A,
-    override val message: IValidationScope<A, A>.() -> String = { "" }
-) : IActualMessageScope<A>
+class ActualMessageScope<out A : Any?, out E : Any?>(
+    override var actual: @UnsafeVariance A,
+    override val message: IValidationScope<@UnsafeVariance A, @UnsafeVariance E>.() -> String = { "" }
+) : IActualMessageScope<A, E>

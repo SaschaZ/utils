@@ -3,7 +3,7 @@
 package de.gapps.utils.observables
 
 import de.gapps.utils.core_testing.assertion.assert
-import de.gapps.utils.core_testing.assertion.onFail
+import de.gapps.utils.core_testing.assertion.rem
 import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.log.Log
@@ -16,16 +16,16 @@ class ObservableTest {
     @Test
     fun `test observable inside class`() = runTest {
         val testClass = TestClass("foo")
-        testClass.observable.value onFail "1" assert "foo"
+        testClass.observable.value assert "foo" % "1"
         var latestObservedChanged: String = testClass.observable.value
         launchEx { testClass.observable.observe { Log.d("observe; value=$it"); latestObservedChanged = it } }
         delay(100L)
         launchEx { testClass.triggerChange("boo") }
         delay(100L)
 
-        testClass.observable.value onFail "2" assert "boo"
-        latestObservedChanged onFail "3" assert "boo"
-        testClass.success onFail "4" assert true
+        testClass.observable.value assert "boo" % "2"
+        latestObservedChanged assert "boo" % "3"
+        testClass.success assert true % "4"
     }
 
     companion object {

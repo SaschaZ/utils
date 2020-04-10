@@ -177,7 +177,7 @@ Attached `Data` is than included when matching conditions.
 // When `State` is `C` and the incoming `Event` of `THIRD` has attached `TestEventData` with the content
 "foo" the `State` `D` gets activated.
 +THIRD TestEventData("foo") + C execAndSet {
-  eventData<TestEventData>().foo onFail "foo String is not \"foo\"" assert "foo"
+  eventData<TestEventData>().foo assert "foo" % "foo String is not \"foo\""
   D
 }
 ```

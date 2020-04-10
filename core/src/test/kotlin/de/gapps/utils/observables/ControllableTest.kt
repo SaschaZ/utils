@@ -1,7 +1,7 @@
 package de.gapps.utils.observables
 
 import de.gapps.utils.core_testing.assertion.assert
-import de.gapps.utils.core_testing.assertion.onFail
+import de.gapps.utils.core_testing.assertion.rem
 import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.log.Log
@@ -14,12 +14,12 @@ class ControllableTest {
     @Test
     fun `test controllable`() = runTest {
         val testObservable = Controllable("foo")
-        testObservable.value onFail "1" assert "foo"
+        testObservable.value assert "foo" % "1"
 
         launchEx { testObservable.value = "boo" }
         delay(100L)
 
-        testObservable.value onFail "2" assert "boo"
+        testObservable.value assert "boo" % "2"
     }
 
     @Test
@@ -28,13 +28,13 @@ class ControllableTest {
 
         testClass.controllable.control { Log.d("111=$it");if (value == "foo") value = "boo" }
         delay(100L)
-        testClass.controllable.value onFail "1" assert "boo"
-        testClass.internal onFail "2" assert "boo"
+        testClass.controllable.value assert "boo" % "1"
+        testClass.internal assert "boo" % "2"
 
         testClass.internal = "moo"
         delay(100L)
-        testClass.internal onFail "3" assert "moo"
-        testClass.controllable.value onFail "4" assert "moo"
+        testClass.internal assert "moo" % "3"
+        testClass.controllable.value assert "moo" % "4"
     }
 
     companion object {

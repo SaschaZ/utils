@@ -136,7 +136,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * // When [IState] is [C] and the incoming [IEvent] of [THIRD] has attached [TestEventData] with the content
  * "foo" the [IState] [D] gets activated.
  * -THIRD * TestEventData("foo") + C execAndSet {
- *   eventData<TestEventData>().foo onFail "foo String is not \"foo\"" assert "foo"
+ *   eventData<TestEventData>().foo assert "foo" % "foo String is not \"foo\""
  *   D
  * }
  * ```

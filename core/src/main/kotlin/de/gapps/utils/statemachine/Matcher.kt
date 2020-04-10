@@ -100,7 +100,7 @@ object Matcher {
         }
     }
 
-    private fun match(
+    private suspend fun match(
         condition: ICondition,
         event: IComboElement,
         state: IComboElement,

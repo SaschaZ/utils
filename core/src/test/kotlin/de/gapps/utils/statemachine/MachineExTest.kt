@@ -3,12 +3,14 @@
 package de.gapps.utils.statemachine
 
 import de.gapps.utils.core_testing.assertion.assert
-import de.gapps.utils.core_testing.assertion.onFail
+import de.gapps.utils.core_testing.assertion.rem
 import de.gapps.utils.core_testing.runTest
 import de.gapps.utils.statemachine.ConditionElement.Master.Group.EventGroup
 import de.gapps.utils.statemachine.ConditionElement.Master.Group.StateGroup
-import de.gapps.utils.statemachine.ConditionElement.Master.Single.*
+import de.gapps.utils.statemachine.ConditionElement.Master.Single.Event
+import de.gapps.utils.statemachine.ConditionElement.Master.Single.State
 import de.gapps.utils.statemachine.ConditionElement.Slave.Data
+import de.gapps.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
 import de.gapps.utils.statemachine.MachineExTest.TestData.*
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.TEST_EVENT_GROUP.FIFTH
@@ -21,7 +23,7 @@ import org.junit.jupiter.api.Test
 
 class MachineExTest {
 
-    sealed class TestState(ignoreSlave: Boolean = false) : State() {
+    sealed class TestState : State() {
 
         object INITIAL : TestState()
         object A : TestState()
@@ -55,7 +57,7 @@ class MachineExTest {
         companion object : Type<TestData>(TestData::class)
     }
 
-    sealed class TestEvent(ignoreData: Boolean = false) : Event() {
+    sealed class TestEvent : Event() {
 
         object FIRST : TestEvent()
         object SECOND : TestEvent()
@@ -78,14 +80,14 @@ class MachineExTest {
         var executed2 = 0
         MachineEx(INITIAL) {
             +FIRST + INITIAL set A * TestStateData(true)
-            +SECOND * TestData.TestEventData set C
-            +FIFTH + A * TestData.TestStateData set E
+            +SECOND * TestEventData set C
+            +FIFTH + A * TestStateData set E
             +FIRST + SECOND + THIRD + A + B + E set C
             +THIRD + C execAndSet {
                 throw IllegalStateException("This state should never be active")
             }
             +THIRD * TestEventData("foo") + C execAndSet {
-                executed++; eventData<TestEventData>().foo onFail "data test" assert "foo"; D
+                executed++; eventData<TestEventData>().foo assert "foo" % "data test"; D
             }
             +FOURTH + D set B
             +C exec { executed++ }
@@ -95,33 +97,33 @@ class MachineExTest {
 
             fire eventSync FIRST
             state() assert A
-            executed onFail "event FIRST with state INITIAL" assert 0
-            executed2 onFail "event FIRST with state INITIAL2" assert 0
+            executed assert 0 % "event FIRST with state INITIAL"
+            executed2 assert 0 % "event FIRST with state INITIAL2"
 
             fire eventSync FIFTH
             state() assert E
-            executed onFail "event FIFTH with state A" assert 0
-            executed2 onFail "event FIFTH with state A2" assert 0
+            executed assert 0 % "event FIFTH with state A"
+            executed2 assert 0 % "event FIFTH with state A2"
 
             fire eventSync SECOND * TestEventData("moo")
             state() assert C
-            executed onFail "event SECOND with state A" assert 1
-            executed2 onFail "event SECOND with state A#2" assert 1
+            executed assert 1 % "event SECOND with state A"
+            executed2 assert 1 % "event SECOND with state A#2"
 
             fire eventSync THIRD * TestEventData("foo")
             state() assert D
-            executed onFail "event THIRD with state C" assert 2
-            executed2 onFail "event THIRD with state C#2" assert 1
+            executed assert 2 % "event THIRD with state C"
+            executed2 assert 1 % "event THIRD with state C#2"
 
             fire eventSync FOURTH
             state() assert B
-            executed onFail "event FOURTH with state D" assert 2
-            executed2 onFail "event FOURTH with state D#2" assert 1
+            executed assert 2 % "event FOURTH with state D"
+            executed2 assert 1 % "event FOURTH with state D#2"
 
             fire eventSync FIRST
-            state() assert C
-            executed onFail "event FIRST with state B" assert 3
-            executed2 onFail "event FIRST with state B#2" assert 1
+            state() assert C % "FIRST with B"
+            executed assert 3 % "event FIRST with state B"
+            executed2 assert 1 % "event FIRST with state B#2"
         }
     }
 
@@ -175,10 +177,10 @@ class MachineExTest {
     @Test
     fun testData() = runTest {
         MachineEx(INITIAL) {
-            +FIRST + INITIAL * TestData.TestEventData set A
+            +FIRST + INITIAL * TestEventData set A
             +SECOND + INITIAL set A * TestStateData(false)
             +THIRD + A[1] * TestStateData(false) set C
-            +FOURTH + A * TestData.TestStateData set B
+            +FOURTH + A * TestStateData set B
             +FIFTH * TestEventData("foo") + C set D
             +FOURTH * TestEventData("moo") + D set E
         }.run {
@@ -197,19 +199,19 @@ class MachineExTest {
             state() assert B
 
             fire eventSync THIRD
-            state() onFail { "THIRD" } assert C
+            state() assert C % { "THIRD" }
 
             fire eventSync FIFTH
             state() assert C
 
             fire eventSync FIFTH * TestEventData2("foo")
-            state() onFail { "FIFTH with TestEventData2" } assert C
+            state() assert C % { "FIFTH with TestEventData2" }
 
             fire eventSync FIFTH * TestEventData("foo")
-            state() onFail { "FIFTH with TestEventData" } assert D
+            state() assert D % { "FIFTH with TestEventData" }
 
             fire eventSync FOURTH * TestEventData("foo")
-            state() onFail "FOURTH with TestEventData" assert D
+            state() assert D % "FOURTH with TestEventData"
 
             fire eventSync FOURTH * TestEventData("moo")
             state() assert E
@@ -248,29 +250,33 @@ class MachineExTest {
     @Test
     fun testExternal() = runTest {
         var isActive = false
-        MachineEx(INITIAL) {
-            +FIRST + INITIAL + External { isActive } set A
-            +SECOND + C + External { !isActive } set B
-            +THIRD + A + B + External { isActive } set C
+        MachineEx(INITIAL, debugLevel = DEBUG) {
+            +FIRST + INITIAL + { isActive } set A * TestStateData(true)
+            +SECOND + C + E + { !isActive } set B
+            +THIRD + A * TestStateData + B - D[X] + { isActive } set C
+            +FOURTH + A[X] * TestStateData + B set D
         }.run {
-            state() assert INITIAL
+            state() assert INITIAL % "Initial"
 
             fire eventSync FIRST
-            state() assert INITIAL
+            state() assert INITIAL % "FIRST and still INITIAL"
 
             isActive = true
             fire eventSync FIRST
-            state() assert A
+            state() assert A % "FIRST with isActive == true"
 
             fire eventSync THIRD
-            state() assert C
+            state() assert C % "THIRD with isActive == true"
 
             fire eventSync SECOND
-            state() assert C
+            state() assert C % "SECOND with isActive == true"
 
             isActive = false
             fire eventSync SECOND
-            state() assert B
+            state() assert B % "SECOND with isActive == false"
+
+            fire eventSync FOURTH
+            state() assert D % "FOURTH with isActive == false"
         }
     }
 }
