@@ -30,7 +30,7 @@ internal fun Project.configureJarPublishing(name: String) {
 internal fun Project.configureLibraryJarPublication(name: String) {
     extensions.getByType<PublishingExtension>().publications {
         register<MavenPublication>("mavenJava") {
-            configureNames()
+            configureNames(name)
 
             from(components["java"])
             artifact(getSourcesJar(JVM_LIB))
@@ -47,7 +47,7 @@ internal fun Project.configureAarPublishing(name: String) {
 internal fun Project.configureLibraryAarPublication(name: String) {
     extensions.getByType<PublishingExtension>().publications {
         register<MavenPublication>("aar") {
-            configureNames()
+            configureNames(name)
 
             artifact(file("$buildDir/outputs/aar/$name-release.aar"))
             artifact(getSourcesJar(ANDROID_LIB))
@@ -56,7 +56,7 @@ internal fun Project.configureLibraryAarPublication(name: String) {
     }
 }
 
-private fun MavenPublication.configureNames() {
+private fun MavenPublication.configureNames(name: String) {
     groupId = Globals.group
     artifactId = name
     version = Globals.version
@@ -73,8 +73,8 @@ internal fun Project.configurePublishTask(type: ModuleType) = afterEvaluate {
         JVM_LIB -> "MavenJava"
     }}PublicationToMavenLocal"]
 
-    publishLocal.dependsOn(assemble).doLast { copyArtifacts(type) }
-    publish.dependsOn(assemble).doLast { copyArtifacts(type) }
+    publishLocal.dependsOn(assemble)//.doLast { copyArtifacts(type) }
+    publish.dependsOn(assemble)//.doLast { copyArtifacts(type) }
 }
 
 internal fun Project.copyArtifacts(type: ModuleType) {
