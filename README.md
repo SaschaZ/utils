@@ -21,17 +21,16 @@ repositories {
 }
 
 dependencies {
-    // core contains all jdk utils (compatible with android and jdk)
-    implementation "dev.zieger.utils:core:$utilsVersion"
+    // core contains all jdk utils
+    implementation "dev.zieger.utils:core:$utilsVersion"// android and jdk
+    implementation "dev.zieger.utils:android:$utilsVersion" // android
+    implementation "dev.zieger.utils:jdk:$utilsVersion" // jdk
+    implementation "dev.zieger.utils:swing:$utilsVersion" // swing
 
-    // android only utils
-    implementation "dev.zieger.utils:android:$utilsVersion"
-
-    // testing utils (jdk + android)
-    implementation "dev.zieger.utils:testing:$utilsVersion"
-
-    // jdk only utils
-    implementation "dev.zieger.utils:console:$utilsVersion"
+    // testing utils
+    implementation "dev.zieger.utils:core-testing:$utilsVersion" // android and jdk
+    implementation "dev.zieger.utils:android-testing:$utilsVersion" // android
+    implementation "dev.zieger.utils:jdk-testing:$utilsVersion" // jdk
 }
 ```
 

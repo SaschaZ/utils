@@ -6,7 +6,7 @@ import de.gapps.utils.time.base.TimeUnit
 import de.gapps.utils.time.base.TimeUnit.MS
 import de.gapps.utils.time.base.toMillis
 
-open class DurationEx(override val millis: Long = 0L) : IDurationEx {
+open class DurationEx private constructor(override val millis: Long = 0L) : IDurationEx {
 
     companion object : TimeParseHelper()
 

@@ -71,7 +71,7 @@ operator fun Number.times(other: ITimeEx): ITimeEx =
 operator fun ITimeEx.div(other: Number): ITimeEx =
     TimeEx(millis / other.toLong())
 operator fun IDurationEx.div(other: Number): IDurationEx =
-    DurationEx(millis * other.toLong())
+    DurationEx(millis / other.toLong())
 
 operator fun ITimeEx.div(other: ITimeEx): IDurationEx =
     DurationEx(millis / other.millis)
