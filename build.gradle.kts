@@ -19,7 +19,7 @@ buildscript {
 }
 
 plugins {
-    kotlin("jvm") version "1.3.70"
+    kotlin("jvm") version "1.3.71"
     id("org.jetbrains.dokka") version "0.9.17"
 }
 
