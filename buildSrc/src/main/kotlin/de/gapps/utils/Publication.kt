@@ -73,8 +73,8 @@ internal fun Project.configurePublishTask(type: ModuleType) = afterEvaluate {
         JVM_LIB -> "MavenJava"
     }}PublicationToMavenLocal"]
 
-    publishLocal.dependsOn(assemble)//.doLast { copyArtifacts(type) }
-    publish.dependsOn(assemble)//.doLast { copyArtifacts(type) }
+    publishLocal.dependsOn(assemble).doLast { copyArtifacts(type) }
+    publish.dependsOn(assemble).doLast { copyArtifacts(type) }
 }
 
 internal fun Project.copyArtifacts(type: ModuleType) {
