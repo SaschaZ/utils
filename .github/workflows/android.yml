@@ -19,6 +19,11 @@ jobs:
         java-version: 1.8
     - name: Build with Gradle
       run: ./gradlew test publishToMavenLocal
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+         name:  "Releases"
+         path:  "./build/publications"
 #    - name: FTP-Deploy-Action
 #      uses: SamKirkland/FTP-Deploy-Action@3.0.0
 #      with:
