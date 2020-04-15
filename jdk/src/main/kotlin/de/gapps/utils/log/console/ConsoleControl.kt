@@ -22,7 +22,12 @@ object ConsoleControl {
         flush()
 
         delay(2000)
-        print("Boo\n")
+        print("Boo")
+        flush()
+
+        delay(2000)
+        carriageReturn()
+        print("WooMoo")
         flush()
     }.asUnit()
 

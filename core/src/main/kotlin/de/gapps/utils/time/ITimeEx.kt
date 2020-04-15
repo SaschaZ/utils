@@ -23,5 +23,7 @@ interface ITimeEx : IMillisecondHolderComparator, ITimeZoneHolder, StringConvert
         get() = get(Calendar.DAY_OF_MONTH)
     val dayOfWeek: Int
         get() = get(Calendar.DAY_OF_WEEK)
+    val hourOfDay: Int
+        get() = get(Calendar.HOUR_OF_DAY)
 }
 

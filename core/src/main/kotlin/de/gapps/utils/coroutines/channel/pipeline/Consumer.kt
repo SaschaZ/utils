@@ -1,6 +1,7 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
 import de.gapps.utils.coroutines.builder.launchEx
+import de.gapps.utils.coroutines.channel.pipeline.PipelineElementStage.*
 import de.gapps.utils.time.ITimeEx
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -30,17 +31,17 @@ open class Consumer<out I : Any>(
 
     override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.consume() = scope.launchEx {
         var prevValue: IPipeValue<I>? = null
-        pipeline.tick(this@Consumer, PipelineElementStage.RECEIVE_INPUT)
+        pipeline.tick(this@Consumer, RECEIVE_INPUT)
         for (value in this@consume) {
-            pipeline.tick(this@Consumer, PipelineElementStage.PROCESSING)
+            pipeline.tick(this@Consumer, PROCESSING)
             ConsumerScope(value, pipeline).block(value.value)
             prevValue = value
-            pipeline.tick(this@Consumer, PipelineElementStage.RECEIVE_INPUT)
+            pipeline.tick(this@Consumer, RECEIVE_INPUT)
         }
         Log.v("consuming finished")
-        pipeline.tick(this@Consumer, PipelineElementStage.FINISHED_PROCESSING)
+        pipeline.tick(this@Consumer, FINISHED_PROCESSING)
         prevValue?.let { pv -> ConsumerScope(pv, pipeline).onConsumingFinished() }
-        pipeline.tick(this@Consumer, PipelineElementStage.FINISHED_CLOSING)
+        pipeline.tick(this@Consumer, FINISHED_CLOSING)
     }
 }
 

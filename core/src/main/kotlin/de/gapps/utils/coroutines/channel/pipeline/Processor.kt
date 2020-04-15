@@ -24,9 +24,10 @@ open class Processor<out I : Any, out O : Any>(
     override var params: IProcessingParams = ProcessingParams(),
     override val inOutRelation: ProcessorValueRelation = ProcessorValueRelation.Unspecified,
     override var outputChannel: Channel<out IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
+    identity: Identity = Id("Processor"),
     override val block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit =
         { throw IllegalArgumentException("No processor block defined") }
-) : IProcessor<I, O>, Identity by Id("Processor") {
+) : IProcessor<I, O>, Identity by identity {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
 

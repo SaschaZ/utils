@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package de.gapps.utils.log.console
 
 import com.github.ajalt.mordant.TermColors
