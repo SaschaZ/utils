@@ -1,50 +1,24 @@
 package de.gapps.utils.json
 
-import com.squareup.moshi.*
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import de.gapps.utils.misc.asUnit
 import de.gapps.utils.misc.catch
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.list
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
 
-open class JsonConverter(vararg adapter: JsonAdapter<*>) {
+open class JsonConverter {
 
-    val moshi: Moshi = Moshi.Builder().apply {
-        for (jsonAdapter in adapter) add(jsonAdapter)
-        add(object : JsonAdapter<Pair<String, String>>() {
-            @FromJson
-            override fun fromJson(reader: JsonReader): Pair<String, String>? = reader.run {
-                beginObject()
-                nextString() // first
-                val first = nextString()
-                nextString() // second
-                val second = nextString()
-                endObject()
-                first to second
-            }
+    private val json = Json(JsonConfiguration.Stable)
 
-            @ToJson
-            override fun toJson(writer: JsonWriter, value: Pair<String, String>?) = writer.run {
-                value?.let { pair ->
-                    beginObject()
-                    buildString { append("first") }
-                    buildString { append(pair.first) }
-                    buildString { append("second") }
-                    buildString { append(pair.second) }
-                    endObject()
-                }
-            }.asUnit()
-        })
-        add(KotlinJsonAdapterFactory())
-    }.build()
+    fun <T: Any> @UnsafeVariance T.toJson(serializer: KSerializer<T>): String? =
+        catch(null, onCatch = { print(it) }) { json.stringify(serializer, this) }
 
-    inline fun <reified T : Any> T.toJson(): String? =
-        catch(null, onCatch = { print(it) }) { moshi.adapter(T::class.java).toJson(this) }
+    fun <T: Any> List<@UnsafeVariance T>.toJson(serializer: KSerializer<T>): String? =
+        catch(null, onCatch = { print(it) }) { json.stringify(serializer.list, this) }
 
-    inline fun <reified T : Any, reified L : List<T>> L.toJson(): String? =
-        catch(null, onCatch = { print(it) }) { moshi.adapter(L::class.java).toJson(this) }
+    fun <T: Any> String.fromJson(serializer: KSerializer<T>): T? =
+        catch(null, onCatch = { print(it) }) { json.parse(serializer, this) }
 
-    inline fun <reified T : Any> String.fromJson(): T? =
-        catch(null, onCatch = { print(it) }) { moshi.adapter(T::class.java).fromJson(this) }
-
-    inline fun <reified T : Any, reified L : List<T>> String.fromJsonList(): List<T>? =
-        catch(null, onCatch = { print(it) }) { moshi.adapter(L::class.java).fromJson(this) }
+    fun <T: Any> String.fromJsonList(serializer: KSerializer<T>): List<T>? =
+        catch(null, onCatch = { print(it) }) { json.parse(serializer.list, this) }
 }

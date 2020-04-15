@@ -7,6 +7,7 @@ import de.gapps.utils.delegates.OnChanged
 import de.gapps.utils.json.DefaultSerializer
 import de.gapps.utils.json.ISerializer
 import de.gapps.utils.misc.asUnit
+import kotlinx.serialization.KSerializer
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -16,7 +17,8 @@ import kotlin.reflect.KProperty
 @Suppress("FunctionName")
 inline fun <reified P : IStoreContext, reified T : Any> StoredProperty(
     initial: T,
-    serializer: ISerializer<T> = DefaultSerializer(),
+    kSerializer: KSerializer<T>,
+    serializer: ISerializer<T> = DefaultSerializer(kSerializer),
     noinline onChange: IOnChangedScope<*, T>.(T) -> Unit = {}
 ) = object : ReadWriteProperty<P, T> {
 

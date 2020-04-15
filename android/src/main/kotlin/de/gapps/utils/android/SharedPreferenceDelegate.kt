@@ -2,26 +2,30 @@
 
 package de.gapps.utils.android
 
+import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-interface ISharedPrefsHolder {
-    val sharedPreferences: SharedPreferences
+interface IKeyProvider {
+    val key: String
 }
 
 @Suppress("TestFunctionName")
-inline fun <reified T : Any> SharedPreferenceDelegate(
+inline fun <reified T : Any> IKeyProvider.SharedPreferenceDelegate(
     initial: T,
-    key: String? = null
-) = object : ReadWriteProperty<ISharedPrefsHolder, T> {
+    propertyKey: String? = null
+) = object : ReadWriteProperty<Context, T> {
 
-    override fun getValue(thisRef: ISharedPrefsHolder, property: KProperty<*>): T =
-        thisRef.sharedPreferences.get(key ?: property.name, initial)
+    private val Context.prefs
+        get() = getSharedPreferences(key, Context.MODE_PRIVATE)
 
-    override fun setValue(thisRef: ISharedPrefsHolder, property: KProperty<*>, value: T) =
-        thisRef.sharedPreferences.edit { set(key ?: property.name, value) }
+    override fun getValue(thisRef: Context, property: KProperty<*>): T =
+        thisRef.prefs.get(propertyKey ?: property.name, initial)
+
+    override fun setValue(thisRef: Context, property: KProperty<*>, value: T) =
+        thisRef.prefs.edit { set(propertyKey ?: property.name, value) }
 }
 
 inline fun <reified T> SharedPreferences.Editor.set(key: String, value: T) {

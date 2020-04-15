@@ -57,10 +57,9 @@ val DependencyHandlerScope.koinTest
     get() = "implementation"("org.koin:koin-test:${Versions.koin}")
 
 
-val DependencyHandlerScope.moshi
-    get() = "implementation"("com.squareup.moshi:moshi:${Versions.moshi}")
-val DependencyHandlerScope.moshiKotlin
-    get() = "implementation"("com.squareup.moshi:moshi-kotlin:${Versions.moshi}")
+val DependencyHandlerScope.kotlinSerialization
+    get() = "implementation"("org.jetbrains.kotlinx:kotlinx-serialization-runtime:${Versions.kotlinSerialization}")
+
 
 val DependencyHandlerScope.slf4jSimple
     get() = "implementation"("org.slf4j:slf4j-simple:1.7.29")
