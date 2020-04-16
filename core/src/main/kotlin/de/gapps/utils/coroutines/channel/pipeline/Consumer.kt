@@ -23,9 +23,10 @@ interface IConsumer<out I : Any> : IPipelineElement<I, Any?> {
 
 open class Consumer<out I : Any>(
     override var params: IProcessingParams = ProcessingParams(),
+    identity: Identity = Id("Consumer"),
     override val block: suspend IConsumerScope<@UnsafeVariance I>.(value: @UnsafeVariance I) -> Unit =
         { throw IllegalArgumentException("No consumer block defined") }
-) : IConsumer<I>, Identity by Id("Consumer") {
+) : IConsumer<I>, Identity by identity {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
 
@@ -34,13 +35,13 @@ open class Consumer<out I : Any>(
         pipeline.tick(this@Consumer, RECEIVE_INPUT)
         for (value in this@consume) {
             pipeline.tick(this@Consumer, PROCESSING)
-            ConsumerScope(value, pipeline).block(value.value)
+            ConsumerScope(value).block(value.value)
             prevValue = value
             pipeline.tick(this@Consumer, RECEIVE_INPUT)
         }
         Log.v("consuming finished")
         pipeline.tick(this@Consumer, FINISHED_PROCESSING)
-        prevValue?.let { pv -> ConsumerScope(pv, pipeline).onConsumingFinished() }
+        prevValue?.let { pv -> ConsumerScope(pv).onConsumingFinished() }
         pipeline.tick(this@Consumer, FINISHED_CLOSING)
     }
 }
@@ -52,13 +53,11 @@ interface IConsumerScope<out T : Any> {
     val inIdx: Int
     val outIdx: Int
     val time: ITimeEx
-    val storage: IPipelineStorage
 }
 
 @Suppress("LeakingThis")
 open class ConsumerScope<out T : Any>(
-    override val rawValue: IPipeValue<T>,
-    override val storage: IPipelineStorage
+    override val rawValue: IPipeValue<T>
 ) : IConsumerScope<T> {
 
     override val value: T = rawValue.value

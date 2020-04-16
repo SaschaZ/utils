@@ -23,8 +23,35 @@ import kotlinx.coroutines.sync.withLock
 interface IPipelineWatchDog {
 
     var active: Boolean
-
+    val ticks: Map<IPipelineElement<*, *>, Map<ITimeEx, PipelineElementStage>>
     fun tick(element: IPipelineElement<*, *>, stage: PipelineElementStage, time: ITimeEx = TimeEx())
+
+    val Map<IPipelineElement<*, *>, Map<ITimeEx, PipelineElementStage>>.numPipeElements: Int
+        get() = size + entries.sumBy { (it.key as? IPipelineWatchDog)?.ticks?.numPipeElements ?: 0 }
+
+    val IPipelineElement<*, *>.numProcessed: Int
+        get() = ticks[this]?.count { it.value == PROCESSING } ?: 0
+
+    val IPipelineElement<*, *>.numReceived: Int
+        get() = ticks[this]?.count { it.value == RECEIVE_INPUT } ?: 0
+
+    val IPipelineElement<*, *>.numSend: Int
+        get() = ticks[this]?.count { it.value == SEND_OUTPUT } ?: 0
+
+    val IPipelineElement<*, *>.hasFinished: Boolean
+        get() = ticks[this]?.any { it.value == FINISHED_PROCESSING } ?: false
+
+    val IPipelineElement<*, *>.hasClosed: Boolean
+        get() = ticks[this]?.any { it.value == FINISHED_CLOSING } ?: false
+
+    val IPipelineElement<*, *>.lastUpdateBefore: IDurationEx
+        get() = TimeEx() - (ticks[this]?.maxBy { it.key }?.key ?: 0.toTime())
+
+    val IPipelineElement<*, *>.isSubPipeline: Boolean
+        get() = this is IPipeline<*, *>
+
+    val IPipelineElement<*, *>.subWatchDog: IPipelineWatchDog?
+        get() = this as? IPipelineWatchDog
 }
 
 sealed class PipelineElementStage {
@@ -35,16 +62,19 @@ sealed class PipelineElementStage {
     object FINISHED_CLOSING : PipelineElementStage()
 }
 
-open class PipelineWatchDog(private val scope: CoroutineScope = DefaultCoroutineScope()) : IPipelineWatchDog {
+open class PipelineWatchDog(
+    private val scope: CoroutineScope = DefaultCoroutineScope(),
+    active: Boolean = false
+) : IPipelineWatchDog {
 
     private val tickChannel = Channel<Triple<IPipelineElement<*, *>, PipelineElementStage, ITimeEx>>()
-    private val ticks = HashMap<IPipelineElement<*, *>, HashMap<ITimeEx, PipelineElementStage>>()
+    override val ticks = HashMap<IPipelineElement<*, *>, HashMap<ITimeEx, PipelineElementStage>>()
 
     private var tickJob: Job? = null
     private var outputJob: Job? = null
     private val tickMutex = Mutex()
 
-    override var active by OnChanged(false) {
+    override var active by OnChanged(active) {
         tickJob?.cancel()
         if (it) tickJob = scope.launchEx {
             for ((element, stage, time) in tickChannel) {
@@ -55,30 +85,18 @@ open class PipelineWatchDog(private val scope: CoroutineScope = DefaultCoroutine
         }
     }
 
-    private val IPipelineElement<*, *>.numProcessed: Int
-        get() = ticks[this]?.count { it.value == PROCESSING } ?: 0
-
-    private val IPipelineElement<*, *>.numReceived: Int
-        get() = ticks[this]?.count { it.value == RECEIVE_INPUT } ?: 0
-
-    private val IPipelineElement<*, *>.numSend: Int
-        get() = ticks[this]?.count { it.value == SEND_OUTPUT } ?: 0
-
-    private val IPipelineElement<*, *>.hasFinished: Boolean
-        get() = ticks[this]?.any { it.value == FINISHED_PROCESSING } ?: false
-
-    private val IPipelineElement<*, *>.hasClosed: Boolean
-        get() = ticks[this]?.any { it.value == FINISHED_CLOSING } ?: false
-
-    private val IPipelineElement<*, *>.lastUpdateBefore: IDurationEx
-        get() = TimeEx() - (ticks[this]?.maxBy { it.key }?.key ?: 0.toTime())
-
     private var updateJob: Job? = null
     private suspend fun printStates(ongoing: Boolean = true): Unit = tickMutex.withLock {
-
+        printStatesInternal()
 
         if (ongoing)
             updateJob = launchEx(delayed = 1.seconds) { printStates() }
+    }
+
+    private fun printStatesInternal() {
+        println(ticks.entries.joinToString("\n") { (e, _) ->
+            "${e.id}: ${e.numReceived}/${e.numProcessed}/${e.numSend}-${e.hasFinished}/${e.hasClosed}"
+        })
     }
 
     override fun tick(

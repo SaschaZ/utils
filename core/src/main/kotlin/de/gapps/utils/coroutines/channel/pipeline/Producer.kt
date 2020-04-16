@@ -25,15 +25,16 @@ interface IProducer<out T : Any> : IPipelineElement<Any?, T> {
 open class Producer<out T : Any>(
     override var params: IProcessingParams = ProcessingParams(),
     private val outputChannel: Channel<IPipeValue<@UnsafeVariance T>> = Channel(params.channelCapacity),
+    identity: Identity = Id("Producer"),
     override val block: suspend IProducerScope<@UnsafeVariance T>.() -> Unit =
         { throw IllegalArgumentException("No producer block defined") }
-) : IProducer<T>, Identity by Id("Producer") {
+) : IProducer<T>, Identity by identity {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
 
     @Suppress("LeakingThis")
     private val producerScope
-        get() = ProducerScope<T>(pipeline, params.parallelIdx, params.type, { closeOutput() }) {
+        get() = ProducerScope<T>(params.parallelIdx, params.type, { closeOutput() }) {
             pipeline.tick(this@Producer, PipelineElementStage.SEND_OUTPUT)
             outputChannel.send(it)
             pipeline.tick(this@Producer, PipelineElementStage.PROCESSING)
@@ -59,7 +60,6 @@ interface IProducerScope<out T : Any> {
     var outIdx: Int
     val parallelIdx: Int
     val parallelType: ParallelProcessingType
-    val storage: IPipelineStorage
 
     suspend fun send(
         value: @UnsafeVariance T,
@@ -78,18 +78,16 @@ open class ProducerScope<out T : Any>(
     override var outIdx: Int,
     override val parallelIdx: Int = NO_PARALLEL_EXECUTION,
     override val parallelType: ParallelProcessingType = ParallelProcessingType.NONE,
-    override val storage: IPipelineStorage,
     private val closer: suspend IProducerScope<T>.() -> Unit,
     private val sender: suspend (rawValue: IPipeValue<T>) -> Unit
 ) : IProducerScope<T> {
 
     constructor(
-        storage: IPipelineStorage,
         parallelIdx: Int = NO_PARALLEL_EXECUTION,
         parallelType: ParallelProcessingType = ParallelProcessingType.NONE,
         closer: suspend IProducerScope<T>.() -> Unit,
         sender: suspend (rawValue: IPipeValue<T>) -> Unit
-    ) : this(NO_IDX, 0, parallelIdx, parallelType, storage, closer, sender)
+    ) : this(NO_IDX, 0, parallelIdx, parallelType, closer, sender)
 
     private val mutex: Mutex = Mutex()
 

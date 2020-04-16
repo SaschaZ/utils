@@ -15,8 +15,9 @@ open class ParallelProcessor<out I : Any, out O : Any>(
     params: IProcessingParams,
     inOutRelation: ProcessorValueRelation = ProcessorValueRelation.Unspecified,
     override var outputChannel: Channel<out IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
+    identity: Identity = Id("ParallelProcessor"),
     processorFactory: (idx: Int) -> IProcessor<I, O> = { throw IllegalArgumentException("No processor factory defined") }
-) : Processor<I, O>(params, inOutRelation, outputChannel),
+) : Processor<I, O>(params, inOutRelation, outputChannel, identity),
     IParallelProcessedValueMerger<O> by ParallelProcessValueMerger(params) {
 
     private val processors = params.parallelIndices.map { processorFactory(it).withParallelIdx(it) }

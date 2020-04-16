@@ -16,7 +16,7 @@ class ConsumerTest {
     fun testConsumer() = runBlocking {
         val consumerResult = ArrayList<Int>()
         var finished = false
-        (object : Consumer<Int>(ProcessingParams(), { consumerResult.add(it) }) {
+        (object : Consumer<Int>(ProcessingParams(), block = { consumerResult.add(it) }) {
             override suspend fun IConsumerScope<Int>.onConsumingFinished() {
                 finished = true
             }

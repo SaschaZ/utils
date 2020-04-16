@@ -35,7 +35,7 @@ open class Processor<out I : Any, out O : Any>(
 
     @Suppress("LeakingThis", "UNCHECKED_CAST")
     private fun producerScope(inIdx: Int) =
-        ProducerScope<O>(inIdx, outIdx++, params.parallelIdx, params.type, pipeline, { closeOutput() }) {
+        ProducerScope<O>(inIdx, outIdx++, params.parallelIdx, params.type, { closeOutput() }) {
             pipeline.tick(this@Processor, PipelineElementStage.SEND_OUTPUT)
             (outputChannel as SendChannel<IPipeValue<O>>).send(it)
         }
