@@ -1,6 +1,8 @@
 name: Android CI
 
 on:
+  label:
+    branches: [master]
   release:
     branches: [master]
 #  push:
