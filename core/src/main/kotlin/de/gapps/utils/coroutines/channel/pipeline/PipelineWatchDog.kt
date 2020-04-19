@@ -22,35 +22,35 @@ import kotlinx.coroutines.sync.withLock
 
 interface IPipelineWatchDog {
 
-    var active: Boolean
-    val ticks: Map<IPipelineElement<*, *>, Map<ITimeEx, PipelineElementStage>>
-    fun tick(element: IPipelineElement<*, *>, stage: PipelineElementStage, time: ITimeEx = TimeEx())
+    var watchDogActive: Boolean
+    val ticks: Map<IProcessingUnit<*, *>, Map<ITimeEx, PipelineElementStage>>
+    fun tick(element: IProcessingUnit<*, *>, stage: PipelineElementStage, time: ITimeEx = TimeEx())
 
-    val Map<IPipelineElement<*, *>, Map<ITimeEx, PipelineElementStage>>.numPipeElements: Int
+    val Map<IProcessingUnit<*, *>, Map<ITimeEx, PipelineElementStage>>.numPipeElements: Int
         get() = size + entries.sumBy { (it.key as? IPipelineWatchDog)?.ticks?.numPipeElements ?: 0 }
 
-    val IPipelineElement<*, *>.numProcessed: Int
+    val IProcessingUnit<*, *>.numProcessed: Int
         get() = ticks[this]?.count { it.value == PROCESSING } ?: 0
 
-    val IPipelineElement<*, *>.numReceived: Int
+    val IProcessingUnit<*, *>.numReceived: Int
         get() = ticks[this]?.count { it.value == RECEIVE_INPUT } ?: 0
 
-    val IPipelineElement<*, *>.numSend: Int
+    val IProcessingUnit<*, *>.numSend: Int
         get() = ticks[this]?.count { it.value == SEND_OUTPUT } ?: 0
 
-    val IPipelineElement<*, *>.hasFinished: Boolean
+    val IProcessingUnit<*, *>.hasFinished: Boolean
         get() = ticks[this]?.any { it.value == FINISHED_PROCESSING } ?: false
 
-    val IPipelineElement<*, *>.hasClosed: Boolean
+    val IProcessingUnit<*, *>.hasClosed: Boolean
         get() = ticks[this]?.any { it.value == FINISHED_CLOSING } ?: false
 
-    val IPipelineElement<*, *>.lastUpdateBefore: IDurationEx
+    val IProcessingUnit<*, *>.lastUpdateBefore: IDurationEx
         get() = TimeEx() - (ticks[this]?.maxBy { it.key }?.key ?: 0.toTime())
 
-    val IPipelineElement<*, *>.isSubPipeline: Boolean
+    val IProcessingUnit<*, *>.isSubPipeline: Boolean
         get() = this is IPipeline<*, *>
 
-    val IPipelineElement<*, *>.subWatchDog: IPipelineWatchDog?
+    val IProcessingUnit<*, *>.subWatchDog: IPipelineWatchDog?
         get() = this as? IPipelineWatchDog
 }
 
@@ -67,16 +67,22 @@ open class PipelineWatchDog(
     active: Boolean = false
 ) : IPipelineWatchDog {
 
-    private val tickChannel = Channel<Triple<IPipelineElement<*, *>, PipelineElementStage, ITimeEx>>()
-    override val ticks = HashMap<IPipelineElement<*, *>, HashMap<ITimeEx, PipelineElementStage>>()
+    private val tickChannel = Channel<Triple<IProcessingUnit<*, *>, PipelineElementStage, ITimeEx>>()
+    override val ticks = HashMap<IProcessingUnit<*, *>, HashMap<ITimeEx, PipelineElementStage>>()
 
     private var tickJob: Job? = null
     private var outputJob: Job? = null
     private val tickMutex = Mutex()
 
-    override var active by OnChanged(active) {
-        tickJob?.cancel()
-        if (it) tickJob = scope.launchEx {
+    override var watchDogActive by OnChanged(active, notifyForExisting = true) {
+        outputJob?.cancel()
+        if (it) outputJob = scope.launchEx(interval = 1.seconds, mutex = tickMutex) {
+            printStates()
+        }
+    }
+
+    init {
+        tickJob = scope.launchEx {
             for ((element, stage, time) in tickChannel) {
                 tickMutex.withLock {
                     ticks.getOrPut(element) { HashMap() }.put(time, stage)
@@ -85,22 +91,14 @@ open class PipelineWatchDog(
         }
     }
 
-    private var updateJob: Job? = null
-    private suspend fun printStates(ongoing: Boolean = true): Unit = tickMutex.withLock {
-        printStatesInternal()
-
-        if (ongoing)
-            updateJob = launchEx(delayed = 1.seconds) { printStates() }
-    }
-
-    private fun printStatesInternal() {
-        println(ticks.entries.joinToString("\n") { (e, _) ->
+    private fun printStates() {
+        println("#${ticks.entries.joinToString("\n") { (e, _) ->
             "${e.id}: ${e.numReceived}/${e.numProcessed}/${e.numSend}-${e.hasFinished}/${e.hasClosed}"
-        })
+        }}")
     }
 
     override fun tick(
-        element: IPipelineElement<*, *>,
+        element: IProcessingUnit<*, *>,
         stage: PipelineElementStage,
         time: ITimeEx
     ) = scope.launchEx { tickChannel.send(element to stage to time) }.asUnit()

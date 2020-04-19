@@ -1,77 +1,94 @@
+@file:Suppress("FunctionName")
+
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.time.ITimeEx
+import de.gapps.utils.coroutines.builder.launchEx
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.launch
+import kotlin.reflect.KClass
 
-interface IProcessor<out I : Any, out O : Any> : IPipelineElement<I, O> {
+inline fun <reified I : Any, reified O : Any> processor(
+    params: IProcessingParams = ProcessingParams(),
+    outputChannel: Channel<IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
+    identity: Identity = Id("Processor"),
+    noinline block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit
+): IProcessingUnit<I, O> = Processor(params, outputChannel, identity, I::class, O::class, block)
 
-    val inOutRelation: ProcessorValueRelation
-    var outputChannel: Channel<out IPipeValue<@UnsafeVariance O>>
-
-    override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.pipe(): ReceiveChannel<IPipeValue<O>> = process()
-
-    fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IPipeValue<O>>
-
-    val block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit
-
-    suspend fun IProducerScope<@UnsafeVariance O>.onProcessingFinished() = Unit
-}
+inline fun <reified I : Any, reified O : Any> IParamsHolder.processor(
+    outputChannel: Channel<IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
+    identity: Identity = Id("Processor"),
+    noinline block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit
+): IProcessingUnit<I, O> = Processor(params, outputChannel, identity, I::class, O::class, block)
 
 open class Processor<out I : Any, out O : Any>(
     override var params: IProcessingParams = ProcessingParams(),
-    override val inOutRelation: ProcessorValueRelation = ProcessorValueRelation.Unspecified,
-    override var outputChannel: Channel<out IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
+    override var outputChannel: Channel<IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
     identity: Identity = Id("Processor"),
-    override val block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit =
-        { throw IllegalArgumentException("No processor block defined") }
-) : IProcessor<I, O>, Identity by identity {
+    inputType: KClass<out I>,
+    outputType: KClass<out O>,
+    open val block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit
+) : AbsProcessingUnit<I, O>(inputType, outputType),
+    Identity by identity {
 
-    override var pipeline: IPipeline<*, *> = DummyPipeline()
+    override suspend fun IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.processSingle(value: @UnsafeVariance I) =
+        block(value)
+}
 
-    private var outIdx = 0
+inline fun <reified I : Any, reified O : Any> listProcessor(
+    params: IProcessingParams = ProcessingParams(),
+    outputChannel: Channel<IPipeValue<List<@UnsafeVariance O>>> = Channel(params.channelCapacity),
+    identity: Identity = Id("ListProcessor"),
+    noinline block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit
+): IProcessingUnit<List<I>, List<O>> = ListProcessor(
+    params, outputChannel, identity,
+    listOf<I>()::class, listOf<O>()::class, block
+)
 
-    @Suppress("LeakingThis", "UNCHECKED_CAST")
-    private fun producerScope(inIdx: Int) =
-        ProducerScope<O>(inIdx, outIdx++, params.parallelIdx, params.type, { closeOutput() }) {
-            pipeline.tick(this@Processor, PipelineElementStage.SEND_OUTPUT)
-            (outputChannel as SendChannel<IPipeValue<O>>).send(it)
-        }
+inline fun <reified I : Any, reified O : Any> IParamsHolder.listProcessor(
+    outputChannel: Channel<IPipeValue<List<@UnsafeVariance O>>> = Channel(params.channelCapacity),
+    identity: Identity = Id("ListProcessor"),
+    noinline block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit
+): IProcessingUnit<List<I>, List<O>> = ListProcessor(
+    params, outputChannel, identity,
+    listOf<I>()::class, listOf<O>()::class, block
+)
 
-    private fun processingScope(rawValue: IPipeValue<I>) = ProcessingScope(rawValue, producerScope(rawValue.outIdx))
+open class ListProcessor<out I : Any, out O : Any>(
+    params: IProcessingParams = ProcessingParams(),
+    outputChannel: Channel<IPipeValue<List<@UnsafeVariance O>>> = Channel(params.channelCapacity),
+    identity: Identity = Id("ListProcessor"),
+    inputType: KClass<out List<I>>,
+    outputType: KClass<out List<O>>,
+    private val block2: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit
+) : Processor<List<I>, List<O>>(
+    params, outputChannel, identity, inputType, outputType, {}
+) {
 
-    override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IPipeValue<@UnsafeVariance O>> =
-        scope.launch {
-            var prevValue: IPipeValue<I>? = null
-            pipeline.tick(this@Processor, PipelineElementStage.RECEIVE_INPUT)
-            for (value in this@process) {
-                pipeline.tick(this@Processor, PipelineElementStage.PROCESSING)
-                processingScope(value).block(value.value)
-                prevValue = value
-                pipeline.tick(this@Processor, PipelineElementStage.RECEIVE_INPUT)
+    override fun ReceiveChannel<IPipeValue<List<@UnsafeVariance I>>>.process(): ReceiveChannel<IPipeValue<List<O>>> =
+        outputChannel.also { output ->
+            scope.launchEx {
+                for (value in this@process) {
+                    val result = ArrayList<O>()
+                    value.value.forEach { v ->
+                        ProcessingScope<I, O>(
+                            PipeValue(v, value.time, value.outIdx, outIdx, value.parallelIdx, value.parallelType),
+                            ProducerScope(value.parallelIdx, value.outIdx, outIdx, value.parallelType, params,
+                                { close() }, { r -> result.add(r.value) })
+                        ).block2(v)
+                    }
+                    output.send(
+                        PipeValue(
+                            result,
+                            value.time,
+                            value.outIdx,
+                            outIdx++,
+                            value.parallelIdx,
+                            value.parallelType
+                        )
+                    )
+                }
+                output.close()
             }
-            prevValue?.let { pv -> processingScope(pv).closeOutput() }
-        }.let { outputChannel }
-
-    private suspend fun IProducerScope<O>.closeOutput() {
-        Log.v("processing finished params=$params")
-        pipeline.tick(this@Processor, PipelineElementStage.FINISHED_PROCESSING)
-        onProcessingFinished()
-        outputChannel.close()
-        pipeline.tick(this@Processor, PipelineElementStage.FINISHED_CLOSING)
-    }
+        }
 }
 
-interface IProcessingScope<out I : Any, out O : Any> : IConsumerScope<I>, IProducerScope<O>
-
-@Suppress("LeakingThis")
-open class ProcessingScope<out I : Any, out O : Any>(
-    override val rawValue: IPipeValue<I>,
-    producerScope: ProducerScope<O>
-) : IProcessingScope<I, O>, IProducerScope<O> by producerScope {
-
-    override val value: I = rawValue.value
-    override val time: ITimeEx = rawValue.time
-}

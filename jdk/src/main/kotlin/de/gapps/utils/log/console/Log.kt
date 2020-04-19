@@ -26,7 +26,7 @@ object LogColored : LogElement {
         with(TermColors()) {
             println(
                 when (level) {
-                    LogLevel.VERBOSE -> brightWhite(msg)
+                    LogLevel.VERBOSE -> brightGreen(msg)
                     LogLevel.DEBUG -> brightBlue(msg)
                     LogLevel.INFO -> brightCyan(msg)
                     LogLevel.WARNING -> brightYellow(msg)

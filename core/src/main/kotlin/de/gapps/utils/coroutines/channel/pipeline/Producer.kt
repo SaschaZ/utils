@@ -1,102 +1,57 @@
+@file:Suppress("FunctionName")
+
 package de.gapps.utils.coroutines.channel.pipeline
 
-import de.gapps.utils.coroutines.channel.pipeline.IPipeValue.Companion.NO_IDX
-import de.gapps.utils.coroutines.channel.pipeline.IPipeValue.Companion.NO_PARALLEL_EXECUTION
-import de.gapps.utils.log.Log
-import de.gapps.utils.time.ITimeEx
-import de.gapps.utils.time.TimeEx
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlin.reflect.KClass
 
-interface IProducer<out T : Any> : IPipelineElement<Any?, T> {
+interface IProducer<out T : Any> : IProcessingUnit<Any, T> {
 
-    override fun ReceiveChannel<IPipeValue<Any?>>.pipe(): ReceiveChannel<IPipeValue<T>> = produce()
+    override fun ReceiveChannel<IPipeValue<Any>>.process(): ReceiveChannel<IPipeValue<T>> = produce()
+    override suspend fun IProcessingScope<Any, @UnsafeVariance T>.processSingle(value: Any) = Unit
 
     fun produce(): ReceiveChannel<IPipeValue<@UnsafeVariance T>>
 
-    suspend fun IProducerScope<@UnsafeVariance T>.onProducingFinished() = Unit
+    override suspend fun IProducerScope<@UnsafeVariance T>.onProcessingFinished() = onProducingFinished()
 
-    val block: suspend IProducerScope<@UnsafeVariance T>.() -> Unit
+    suspend fun IProducerScope<@UnsafeVariance T>.onProducingFinished() = Unit
+}
+
+inline fun <reified T : Any> producer(
+    params: IProcessingParams = ProcessingParams(),
+    outputChannel: Channel<IPipeValue<@UnsafeVariance T>> = Channel(params.channelCapacity),
+    identity: Identity = Id("Producer"),
+    noinline block: suspend IProducerScope<@UnsafeVariance T>.() -> Unit =
+        { throw IllegalArgumentException("No producer block defined") }
+): IProducer<T> = Producer(params, outputChannel, identity, T::class, block)
+
+inline fun <reified T : Any> IParamsHolder.producer(
+    outputChannel: Channel<IPipeValue<@UnsafeVariance T>> = Channel(params.channelCapacity),
+    identity: Identity = Id("Producer"),
+    noinline block: suspend IProducerScope<@UnsafeVariance T>.() -> Unit =
+        { throw IllegalArgumentException("No producer block defined") }
+): IProducer<T> = Producer(params, outputChannel, identity, T::class, block)
+
+inline fun <reified T : Any, reified R : Any> checkGenerics(block: () -> R): R {
+    if (T::class.typeParameters.isNotEmpty())
+        throw IllegalArgumentException("Generics can not have generics itself: ${T::class}")
+    return block()
 }
 
 open class Producer<out T : Any>(
     override var params: IProcessingParams = ProcessingParams(),
-    private val outputChannel: Channel<IPipeValue<@UnsafeVariance T>> = Channel(params.channelCapacity),
+    override val outputChannel: Channel<IPipeValue<@UnsafeVariance T>> = Channel(params.channelCapacity),
     identity: Identity = Id("Producer"),
-    override val block: suspend IProducerScope<@UnsafeVariance T>.() -> Unit =
+    outputType: KClass<T>,
+    val produce: suspend IProducerScope<@UnsafeVariance T>.() -> Unit =
         { throw IllegalArgumentException("No producer block defined") }
-) : IProducer<T>, Identity by identity {
-
-    override var pipeline: IPipeline<*, *> = DummyPipeline()
-
-    @Suppress("LeakingThis")
-    private val producerScope
-        get() = ProducerScope<T>(params.parallelIdx, params.type, { closeOutput() }) {
-            pipeline.tick(this@Producer, PipelineElementStage.SEND_OUTPUT)
-            outputChannel.send(it)
-            pipeline.tick(this@Producer, PipelineElementStage.PROCESSING)
-        }
+) : AbsProcessingUnit<Any, T>(Any::class, outputType), IProducer<T>, Identity by identity {
 
     override fun produce(): ReceiveChannel<IPipeValue<T>> = scope.launch {
         pipeline.tick(this@Producer, PipelineElementStage.PROCESSING)
-        producerScope.block()
+        producerScope().produce()
     }.let { outputChannel }
-
-    private suspend fun IProducerScope<T>.closeOutput() {
-        Log.v("producing finished")
-        pipeline.tick(this@Producer, PipelineElementStage.FINISHED_PROCESSING)
-        onProducingFinished()
-        outputChannel.close()
-        pipeline.tick(this@Producer, PipelineElementStage.FINISHED_CLOSING)
-    }
 }
 
-interface IProducerScope<out T : Any> {
-
-    val inIdx: Int
-    var outIdx: Int
-    val parallelIdx: Int
-    val parallelType: ParallelProcessingType
-
-    suspend fun send(
-        value: @UnsafeVariance T,
-        time: ITimeEx = TimeEx(),
-        outIdx: Int = this.outIdx++,
-        parallelIdx: Int = NO_PARALLEL_EXECUTION
-    ) = send(PipeValue(value, time, inIdx, outIdx, parallelIdx))
-
-    suspend fun send(rawValue: IPipeValue<@UnsafeVariance T>): IPipeValue<@UnsafeVariance T>
-
-    suspend fun close()
-}
-
-open class ProducerScope<out T : Any>(
-    override val inIdx: Int,
-    override var outIdx: Int,
-    override val parallelIdx: Int = NO_PARALLEL_EXECUTION,
-    override val parallelType: ParallelProcessingType = ParallelProcessingType.NONE,
-    private val closer: suspend IProducerScope<T>.() -> Unit,
-    private val sender: suspend (rawValue: IPipeValue<T>) -> Unit
-) : IProducerScope<T> {
-
-    constructor(
-        parallelIdx: Int = NO_PARALLEL_EXECUTION,
-        parallelType: ParallelProcessingType = ParallelProcessingType.NONE,
-        closer: suspend IProducerScope<T>.() -> Unit,
-        sender: suspend (rawValue: IPipeValue<T>) -> Unit
-    ) : this(NO_IDX, 0, parallelIdx, parallelType, closer, sender)
-
-    private val mutex: Mutex = Mutex()
-
-    override suspend fun send(
-        rawValue: IPipeValue<@UnsafeVariance T>
-    ) = mutex.withLock { rawValue.withParallelIdx(parallelIdx, parallelType).apply { sender(this) } }
-
-    override suspend fun close() {
-        Log.v("producing finished")
-        closer()
-    }
-}

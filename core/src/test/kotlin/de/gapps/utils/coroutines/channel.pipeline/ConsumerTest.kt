@@ -5,9 +5,11 @@ import de.gapps.utils.misc.asUnit
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 
-class ConsumerTest {
+class ConsumerTest : IParamsHolder {
 
-    private val testProducer = Producer<Int> {
+    override val params: IProcessingParams = ProcessingParams()
+
+    private val testProducer = producer<Int> {
         repeat(5) { send(it) }
         close()
     }
@@ -16,7 +18,7 @@ class ConsumerTest {
     fun testConsumer() = runBlocking {
         val consumerResult = ArrayList<Int>()
         var finished = false
-        (object : Consumer<Int>(ProcessingParams(), block = { consumerResult.add(it) }) {
+        (object : Consumer<Int>(block = { consumerResult.add(it) }, inputType = Int::class) {
             override suspend fun IConsumerScope<Int>.onConsumingFinished() {
                 finished = true
             }
