@@ -77,14 +77,7 @@ open class ListProcessor<out I : Any, out O : Any>(
                         ).block2(v)
                     }
                     output.send(
-                        PipeValue(
-                            result,
-                            value.time,
-                            value.outIdx,
-                            outIdx++,
-                            value.parallelIdx,
-                            value.parallelType
-                        )
+                        PipeValue(result, value.time, value.outIdx, outIdx++, value.parallelIdx, value.parallelType)
                     )
                 }
                 output.close()

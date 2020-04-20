@@ -2,6 +2,7 @@ package de.gapps.utils.coroutines.channel.pipeline
 
 import de.gapps.utils.coroutines.builder.launchEx
 import de.gapps.utils.coroutines.channel.pipeline.PipelineElementStage.*
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlin.reflect.KClass
@@ -40,25 +41,60 @@ inline fun <reified I : Any> consumer(
     identity: Identity = Id("Consumer"),
     noinline block: suspend IConsumerScope<@UnsafeVariance I>.(value: @UnsafeVariance I) -> Unit =
         { throw IllegalArgumentException("No consumer block defined") }
-): Consumer<I> = checkGenerics<I, Consumer<I>> { Consumer(params, identity, I::class, block) }
+): IConsumer<I> = Consumer(params, identity, I::class, block)
 
 inline fun <reified I : Any> IParamsHolder.consumer(
     identity: Identity = Id("Consumer"),
     noinline block: suspend IConsumerScope<@UnsafeVariance I>.(value: @UnsafeVariance I) -> Unit =
         { throw IllegalArgumentException("No consumer block defined") }
-): Consumer<I> = checkGenerics<I, Consumer<I>> { Consumer(params, identity, I::class, block) }
+): IConsumer<I> = Consumer(params, identity, I::class, block)
 
 open class Consumer<out I : Any>(
     override var params: IProcessingParams = ProcessingParams(),
     identity: Identity = Id("Consumer"),
-    inputType: KClass<I>,
+    inputType: KClass<out I>,
     private val block: suspend IConsumerScope<@UnsafeVariance I>.(value: @UnsafeVariance I) -> Unit =
         { throw IllegalArgumentException("No consumer block defined") }
 ) : AbsProcessingUnit<I, Any>(inputType, Any::class), IConsumer<I>, Identity by identity {
 
     override var pipeline: IPipeline<*, *> = DummyPipeline()
-    override val outputChannel: Channel<out IPipeValue<Any>> = Channel()
+    override val outputChannel: Channel<out IPipeValue<Any>>
+        get() = throw IllegalStateException("Consumer do not have an output channel.")
 
     override suspend fun IConsumerScope<@UnsafeVariance I>.consumeSingle(value: @UnsafeVariance I) = block(value)
+}
+
+inline fun <reified I : Any> listConsumer(
+    params: IProcessingParams = ProcessingParams(),
+    identity: Identity = Id("Consumer"),
+    noinline block: suspend IConsumerScope<@UnsafeVariance I>.(value: @UnsafeVariance I) -> Unit =
+        { throw IllegalArgumentException("No consumer block defined") }
+): IConsumer<List<I>> = ListConsumer(params, identity, listOf<I>()::class, block)
+
+inline fun <reified I : Any> IParamsHolder.listConsumer(
+    identity: Identity = Id("Consumer"),
+    noinline block: suspend IConsumerScope<@UnsafeVariance I>.(value: @UnsafeVariance I) -> Unit =
+        { throw IllegalArgumentException("No consumer block defined") }
+): IConsumer<List<I>> = ListConsumer(params, identity, listOf<I>()::class, block)
+
+
+open class ListConsumer<out I : Any>(
+    params: IProcessingParams = ProcessingParams(),
+    identity: Identity = Id("Consumer"),
+    inputType: KClass<out List<@UnsafeVariance I>>,
+    private val block2: suspend IConsumerScope<@UnsafeVariance I>.(value: @UnsafeVariance I) -> Unit =
+        { throw IllegalArgumentException("No consumer block defined") }
+) : Consumer<List<I>>(params, identity, inputType) {
+
+    override fun ReceiveChannel<IPipeValue<List<@UnsafeVariance I>>>.consume(): Job = scope.launchEx {
+        var outIdx = 0
+        for (value in this@consume) {
+            value.value.forEach { v ->
+                ConsumerScope(
+                    PipeValue(v, value.time, value.outIdx, outIdx++, value.parallelIdx, value.parallelType), params
+                ).block2(v)
+            }
+        }
+    }
 }
 

@@ -1,7 +1,7 @@
 package de.gapps.utils
 
 object Versions {
-    const val kotlin = "1.3.71"
+    const val kotlin = "1.3.72"
     const val kotest = "3.4.2"
     const val kotlinSerialization = "0.20.0"
 

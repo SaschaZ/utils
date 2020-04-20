@@ -54,4 +54,3 @@ open class Producer<out T : Any>(
         producerScope().produce()
     }.let { outputChannel }
 }
-
