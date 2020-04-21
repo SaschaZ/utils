@@ -149,10 +149,10 @@ class MachineExTest {
     @Test
     fun testPrev() = runTest {
         MachineEx(INITIAL) {
-            +FIRST + INITIAL set A
+            +FIRST + INITIAL[0] set A
             +SECOND + A + INITIAL[1] set B
             +THIRD + B + A[1] + INITIAL[2] set C
-            +FOURTH + C + B[1] + A[2] + INITIAL[3] set D
+            +FOURTH + C[0] + B[1] + A[2] + INITIAL[3] set D
             +FIFTH + D + C[1] + B[2] + A[3] + INITIAL[3] set E
         }.run {
             state() assert INITIAL

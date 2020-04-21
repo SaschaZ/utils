@@ -36,7 +36,6 @@ abstract class ProcessorBaseTest(
         params = ProcessingParams(
             type,
             channelCapacity,
-            scope,
             numParallel
         )
         testProducer = producer<Int> {
@@ -78,9 +77,9 @@ abstract class ProcessorBaseTest(
 }
 
 inline fun <reified I : Any, reified O : Any> Collection<IProcessingUnit<I, O>>.inParallel(params: IProcessingParams = ProcessingParams()) =
-    ParallelProcessor(params, inputType = I::class, outputType = O::class) { toList()[it] }
+    ParallelProcessor(params) { toList()[it] }
 
 inline fun <reified I : Any, reified O : Any> parallelWith(
     params: IProcessingParams = ProcessingParams(),
     crossinline factory: (Int) -> IProcessingUnit<I, O>
-) = ParallelProcessor(params, inputType = I::class, outputType = O::class) { factory(it) }
+) = ParallelProcessor(params) { factory(it) }

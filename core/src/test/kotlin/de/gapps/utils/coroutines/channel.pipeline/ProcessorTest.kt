@@ -22,7 +22,7 @@ class ProcessorTest : IParamsHolder {
         var finished = false
         val processorResult = object : Processor<Int, Int>(params, block = {
             send(it)
-        }, inputType = Int::class, outputType = Int::class, identity = NoId, outputChannel = Channel()) {
+        }, identity = NoId, outputChannel = Channel()) {
             override suspend fun IProducerScope<Int>.onProcessingFinished() {
                 finished = true
             }

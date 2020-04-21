@@ -214,6 +214,10 @@ open class MachineEx(
 
     init {
         MachineEx.debugLevel = debugLevel
+        applyNewState(initialState.combo, initialState.combo, object : IEvent {
+            override val noLogging: Boolean
+                get() = false
+        }.combo)
         scope.launchEx {
             this@MachineEx.builder()
             for (event in eventChannel) event.processEvent()
@@ -236,7 +240,7 @@ open class MachineEx(
         event: IComboElement
     ) = newState?.let {
         state = newState
-        previousChanges.add(
+        previousChanges.add(0,
             OnStateChanged(event, stateBefore, newState).apply {
                 stateBefore.state?.run { activeStateChanged(false) }
                 event.event?.run { fired() }
@@ -244,7 +248,7 @@ open class MachineEx(
             }
         )
         if (previousChanges.size > previousChangesCacheSize)
-            previousChanges.remove(previousChanges.first())
+            previousChanges.remove(previousChanges.last())
     }
 
     override suspend fun suspendUtilProcessingFinished() {

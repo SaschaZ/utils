@@ -18,7 +18,7 @@ class ConsumerTest : IParamsHolder {
     fun testConsumer() = runBlocking {
         val consumerResult = ArrayList<Int>()
         var finished = false
-        (object : Consumer<Int>(block = { consumerResult.add(it) }, inputType = Int::class) {
+        (object : Consumer<Int>(block = { consumerResult.add(it) }) {
             override suspend fun IConsumerScope<Int>.onConsumingFinished() {
                 finished = true
             }

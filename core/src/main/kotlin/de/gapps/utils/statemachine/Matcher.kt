@@ -37,7 +37,7 @@ object Matcher {
     ): IComboElement? {
         Log.v(
             "findStateForEvent()\n\tevent=$event;\n\tstate=$state;\n\t" +
-                    "previousChanges=${previousChanges.toList().takeLast(3).joinToStringTabbed(2)}",
+                    "previousChanges=${previousChanges.toList().take(3).joinToStringTabbed(2)}",
             logFilter = GENERIC(
                 disableLog = event.disableLogging || MachineEx.debugLevel <= INFO
             )

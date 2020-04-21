@@ -378,8 +378,9 @@ sealed class ConditionElement : IConditionElement {
 
             /**
              * External condition.
+             * Is checked at runtime. All External's need to match within a condition.
              */
-            open class External internal constructor(override val condition: suspend MatchScope.() -> Boolean) :
+            open class External(override val condition: suspend MatchScope.() -> Boolean) :
                 Single(), IExternal {
                 override fun toString(): String = "External"
             }

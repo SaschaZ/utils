@@ -17,6 +17,8 @@ interface ITimeEx : IMillisecondHolderComparator, ITimeZoneHolder, StringConvert
      */
     fun get(field: Int) = calendar.get(field)
 
+    val year: Int
+        get() = get(Calendar.YEAR)
     val month: Int
         get() = get(Calendar.MONTH)
     val dayOfMonth: Int

@@ -9,6 +9,7 @@ import de.gapps.utils.statemachine.IConditionElement.IConditionElementGroup.Matc
 import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle
 import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
 import de.gapps.utils.statemachine.IConditionElement.IMaster.ISingle.IState
+import kotlin.math.max
 
 
 abstract class MachineDsl : IMachineEx {
@@ -60,21 +61,32 @@ abstract class MachineDsl : IMachineEx {
         override val range: IntRange
     ) : IPrevElement {
         override val idx: Int
-            get() = range.last
+            get() = max(range.first, range.last)
     }
 
     operator fun Condition.plus(other: IPrevElement): Condition {
         this + {
             when {
-                other.range.last > 0 -> other.range.any { idx ->
-                    previousChanges.getOrNull(previousChanges.size - idx)?.let {
+                other.range == X -> previousChanges.any {
+                    InputElement(it.event, it.stateBefore).match(other.combo, previousChanges)
+                }
+                other.idx == 0 -> previousChanges.getOrNull(0)?.let {
+                    InputElement(it.event, it.stateAfter).match(other.combo, previousChanges)
+                } ?: false
+                other.range.run { endInclusive - start } > 0 -> other.range.any { idx ->
+                    when (idx) {
+                        0 -> previousChanges.getOrNull(0)?.let {
+                            InputElement(it.event, it.stateAfter).match(other.combo, previousChanges)
+                        } ?: false
+                        else -> previousChanges.getOrNull(idx - 1)?.let {
+                            InputElement(it.event, it.stateBefore).match(other.combo, previousChanges)
+                        } ?: false
+                    }
+                }
+                else -> other.idx.let { idx ->
+                    previousChanges.getOrNull(idx - 1)?.let {
                         InputElement(it.event, it.stateBefore).match(other.combo, previousChanges)
                     } ?: false
-                }
-                else -> other.range.all { idx ->
-                    previousChanges.getOrNull(previousChanges.size - idx)?.let {
-                        InputElement(it.event, it.stateBefore).match(other.combo, previousChanges)
-                    } ?: true
                 }
             }
         }
@@ -84,7 +96,7 @@ abstract class MachineDsl : IMachineEx {
     operator fun Condition.minus(other: IPrevElement): Condition {
         this + {
             other.range.none { idx ->
-                previousChanges.getOrNull(previousChanges.size - idx)?.let {
+                previousChanges.getOrNull(idx)?.let {
                     InputElement(it.event, it.stateBefore).match(other.combo, previousChanges)
                 } ?: false
             }
@@ -95,22 +107,36 @@ abstract class MachineDsl : IMachineEx {
     /**
      * Use the [Int] operator to match against one of the previous items. For example [State][3] will not try to match
      * against the current state, it will try to match against the third last [IState] instead.
-     * This works for all [ConditionElement]s.
      */
     operator fun IMaster.get(idx: Int): IPrevElement = combo[idx]
     operator fun IMaster.get(range: IntRange): IPrevElement = combo[range]
     operator fun IComboElement.get(idx: Int): IPrevElement = this[idx..idx]
     operator fun IComboElement.get(range: IntRange): IPrevElement = PrevElement(this, range)
 
+    /**
+     *
+     */
     @Suppress("EmptyRange", "PropertyName")
     val X: IntRange = 0..-1
 
-    // Same as += but with more proper name
+    /**
+     *
+     */
     suspend infix fun Condition.set(state: IState) = execAndSet { state }
+
+    /**
+     *
+     */
     suspend infix fun Condition.set(state: IComboElement) = execAndSet { state }
 
+    /**
+     *
+     */
     suspend infix fun Condition.exec(block: suspend ExecutorScope.() -> Unit) = execAndSet { block(); null }
 
+    /**
+     *
+     */
     suspend infix fun <T : IActionResult> Condition.execAndSet(block: suspend ExecutorScope.() -> T?) {
         mapper.addCondition(this) {
             when (val result = block()) {

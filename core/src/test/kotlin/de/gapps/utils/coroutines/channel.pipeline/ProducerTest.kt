@@ -13,7 +13,7 @@ class ProducerTest {
     @Test
     fun testProducer() = runBlocking {
         var finished = false
-        val producer = object : Producer<Int>(ProcessingParams(), outputType = Int::class, produce = {
+        val producer = object : Producer<Int>(ProcessingParams(), produce = {
             repeat(5) { send(it) }
             close()
         }) {
