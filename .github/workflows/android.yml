@@ -23,6 +23,8 @@ jobs:
         java-version: 1.8
     - name: Build with Gradle
       run: ./gradlew test publishToMavenLocal
+    - name: Codecov
+      uses: codecov/codecov-action@v1.0.6
     - name: Upload artifact
       uses: actions/upload-artifact@v1.0.0
       with:
