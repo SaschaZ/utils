@@ -242,10 +242,8 @@ interface IConditionElement {
             return when (other) {
                 is IInputElement -> {
                     val filtered = elements.filter {
-                        it.hasEvent && other.event.hasEvent
-                                || it.hasState && other.state.hasState
-                                || it.hasEventGroup && other.event.hasEventGroup
-                                || it.hasStateGroup && other.state.hasStateGroup
+                        (it.hasEvent || it.hasEventGroup) && (other.event.hasEvent || other.event.hasEventGroup)
+                                || (it.hasState || it.hasStateGroup) && (other.state.hasState || other.state.hasStateGroup)
                                 || it.hasExternal && matchType == ALL
                     }
                     filtered.isEmpty() || when (matchType) {

@@ -8,35 +8,34 @@ import de.gapps.utils.coroutines.channel.pipeline.ParallelProcessingType.*
 import de.gapps.utils.misc.runEach
 import de.gapps.utils.misc.runEachIndexed
 import kotlinx.coroutines.channels.Channel
-import kotlin.reflect.KClass
 
-inline fun <reified I : Any, reified O : Any> parallel(
+fun <I : Any, O : Any> parallelUnits(
     params: IProcessingParams = ProcessingParams(),
     outputChannel: Channel<IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
     identity: Identity = Id("ParallelProcessor"),
-    noinline factory: (idx: Int) -> IProcessingUnit<I, O>
-): ParallelProcessor<I, O> = ParallelProcessor(params, outputChannel, identity, I::class, O::class, factory)
+    factory: (idx: Int) -> IProcessingUnit<I, O>
+): ParallelProcessor<I, O> = ParallelProcessor(params, outputChannel, identity, factory)
 
-inline fun <reified I : Any, reified O : Any> IParamsHolder.parallel(
+fun <I : Any, O : Any> IParamsHolder.parallelUnits(
     outputChannel: Channel<IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
     identity: Identity = Id("ParallelProcessor"),
-    noinline factory: (idx: Int) -> IProcessingUnit<I, O>
-): ParallelProcessor<I, O> = ParallelProcessor(params, outputChannel, identity, I::class, O::class, factory)
+    factory: (idx: Int) -> IProcessingUnit<I, O>
+): ParallelProcessor<I, O> = ParallelProcessor(params, outputChannel, identity, factory)
 
-inline fun <reified I : Any, reified O : Any> parallel(
+fun <I : Any, O : Any> parallel(
     params: IProcessingParams = ProcessingParams(),
     outputChannel: Channel<IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
     identity: Identity = Id("ParallelProcessor"),
-    noinline block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit
-): ParallelProcessor<I, O> = ParallelProcessor(params, outputChannel, identity, I::class, O::class) {
+    block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit
+): ParallelProcessor<I, O> = ParallelProcessor(params, outputChannel, identity) {
     processor<I, O> { block(it) }
 }
 
-inline fun <reified I : Any, reified O : Any> IParamsHolder.parallel(
+fun <I : Any, O : Any> IParamsHolder.parallel(
     outputChannel: Channel<IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
     identity: Identity = Id("ParallelProcessor"),
-    noinline block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit
-): ParallelProcessor<I, O> = ParallelProcessor(params, outputChannel, identity, I::class, O::class) {
+    block: suspend IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.(value: @UnsafeVariance I) -> Unit
+): ParallelProcessor<I, O> = ParallelProcessor(params, outputChannel, identity) {
     processor<I, O> { block(it) }
 }
 
@@ -44,10 +43,8 @@ open class ParallelProcessor<out I : Any, out O : Any>(
     params: IProcessingParams,
     override var outputChannel: Channel<IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
     identity: Identity = Id("ParallelProcessor"),
-    inputType: KClass<I>,
-    outputType: KClass<O>,
     processorFactory: (idx: Int) -> IProcessingUnit<I, O>
-) : Processor<I, O>(params, outputChannel, identity, inputType, outputType, {}),
+) : Processor<I, O>(params, outputChannel, identity, {}),
     IParallelProcessedValueMerger<O> by ParallelProcessValueMerger(params) {
 
     private val processors = params.parallelIndices.map { processorFactory(it).withParallelIdx(it) }
@@ -55,7 +52,7 @@ open class ParallelProcessor<out I : Any, out O : Any>(
     private val outputs = processors.runEachIndexed { idx -> inputs[idx].process() }
 
     private val jobs = outputs.mapIndexed { idx, output ->
-        params.scope.launchEx {
+        scope.launchEx {
             for (value in output) {
                 @Suppress("UNCHECKED_CAST")
                 value.suspendUntilInPosition {

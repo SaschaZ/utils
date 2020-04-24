@@ -19,6 +19,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.ConcurrentHashMap
 
 interface IPipelineWatchDog {
 
@@ -68,7 +69,7 @@ open class PipelineWatchDog(
 ) : IPipelineWatchDog {
 
     private val tickChannel = Channel<Triple<IProcessingUnit<*, *>, PipelineElementStage, ITimeEx>>()
-    override val ticks = HashMap<IProcessingUnit<*, *>, HashMap<ITimeEx, PipelineElementStage>>()
+    override val ticks = ConcurrentHashMap<IProcessingUnit<*, *>, ConcurrentHashMap<ITimeEx, PipelineElementStage>>()
 
     private var tickJob: Job? = null
     private var outputJob: Job? = null
@@ -85,7 +86,7 @@ open class PipelineWatchDog(
         tickJob = scope.launchEx {
             for ((element, stage, time) in tickChannel) {
                 tickMutex.withLock {
-                    ticks.getOrPut(element) { HashMap() }.put(time, stage)
+                    ticks.getOrPut(element) { ConcurrentHashMap() }.put(time, stage)
                 }
             }
         }

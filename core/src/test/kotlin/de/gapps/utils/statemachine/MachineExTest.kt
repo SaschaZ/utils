@@ -13,11 +13,14 @@ import de.gapps.utils.statemachine.ConditionElement.Slave.Data
 import de.gapps.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
 import de.gapps.utils.statemachine.MachineExTest.TestData.*
 import de.gapps.utils.statemachine.MachineExTest.TestEvent.*
-import de.gapps.utils.statemachine.MachineExTest.TestEvent.TEST_EVENT_GROUP.FIFTH
-import de.gapps.utils.statemachine.MachineExTest.TestEvent.TEST_EVENT_GROUP.FOURTH
+import de.gapps.utils.statemachine.MachineExTest.TestEvent.TEST_EVENT_GROUP.*
 import de.gapps.utils.statemachine.MachineExTest.TestState.*
-import de.gapps.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP.D
-import de.gapps.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP.E
+import de.gapps.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DEFG.D
+import de.gapps.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DEFG.E
+import de.gapps.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG.F
+import de.gapps.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG.G
+import de.gapps.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.H
+import de.gapps.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.I
 import de.gapps.utils.time.duration.seconds
 import org.junit.jupiter.api.Test
 
@@ -30,11 +33,25 @@ class MachineExTest {
         object B : TestState()
         object C : TestState()
 
-        sealed class TEST_STATE_GROUP : TestState() {
-            object D : TEST_STATE_GROUP()
-            object E : TEST_STATE_GROUP()
+        sealed class TEST_STATE_GROUP_DEFG : TestState() {
+            object D : TEST_STATE_GROUP_DEFG()
+            object E : TEST_STATE_GROUP_DEFG()
 
-            companion object : StateGroup<TEST_STATE_GROUP>(TEST_STATE_GROUP::class)
+            sealed class TEST_STATE_GROUP_FG : TestState() {
+                object F : TEST_STATE_GROUP_FG()
+                object G : TEST_STATE_GROUP_FG()
+
+                companion object : StateGroup<TEST_STATE_GROUP_FG>(TEST_STATE_GROUP_FG::class)
+            }
+
+            companion object : StateGroup<TEST_STATE_GROUP_DEFG>(TEST_STATE_GROUP_DEFG::class)
+        }
+
+        sealed class TEST_STATE_GROUP_HI : TestState() {
+            object H : TEST_STATE_GROUP_HI()
+            object I : TEST_STATE_GROUP_HI()
+
+            companion object : StateGroup<TEST_STATE_GROUP_HI>(TEST_STATE_GROUP_HI::class)
         }
 
         companion object : StateGroup<TestState>(TestState::class)
@@ -220,21 +237,39 @@ class MachineExTest {
 
     @Test
     fun testGroup() = runTest {
-        MachineEx(INITIAL) {
-            +TEST_EVENT_GROUP + INITIAL set D
-            +FIFTH + TEST_STATE_GROUP set C
-            +FIRST * TestData + C set A
+        MachineEx(INITIAL, debugLevel = DEBUG) {
+            +TestEvent + INITIAL set D
+            +SECOND + TEST_STATE_GROUP_DEFG set E
+            +THIRD * TestData + TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG set G
+            +FOURTH + TEST_STATE_GROUP_DEFG set F
+            +FIFTH + TEST_STATE_GROUP_HI set I
+            +SIXTH set H
         }.run {
-            state() assert INITIAL
+            state() assert INITIAL % "INITIAL"
+
+            fire eventSync FIRST
+            state() assert D % "FIRST"
+
+            fire eventSync SECOND
+            state() assert E % "SECOND"
+
+            fire eventSync THIRD * TestEventData2("bam")
+            state() assert E % "THIRD"
 
             fire eventSync FOURTH
-            state() assert D
+            state() assert F % "FOURTH"
+
+            fire eventSync THIRD * TestEventData2("bom")
+            state() assert G % "THIRD#2"
 
             fire eventSync FIFTH
-            state() assert C
+            state() assert G % "FIFTH"
 
-            fire eventSync FIRST * TestEventData2("bam")
-            state() assert A
+            fire eventSync SIXTH
+            state() assert H % "SIXTH"
+
+            fire eventSync FIFTH
+            state() assert I % "FIFTH#2"
         }
     }
 

@@ -122,12 +122,7 @@ abstract class MachineDsl : IMachineEx {
     /**
      *
      */
-    suspend infix fun Condition.set(state: IState) = execAndSet { state }
-
-    /**
-     *
-     */
-    suspend infix fun Condition.set(state: IComboElement) = execAndSet { state }
+    suspend infix fun Condition.set(state: IActionResult) = execAndSet { state }
 
     /**
      *

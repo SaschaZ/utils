@@ -34,7 +34,7 @@ internal fun Project.configureLibraryJarPublication(name: String) {
 
             from(components["java"])
             artifact(getSourcesJar(JVM_LIB))
-            artifact(getDokkaJar(name))
+            artifact(getDokkaJar())
         }
     }
 }
@@ -51,7 +51,7 @@ internal fun Project.configureLibraryAarPublication(name: String) {
 
             artifact(file("$buildDir/outputs/aar/$name-release.aar"))
             artifact(getSourcesJar(ANDROID_LIB))
-            artifact(getDokkaJar(name))
+            artifact(getDokkaJar())
         }
     }
 }
@@ -101,7 +101,7 @@ internal fun Project.copyArtifacts(type: ModuleType) {
     }
 }
 
-internal fun Project.getDokkaJar(name: String): Jar {
+internal fun Project.getDokkaJar(): Jar {
     val dokkaJar by tasks.creating(Jar::class) {
         group = JavaBasePlugin.DOCUMENTATION_GROUP
         description = "$name Utils"

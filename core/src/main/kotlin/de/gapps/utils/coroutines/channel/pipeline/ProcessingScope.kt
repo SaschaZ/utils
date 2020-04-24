@@ -1,5 +1,6 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
+import de.gapps.utils.coroutines.scope.CoroutineScopeEx
 import de.gapps.utils.time.ITimeEx
 import de.gapps.utils.time.TimeEx
 import kotlinx.coroutines.sync.Mutex
@@ -24,6 +25,7 @@ interface IProducerScope<out T : Any> : IParamsHolder {
     var outIdx: Int
     val parallelIdx: Int
     val parallelType: ParallelProcessingType
+    val scope: CoroutineScopeEx
 
     suspend fun send(
         value: @UnsafeVariance T,
@@ -51,6 +53,7 @@ open class ProducerScope<out T : Any>(
     override val parallelIdx: Int = IPipeValue.NO_PARALLEL_EXECUTION,
     override val parallelType: ParallelProcessingType = ParallelProcessingType.NONE,
     override val params: IProcessingParams = ProcessingParams(),
+    override val scope: CoroutineScopeEx,
     private val closer: suspend IProducerScope<T>.() -> Unit,
     private val sender: suspend (rawValue: IPipeValue<T>) -> Unit
 ) : IProducerScope<T> {
@@ -59,9 +62,10 @@ open class ProducerScope<out T : Any>(
         parallelIdx: Int = IPipeValue.NO_PARALLEL_EXECUTION,
         parallelType: ParallelProcessingType = ParallelProcessingType.NONE,
         params: IProcessingParams = ProcessingParams(),
+        scope: CoroutineScopeEx,
         closer: suspend IProducerScope<T>.() -> Unit,
         sender: suspend (rawValue: IPipeValue<T>) -> Unit
-    ) : this(IPipeValue.NO_IDX, 0, parallelIdx, parallelType, params, closer, sender)
+    ) : this(IPipeValue.NO_IDX, 0, parallelIdx, parallelType, params, scope, closer, sender)
 
     private val mutex: Mutex =
         Mutex()
@@ -87,12 +91,14 @@ interface IConsumerScope<out T : Any> : IParamsHolder {
     val inIdx: Int
     val outIdx: Int
     val time: ITimeEx
+    val scope: CoroutineScopeEx
 }
 
 @Suppress("LeakingThis")
 open class ConsumerScope<out T : Any>(
     override val rawValue: IPipeValue<T>,
-    override val params: IProcessingParams
+    override val params: IProcessingParams,
+    override val scope: CoroutineScopeEx
 ) : IConsumerScope<T> {
 
     override val value: T = rawValue.value

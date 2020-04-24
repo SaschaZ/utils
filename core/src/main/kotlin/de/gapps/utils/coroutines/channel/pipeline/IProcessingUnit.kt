@@ -3,26 +3,24 @@
 package de.gapps.utils.coroutines.channel.pipeline
 
 import de.gapps.utils.coroutines.builder.launchEx
+import de.gapps.utils.coroutines.scope.CoroutineScopeEx
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
-import kotlin.reflect.KClass
 
 
 interface IProcessingUnit<out I : Any, out O : Any> : Identity {
 
     var params: IProcessingParams
+    val scope: CoroutineScopeEx
     var pipeline: IPipeline<*, *>
-
-    val inputType: KClass<out @UnsafeVariance I>
-    val outputType: KClass<out @UnsafeVariance O>
 
     val outputChannel: Channel<out IPipeValue<@UnsafeVariance O>>
     var outIdx: Int
 
     @Suppress("LeakingThis", "UNCHECKED_CAST")
     fun producerScope(inIdx: Int = 0) =
-        ProducerScope<O>(inIdx, outIdx++, params.parallelIdx, params.type, params, { closeOutput() }) {
+        ProducerScope<O>(inIdx, outIdx++, params.parallelIdx, params.type, params, scope, { closeOutput() }) {
             pipeline.tick(this, PipelineElementStage.SEND_OUTPUT)
             (outputChannel as SendChannel<IPipeValue<O>>).send(it)
         }
@@ -57,24 +55,11 @@ interface IProcessingUnit<out I : Any, out O : Any> : Identity {
     suspend fun IProducerScope<@UnsafeVariance O>.onProcessingFinished() = Unit
 }
 
-abstract class AbsProcessingUnit<out I : Any, out O : Any>(
-    override val inputType: KClass<out @UnsafeVariance I>,
-    override val outputType: KClass<out @UnsafeVariance O>
-) : IProcessingUnit<I, O> {
+abstract class AbsProcessingUnit<out I : Any, out O : Any> : IProcessingUnit<I, O> {
 
+    override val scope: CoroutineScopeEx by lazy { params.scopeFactory() }
     override var pipeline: IPipeline<*, *> = DummyPipeline()
     override var outIdx: Int = 0
-
-    init {
-        @Suppress("LeakingThis")
-        if (inputType.typeParameters.isNotEmpty() ||
-            outputType.typeParameters.isNotEmpty()
-        )
-            throw IllegalArgumentException("Input and output types must have no type parameters.")
-    }
 }
-
-val IProcessingUnit<*, *>.scope
-    get() = params.scope
 
 fun <I : Any, O : Any> IProcessingUnit<I, O>.withParallelIdx(idx: Int) = apply { params = params.withParallelIdx(idx) }
