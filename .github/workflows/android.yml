@@ -25,6 +25,9 @@ jobs:
       run: ./gradlew test publishToMavenLocal
     - name: Codecov
       uses: codecov/codecov-action@v1.0.6
+      with:
+        name: "Utils coverage"
+        file: "./core/build/jacoco/test.exec"
     - name: Upload artifact
       uses: actions/upload-artifact@v1.0.0
       with:
