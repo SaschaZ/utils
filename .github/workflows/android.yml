@@ -22,7 +22,13 @@ jobs:
       with:
         java-version: 1.8
     - name: Build with Gradle
-      run: ./gradlew test publishToMavenLocal
+      run: ./gradlew build jacocoTestReport publishToMavenLocal
+    - name: Codecov
+      uses: codecov/codecov-action@v1.0.6
+      with:
+        name: "Utils coverage"
+        file: "./core/build/jacoco/test.exec"
+        token:  ${{ secrets.CODECOV_TOKEN }}
     - name: Upload artifact
       uses: actions/upload-artifact@v1.0.0
       with:
