@@ -28,6 +28,7 @@ jobs:
       with:
         name: "Utils coverage"
         file: "./core/build/jacoco/test.exec"
+        token:  ${{ secrets.CODECOV_TOKEN }}
     - name: Upload artifact
       uses: actions/upload-artifact@v1.0.0
       with:
