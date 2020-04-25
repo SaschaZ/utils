@@ -1,4 +1,4 @@
-package de.gapps.utils
+package dev.zieger.utils
 
 object Android {
 

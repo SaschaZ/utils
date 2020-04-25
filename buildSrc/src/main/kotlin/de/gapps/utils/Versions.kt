@@ -1,4 +1,4 @@
-package de.gapps.utils
+package dev.zieger.utils
 
 object Versions {
     const val kotlin = "1.3.72"
@@ -31,4 +31,5 @@ object Versions {
     const val bouncyCastle = "1.46"
 
     const val dokka = "0.10.1"
+    const val jacoco = "0.8.5"
 }

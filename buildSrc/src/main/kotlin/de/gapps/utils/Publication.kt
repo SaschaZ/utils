@@ -1,11 +1,11 @@
 @file:Suppress("RemoveRedundantBackticks", "UnstableApiUsage")
 
-package de.gapps.utils
+package dev.zieger.utils
 
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.api.AndroidSourceSet
-import de.gapps.utils.ModuleType.ANDROID_LIB
-import de.gapps.utils.ModuleType.JVM_LIB
+import dev.zieger.utils.ModuleType.ANDROID_LIB
+import dev.zieger.utils.ModuleType.JVM_LIB
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.plugins.JavaBasePlugin

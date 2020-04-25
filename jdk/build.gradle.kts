@@ -1,8 +1,8 @@
-import de.gapps.utils.ModuleType.JVM_LIB
-import de.gapps.utils.configModule
-import de.gapps.utils.core
-import de.gapps.utils.mordant
-import de.gapps.utils.progressbar
+import dev.zieger.utils.ModuleType.JVM_LIB
+import dev.zieger.utils.configModule
+import dev.zieger.utils.core
+import dev.zieger.utils.mordant
+import dev.zieger.utils.progressbar
 
 plugins {
     kotlin("jvm")

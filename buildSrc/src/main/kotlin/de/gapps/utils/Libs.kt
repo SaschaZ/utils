@@ -1,6 +1,6 @@
 @file:Suppress("SpellCheckingInspection")
 
-package de.gapps.utils
+package dev.zieger.utils
 
 import org.gradle.kotlin.dsl.DependencyHandlerScope
 import org.gradle.kotlin.dsl.project

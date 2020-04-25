@@ -1,7 +1,7 @@
-import de.gapps.utils.Android
-import de.gapps.utils.ModuleType.ANDROID_LIB
-import de.gapps.utils.configModule
-import de.gapps.utils.core
+import dev.zieger.utils.Android
+import dev.zieger.utils.ModuleType.ANDROID_LIB
+import dev.zieger.utils.configModule
+import dev.zieger.utils.core
 
 plugins {
     id("com.android.library")
