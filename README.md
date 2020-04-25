@@ -1,6 +1,6 @@
 # utilsEx
 Kotlin Jvm Utilities 
-[![](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core) ![](https://github.com/SaschaZ/utils/workflows/Android%20CI/badge.svg)
+[![](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core) ![](https://github.com/SaschaZ/utils/workflows/Android%20CI/badge.svg) [![codecov](https://codecov.io/gh/SaschaZ/utils/branch/master/graph/badge.svg)](https://codecov.io/gh/SaschaZ/utils)
 
 ## Contains utilities for
 - [utilsEx](#utilsex)
