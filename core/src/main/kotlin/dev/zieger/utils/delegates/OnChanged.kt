@@ -1,4 +1,4 @@
-@file:Suppress("MemberVisibilityCanBePrivate")
+@file:Suppress("MemberVisibilityCanBePrivate", "LeakingThis")
 
 package dev.zieger.utils.delegates
 
@@ -33,7 +33,7 @@ interface IOnChanged<T> : IOnChanged2<Any?, T>
  * @property onChange Unsuspended on change callback.
  */
 interface IOnChanged2<P : Any?, out T : Any?> : ReadWriteProperty<P, @kotlin.UnsafeVariance T> {
-    var value: @UnsafeVariance T
+    val value: @UnsafeVariance T
 
     val storeRecentValues: Boolean
     val notifyForExisting: Boolean
@@ -41,9 +41,9 @@ interface IOnChanged2<P : Any?, out T : Any?> : ReadWriteProperty<P, @kotlin.Uns
     val scope: CoroutineScope?
     val mutex: Mutex?
 
-    val veto: (@UnsafeVariance T) -> Boolean
-    val onChangedS: suspend IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit
-    var onChange: IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit
+    fun veto(value: @UnsafeVariance T): Boolean
+    suspend fun IOnChangedScope<P, @UnsafeVariance T>.onChangedS(value: @UnsafeVariance T)
+    fun IOnChangedScope<P, @UnsafeVariance T>.onChanged(value: @UnsafeVariance T)
 
     /**
      * Clears the recent value storage.
@@ -59,16 +59,16 @@ typealias OnChanged<T> = OnChanged2<Any?, T>
 /**
  * Simple implementation of [IOnChanged2].
  */
-class OnChanged2<P : Any?, out T : Any?>(
+open class OnChanged2<P : Any?, out T : Any?>(
     initial: T,
     override val storeRecentValues: Boolean = false,
     override val notifyForExisting: Boolean = false,
     override val notifyOnChangedValueOnly: Boolean = true,
     override val scope: CoroutineScope? = null,
     override val mutex: Mutex? = null,
-    override val veto: (@UnsafeVariance T) -> Boolean = { false },
-    override val onChangedS: suspend IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {},
-    override var onChange: IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {}
+    val vetoP: (@UnsafeVariance T) -> Boolean = { false },
+    val onChangeS: suspend IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {},
+    val onChange: IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {}
 
 ) : IOnChanged2<P, @UnsafeVariance T> {
 
@@ -116,7 +116,7 @@ class OnChanged2<P : Any?, out T : Any?>(
         previous: List<@UnsafeVariance T?>
     ) = OnChangedScope(new, thisRef, old, previous) { clearRecentValues() }.apply {
         scope?.launchEx(mutex = mutex) { onChangedS(new) }
-        onChange(new)
+        onChanged(new)
     }
 
     override fun setValue(thisRef: P, property: KProperty<*>, value: @UnsafeVariance T) {
@@ -125,5 +125,11 @@ class OnChanged2<P : Any?, out T : Any?>(
     }
 
     override fun getValue(thisRef: P, property: KProperty<*>): T = value
+
+    override fun veto(value: @UnsafeVariance T): Boolean = vetoP(value)
+
+    override suspend fun IOnChangedScope<P, @UnsafeVariance T>.onChangedS(value: @UnsafeVariance T) = onChangeS(value)
+
+    override fun IOnChangedScope<P, @UnsafeVariance T>.onChanged(value: @UnsafeVariance T) = onChange(value)
 }
 

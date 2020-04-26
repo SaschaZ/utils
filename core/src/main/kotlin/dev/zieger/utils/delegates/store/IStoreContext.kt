@@ -19,25 +19,25 @@ interface IStoreContext {
     fun storeValue(
         propertyKey: String,
         v: String
-    ) = key(key, propertyKey).contentEntity.write(v)
+    ) = key(key, propertyKey).contentAdapter.write(v)
 
     fun readValue(
         propertyKey: String
-    ) = key(key, propertyKey).contentEntity.read()
+    ) = key(key, propertyKey).contentAdapter.read()
 
     fun key(contextKey: String, propertyKey: String) = "$contextKey$propertyKey"
 
-    val String.contentEntity: IContentEntity
-        get() = FileEntity(File(this))
+    val String.contentAdapter: IContentAdapter
+        get() = FileAdapter(File(this))
 }
 
-interface IContentEntity {
+interface IContentAdapter {
 
     fun write(text: String)
     fun read(): String
 }
 
-class FileEntity(private val file: File) : IContentEntity {
+class FileAdapter(private val file: File) : IContentAdapter {
     override fun write(text: String) = file.writeText(text)
     override fun read() = file.readText()
 }
