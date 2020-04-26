@@ -4,55 +4,87 @@ import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.misc.asUnit
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import kotlin.random.Random
 
 class OnChangedTest {
 
     private var calledCnt: Int = 0
-    private lateinit var delegate: OnChanged<Int>
 
     private var toTestOnChangeOldVar: Int? = null
     private var toTestOnChangeNewVar: Int? = null
+    private var toTestOnChangePrevValues: List<Int?>? = null
+    private var toTestOnChangedClearPrevValues: (() -> Unit)? = null
 
-    @BeforeEach
-    fun before() {
-        calledCnt = 0
-        toTestOnChangeOldVar = null
-        toTestOnChangeNewVar = null
-
-        delegate = OnChanged(0) {
-            calledCnt++
-            toTestOnChangeOldVar = previousValue
-            toTestOnChangeNewVar = value
-        }
+    private fun newDelegate(
+        storeRecentValues: Boolean,
+        notifyForExisting: Boolean,
+        notifyOnChangedOnly: Boolean
+    ) = OnChanged(
+        0,
+        storeRecentValues = storeRecentValues,
+        notifyForExisting = notifyForExisting,
+        notifyOnChangedValueOnly = notifyOnChangedOnly
+    ) {
+        calledCnt++
+        toTestOnChangeOldVar = previousValue
+        toTestOnChangeNewVar = value
+        toTestOnChangePrevValues = previousValues
+        toTestOnChangedClearPrevValues = clearPreviousValues
     }
 
     @Test
     fun testIt() = runTest {
-        var toTestVar: Int by delegate
+        fun testWithValues(
+            storePreviousValues: Boolean,
+            notifyForExisting: Boolean,
+            notifyOnChangedOnly: Boolean
+        ) {
+            calledCnt = 0
+            toTestOnChangeOldVar = null
+            toTestOnChangeNewVar = null
+            toTestOnChangePrevValues = null
+            toTestOnChangedClearPrevValues = null
 
-        toTestVar assert 0 % "1"
-        calledCnt assert 0 % "1C"
-        toTestOnChangeNewVar assert null % "1"
-        toTestOnChangeOldVar assert null % "1"
+            var toTestVar: Int by newDelegate(storePreviousValues, notifyForExisting, notifyOnChangedOnly)
+            var prevVal: Int? = 0
+            var prevValues = ArrayList<Int?>().apply { add(0) }
 
-        toTestVar = 0
-        toTestVar assert 0 % "2"
-        calledCnt assert 0 % "2C"
-        toTestOnChangeNewVar assert null % "2"
-        toTestOnChangeOldVar assert null % "2"
+            (1..100).forEach { i ->
+                var newValue: Int
+                do {
+                    newValue = Random.nextInt()
+                } while (i == 1 && newValue == 0)
 
-        toTestVar = 1
-        toTestVar assert 1 % "3"
-        calledCnt assert 1 % "3C"
-        toTestOnChangeNewVar assert 1 % "3"
-        toTestOnChangeOldVar assert 0 % "3"
+                toTestVar = newValue
+                toTestVar assert newValue % "$newValue|$i|V $storePreviousValues|$notifyForExisting|$notifyOnChangedOnly"
+                calledCnt assert when {
+                    notifyForExisting -> i + 1
+                    else -> i
+                } % "$newValue|$i|C $storePreviousValues|$notifyForExisting|$notifyOnChangedOnly"
+                toTestOnChangeNewVar assert newValue % "$newValue|$i|N $storePreviousValues|$notifyForExisting|$notifyOnChangedOnly"
+                toTestOnChangeOldVar assert prevVal % "$newValue|$i|O $storePreviousValues|$notifyForExisting|$notifyOnChangedOnly"
+                toTestOnChangePrevValues assert when {
+                    !storePreviousValues -> emptyList<Int?>()
+                    notifyForExisting && i <= 50 -> listOf(0) + prevValues
+                    else -> prevValues
+                } % "$newValue|$i|P $storePreviousValues|$notifyForExisting|$notifyOnChangedOnly"
 
-        toTestVar = 2
-        toTestVar assert 2 % "4"
-        calledCnt assert 2 % "4C"
-        toTestOnChangeNewVar assert 2 % "4"
-        toTestOnChangeOldVar assert 1 % "4"
+                if (i == 50) {
+                    toTestOnChangedClearPrevValues?.invoke()
+                    prevValues = ArrayList<Int?>()
+                }
+                prevVal = newValue
+                prevValues.add(newValue)
+
+            }
+        }
+
+        testWithValues(storePreviousValues = true, notifyForExisting = false, notifyOnChangedOnly = true)
+        testWithValues(storePreviousValues = false, notifyForExisting = false, notifyOnChangedOnly = true)
+        testWithValues(storePreviousValues = false, notifyForExisting = false, notifyOnChangedOnly = false)
+        testWithValues(storePreviousValues = true, notifyForExisting = true, notifyOnChangedOnly = true)
+        testWithValues(storePreviousValues = false, notifyForExisting = true, notifyOnChangedOnly = true)
+        testWithValues(storePreviousValues = true, notifyForExisting = false, notifyOnChangedOnly = false)
     }.asUnit()
 }

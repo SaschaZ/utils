@@ -22,4 +22,7 @@ interface IObservable2<out P : Any?, out T : Any?> : ReadWriteProperty<@UnsafeVa
     fun clearRecentValues()
 }
 
+/**
+ * Same as [IObservable2] but with [Any]? as parent type.Should be used when the parent type is irrelevant.
+ */
 interface IObservable<T> : IObservable2<Any?, T>

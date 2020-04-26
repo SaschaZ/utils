@@ -17,13 +17,13 @@ interface IStoreContext {
     val key: String
 
     fun storeValue(
-        propertyName: String,
+        propertyKey: String,
         v: String
-    ) = key(key, propertyName).contentEntity.write(v)
+    ) = key(key, propertyKey).contentEntity.write(v)
 
     fun readValue(
-        propertyName: String
-    ) = key(key, propertyName).contentEntity.read()
+        propertyKey: String
+    ) = key(key, propertyKey).contentEntity.read()
 
     fun key(contextKey: String, propertyKey: String) = "$contextKey$propertyKey"
 
