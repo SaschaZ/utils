@@ -1,72 +1,70 @@
-@file:Suppress("unused")
+@file:Suppress("unused", "MemberVisibilityCanBePrivate", "CanBeParameter")
 
 package dev.zieger.utils.observables
 
+import dev.zieger.utils.core_testing.*
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
-import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.log.Log
-import dev.zieger.utils.misc.castSafe
 import dev.zieger.utils.observable.Observable
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
 import org.junit.jupiter.api.Test
-import kotlin.reflect.KClass
-import kotlin.reflect.full.memberProperties
-
-fun parametersOf(params: List<Pair<String, List<*>>>, block: () -> Unit) {
-
-}
-
-abstract class ParameterHolder {
-    val params: List<Pair<String, KClass<*>>> = this::class.memberProperties.mapNotNull {
-        when (it.name) {
-            "params" -> null
-            else -> it.typeParameters.firstOrNull()?.upperBounds?.firstOrNull()?.classifier?.castSafe<KClass<*>>()
-                ?.let { c -> it.name to c }
-        }
-    }
-}
-
-data class TestParameterHolder(
-    val testVal0: List<Int> = listOf(0, 5),
-    val testVal1: List<String> = listOf("foo"),
-    val testVal2: List<Double> = listOf(10.5)
-) : ParameterHolder()
-
-class ParameterHolderTest {
-
-    @Test
-    fun testParameterHolder() = runTest {
-        println("${TestParameterHolder().params}")
-    }
-}
 
 class ObservableTest {
 
     @Test
     fun `test observable inside class`() = runTest {
-        val testClass = TestClass("foo")
-        testClass.observable.value assert "foo" % "1"
-        testClass.value assert "foo" % "1b"
+        parameterMix(
+            { TestClass("foo", it) },
+            param("storePreviousValues", true, false),
+            param("notifyForExisting", true, false),
+            param("notifyOnChangedOnly", true, false),
+            param("scope", DefaultCoroutineScope(), null),
+            param("mutex", Mutex(), null)
+        ) {
+            println(this)
 
-        var latestObservedChanged: String = testClass.observable.value
-        testClass.observable.observe { Log.d("observe; value=$it"); latestObservedChanged = it }
-        var latestObservedChangedS: String = testClass.observable.value
-        testClass.observable.observeS { Log.d("observeS; value=$it"); latestObservedChangedS = it }
-        testClass.value = "boo"
-        delay(200L)
+            val testClass = this
+            testClass.observable.value assert "foo" % "initial observable.value"
+            testClass.value assert "foo" % "initial value"
 
-        testClass.observable.value assert "boo" % "2"
-        testClass.value assert "boo" % "2b"
-        latestObservedChanged assert "boo" % "3"
-        latestObservedChangedS assert "boo" % "3"
+            var latestObservedChanged: String? = null
+            testClass.observable.observe { Log.d("observe -> value=$it"); latestObservedChanged = it }
+            latestObservedChanged assert (if (notifyForExisting) "foo" else null) % "after observe without changes"
+
+            var latestObservedChangedS: String? = null
+            testClass.observable.observeS { Log.d("observeS -> value=$it"); latestObservedChangedS = it }
+            delay(10L)
+            latestObservedChangedS assert (if (notifyForExisting && scope != null) "foo" else null) % "after observe without changes suspended"
+
+            testClass.value = "boo"
+            delay(10L)
+
+            testClass.observable.value assert "boo" % "after change observable.value"
+            testClass.value assert "boo" % "after change value"
+            latestObservedChanged assert "boo" % "after change observe"
+            latestObservedChangedS assert (if (scope != null) "boo" else null) % "after change observe suspended"
+        }
     }
 
     companion object {
 
-        class TestClass(value: String) {
-            val observable = Observable(value, scope = DefaultCoroutineScope())
+        data class TestClass(
+            val initial: String,
+            val map: Map<String, ParamInstance<*>>
+        ) {
+
+            val storePreviousValues: Boolean by bind(map)
+            val notifyForExisting: Boolean by bind(map)
+            val notifyOnChangedOnly: Boolean by bind(map)
+            val scope: CoroutineScope? by bind(map)
+            val mutex: Mutex? by bind(map)
+
+            val observable =
+                Observable(initial, notifyOnChangedOnly, notifyForExisting, storePreviousValues, scope, mutex)
             var value by observable
         }
     }
