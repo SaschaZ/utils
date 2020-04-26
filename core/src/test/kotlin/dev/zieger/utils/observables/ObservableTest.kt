@@ -7,9 +7,40 @@ import dev.zieger.utils.core_testing.assertion.rem
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.log.Log
+import dev.zieger.utils.misc.castSafe
 import dev.zieger.utils.observable.Observable
 import kotlinx.coroutines.delay
 import org.junit.jupiter.api.Test
+import kotlin.reflect.KClass
+import kotlin.reflect.full.memberProperties
+
+fun parametersOf(params: List<Pair<String, List<*>>>, block: () -> Unit) {
+
+}
+
+abstract class ParameterHolder {
+    val params: List<Pair<String, KClass<*>>> = this::class.memberProperties.mapNotNull {
+        when (it.name) {
+            "params" -> null
+            else -> it.typeParameters.firstOrNull()?.upperBounds?.firstOrNull()?.classifier?.castSafe<KClass<*>>()
+                ?.let { c -> it.name to c }
+        }
+    }
+}
+
+data class TestParameterHolder(
+    val testVal0: List<Int> = listOf(0, 5),
+    val testVal1: List<String> = listOf("foo"),
+    val testVal2: List<Double> = listOf(10.5)
+) : ParameterHolder()
+
+class ParameterHolderTest {
+
+    @Test
+    fun testParameterHolder() = runTest {
+        println("${TestParameterHolder().params}")
+    }
+}
 
 class ObservableTest {
 
