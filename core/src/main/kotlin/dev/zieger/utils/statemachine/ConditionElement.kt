@@ -19,7 +19,6 @@ import dev.zieger.utils.statemachine.IConditionElement.ISlave.IType
 import dev.zieger.utils.statemachine.IConditionElement.UsedAs.DEFINITION
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
 import kotlin.reflect.KClass
-import kotlin.reflect.full.isSuperclassOf
 
 val IConditionElement?.disableLogging
     get() = (this as? IEvent)?.noLogging == true
@@ -52,7 +51,7 @@ interface IConditionElement {
                 ): Boolean {
                     return when (other) {
                         is IEvent -> this === other
-                        is IEventGroup<IEvent> -> other.type.isSuperclassOf(this::class)
+                        is IEventGroup<IEvent> -> other.match(this, previousStateChanges)
                         else -> false
                     } logV {
                         f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel <= INFO)
@@ -70,7 +69,7 @@ interface IConditionElement {
                 ): Boolean {
                     return when (other) {
                         is IState -> this === other
-                        is IStateGroup<IState> -> other.type.isSuperclassOf(this::class)
+                        is IStateGroup<IState> -> other.match(this, previousStateChanges)
                         else -> false
                     } logV {
                         f = GENERIC(disableLog = disableLogging || other.disableLogging || MachineEx.debugLevel <= INFO)
@@ -145,7 +144,7 @@ interface IConditionElement {
             ): Boolean {
                 return when (other) {
                     is IData -> this == other
-                    is IType<*> -> other.type.isInstance(this)
+                    is IType<*> -> other.match(this, previousStateChanges)
                     null -> false
                     else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
                 } logV {
