@@ -6,6 +6,7 @@ import dev.zieger.utils.log.Log
 import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 import dev.zieger.utils.statemachine.ConditionElement.Condition
 import dev.zieger.utils.statemachine.IConditionElement.IComboElement
+import dev.zieger.utils.statemachine.IConditionElement.ICondition
 import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
 import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle.IState
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.ERROR
@@ -15,7 +16,8 @@ import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.ERROR
  */
 interface IMachineExMapper {
 
-    val conditions: MutableMap<Long, Condition>
+    val conditions: MutableMap<Long, ICondition>
+    val bindings: MutableMap<ICondition, IMachineEx>
 
     /**
      *
@@ -33,21 +35,21 @@ interface IMachineExMapper {
     private val newId: Long
         get() = ++lastId
 
-    /**
-     *
-     */
-    fun removeMapping(id: Long) = conditions.remove(id)
-
     suspend fun findStateForEvent(
         event: IComboElement,
         state: IComboElement,
         previousChanges: List<OnStateChanged>
     ): IComboElement? =
-        Matcher.findStateForEvent(event, state, previousChanges, conditions)
+        Matcher.findStateForEvent(event, state, previousChanges, conditions, bindings)
+
+    fun bind(condition: ICondition, machine: IMachineEx) {
+        bindings[condition] = machine
+    }
 }
 
 class MachineExMapper : IMachineExMapper {
 
-    override val conditions: MutableMap<Long, Condition> = HashMap()
+    override val conditions: MutableMap<Long, ICondition> = HashMap()
+    override val bindings: MutableMap<ICondition, IMachineEx> = HashMap()
     override var lastId: Long = -1L
 }

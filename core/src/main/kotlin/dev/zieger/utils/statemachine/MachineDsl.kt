@@ -106,6 +106,14 @@ abstract class MachineDsl : IMachineEx {
     operator fun IComboElement.get(idx: Int): IPrevElement = this[idx..idx]
     operator fun IComboElement.get(range: IntRange): IPrevElement = PrevElement(this, range)
 
+
+    /**
+     * Binds the [Condition] to the specified [IMachineEx].
+     * A bound [IMachineEx] will process all events as long as the condition matches.
+     */
+    infix fun Condition.bind(machine: IMachineEx) = mapper.bind(this, machine)
+
+
     /**
      *
      */
@@ -141,8 +149,10 @@ abstract class MachineDsl : IMachineEx {
      * Non DSL helper method to fire an [IEvent] with optional [Slave] and suspend until it was processed by the state
      * machine.
      */
-    override suspend fun fire(combo: IComboElement) =
+    override suspend fun fire(combo: IComboElement): IComboElement {
         fire eventSync combo
+        return state
+    }
 
     /**
      * Non DSL helper method to add an [IEvent] with optional [Slave] to the [IEvent] processing queue and return

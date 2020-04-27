@@ -21,7 +21,7 @@ interface IMachineEx {
 
     suspend fun suspendUtilProcessingFinished()
 
-    suspend fun fire(combo: IComboElement)
+    suspend fun fire(combo: IComboElement): IComboElement
     fun fireAndForget(combo: IComboElement)
 
     fun clearPreviousChanges()

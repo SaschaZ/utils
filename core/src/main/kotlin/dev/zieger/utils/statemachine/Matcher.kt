@@ -27,13 +27,16 @@ object Matcher {
      * @param event new event
      * @param state current state
      * @param previousChanges previous state changes of the state machine
+     * @param conditions
+     * @param bindings
      * @return new state
      */
     suspend fun findStateForEvent(
         event: IComboElement,
         state: IComboElement,
         previousChanges: List<OnStateChanged>,
-        conditions: Map<Long, ICondition>
+        conditions: Map<Long, ICondition>,
+        bindings: Map<ICondition, IMachineEx>
     ): IComboElement? {
         Log.v(
             "findStateForEvent()\n\tevent=$event;\n\tstate=$state;\n\t" +
@@ -44,59 +47,73 @@ object Matcher {
         )
 
         val execScope = ExecutorScope(event, state, previousChanges)
+        val matchingEventBindings = bindings.filter { match(it.key, event, state, previousChanges, EVENT) }
 
-        val matchingEventConditions =
-            conditions.filter { match(it.value, event, state, previousChanges, EVENT) }
-        if (matchingEventConditions.isEmpty()) {
-            Log.i(
-                "No event condition matches for $event and $state.",
-                GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel == ERROR)
-            )
-            return null
-        }
-        val matchedResults = matchingEventConditions.mapNotNull { it.value.action?.invoke(execScope) }
-
-        val newState = when (matchedResults.size) {
-            in 0..1 -> matchedResults.firstOrNull()
-            else -> throw IllegalStateException(
-                "To much states defined for $event and $state " +
-                        "with mappedEvents=${matchedResults.joinToStringTabbed()}"
-            )
-        }
-
-        Log.v(
-            "\n\tnewState=$newState" +
-                    "\n\tmatchingEventConditions=${matchingEventConditions.toList().joinToStringTabbed(2)}",
-            GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel <= INFO)
-        )
-
-        return newState?.also {
-            val matchingStateConditions = conditions.filter {
-                match(it.value, event, newState, previousChanges, STATE)
+        return when (matchingEventBindings.size) {
+            1 -> matchingEventBindings.values.first().fire(event).also { newState ->
+                bindings.filter { match(it.key, event, newState, previousChanges, STATE) }
+                    .forEach { it.key.action?.invoke(execScope) }
             }
+            0 -> {
+                val matchingEventConditions =
+                    conditions.filter { match(it.value, event, state, previousChanges, EVENT) }
+                if (matchingEventConditions.isEmpty()) {
+                    Log.i(
+                        "No event condition matches for $event and $state.",
+                        GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel == ERROR)
+                    )
+                    return null
+                }
 
-            Log.v(
-                "executing matching state conditions: \n" +
-                        matchingStateConditions.entries.joinToStringTabbed(2),
-                GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel <= INFO)
-            )
+                val matchedResults = matchingEventConditions.mapNotNull { it.value.action?.invoke(execScope) }
 
-            matchingStateConditions.forEach { it.value.action?.invoke(execScope) }
+                val newState = when (matchedResults.size) {
+                    in 0..1 -> matchedResults.firstOrNull()
+                    else -> throw IllegalStateException(
+                        "To much states defined for $event and $state " +
+                                "with mappedEvents=${matchedResults.joinToStringTabbed()}"
+                    )
+                }
 
-            Log.d(
-                "state changed from $state to $newState with event $event",
-                GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel == ERROR)
-            )
-        } ifNull {
-            Log.i(
-                "No event condition matches for $event and $state. Had ${matchingEventConditions.size}" +
-                        " matches:${matchingEventConditions.values.joinToStringTabbed(2)}",
-                GENERIC(
-                    disableLog = matchingEventConditions.values.isNotEmpty() || event.disableLogging
-                            || MachineEx.debugLevel <= INFO
+                Log.v(
+                    "\n\tnewState=$newState" +
+                            "\n\tmatchingEventConditions=${matchingEventConditions.toList().joinToStringTabbed(2)}",
+                    GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel <= INFO)
                 )
-            )
-            null
+
+                return newState?.also {
+                    bindings.filter { match(it.key, event, newState, previousChanges, STATE) }
+                        .forEach { it.key.action?.invoke(execScope) }
+
+                    val matchingStateConditions = conditions.filter {
+                        match(it.value, event, newState, previousChanges, STATE)
+                    }
+
+                    Log.v(
+                        "executing matching state conditions: \n" +
+                                matchingStateConditions.entries.joinToStringTabbed(2),
+                        GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel <= INFO)
+                    )
+
+                    matchingStateConditions.forEach { it.value.action?.invoke(execScope) }
+
+                    Log.d(
+                        "state changed from $state to $newState with event $event",
+                        GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel == ERROR)
+                    )
+                } ifNull {
+                    Log.i(
+                        "No event condition matches for $event and $state. Had ${matchingEventConditions.size}" +
+                                " matches:${matchingEventConditions.values.joinToStringTabbed(2)}",
+                        GENERIC(
+                            disableLog = matchingEventConditions.values.isNotEmpty() || event.disableLogging
+                                    || MachineEx.debugLevel <= INFO
+                        )
+                    )
+                    null
+                }
+            }
+            else -> throw IllegalStateException("More than one binding found for condition.")
         }
     }
 
