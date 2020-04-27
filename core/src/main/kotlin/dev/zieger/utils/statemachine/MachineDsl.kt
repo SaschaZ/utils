@@ -64,44 +64,37 @@ abstract class MachineDsl : IMachineEx {
             get() = max(range.first, range.last)
     }
 
-    operator fun Condition.plus(other: IPrevElement): Condition {
-        this + {
-            when {
-                other.range == X -> previousChanges.any {
-                    InputElement(it.event, it.stateBefore).match(other.combo, previousChanges)
-                }
-                other.idx == 0 -> previousChanges.getOrNull(0)?.let {
-                    InputElement(it.event, it.stateAfter).match(other.combo, previousChanges)
-                } ?: false
-                other.range.run { endInclusive - start } > 0 -> other.range.any { idx ->
-                    when (idx) {
-                        0 -> previousChanges.getOrNull(0)?.let {
-                            InputElement(it.event, it.stateAfter).match(other.combo, previousChanges)
-                        } ?: false
-                        else -> previousChanges.getOrNull(idx - 1)?.let {
-                            InputElement(it.event, it.stateBefore).match(other.combo, previousChanges)
-                        } ?: false
-                    }
-                }
-                else -> other.idx.let { idx ->
-                    previousChanges.getOrNull(idx - 1)?.let {
-                        InputElement(it.event, it.stateBefore).match(other.combo, previousChanges)
-                    } ?: false
-                }
-            }
+    operator fun Condition.plus(other: IPrevElement): Condition = let { it + { matchPrev(other) } }
+
+    operator fun Condition.minus(other: IPrevElement): Condition = let { it + { !matchPrev(other) } }
+
+    private suspend fun List<OnStateChanged>.stateChanged(
+        idx: Int,
+        block: suspend InputElement.() -> Boolean
+    ): Boolean {
+        return when (idx) {
+            0 -> getOrNull(0)?.let {
+                InputElement(it.event, it.stateAfter).block()
+            } ?: false
+            else -> getOrNull(idx - 1)?.let {
+                InputElement(it.event, it.stateBefore).block()
+            } ?: false
         }
-        return this
     }
 
-    operator fun Condition.minus(other: IPrevElement): Condition {
-        this + {
-            other.range.none { idx ->
-                previousChanges.getOrNull(idx)?.let {
+    private suspend fun MatchScope.matchPrev(other: IPrevElement): Boolean {
+        return when {
+            other.range == X ->
+                previousChanges.any {
                     InputElement(it.event, it.stateBefore).match(other.combo, previousChanges)
-                } ?: false
-            }
+                }
+            other.range.run { endInclusive - start } > 0 ->
+                other.range.any { idx ->
+                    previousChanges.stateChanged(idx) { match(other.combo, previousChanges) }
+                }
+            else ->
+                previousChanges.stateChanged(other.idx) { match(other.combo, previousChanges) }
         }
-        return this
     }
 
     /**
