@@ -1,7 +1,7 @@
 package dev.zieger.utils.coroutines.channel.pipeline
 
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.coroutines.channel.pipeline.PipelineElementStage.*
+import dev.zieger.utils.coroutines.channel.pipeline.ProcessingElementStage.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel

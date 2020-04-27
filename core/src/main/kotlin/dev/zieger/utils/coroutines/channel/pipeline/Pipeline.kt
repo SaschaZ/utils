@@ -5,7 +5,7 @@ import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 
-interface IPipeline<out I : Any, out O : Any> : IProcessor<I, O>, IPipelineWatchDog {
+interface IPipeline<out I : Any, out O : Any> : IProcessor<I, O> {
     override suspend fun IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.processSingle(value: @UnsafeVariance I) =
         Unit
 }
@@ -13,7 +13,7 @@ interface IPipeline<out I : Any, out O : Any> : IProcessor<I, O>, IPipelineWatch
 abstract class AbsPipeline<out I : Any, out O : Any>(
     override var params: IProcessingParams,
     override var outputChannel: Channel<out IPipeValue<@UnsafeVariance O>>,
-    protected val processors: List<IProcessor<*, *>>
+    private val processors: List<IProcessor<*, *>>
 ) : AbsProcessingUnit<I, O>(), IPipeline<I, O>, IProcessor<I, O> {
 
     override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IPipeValue<O>> {
@@ -31,7 +31,6 @@ open class Pipeline<out I : Any, out O : Any>(
     processors: List<IProcessor<*, *>>,
     observingActive: Boolean = false
 ) : AbsPipeline<I, O>(params, outputChannel, processors),
-    IPipelineWatchDog by PipelineWatchDog(active = observingActive),
     Identity by identity {
 
     @Suppress("LeakingThis")
@@ -39,7 +38,8 @@ open class Pipeline<out I : Any, out O : Any>(
 }
 
 class DummyPipeline :
-    IPipeline<Any, Any>, IPipelineWatchDog by PipelineWatchDog(), Identity by NoId {
+    IProcessingWatchDog by ProcessingWatchDog(),
+    IPipeline<Any, Any>, Identity by NoId {
 
     override fun ReceiveChannel<IPipeValue<Any>>.process(): ReceiveChannel<IPipeValue<Any>> = Channel()
 

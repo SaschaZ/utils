@@ -9,7 +9,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 
 
-interface IProcessingUnit<out I : Any, out O : Any> : Identity {
+interface IProcessingUnit<out I : Any, out O : Any> : Identity, IProcessingWatchDog {
 
     var params: IProcessingParams
     val scope: CoroutineScopeEx
@@ -21,7 +21,7 @@ interface IProcessingUnit<out I : Any, out O : Any> : Identity {
     @Suppress("LeakingThis", "UNCHECKED_CAST")
     fun producerScope(inIdx: Int = 0) =
         ProducerScope<O>(inIdx, outIdx++, params.parallelIdx, params.type, params, scope, { closeOutput() }) {
-            pipeline.tick(this, PipelineElementStage.SEND_OUTPUT)
+            pipeline.tick(this, ProcessingElementStage.SEND_OUTPUT)
             (outputChannel as SendChannel<IPipeValue<O>>).send(it)
         }
 
@@ -31,12 +31,12 @@ interface IProcessingUnit<out I : Any, out O : Any> : Identity {
     fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IPipeValue<O>> =
         scope.launchEx {
             var prevValue: IPipeValue<I>? = null
-            pipeline.tick(this@IProcessingUnit, PipelineElementStage.RECEIVE_INPUT)
+            pipeline.tick(this@IProcessingUnit, ProcessingElementStage.RECEIVE_INPUT)
             for (value in this@process) {
-                pipeline.tick(this@IProcessingUnit, PipelineElementStage.PROCESSING)
+                pipeline.tick(this@IProcessingUnit, ProcessingElementStage.PROCESSING)
                 processingScope(value).processSingle(value.value)
                 prevValue = value
-                pipeline.tick(this@IProcessingUnit, PipelineElementStage.RECEIVE_INPUT)
+                pipeline.tick(this@IProcessingUnit, ProcessingElementStage.RECEIVE_INPUT)
             }
             prevValue?.let { pv -> processingScope(pv).closeOutput() }
         }.let { outputChannel }
@@ -44,10 +44,10 @@ interface IProcessingUnit<out I : Any, out O : Any> : Identity {
 
     suspend fun IProducerScope<@UnsafeVariance O>.closeOutput() {
         Log.v("processing finished params=$params")
-        pipeline.tick(this@IProcessingUnit, PipelineElementStage.FINISHED_PROCESSING)
+        pipeline.tick(this@IProcessingUnit, ProcessingElementStage.FINISHED_PROCESSING)
         onProcessingFinished()
         outputChannel.close()
-        pipeline.tick(this@IProcessingUnit, PipelineElementStage.FINISHED_CLOSING)
+        pipeline.tick(this@IProcessingUnit, ProcessingElementStage.FINISHED_CLOSING)
     }
 
     suspend fun IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.processSingle(value: @UnsafeVariance I)
@@ -55,7 +55,8 @@ interface IProcessingUnit<out I : Any, out O : Any> : Identity {
     suspend fun IProducerScope<@UnsafeVariance O>.onProcessingFinished() = Unit
 }
 
-abstract class AbsProcessingUnit<out I : Any, out O : Any> : IProcessingUnit<I, O> {
+abstract class AbsProcessingUnit<out I : Any, out O : Any> : IProcessingUnit<I, O>,
+    IProcessingWatchDog by ProcessingWatchDog() {
 
     override val scope: CoroutineScopeEx by lazy { params.scopeFactory() }
     override var pipeline: IPipeline<*, *> = DummyPipeline()

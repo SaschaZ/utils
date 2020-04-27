@@ -27,10 +27,9 @@ interface IOnChanged<T> : IOnChanged2<Any?, T>
  * When `true` every "set" to the property will notify the listener.
  * @property scope [CoroutineScope] that is used to notify listener that requested to be notified within a coroutine.
  * @property mutex If not `null` the [Mutex] will wrap the whole execution of [scope].
- * @property veto Is invoked before every change of the property. When returning `true` the new value is not assigned
- * to the property.
- * @property onChangedS Suspend on change callback. Only is invoked when [scope] is set.
- * @property onChange Unsuspended on change callback.
+ * @property veto
+ * @property onChangedS
+ * @property onChange
  */
 interface IOnChanged2<P : Any?, out T : Any?> : ReadWriteProperty<P, @kotlin.UnsafeVariance T> {
     val value: @UnsafeVariance T
@@ -41,8 +40,20 @@ interface IOnChanged2<P : Any?, out T : Any?> : ReadWriteProperty<P, @kotlin.Uns
     val scope: CoroutineScope?
     val mutex: Mutex?
 
+    /**
+     * Is invoked before every change of the property. When returning `true` the new value is not assigned
+     * to the property.
+     */
     fun veto(value: @UnsafeVariance T): Boolean
+
+    /**
+     * Suspend on change callback. Only is invoked when [scope] is set.
+     */
     suspend fun IOnChangedScope<P, @UnsafeVariance T>.onChangedS(value: @UnsafeVariance T)
+
+    /**
+     * Unsuspended on change callback.
+     */
     fun IOnChangedScope<P, @UnsafeVariance T>.onChanged(value: @UnsafeVariance T)
 
     /**
@@ -79,15 +90,17 @@ open class OnChanged2<P : Any?, out T : Any?>(
 
     override var value: @UnsafeVariance T = initial
         set(newValue) {
-            val block = {
-                if (!veto(newValue) && (field != newValue || !notifyOnChangedValueOnly || triggeredChangeRunning)) {
-                    triggeredChangeRunning = false
-                    val old = field
-                    field = newValue
-                    onPropertyChanged(previousThisRef.get(), value, old, recentValues)
+            if (!veto(newValue) && (field != newValue || !notifyOnChangedValueOnly || triggeredChangeRunning)) {
+                triggeredChangeRunning = false
+                val old = field
+                field = newValue
+                if (storeRecentValues) recentValues.add(old)
+
+                OnChangedScope(value, previousThisRef.get(), old, recentValues) { clearRecentValues() }.apply {
+                    scope?.launchEx(mutex = mutex) { onChangedS(value) }
+                    onChanged(value)
                 }
             }
-            scope?.launchEx(mutex = mutex) { block() } ?: block()
         }
 
     init {
@@ -96,27 +109,9 @@ open class OnChanged2<P : Any?, out T : Any?>(
 
     override fun clearRecentValues() = recentValues.clear().asUnit()
 
-    private fun onPropertyChanged(
-        thisRef: P?,
-        new: @UnsafeVariance T,
-        old: @UnsafeVariance T?,
-        previous: List<@UnsafeVariance T?>
-    ) {
-        if (storeRecentValues) recentValues.add(old)
-        notifyListener(thisRef, new, old, previous)
-    }
-
     private fun triggerOnChanged() {
         triggeredChangeRunning = true
         value = value
-    }
-
-    private fun notifyListener(
-        thisRef: P?, new: @UnsafeVariance T, old: @UnsafeVariance T?,
-        previous: List<@UnsafeVariance T?>
-    ) = OnChangedScope(new, thisRef, old, previous) { clearRecentValues() }.apply {
-        scope?.launchEx(mutex = mutex) { onChangedS(new) }
-        onChanged(new)
     }
 
     override fun setValue(thisRef: P, property: KProperty<*>, value: @UnsafeVariance T) {

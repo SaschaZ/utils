@@ -1,9 +1,9 @@
-@file:Suppress("ClassName")
+@file:Suppress("ClassName", "unused")
 
 package dev.zieger.utils.coroutines.channel.pipeline
 
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.coroutines.channel.pipeline.PipelineElementStage.*
+import dev.zieger.utils.coroutines.channel.pipeline.ProcessingElementStage.*
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.misc.asUnit
@@ -20,15 +20,16 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 
-interface IPipelineWatchDog {
+interface IProcessingWatchDog {
 
     var watchDogActive: Boolean
-    val ticks: Map<IProcessingUnit<*, *>, Map<ITimeEx, PipelineElementStage>>
-    fun tick(element: IProcessingUnit<*, *>, stage: PipelineElementStage, time: ITimeEx = TimeEx())
+    val ticks: Map<IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>
+    fun tick(element: IProcessingUnit<*, *>, stage: ProcessingElementStage, time: ITimeEx = TimeEx())
 
-    val Map<IProcessingUnit<*, *>, Map<ITimeEx, PipelineElementStage>>.numPipeElements: Int
-        get() = size + entries.sumBy { (it.key as? IPipelineWatchDog)?.ticks?.numPipeElements ?: 0 }
+    val Map<IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>.numPipeElements: Int
+        get() = size + entries.sumBy { (it.key as? IProcessingWatchDog)?.ticks?.numPipeElements ?: 0 }
 
     val IProcessingUnit<*, *>.numProcessed: Int
         get() = ticks[this]?.count { it.value == PROCESSING } ?: 0
@@ -51,25 +52,45 @@ interface IPipelineWatchDog {
     val IProcessingUnit<*, *>.isSubPipeline: Boolean
         get() = this is IPipeline<*, *>
 
-    val IProcessingUnit<*, *>.subWatchDog: IPipelineWatchDog?
-        get() = this as? IPipelineWatchDog
+    val IProcessingUnit<*, *>.subWatchDog: IProcessingWatchDog?
+        get() = this
 }
 
-sealed class PipelineElementStage {
-    object RECEIVE_INPUT : PipelineElementStage()
-    object PROCESSING : PipelineElementStage()
-    object SEND_OUTPUT : PipelineElementStage()
-    object FINISHED_PROCESSING : PipelineElementStage()
-    object FINISHED_CLOSING : PipelineElementStage()
+sealed class ProcessingElementStage {
+    object RECEIVE_INPUT : ProcessingElementStage()
+    object PROCESSING : ProcessingElementStage()
+    object SEND_OUTPUT : ProcessingElementStage()
+    object FINISHED_PROCESSING : ProcessingElementStage()
+    object FINISHED_CLOSING : ProcessingElementStage()
 }
 
-open class PipelineWatchDog(
+class ProcessingWatchDog private constructor(
     private val scope: CoroutineScope = DefaultCoroutineScope(),
     active: Boolean = false
-) : IPipelineWatchDog {
+) : IProcessingWatchDog {
 
-    private val tickChannel = Channel<Triple<IProcessingUnit<*, *>, PipelineElementStage, ITimeEx>>()
-    override val ticks = ConcurrentHashMap<IProcessingUnit<*, *>, ConcurrentHashMap<ITimeEx, PipelineElementStage>>()
+    companion object {
+        private fun <V> AtomicReference<V>.updateAndGet2(updateFunction: (V) -> V): V {
+            var prev: V?
+            var next: V
+            do {
+                prev = get()
+                next = updateFunction(prev)
+            } while (!compareAndSet(prev, next))
+            return next
+        }
+
+        private var watchDog = AtomicReference<IProcessingWatchDog?>(null)
+
+        operator fun invoke(
+            scope: CoroutineScope = DefaultCoroutineScope(),
+            active: Boolean = false
+        ): IProcessingWatchDog =
+            watchDog.updateAndGet2 { it ?: ProcessingWatchDog(scope, active) }!!
+    }
+
+    private val tickChannel = Channel<Triple<IProcessingUnit<*, *>, ProcessingElementStage, ITimeEx>>()
+    override val ticks = ConcurrentHashMap<IProcessingUnit<*, *>, ConcurrentHashMap<ITimeEx, ProcessingElementStage>>()
 
     private var tickJob: Job? = null
     private var outputJob: Job? = null
@@ -100,7 +121,7 @@ open class PipelineWatchDog(
 
     override fun tick(
         element: IProcessingUnit<*, *>,
-        stage: PipelineElementStage,
+        stage: ProcessingElementStage,
         time: ITimeEx
     ) = scope.launchEx { tickChannel.send(element to stage to time) }.asUnit()
 }
