@@ -4,6 +4,7 @@ package dev.zieger.utils.statemachine
 
 import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 import dev.zieger.utils.log.logV
+import dev.zieger.utils.misc.anyOf
 import dev.zieger.utils.misc.name
 import dev.zieger.utils.statemachine.IConditionElement.*
 import dev.zieger.utils.statemachine.IConditionElement.ICondition.ConditionType.EVENT
@@ -241,7 +242,7 @@ interface IConditionElement {
                     val filtered = elements.filter {
                         (it.hasEvent || it.hasEventGroup) && (other.event.hasEvent || other.event.hasEventGroup)
                                 || (it.hasState || it.hasStateGroup) && (other.state.hasState || other.state.hasStateGroup)
-                                || it.hasExternal && matchType == ALL
+                                || it.hasExternal && matchType.anyOf(ALL, NONE)
                     }
                     filtered.isEmpty() || when (matchType) {
                         ALL -> filtered.all { it.match(other, previousStateChanges) }

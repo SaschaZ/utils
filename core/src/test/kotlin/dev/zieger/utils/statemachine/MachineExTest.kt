@@ -287,9 +287,10 @@ class MachineExTest {
         var isActive = false
         MachineEx(INITIAL, debugLevel = DEBUG) {
             +FIRST + INITIAL + { isActive } set A * TestStateData(true)
-            +SECOND + C + E + { !isActive } set B
+            +SECOND + C + E - { isActive } set B
             +THIRD + A * TestStateData + B - D[X] + { isActive } set C
             +FOURTH + A[0..10] * TestStateData + B set D
+            +SIXTH - { !isActive } set E
         }.run {
             state() assert INITIAL % "Initial"
 
@@ -312,6 +313,13 @@ class MachineExTest {
 
             fire eventSync FOURTH
             state() assert D % "FOURTH with isActive == false"
+
+            fire eventSync SIXTH
+            state() assert D % "SIXTH with isActive == false"
+
+            isActive = true
+            fire eventSync SIXTH
+            state() assert E % "SIXTH with isActive == true"
         }
     }
 }

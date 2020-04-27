@@ -278,3 +278,6 @@ inline fun <T, R> Collection<T>.runEach(block: T.() -> R): List<R> = map { it.ru
 suspend inline fun <T> ReceiveChannel<T>.runEach(block: T.() -> Unit) {
     for (value in this) value.run { block() }
 }
+
+infix fun <T> T.anyOf(values: List<T>) = values.contains(this)
+fun <T> T.anyOf(vararg values: T): Boolean = anyOf(values.toList())
