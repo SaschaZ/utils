@@ -43,12 +43,12 @@ abstract class MachineDsl : IMachineEx {
 
 
     // apply Data with * operator
-    operator fun ISingle.times(slave: ISlave?) = combo.also { it.slave = slave }
+    operator fun ISingle.times(slave: ISlave?) = combo * slave
     operator fun IComboElement.times(slave: ISlave?) = also { it.slave = slave }
-    operator fun IPrevElement.times(slave: ISlave?) = also { it.combo.slave = slave }
+    operator fun IPrevElement.times(slave: ISlave?) = also { it.combo * slave }
 
     // Only the case when slave is added to first item. unary operators are processed before.
-    operator fun Condition.times(slave: ISlave?) = apply { start.also { it.slave = slave } }
+    operator fun Condition.times(slave: ISlave?) = apply { start * slave }
 
     interface IPrevElement {
         val combo: IComboElement
