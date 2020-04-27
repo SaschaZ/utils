@@ -182,15 +182,13 @@ interface IConditionElement {
         val ignoreSlave: Boolean
         var exclude: Boolean
 
-        val single get() = master as? ISingle
         val event get() = master as? IEvent
         val state get() = master as? IState
         val group get() = master as? IGroup<*>
         val eventGroup get() = master as? IEventGroup<*>
         val stateGroup get() = master as? IStateGroup<*>
-        val external get() = single as? IExternal
+        val external get() = master as? IExternal
 
-        val hasSingle get() = single != null
         val hasEvent get() = event != null
         val hasState get() = state != null
         val hasGroup get() = group != null
@@ -243,20 +241,6 @@ interface IConditionElement {
                     val filtered = elements.filter {
                         (it.hasEvent || it.hasEventGroup) && (other.event.hasEvent || other.event.hasEventGroup)
                                 || (it.hasState || it.hasStateGroup) && (other.state.hasState || other.state.hasStateGroup)
-                                || it.hasExternal && matchType == ALL
-                    }
-                    filtered.isEmpty() || when (matchType) {
-                        ALL -> filtered.all { it.match(other, previousStateChanges) }
-                        ANY -> filtered.any { it.match(other, previousStateChanges) }
-                        NONE -> filtered.none { it.match(other, previousStateChanges) }
-                    }
-                }
-                is IComboElement -> {
-                    val filtered = elements.filter {
-                        it.hasEvent && other.hasEvent
-                                || it.hasState && other.hasState
-                                || it.hasEventGroup && other.hasEventGroup
-                                || it.hasStateGroup && other.hasStateGroup
                                 || it.hasExternal && matchType == ALL
                     }
                     filtered.isEmpty() || when (matchType) {
@@ -332,7 +316,6 @@ interface IConditionElement {
                     other.hasState || other.hasStateGroup -> state.match(other, previousStateChanges)
                     else -> false
                 }
-                is IExternal -> other.match(this, previousStateChanges)
                 null -> false
                 else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
             } logV {
