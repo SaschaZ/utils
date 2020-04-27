@@ -5,11 +5,9 @@ package dev.zieger.utils.delegates
 import dev.zieger.utils.core_testing.*
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.time.duration.seconds
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicInteger
@@ -75,7 +73,7 @@ class OnChangedTest {
             var prevVal: Int? = 0
             var prevValues = ArrayList<Int?>().apply { add(0) }
 
-            val num = 10
+            val num = 200
             (1..num).forEach { i ->
                 var newValue: Int
                 do {
@@ -83,7 +81,7 @@ class OnChangedTest {
                 } while (i == 1 && newValue == 0 || newValue == prevVal)
 
                 toTestVar = newValue
-                delay(10)
+//                delay(100)
                 toTestVar assert (if (vetoReturn) 0 else newValue) % "$newValue|$i|V $storePreviousValues|$notifyForExisting|$notifyOnChangedOnly"
                 calledCnt.get() assert when {
                     vetoReturn -> 0
@@ -115,12 +113,12 @@ class OnChangedTest {
             param("storePreviousValues", true, false),
             param("notifyForExisting", true, false),
             param("notifyOnChangedOnly", true, false),
-            param("scope", DefaultCoroutineScope(), null),
+//            param("scope", DefaultCoroutineScope(), null),
             param("mutex", Mutex(), null),
             param("vetoReturn", true, false)
         ) {
             println(this)
-            testWithValues(storePreviousValues, notifyForExisting, notifyOnChangedOnly, scope, mutex, vetoReturn, veto)
+            testWithValues(storePreviousValues, notifyForExisting, notifyOnChangedOnly, null, mutex, vetoReturn, veto)
         }
     }.asUnit()
 
@@ -129,7 +127,8 @@ class OnChangedTest {
         val storePreviousValues: Boolean by bind(map)
         val notifyForExisting: Boolean by bind(map)
         val notifyOnChangedOnly: Boolean by bind(map)
-        val scope: CoroutineScope? by bind(map)
+
+        //        val scope: CoroutineScope? by bind(map)
         val mutex: Mutex? by bind(map)
         val vetoReturn: Boolean by bind(map)
         val veto: (Int) -> Boolean
