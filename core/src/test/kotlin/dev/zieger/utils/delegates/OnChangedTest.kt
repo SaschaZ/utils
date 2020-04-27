@@ -1,3 +1,5 @@
+@file:Suppress("MemberVisibilityCanBePrivate")
+
 package dev.zieger.utils.delegates
 
 import dev.zieger.utils.core_testing.*
@@ -5,14 +7,17 @@ import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.time.duration.seconds
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import org.junit.jupiter.api.Test
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
 class OnChangedTest {
 
-    private var calledCnt: Int = 0
+    private var calledCnt = AtomicInteger(0)
 
     private var toTestOnChangeOldVar: Int? = null
     private var toTestOnChangeNewVar: Int? = null
@@ -24,16 +29,18 @@ class OnChangedTest {
         notifyForExisting: Boolean,
         notifyOnChangedOnly: Boolean,
         scope: CoroutineScope?,
-        mutex: Mutex?
+        mutex: Mutex?,
+        veto: (Int) -> Boolean
     ) = OnChanged(
         0,
         storeRecentValues = storeRecentValues,
         notifyForExisting = notifyForExisting,
         notifyOnChangedValueOnly = notifyOnChangedOnly,
         scope = scope,
-        mutex = mutex
+        mutex = mutex,
+        vetoP = veto
     ) {
-        calledCnt++
+        calledCnt.incrementAndGet()
         toTestOnChangeOldVar = previousValue
         toTestOnChangeNewVar = value
         toTestOnChangePrevValues = previousValues
@@ -41,45 +48,59 @@ class OnChangedTest {
     }
 
     @Test
-    fun testIt() = runTest {
-        fun testWithValues(
+    fun testIt() = runTest(120.seconds) {
+        suspend fun testWithValues(
             storePreviousValues: Boolean,
             notifyForExisting: Boolean,
             notifyOnChangedOnly: Boolean,
             scope: CoroutineScope?,
-            mutex: Mutex?
+            mutex: Mutex?,
+            vetoReturn: Boolean,
+            veto: (Int) -> Boolean
         ) {
-            calledCnt = 0
+            calledCnt.set(0)
             toTestOnChangeOldVar = null
             toTestOnChangeNewVar = null
             toTestOnChangePrevValues = null
             toTestOnChangedClearPrevValues = null
 
-            var toTestVar: Int by newDelegate(storePreviousValues, notifyForExisting, notifyOnChangedOnly, scope, mutex)
+            var toTestVar: Int by newDelegate(
+                storePreviousValues,
+                notifyForExisting,
+                notifyOnChangedOnly,
+                scope,
+                mutex,
+                veto
+            )
             var prevVal: Int? = 0
             var prevValues = ArrayList<Int?>().apply { add(0) }
 
-            (1..100).forEach { i ->
+            val num = 10
+            (1..num).forEach { i ->
                 var newValue: Int
                 do {
                     newValue = Random.nextInt()
-                } while (i == 1 && newValue == 0)
+                } while (i == 1 && newValue == 0 || newValue == prevVal)
 
                 toTestVar = newValue
-                toTestVar assert newValue % "$newValue|$i|V $storePreviousValues|$notifyForExisting|$notifyOnChangedOnly"
-                calledCnt assert when {
+                delay(10)
+                toTestVar assert (if (vetoReturn) 0 else newValue) % "$newValue|$i|V $storePreviousValues|$notifyForExisting|$notifyOnChangedOnly"
+                calledCnt.get() assert when {
+                    vetoReturn -> 0
                     notifyForExisting -> i + 1
                     else -> i
                 } % "$newValue|$i|C $storePreviousValues|$notifyForExisting|$notifyOnChangedOnly"
-                toTestOnChangeNewVar assert newValue % "$newValue|$i|N $storePreviousValues|$notifyForExisting|$notifyOnChangedOnly"
-                toTestOnChangeOldVar assert prevVal % "$newValue|$i|O $storePreviousValues|$notifyForExisting|$notifyOnChangedOnly"
+
+                toTestOnChangeNewVar assert (if (vetoReturn) null else newValue) % "$newValue|$i|N $storePreviousValues|$notifyForExisting|$notifyOnChangedOnly"
+                toTestOnChangeOldVar assert (if (vetoReturn) null else prevVal) % "$newValue|$i|O $storePreviousValues|$notifyForExisting|$notifyOnChangedOnly"
                 toTestOnChangePrevValues assert when {
+                    vetoReturn -> null
                     !storePreviousValues -> emptyList<Int?>()
-                    notifyForExisting && i <= 50 -> listOf(0) + prevValues
+                    notifyForExisting && i <= num / 2 -> listOf(0) + prevValues
                     else -> prevValues
                 } % "$newValue|$i|P $storePreviousValues|$notifyForExisting|$notifyOnChangedOnly"
 
-                if (i == 50) {
+                if (i == num / 2) {
                     toTestOnChangedClearPrevValues?.invoke()
                     prevValues = ArrayList<Int?>()
                 }
@@ -95,9 +116,11 @@ class OnChangedTest {
             param("notifyForExisting", true, false),
             param("notifyOnChangedOnly", true, false),
             param("scope", DefaultCoroutineScope(), null),
-            param("mutex", Mutex(), null)
+            param("mutex", Mutex(), null),
+            param("vetoReturn", true, false)
         ) {
-            testWithValues(storePreviousValues, notifyForExisting, notifyOnChangedOnly, scope, mutex)
+            println(this)
+            testWithValues(storePreviousValues, notifyForExisting, notifyOnChangedOnly, scope, mutex, vetoReturn, veto)
         }
     }.asUnit()
 
@@ -108,5 +131,8 @@ class OnChangedTest {
         val notifyOnChangedOnly: Boolean by bind(map)
         val scope: CoroutineScope? by bind(map)
         val mutex: Mutex? by bind(map)
+        val vetoReturn: Boolean by bind(map)
+        val veto: (Int) -> Boolean
+            get() = { vetoReturn }
     }
 }
