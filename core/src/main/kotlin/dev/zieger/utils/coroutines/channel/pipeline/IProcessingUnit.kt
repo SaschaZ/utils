@@ -21,7 +21,7 @@ interface IProcessingUnit<out I : Any, out O : Any> : Identity, IProcessingWatch
     @Suppress("LeakingThis", "UNCHECKED_CAST")
     fun producerScope(inIdx: Int = 0) =
         ProducerScope<O>(inIdx, outIdx++, params.parallelIdx, params.type, params, scope, { closeOutput() }) {
-            pipeline.tick(this, ProcessingElementStage.SEND_OUTPUT)
+            tick(this, ProcessingElementStage.SEND_OUTPUT)
             (outputChannel as SendChannel<IPipeValue<O>>).send(it)
         }
 
@@ -31,12 +31,12 @@ interface IProcessingUnit<out I : Any, out O : Any> : Identity, IProcessingWatch
     fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IPipeValue<O>> =
         scope.launchEx {
             var prevValue: IPipeValue<I>? = null
-            pipeline.tick(this@IProcessingUnit, ProcessingElementStage.RECEIVE_INPUT)
+            tick(this@IProcessingUnit, ProcessingElementStage.RECEIVE_INPUT)
             for (value in this@process) {
-                pipeline.tick(this@IProcessingUnit, ProcessingElementStage.PROCESSING)
+                tick(this@IProcessingUnit, ProcessingElementStage.PROCESSING)
                 processingScope(value).processSingle(value.value)
                 prevValue = value
-                pipeline.tick(this@IProcessingUnit, ProcessingElementStage.RECEIVE_INPUT)
+                tick(this@IProcessingUnit, ProcessingElementStage.RECEIVE_INPUT)
             }
             prevValue?.let { pv -> processingScope(pv).closeOutput() }
         }.let { outputChannel }
@@ -44,10 +44,10 @@ interface IProcessingUnit<out I : Any, out O : Any> : Identity, IProcessingWatch
 
     suspend fun IProducerScope<@UnsafeVariance O>.closeOutput() {
         Log.v("processing finished params=$params")
-        pipeline.tick(this@IProcessingUnit, ProcessingElementStage.FINISHED_PROCESSING)
+        tick(this@IProcessingUnit, ProcessingElementStage.FINISHED_PROCESSING)
         onProcessingFinished()
         outputChannel.close()
-        pipeline.tick(this@IProcessingUnit, ProcessingElementStage.FINISHED_CLOSING)
+        tick(this@IProcessingUnit, ProcessingElementStage.FINISHED_CLOSING)
     }
 
     suspend fun IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.processSingle(value: @UnsafeVariance I)
