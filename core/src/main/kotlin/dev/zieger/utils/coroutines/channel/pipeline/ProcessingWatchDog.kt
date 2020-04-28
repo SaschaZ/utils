@@ -83,10 +83,9 @@ class ProcessingWatchDog private constructor(
         private var watchDog = AtomicReference<IProcessingWatchDog?>(null)
 
         operator fun invoke(
-            scope: CoroutineScope = DefaultCoroutineScope(),
-            active: Boolean = false
+            scope: CoroutineScope = DefaultCoroutineScope()
         ): IProcessingWatchDog =
-            watchDog.updateAndGet2 { it ?: ProcessingWatchDog(scope, active) }!!
+            watchDog.updateAndGet2 { it ?: ProcessingWatchDog(scope, true) }!!
     }
 
     private val tickChannel = Channel<Triple<IProcessingUnit<*, *>, ProcessingElementStage, ITimeEx>>()
