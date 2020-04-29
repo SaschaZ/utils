@@ -95,8 +95,8 @@ class ProcessingWatchDog private constructor(
     }
 
     private fun printStates() {
-        println("#${hashCode()}-${ticks.entries.joinToString("\n") { (e, _) ->
-            "${e.id}: ${e.numReceived}/${e.numProcessed}/${e.numSend}-${e.hasFinished}/${e.hasClosed}"
+        println("#${hashCode()}-\n${ticks.entries.joinToString("\n") { (e, _) ->
+            "\t${e.id}: ${e.numReceived}/${e.numProcessed}/${e.numSend}-${e.hasFinished}/${e.hasClosed}"
         }}")
     }
 
