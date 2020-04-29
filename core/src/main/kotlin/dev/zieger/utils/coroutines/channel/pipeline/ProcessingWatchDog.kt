@@ -5,9 +5,7 @@ package dev.zieger.utils.coroutines.channel.pipeline
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.channel.pipeline.ProcessingElementStage.*
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
-import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.misc.to
 import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.TimeEx
 import dev.zieger.utils.time.base.minus
@@ -16,15 +14,12 @@ import dev.zieger.utils.time.duration.seconds
 import dev.zieger.utils.time.toTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
 interface IProcessingWatchDog {
 
-    var watchDogActive: Boolean
     val ticks: Map<IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>
     fun tick(element: IProcessingUnit<*, *>, stage: ProcessingElementStage, time: ITimeEx = TimeEx())
 
@@ -54,6 +49,8 @@ interface IProcessingWatchDog {
 
     val IProcessingUnit<*, *>.subWatchDog: IProcessingWatchDog?
         get() = this
+
+    fun release()
 }
 
 sealed class ProcessingElementStage {
@@ -65,8 +62,7 @@ sealed class ProcessingElementStage {
 }
 
 class ProcessingWatchDog private constructor(
-    private val scope: CoroutineScope = DefaultCoroutineScope(),
-    active: Boolean = false
+    private val scope: CoroutineScope = DefaultCoroutineScope()
 ) : IProcessingWatchDog {
 
     companion object {
@@ -80,40 +76,26 @@ class ProcessingWatchDog private constructor(
             return next
         }
 
-        private var watchDog = AtomicReference<IProcessingWatchDog?>(null)
+        private val watchDog = AtomicReference<IProcessingWatchDog?>(null)
 
         operator fun invoke(
             scope: CoroutineScope = DefaultCoroutineScope()
-        ): IProcessingWatchDog =
-            watchDog.updateAndGet2 { it ?: ProcessingWatchDog(scope, true) }!!
+        ): IProcessingWatchDog = watchDog.updateAndGet2 { it ?: ProcessingWatchDog(scope) }!!
     }
 
-    private val tickChannel = Channel<Triple<IProcessingUnit<*, *>, ProcessingElementStage, ITimeEx>>()
     override val ticks = ConcurrentHashMap<IProcessingUnit<*, *>, ConcurrentHashMap<ITimeEx, ProcessingElementStage>>()
 
-    private var tickJob: Job? = null
-    private var outputJob: Job? = null
     private val tickMutex = Mutex()
+    private val outputJob: Job
 
-    override var watchDogActive by OnChanged(active, notifyForExisting = true) {
-        outputJob?.cancel()
-        if (it) outputJob = scope.launchEx(interval = 1.seconds, mutex = tickMutex) {
+    init {
+        outputJob = scope.launchEx(interval = 1.seconds, mutex = tickMutex) {
             printStates()
         }
     }
 
-    init {
-        tickJob = scope.launchEx {
-            for ((element, stage, time) in tickChannel) {
-                tickMutex.withLock {
-                    ticks.getOrPut(element) { ConcurrentHashMap() }.put(time, stage)
-                }
-            }
-        }
-    }
-
     private fun printStates() {
-        println("#${ticks.entries.joinToString("\n") { (e, _) ->
+        println("#${hashCode()}-${ticks.entries.joinToString("\n") { (e, _) ->
             "${e.id}: ${e.numReceived}/${e.numProcessed}/${e.numSend}-${e.hasFinished}/${e.hasClosed}"
         }}")
     }
@@ -122,5 +104,9 @@ class ProcessingWatchDog private constructor(
         element: IProcessingUnit<*, *>,
         stage: ProcessingElementStage,
         time: ITimeEx
-    ) = scope.launchEx { tickChannel.send(element to stage to time) }.asUnit()
+    ) = scope.launchEx(mutex = tickMutex) {
+        ticks.getOrPut(element) { ConcurrentHashMap() }[time] = stage
+    }.asUnit()
+
+    override fun release() = outputJob.cancel().asUnit()
 }

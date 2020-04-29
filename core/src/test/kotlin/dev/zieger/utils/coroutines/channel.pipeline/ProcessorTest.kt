@@ -1,11 +1,11 @@
 package dev.zieger.utils.coroutines.channel.pipeline
 
 import dev.zieger.utils.core_testing.assertion.assert
-import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.misc.runEachIndexed
-import kotlinx.coroutines.channels.Channel
+import dev.zieger.utils.time.duration.minutes
 import kotlinx.coroutines.channels.toList
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.delay
 import org.junit.jupiter.api.Test
 
 class ProcessorTest : IParamsHolder {
@@ -13,16 +13,17 @@ class ProcessorTest : IParamsHolder {
     override val params: IProcessingParams = ProcessingParams()
 
     private val testProducer = producer<Int> {
-        repeat(5) { send(it) }
+        repeat(500) { send(it); delay(10) }
         close()
     }
 
     @Test
-    fun testProcessor() = runBlocking {
+    fun testProcessor() = runTest(1.minutes) {
         var finished = false
         val processorResult = object : Processor<Int, Int>(params, block = {
             send(it)
-        }, identity = NoId, outputChannel = Channel()) {
+            delay(10)
+        }, identity = NoId) {
             override suspend fun IProducerScope<Int>.onProcessingFinished() {
                 finished = true
             }
@@ -30,11 +31,11 @@ class ProcessorTest : IParamsHolder {
             testProducer.produce().process().toList()
         }
         finished assert true
-        processorResult.size assert 5
+        processorResult.size assert 500
         processorResult.runEachIndexed { index ->
             value assert index
             inIdx assert index
             outIdx assert index
         }
-    }.asUnit()
+    }
 }

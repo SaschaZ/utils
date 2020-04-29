@@ -17,17 +17,17 @@ interface IConsumer<out I : Any> : IProcessingUnit<I, Any> {
 
     fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.consume() = scope.launchEx {
         var prevValue: IPipeValue<I>? = null
-        pipeline.tick(this@IConsumer, RECEIVE_INPUT)
+        tick(this@IConsumer, RECEIVE_INPUT)
         for (value in this@consume) {
-            pipeline.tick(this@IConsumer, PROCESSING)
+            tick(this@IConsumer, PROCESSING)
             ConsumerScope(value, params, scope).consumeSingle(value.value)
             prevValue = value
-            pipeline.tick(this@IConsumer, RECEIVE_INPUT)
+            tick(this@IConsumer, RECEIVE_INPUT)
         }
         Log.v("consuming finished")
-        pipeline.tick(this@IConsumer, FINISHED_PROCESSING)
+        tick(this@IConsumer, FINISHED_PROCESSING)
         prevValue?.let { pv -> ConsumerScope(pv, params, scope).onConsumingFinished() }
-        pipeline.tick(this@IConsumer, FINISHED_CLOSING)
+        tick(this@IConsumer, FINISHED_CLOSING)
     }
 
     suspend fun IConsumerScope<@UnsafeVariance I>.consumeSingle(value: @UnsafeVariance I)

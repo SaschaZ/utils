@@ -2,6 +2,7 @@
 
 package dev.zieger.utils.koin
 
+import dev.zieger.utils.koin.GlobalDiHolder.SINGLE_GLOBAL_DI_KEY
 import org.koin.core.KoinApplication
 import org.koin.dsl.KoinAppDeclaration
 import java.util.concurrent.ConcurrentHashMap
@@ -25,7 +26,6 @@ internal class GlobalDi : IGlobalDi {
 object GlobalDiHolder : IGlobalDi by GlobalDi(), (String, Boolean) -> IGlobalDi? {
 
     const val SINGLE_GLOBAL_DI_KEY = "SINGLE_GLOBAL_DI_KEY"
-    var defaultGlobalDiKey: String = SINGLE_GLOBAL_DI_KEY
 
     private val diMap = ConcurrentHashMap<String, IGlobalDi>()
 
@@ -38,18 +38,18 @@ object GlobalDiHolder : IGlobalDi by GlobalDi(), (String, Boolean) -> IGlobalDi?
 }
 
 fun getKoinComponent(
-    key: String = GlobalDiHolder.defaultGlobalDiKey
+    key: String = SINGLE_GLOBAL_DI_KEY
 ) = getKoinComponent(key, false)!!
 
 fun getKoinComponent(
-    key: String = GlobalDiHolder.defaultGlobalDiKey,
+    key: String = SINGLE_GLOBAL_DI_KEY,
     getOnly: Boolean
 ) = GlobalDiHolder(key, getOnly)
 
 fun startKoin(
-    key: String = GlobalDiHolder.defaultGlobalDiKey,
+    key: String = SINGLE_GLOBAL_DI_KEY,
     appDeclaration: KoinAppDeclaration
 ) = getKoinComponent(key).startKoin(appDeclaration)
 
-fun stopKoin(key: String = GlobalDiHolder.defaultGlobalDiKey) =
+fun stopKoin(key: String = SINGLE_GLOBAL_DI_KEY) =
     getKoinComponent(key, true)?.stopKoin()

@@ -42,7 +42,7 @@ open class Producer<out T : Any>(
 ) : AbsProcessingUnit<Any, T>(), IProducer<T>, Identity by identity {
 
     override fun produce(): ReceiveChannel<IPipeValue<T>> = scope.launch {
-        pipeline.tick(this@Producer, ProcessingElementStage.PROCESSING)
+        tick(this@Producer, ProcessingElementStage.PROCESSING)
         producerScope().produce()
     }.let { outputChannel }
 }

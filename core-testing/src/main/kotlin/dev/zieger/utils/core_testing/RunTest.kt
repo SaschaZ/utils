@@ -6,7 +6,7 @@ import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.seconds
 import kotlinx.coroutines.runBlocking
 
-inline fun runTest(
+fun runTest(
     timeout: IDurationEx = 5.seconds,
-    crossinline block: suspend () -> Unit
+    block: suspend () -> Unit
 ) = runBlocking { withTimeout(timeout) { block() } }.asUnit()
