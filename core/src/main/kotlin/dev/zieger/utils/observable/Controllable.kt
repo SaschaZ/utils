@@ -7,7 +7,23 @@ import dev.zieger.utils.delegates.OnChanged2
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 
-typealias Controllable<T> = Controllable2<Any?, T>
+/**
+ * Same as [Controllable2] but without a parent type. Use this if you do not care who holds the observed property.
+ */
+open class Controllable<T>(
+    initial: T,
+    onlyNotifyOnChanged: Boolean = true,
+    override val notifyForExisting: Boolean = false,
+    storeRecentValues: Boolean = false,
+    scope: CoroutineScope? = null,
+    mutex: Mutex? = null,
+    veto: (@UnsafeVariance T) -> Boolean = { false },
+    subscriberStateChanged: ((Boolean) -> Unit)? = null,
+    onControl: Controller<T> = {}
+) : Controllable2<Any?, T>(
+    initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, scope, mutex, veto,
+    subscriberStateChanged, onControl
+)
 
 /**
  * Container that provides observing of the internal variable of type [T].
@@ -22,7 +38,7 @@ typealias Controllable<T> = Controllable2<Any?, T>
 open class Controllable2<P : Any?, out T : Any?>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
-    private val notifyForExistingInternal: Boolean = false,
+    override val notifyForExisting: Boolean = false,
     storeRecentValues: Boolean = false,
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
@@ -30,7 +46,7 @@ open class Controllable2<P : Any?, out T : Any?>(
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
     onControl: Controller2<P, T> = {}
 ) : IControllable2<P, T>,
-    OnChanged2<P, T>(initial, onlyNotifyOnChanged, false, storeRecentValues, scope, mutex,
+    OnChanged2<P, T>(initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, scope, mutex,
         vetoP = veto, onChange = {}) {
 
     private val controller = ArrayList<Controller2<P, T>>()
@@ -55,7 +71,7 @@ open class Controllable2<P : Any?, out T : Any?>(
 
     override fun control(listener: Controller2<P, T>): () -> Unit {
         controller.add(listener)
-        if (notifyForExistingInternal)
+        if (notifyForExisting)
             listener.let { newControlledChangeScope(value, null, null, emptyList()).it(value) }
         updateSubscriberState()
 
@@ -67,7 +83,7 @@ open class Controllable2<P : Any?, out T : Any?>(
 
     override fun controlS(listener: Controller2S<P, T>): () -> Unit {
         controllerS.add(listener)
-        if (notifyForExistingInternal)
+        if (notifyForExisting)
             listener.let {
                 scope?.launchEx(mutex = mutex) {
                     newControlledChangeScope(value, null, null, emptyList()).it(value)

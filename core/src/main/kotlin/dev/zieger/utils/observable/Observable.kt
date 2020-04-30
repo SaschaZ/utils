@@ -9,7 +9,22 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlin.properties.ReadWriteProperty
 
-typealias Observable<T> = Observable2<Any?, T>
+/**
+ * Same as [Observable2] but without a parent type. Use this if you do not care who holds the observed property.
+ */
+open class Observable<out T : Any?>(
+    initial: T,
+    onlyNotifyOnChanged: Boolean = true,
+    private val notifyForExistingInternal: Boolean = false,
+    storeRecentValues: Boolean = false,
+    scope: CoroutineScope? = null,
+    mutex: Mutex? = null,
+    subscriberStateChanged: ((Boolean) -> Unit)? = null,
+    onChanged: Observer<T> = {}
+) : IObservable<T>, Observable2<Any?, T>(
+    initial, onlyNotifyOnChanged, notifyForExistingInternal, storeRecentValues, scope, mutex,
+    subscriberStateChanged, onChanged
+)
 
 /**
  * [ReadWriteProperty] that can be used to add a read only observer to another property with the delegate pattern.
@@ -30,7 +45,7 @@ typealias Observable<T> = Observable2<Any?, T>
 open class Observable2<P : Any?, out T : Any?>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
-    private val notifyForExistingInternal: Boolean = false,
+    override val notifyForExisting: Boolean = false,
     storeRecentValues: Boolean = false,
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
@@ -38,7 +53,7 @@ open class Observable2<P : Any?, out T : Any?>(
     onChanged: Observer2<P, T> = {}
 ) : IObservable2<P, T>,
     OnChanged2<P, T>(
-        initial, storeRecentValues, false, onlyNotifyOnChanged, scope, mutex,
+        initial, storeRecentValues, notifyForExisting, onlyNotifyOnChanged, scope, mutex,
         onChange = onChanged
     ) {
 
@@ -50,7 +65,7 @@ open class Observable2<P : Any?, out T : Any?>(
 
     override fun observe(listener: Observer2<@UnsafeVariance P, @UnsafeVariance T>): () -> Unit {
         observer.add(listener)
-        if (notifyForExistingInternal)
+        if (notifyForExisting)
             OnChangedScope<P, T>(value, null, null, emptyList(), { clearRecentValues() })
                 .listener(value)
         updateSubscriberState()
@@ -63,7 +78,7 @@ open class Observable2<P : Any?, out T : Any?>(
 
     override fun observeS(listener: Observer2S<@UnsafeVariance P, @UnsafeVariance T>): () -> Unit {
         observerS.add(listener)
-        if (notifyForExistingInternal)
+        if (notifyForExisting)
             scope?.launchEx(mutex = mutex) {
                 OnChangedScope<P, T>(value, null, null, emptyList(), { clearRecentValues() })
                     .listener(value)
