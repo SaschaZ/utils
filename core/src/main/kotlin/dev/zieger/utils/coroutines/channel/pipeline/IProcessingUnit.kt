@@ -3,13 +3,22 @@
 package dev.zieger.utils.coroutines.channel.pipeline
 
 import dev.zieger.utils.coroutines.builder.launchEx
+import dev.zieger.utils.coroutines.channel.pipeline.ProcessingElementStage.*
 import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 
+interface IProcessingType {
 
-interface IProcessingUnit<out I : Any, out O : Any> : Identity, IProcessingWatchDog {
+    val isProducer get() = false
+    val isProcessor get() = false
+    val isConsumer get() = false
+    val isPipeline get() = false
+    val isParallelProcessor get() = false
+}
+
+interface IProcessingUnit<out I : Any, out O : Any> : IProcessingType, Identity, IProcessingWatchDog {
 
     var params: IProcessingParams
     val scope: CoroutineScopeEx
@@ -21,7 +30,7 @@ interface IProcessingUnit<out I : Any, out O : Any> : Identity, IProcessingWatch
     @Suppress("LeakingThis", "UNCHECKED_CAST")
     fun producerScope(inIdx: Int = 0) =
         ProducerScope<O>(inIdx, outIdx++, params.parallelIdx, params.type, params, scope, { closeOutput() }) {
-            tick(this, ProcessingElementStage.SEND_OUTPUT)
+            tick(SEND_OUTPUT)
             (outputChannel as SendChannel<IPipeValue<O>>).send(it)
         }
 
@@ -31,12 +40,12 @@ interface IProcessingUnit<out I : Any, out O : Any> : Identity, IProcessingWatch
     fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IPipeValue<O>> =
         scope.launchEx {
             var prevValue: IPipeValue<I>? = null
-            tick(this@IProcessingUnit, ProcessingElementStage.RECEIVE_INPUT)
+            tick(RECEIVE_INPUT)
             for (value in this@process) {
-                tick(this@IProcessingUnit, ProcessingElementStage.PROCESSING)
+                tick(PROCESSING)
                 processingScope(value).processSingle(value.value)
                 prevValue = value
-                tick(this@IProcessingUnit, ProcessingElementStage.RECEIVE_INPUT)
+                tick(RECEIVE_INPUT)
             }
             prevValue?.let { pv -> processingScope(pv).closeOutput() }
         }.let { outputChannel }
@@ -44,10 +53,10 @@ interface IProcessingUnit<out I : Any, out O : Any> : Identity, IProcessingWatch
 
     suspend fun IProducerScope<@UnsafeVariance O>.closeOutput() {
         Log.v("processing finished params=$params")
-        tick(this@IProcessingUnit, ProcessingElementStage.FINISHED_PROCESSING)
+        tick(FINISHED_PROCESSING)
         onProcessingFinished()
         outputChannel.close()
-        tick(this@IProcessingUnit, ProcessingElementStage.FINISHED_CLOSING)
+        tick(FINISHED_CLOSING)
     }
 
     suspend fun IProcessingScope<@UnsafeVariance I, @UnsafeVariance O>.processSingle(value: @UnsafeVariance I)

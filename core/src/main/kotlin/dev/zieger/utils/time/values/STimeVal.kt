@@ -1,12 +1,12 @@
 package dev.zieger.utils.time.values
 
-import dev.zieger.utils.time.base.IMillisecondHolder
+import dev.zieger.utils.time.duration.IDurationHolder
 import dev.zieger.utils.time.time
 
 
 fun <T, IV : ITimeVal<T>> List<IV>.values() = map { it.value }
 
-sealed class STimeVal<out T> : ITimeVal<T>, IMillisecondHolder {
+sealed class STimeVal<out T> : ITimeVal<T>, IDurationHolder {
 
     @Suppress("UNCHECKED_CAST")
     override fun equals(other: Any?) = (other as? ITimeVal<T>)?.let { it == time } == true
@@ -17,8 +17,8 @@ sealed class STimeVal<out T> : ITimeVal<T>, IMillisecondHolder {
 
     class TimeVal<out T>(
         override val value: T,
-        ts: IMillisecondHolder
-    ) : STimeVal<T>(), IMillisecondHolder by ts
+        ts: IDurationHolder
+    ) : STimeVal<T>(), IDurationHolder by ts
 
     open class TripleLineValue(
         val topVal: Double,

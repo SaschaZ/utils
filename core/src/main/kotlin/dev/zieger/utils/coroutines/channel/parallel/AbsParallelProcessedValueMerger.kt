@@ -57,7 +57,5 @@ abstract class AbsParallelProcessedValueMerger<out T : Any>(protected open val p
 }
 
 class ParallelProcessValueMerger<out T : Any>(params: IProcessingParams) : IParallelProcessedValueMerger<T>
-by if (params.type == ParallelProcessingType.UNIQUE) ParallelUniqueProcessedValueMerger(
-    params
-)
+by if (params.type == ParallelProcessingType.UNIQUE) ParallelUniqueProcessedValueMerger(params)
 else ParallelSameProcessedValueMerger(params)

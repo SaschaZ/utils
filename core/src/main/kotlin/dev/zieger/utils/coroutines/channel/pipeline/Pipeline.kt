@@ -10,31 +10,26 @@ interface IPipeline<out I : Any, out O : Any> : IProcessor<I, O> {
         Unit
 }
 
-abstract class AbsPipeline<out I : Any, out O : Any>(
-    override var params: IProcessingParams,
-    override var outputChannel: Channel<out IPipeValue<@UnsafeVariance O>>,
-    private val processors: List<IProcessor<*, *>>
-) : AbsProcessingUnit<I, O>(), IPipeline<I, O>, IProcessor<I, O> {
-
-    override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IPipeValue<O>> {
-        var prevChannel: ReceiveChannel<IPipeValue<Any>> = this
-        processors.forEach { cur -> cur.pipeline = this@AbsPipeline; prevChannel = cur.run { prevChannel.process() } }
-        @Suppress("UNCHECKED_CAST")
-        return prevChannel as ReceiveChannel<IPipeValue<O>>
-    }
-}
-
 open class Pipeline<out I : Any, out O : Any>(
-    params: IProcessingParams = ProcessingParams(),
+    override var params: IProcessingParams = ProcessingParams(),
     identity: Identity = Id("Pipeline"),
-    outputChannel: Channel<out IPipeValue<O>> = Channel(params.channelCapacity),
-    processors: List<IProcessor<*, *>>,
-    observingActive: Boolean = false
-) : AbsPipeline<I, O>(params, outputChannel, processors),
+    override var outputChannel: Channel<out IPipeValue<@UnsafeVariance O>> = Channel(params.channelCapacity),
+    private val processors: List<IProcessor<*, *>>
+) : AbsProcessingUnit<I, O>(),
+    IPipeline<I, O>, IProcessor<I, O>,
     Identity by identity {
+
+    override val isPipeline: Boolean get() = true
 
     @Suppress("LeakingThis")
     override var pipeline: IPipeline<*, *> = this
+
+    override fun ReceiveChannel<IPipeValue<@UnsafeVariance I>>.process(): ReceiveChannel<IPipeValue<O>> {
+        var prevChannel: ReceiveChannel<IPipeValue<Any>> = this
+        processors.forEach { cur -> cur.pipeline = this@Pipeline; prevChannel = cur.run { prevChannel.process() } }
+        @Suppress("UNCHECKED_CAST")
+        return prevChannel as ReceiveChannel<IPipeValue<O>>
+    }
 }
 
 class DummyPipeline :

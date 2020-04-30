@@ -1,11 +1,13 @@
-package dev.zieger.utils.time.base
+package dev.zieger.utils.time.duration
 
-interface IMillisecondHolder : Comparable<IMillisecondHolder> {
+import dev.zieger.utils.time.base.TimeUnit
+import dev.zieger.utils.time.base.convert
 
-    override fun compareTo(other: IMillisecondHolder) = millis.compareTo(other.millis)
+interface IDurationHolder : Comparable<IDurationHolder> {
+
+    override fun compareTo(other: IDurationHolder) = millis.compareTo(other.millis)
 
     val millis: Long
-
     val seconds: Long
         get() = (TimeUnit.MS to TimeUnit.S).convert(millis)
     val minutes: Long
@@ -31,7 +33,7 @@ interface IMillisecondHolder : Comparable<IMillisecondHolder> {
         get() = millis < 0L
 }
 
-fun <T : IMillisecondHolder> List<T>.oldest(): T? = minBy { it.millis }
-fun <T : IMillisecondHolder> List<T>.latest(): T? = maxBy { it.millis }
-fun <T : IMillisecondHolder> List<T>.sort(): List<T> = sortedBy { it.millis }
-fun <T : IMillisecondHolder> List<T>.sortDesc(): List<T> = sortedByDescending { it.millis }
+fun <T : IDurationHolder> List<T>.oldest(): T? = minBy { it.millis }
+fun <T : IDurationHolder> List<T>.latest(): T? = maxBy { it.millis }
+fun <T : IDurationHolder> List<T>.sort(): List<T> = sortedBy { it.millis }
+fun <T : IDurationHolder> List<T>.sortDesc(): List<T> = sortedByDescending { it.millis }

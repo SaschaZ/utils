@@ -47,6 +47,9 @@ open class ParallelProcessor<out I : Any, out O : Any>(
 ) : Processor<I, O>(params, outputChannel, identity, {}),
     IParallelProcessedValueMerger<O> by ParallelProcessValueMerger(params) {
 
+    override val isProcessor: Boolean get() = false
+    override val isParallelProcessor: Boolean get() = true
+
     private val processors = params.parallelIndices.map { processorFactory(it).withParallelIdx(it) }
     private val inputs = params.parallelIndices.map { Channel<IPipeValue<I>>(params.channelCapacity) }
     private val outputs = processors.runEachIndexed { idx -> inputs[idx].process() }

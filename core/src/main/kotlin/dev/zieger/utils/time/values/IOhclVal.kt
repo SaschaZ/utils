@@ -1,8 +1,8 @@
 package dev.zieger.utils.time.values
 
-import dev.zieger.utils.time.base.IMillisecondHolder
+import dev.zieger.utils.time.duration.IDurationHolder
 
-interface IOhclVal : IMillisecondHolder {
+interface IOhclVal : IDurationHolder {
 
     val open: Double
     val high: Double

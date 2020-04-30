@@ -44,15 +44,3 @@ fun Pair<TimeUnit, TimeUnit>.convert(value: Long) =
     (value * first.factorMillis / second.factorMillis.toDouble()).toLong()
 
 fun Long.toMillis(unit: TimeUnit = MS): Long = (unit to MS).convert(this)
-
-val String.timeUnit
-    get() = when (this) {
-        "s" -> TimeUnit.SECOND
-        "m" -> TimeUnit.MINUTE
-        "h" -> TimeUnit.HOUR
-        "d" -> TimeUnit.DAY
-        "w" -> TimeUnit.WEEK
-        "M" -> TimeUnit.MONTH
-        "y" -> TimeUnit.YEAR
-        else -> throw IllegalArgumentException("Can not convert $this to a TimeUnit")
-    }

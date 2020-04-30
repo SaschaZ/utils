@@ -6,8 +6,8 @@ import dev.zieger.utils.coroutines.builder.asyncEx
 import dev.zieger.utils.coroutines.executeNativeBlocking
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.time.TimeEx
-import dev.zieger.utils.time.base.IMillisecondHolder
-import dev.zieger.utils.time.base.latest
+import dev.zieger.utils.time.duration.IDurationHolder
+import dev.zieger.utils.time.duration.latest
 import dev.zieger.utils.time.toTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -248,7 +248,7 @@ fun <K : Any, V : Any> ConcurrentHashMap<K, ArrayList<V>>.update(key: K, value: 
 fun <K : Any, V : Any> ConcurrentHashMap<K, ArrayList<V>>.addAll(key: K, value: List<V>) =
     getOrPut(key) { ArrayList() }.addAll(value)
 
-suspend inline fun <reified T : IMillisecondHolder> processTimeHolderListProducer(
+suspend inline fun <reified T : IDurationHolder> processTimeHolderListProducer(
     startTime: TimeEx,
     crossinline request: (endTime: TimeEx?) -> List<T>?
 ) = CoroutineScope(coroutineContext).asyncEx(null) {

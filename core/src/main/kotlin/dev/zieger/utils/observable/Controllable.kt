@@ -7,6 +7,7 @@ import dev.zieger.utils.delegates.OnChanged2
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 
+
 /**
  * Same as [Controllable2] but without a parent type. Use this if you do not care who holds the observed property.
  */

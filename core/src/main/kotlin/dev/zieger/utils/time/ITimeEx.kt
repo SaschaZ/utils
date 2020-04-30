@@ -1,10 +1,10 @@
 package dev.zieger.utils.time
 
-import dev.zieger.utils.time.base.IMillisecondHolderComparator
+import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.zone.ITimeZoneHolder
 import java.util.*
 
-interface ITimeEx : IMillisecondHolderComparator, ITimeZoneHolder, StringConverter {
+interface ITimeEx : IDurationEx, ITimeZoneHolder, StringConverter {
 
     val date: Date
         get() = Date(millis + zone.rawOffset + zone.dstSavings)

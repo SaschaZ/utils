@@ -2,6 +2,7 @@
 
 package dev.zieger.utils.coroutines.channel.pipeline
 
+import dev.zieger.utils.coroutines.channel.pipeline.ProcessingElementStage.PRODUCING
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
@@ -41,8 +42,10 @@ open class Producer<out T : Any>(
         { throw IllegalArgumentException("No producer block defined") }
 ) : AbsProcessingUnit<Any, T>(), IProducer<T>, Identity by identity {
 
+    override val isProducer: Boolean get() = true
+
     override fun produce(): ReceiveChannel<IPipeValue<T>> = scope.launch {
-        tick(this@Producer, ProcessingElementStage.PROCESSING)
+        tick(PRODUCING)
         producerScope().produce()
     }.let { outputChannel }
 }

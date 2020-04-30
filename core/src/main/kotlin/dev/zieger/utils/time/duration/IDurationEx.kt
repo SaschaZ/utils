@@ -1,10 +1,11 @@
 package dev.zieger.utils.time.duration
 
 import dev.zieger.utils.misc.divMod
-import dev.zieger.utils.time.base.IMillisecondHolderComparator
 import dev.zieger.utils.time.base.TimeUnit
 
-interface IDurationEx : IMillisecondHolderComparator {
+interface IDurationEx : IDurationHolderComparator {
+
+    val nanos: Long
 
     fun formatDuration(
         align: Boolean = false,
