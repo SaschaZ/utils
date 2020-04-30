@@ -26,12 +26,11 @@ internal suspend fun <T : Any?> executeExInternal(
 ): T {
     delayed?.also { delay(it) }
     if (!coroutineContext.isActive) return returnOnCatch
-    if (!coroutineContext.isActive) return returnOnCatch
 
     var result: T = returnOnCatch
     do {
-        val runtime = (mutex ?: Mutex()).withLock {
-            measureTimeMillis {
+        val runtime = measureTimeMillis {
+            (mutex ?: Mutex()).withLock {
                 val scope = CoroutineScope(coroutineContext)
                 catch(
                     Unit, maxExecutions, printStackTrace, logStackTrace,

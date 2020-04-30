@@ -35,7 +35,7 @@ open class Observable2<P : Any?, out T : Any?>(
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
-    onChanged: IOnChangedScope<P, T>.(T) -> Unit = {}
+    onChanged: Observer2<P, T> = {}
 ) : IObservable2<P, T>,
     OnChanged2<P, T>(
         initial, storeRecentValues, false, onlyNotifyOnChanged, scope, mutex,
