@@ -15,14 +15,14 @@ import kotlin.properties.ReadWriteProperty
 open class Observable<out T : Any?>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
-    private val notifyForExistingInternal: Boolean = false,
+    override val notifyForExisting: Boolean = false,
     storeRecentValues: Boolean = false,
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
     onChanged: Observer<T> = {}
 ) : IObservable<T>, Observable2<Any?, T>(
-    initial, onlyNotifyOnChanged, notifyForExistingInternal, storeRecentValues, scope, mutex,
+    initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, scope, mutex,
     subscriberStateChanged, onChanged
 )
 
