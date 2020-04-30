@@ -77,9 +77,9 @@ open class OnChanged2<P : Any?, out T : Any?>(
     override val notifyOnChangedValueOnly: Boolean = true,
     override val scope: CoroutineScope? = null,
     override val mutex: Mutex? = null,
-    val vetoP: (@UnsafeVariance T) -> Boolean = { false },
-    val onChangeS: suspend IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {},
-    val onChange: IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {}
+    open val vetoP: (@UnsafeVariance T) -> Boolean = { false },
+    open val onChangeS: suspend IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {},
+    open val onChange: IOnChangedScope<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {}
 
 ) : IOnChanged2<P, @UnsafeVariance T> {
 

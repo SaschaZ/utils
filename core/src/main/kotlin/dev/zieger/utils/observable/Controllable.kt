@@ -26,10 +26,12 @@ open class Controllable2<P : Any?, out T : Any?>(
     storeRecentValues: Boolean = false,
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
+    veto: (@UnsafeVariance T) -> Boolean = { false },
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
     onControl: Controller2<P, T> = {}
 ) : IControllable2<P, T>,
-    OnChanged2<P, T>(initial, onlyNotifyOnChanged, false, storeRecentValues, scope, mutex, onChange = {}) {
+    OnChanged2<P, T>(initial, onlyNotifyOnChanged, false, storeRecentValues, scope, mutex,
+        vetoP = veto, onChange = {}) {
 
     private val controller = ArrayList<Controller2<P, T>>()
     private val controllerS = ArrayList<Controller2S<P, T>>()
