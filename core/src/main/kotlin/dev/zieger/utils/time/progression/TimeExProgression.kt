@@ -1,6 +1,7 @@
 package dev.zieger.utils.time.progression
 
 import dev.zieger.utils.time.ITimeEx
+import dev.zieger.utils.time.base.bigI
 import dev.zieger.utils.time.base.plus
 import dev.zieger.utils.time.base.times
 import dev.zieger.utils.time.duration.IDurationEx
@@ -23,7 +24,7 @@ open class TimeExProgression(
 }
 
 infix fun ITimeEx.until(other: ITimeEx) =
-    (this..(other.millis - 1).toTime())
+    (this..(other.millis - 1.bigI).toTime())
 
 infix fun ClosedRange<ITimeEx>.step(step: Number) =
     TimeExProgression(start, endInclusive, step.milliseconds)

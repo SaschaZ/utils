@@ -1,22 +1,19 @@
 package dev.zieger.utils.time.duration
 
 import dev.zieger.utils.misc.divMod
+import dev.zieger.utils.time.base.INanoTime
 import dev.zieger.utils.time.base.TimeUnit
+import dev.zieger.utils.time.base.bigD
+import dev.zieger.utils.time.base.bigI
 
-interface IDurationEx : IDurationHolderComparator {
+interface IDurationEx : INanoTime {
 
-    val nanos: Long
-
-    fun formatDuration(
-        align: Boolean = false,
-        onlyDaysAndHours: Boolean = false,
-        withSeconds: Boolean = false
-    ): String {
-        var millisTmp = millis
-        return TimeUnit.values().filter { !it.isCloned }.sortedByDescending { it.factorMillis }.mapNotNull { unit ->
-            val (div, mod) = millisTmp.divMod(unit.factorMillis)
-            millisTmp = mod
-            if (div > 0L) "${"%d".format(div)}${unit.shortChar}" else null
+    fun formatDuration(): String {
+        var secondsTmp = seconds
+        return TimeUnit.values().filter { !it.isCloned }.sortedByDescending { it.factorNanos }.mapNotNull { unit ->
+            val (div, mod) = secondsTmp.bigD.divMod(unit.factorNanos)
+            secondsTmp = mod.bigI
+            if (div.bigI > 0.bigI) "${"%d".format(div.toLong())}${unit.shortChar}" else null
         }.joinToString(" ")
     }
 }

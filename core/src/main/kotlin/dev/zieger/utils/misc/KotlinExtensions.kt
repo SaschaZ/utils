@@ -6,8 +6,8 @@ import dev.zieger.utils.coroutines.builder.asyncEx
 import dev.zieger.utils.coroutines.executeNativeBlocking
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.time.TimeEx
-import dev.zieger.utils.time.duration.IDurationHolder
-import dev.zieger.utils.time.duration.latest
+import dev.zieger.utils.time.base.INanoTime
+import dev.zieger.utils.time.base.latest
 import dev.zieger.utils.time.toTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -28,7 +28,7 @@ fun Long.divMod(div: Double, modulo: ((Long, Long) -> Unit)? = null) =
     (this / div).also { modulo?.invoke(it.toLong(), (this % div).toLong()) }
 
 @Suppress("UNCHECKED_CAST")
-fun <T : Number> T.divMod(div: T): Pair<T, T> = (this / div) as T to (this % div) as T
+fun <T : Number> T.divMod(div: T): Pair<T, T> = (this / div).internal as T to (this % div).internal as T
 
 fun List<Double?>.average(sizeForce: Int? = null, selector: ((Double?) -> Boolean)? = null): Double? {
     val selected = filterNotNull().filter { selector?.invoke(it) ?: true }
@@ -248,7 +248,7 @@ fun <K : Any, V : Any> ConcurrentHashMap<K, ArrayList<V>>.update(key: K, value: 
 fun <K : Any, V : Any> ConcurrentHashMap<K, ArrayList<V>>.addAll(key: K, value: List<V>) =
     getOrPut(key) { ArrayList() }.addAll(value)
 
-suspend inline fun <reified T : IDurationHolder> processTimeHolderListProducer(
+suspend inline fun <reified T : INanoTime> processTimeHolderListProducer(
     startTime: TimeEx,
     crossinline request: (endTime: TimeEx?) -> List<T>?
 ) = CoroutineScope(coroutineContext).asyncEx(null) {

@@ -1,11 +1,11 @@
 package dev.zieger.utils.time.values
 
 import dev.zieger.utils.time.ITimeEx
-import dev.zieger.utils.time.duration.IDurationHolder
+import dev.zieger.utils.time.base.INanoTime
 import dev.zieger.utils.time.time
 import java.io.Serializable
 
-interface ITimeVal<out T> : IDurationHolder, Serializable {
+interface ITimeVal<out T> : INanoTime, Serializable {
 
     val value: T
 

@@ -1,8 +1,8 @@
 package dev.zieger.utils.time.values
 
-import dev.zieger.utils.time.duration.IDurationHolder
+import dev.zieger.utils.time.base.INanoTime
 
-interface IOhclVal : IDurationHolder {
+interface IOhclVal : INanoTime {
 
     val open: Double
     val high: Double

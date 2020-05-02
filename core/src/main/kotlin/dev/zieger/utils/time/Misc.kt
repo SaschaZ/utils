@@ -7,7 +7,7 @@ import dev.zieger.utils.time.progression.TimeExProgression
 import dev.zieger.utils.time.progression.step
 
 
-suspend fun delay(time: IDurationEx) = kotlinx.coroutines.delay(time.millis)
+suspend fun delay(time: IDurationEx) = kotlinx.coroutines.delay(time.millis.toLong())
 
 fun ClosedRange<ITimeEx>.ticks(
     interval: IDurationEx,

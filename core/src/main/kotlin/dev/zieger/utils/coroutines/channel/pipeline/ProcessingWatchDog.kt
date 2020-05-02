@@ -166,9 +166,8 @@ open class ProcessingWatchDog protected constructor(
     override fun release() = outputJob?.cancel().asUnit()
 }
 
-inline fun <reified T : IProcessingUnit<*, *>> Map<IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>.filter(
+private inline fun <reified T : IProcessingUnit<*, *>> Map<IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>.filter(
     filter: (Map.Entry<IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>) -> Boolean
-):
-        Map<T, Map<ITimeEx, ProcessingElementStage>>? =
+): Map<T, Map<ITimeEx, ProcessingElementStage>>? =
     entries.filter(filter).mapNotNull { it.key.castSafe<T>()?.let { s -> s to it.value } }
         .nullWhen { it.isEmpty() }?.toMap()

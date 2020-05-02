@@ -1,17 +1,18 @@
 package dev.zieger.utils.time
 
+import dev.zieger.utils.time.base.INanoTime
+import dev.zieger.utils.time.base.NanoTime
 import dev.zieger.utils.time.base.TimeUnit
 import dev.zieger.utils.time.base.TimeUnit.MS
 import dev.zieger.utils.time.base.toMillis
-import dev.zieger.utils.time.duration.IDurationHolder
+import java.math.BigInteger
 import java.util.*
 
 //@Serializable
 open class TimeEx(
-    override val millis: Long = System.currentTimeMillis(),
-    override val nanos: Long = System.nanoTime(),
+    nanos: BigInteger,
     override val zone: TimeZone = TimeZone.getDefault()
-) : ITimeEx {
+) : NanoTime(nanos), ITimeEx {
 
     //    @Serializer(forClass = TimeEx::class)
     companion object : TimeParseHelper() {//, KSerializer<TimeEx> {
@@ -53,26 +54,29 @@ open class TimeEx(
 //        }
     }
 
+    constructor(millis: Long = System.currentTimeMillis(), nanos: Long = System.nanoTime()) :
+            this((millis to nanos).big)
+
     constructor(value: Number, timeUnit: TimeUnit = MS, timeZone: TimeZone = TimeZone.getDefault()) :
-            this(value.toLong().toMillis(timeUnit), 0L, timeZone)
+            this(value.toMillis(timeUnit), timeZone)
 
     constructor(source: String, timeZone: TimeZone = TimeZone.getDefault()) :
-            this(source.stringToMillis(timeZone), 0L, timeZone)
+            this(source.stringToMillis(timeZone), MS, timeZone)
 
     constructor(date: Date, timeZone: TimeZone = TimeZone.getDefault()) :
-            this(date.time, 0L, timeZone)
+            this(date.time, MS, timeZone)
 
     override fun toString() = formatTime(DateFormat.COMPLETE)
     override fun equals(other: Any?) = millis == (other as? ITimeEx)?.millis
             && nanos == other.nanos
             && zone == other.zone
 
-    override fun hashCode() = millis.hashCode() + nanos.hashCode() + zone.hashCode() + javaClass.hashCode()
+    override fun hashCode() = millis.hashCode() + nanos.hashCode() + zone.hashCode()
 }
 
 
 fun Number.toTime() = toTime(MS)
 infix fun Number.toTime(unit: TimeUnit) = TimeEx(this, unit)
 
-val IDurationHolder.time: ITimeEx
+val INanoTime.time: ITimeEx
     get() = millis.toTime()

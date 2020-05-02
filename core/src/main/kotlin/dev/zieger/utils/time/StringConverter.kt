@@ -1,7 +1,7 @@
 package dev.zieger.utils.time
 
 import dev.zieger.utils.time.DateFormat.*
-import dev.zieger.utils.time.duration.IDurationHolder
+import dev.zieger.utils.time.base.INanoTime
 import dev.zieger.utils.time.zone.ITimeZoneHolder
 import java.text.SimpleDateFormat
 import java.util.*
@@ -20,10 +20,10 @@ enum class DateFormat {
     EXCHANGE
 }
 
-interface StringConverter : IDurationHolder, ITimeZoneHolder {
+interface StringConverter : INanoTime, ITimeZoneHolder {
 
     fun formatTime(format: DateFormat = COMPLETE): String =
-        StringConverterDelegate.formatTime(format, millis, zone)
+        StringConverterDelegate.formatTime(format, millis.toLong(), zone)
 }
 
 object StringConverterDelegate {

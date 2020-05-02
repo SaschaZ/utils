@@ -7,10 +7,10 @@ import java.util.*
 interface ITimeEx : IDurationEx, ITimeZoneHolder, StringConverter {
 
     val date: Date
-        get() = Date(millis + zone.rawOffset + zone.dstSavings)
+        get() = Date(millis.toLong() + zone.rawOffset + zone.dstSavings)
 
     val calendar: Calendar
-        get() = Calendar.getInstance(zone).apply { timeInMillis = millis }
+        get() = Calendar.getInstance(zone).apply { timeInMillis = millis.toLong() }
 
     /**
      * @see [Calendar.get]
