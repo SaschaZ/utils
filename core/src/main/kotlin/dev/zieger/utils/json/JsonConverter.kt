@@ -1,24 +1,53 @@
+@file:Suppress("unused")
+
 package dev.zieger.utils.json
 
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dev.zieger.utils.misc.catch
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.builtins.list
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
+import java.lang.reflect.Type
 
-open class JsonConverter {
 
-    private val json = Json(JsonConfiguration.Stable)
+interface IJsonConverterContext {
 
-    fun <T : Any> @UnsafeVariance T.toJson(serializer: KSerializer<T>): String? =
-        catch(null, onCatch = { print(it) }) { json.stringify(serializer, this) }
+    val converter: JsonConverter
+        get() = JsonConverter()
 
-    fun <T : Any> List<@UnsafeVariance T>.toJson(serializer: KSerializer<T>): String? =
-        catch(null, onCatch = { print(it) }) { json.stringify(serializer.list, this) }
+    fun <T> json(block: JsonConverter.() -> T): T = JsonConverter().block()
+}
 
-    fun <T : Any> String.fromJson(serializer: KSerializer<T>): T? =
-        catch(null, onCatch = { print(it) }) { json.parse(serializer, this) }
+data class JsonConverterContext(override val converter: JsonConverter = JsonConverter()) : IJsonConverterContext
 
-    fun <T : Any> String.fromJsonList(serializer: KSerializer<T>): List<T>? =
-        catch(null, onCatch = { print(it) }) { json.parse(serializer.list, this) }
+open class JsonConverter(vararg adapter: Any) {
+
+    val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).also { m -> adapter.forEach { m.add(it) } }.build()!!
+
+    inline fun <reified T : Any> T.toJson(type: Type? = null): String? =
+        catch(null, onCatch = { print(it) }) {
+            moshi.adapter<T>(type ?: T::class.java).toJson(this)
+        }
+
+    inline fun <reified T : Any> List<T>.toJson(type: Type? = null): String? =
+        catch(null, onCatch = { print(it) }) {
+            val typeToUse: Type = Types.newParameterizedType(
+                List::class.java,
+                type ?: T::class.java
+            )
+            moshi.adapter<List<T>>(typeToUse).toJson(this)
+        }
+
+    inline fun <reified T : Any> String.fromJson(type: Type? = null): T? =
+        catch(null, onCatch = { print(it) }) {
+            moshi.adapter<T>(type ?: T::class.java).fromJson(this)
+        }
+
+    inline fun <reified T : Any> String.fromJsonList(type: Type? = null): List<T>? =
+        catch(null, onCatch = { print(it) }) {
+            val typeToUse: Type = Types.newParameterizedType(
+                List::class.java,
+                type ?: T::class.java
+            )
+            moshi.adapter<List<T>>(typeToUse).fromJson(this)
+        }
 }

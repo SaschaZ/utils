@@ -25,7 +25,7 @@ fun Number.toDuration(): IDurationEx = toDuration(MS)
 
 infix fun BigInteger.toDuration(unit: TimeUnit): IDurationEx = DurationEx(this, unit)
 infix fun Number.toDuration(unit: TimeUnit): IDurationEx = bigI.toDuration(unit)
-infix fun INanoTime.toDuration(unit: TimeUnit): IDurationEx = nanos.toDuration(unit)
+infix fun INanoTime.toDuration(unit: TimeUnit): IDurationEx = nanosInternal.toDuration(unit)
 
 
 val BigInteger.nanos: IDurationEx

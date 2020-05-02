@@ -33,7 +33,8 @@ private fun Project.configureDependencies(type: ModuleType, block: DependencyHan
         }
 
         kotlin
-        kotlinSerialization
+        moshi
+        moshiKotlin
 
         koin
         slf4jSimple

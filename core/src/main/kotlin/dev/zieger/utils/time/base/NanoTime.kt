@@ -1,108 +1,106 @@
-@file:Suppress("unused")
+@file:Suppress("unused", "ClassName")
 
 package dev.zieger.utils.time.base
 
 import dev.zieger.utils.misc.castSafe
+import dev.zieger.utils.misc.toBigInteger
+import dev.zieger.utils.time.base.INanoTime.Companion.BaseType
+import dev.zieger.utils.time.base.TimeUnit.*
+import dev.zieger.utils.time.duration.nanos
+import dev.zieger.utils.time.duration.years
 import java.math.BigInteger
 
 interface INanoTime : Comparable<INanoTime>, Comparator<INanoTime> {
 
-    var nanos: BigInteger
+    companion object {
 
-    operator fun plusAssign(other: INanoTime) {
-        nanos += other.nanos
+        enum class BaseType {
+            SECONDS,
+            MILLIS,
+            NANOS
+        }
     }
 
-    operator fun plusAssign(other: Number) {
-        nanos += other.bigI
-    }
+    var secondsInternal: Long
+    var millisInternal: Long
+    var nanosInternal: BigInteger
 
-    operator fun minusAssign(other: INanoTime) {
-        nanos -= other.nanos
-    }
+    var baseType: BaseType
 
-    operator fun minusAssign(other: Number) {
-        nanos -= other.bigI
-    }
+    var base: Number
+        get() = when (baseType) {
+            BaseType.SECONDS -> secondsInternal
+            BaseType.MILLIS -> millisInternal
+            BaseType.NANOS -> nanosInternal
+        }
+        set(value) = when (baseType) {
+            BaseType.SECONDS -> secondsInternal = value.toLong()
+            BaseType.MILLIS -> millisInternal = value.toLong()
+            BaseType.NANOS -> nanosInternal = value.toBigInteger()
+        }
 
-    operator fun timesAssign(other: INanoTime) {
-        nanos *= other.nanos
-    }
+    override fun compareTo(other: INanoTime): Int = nanosInternal.compareTo(other.nanosInternal)
+    override fun compare(p0: INanoTime, p1: INanoTime) = p0.nanosInternal.compareTo(p1.nanosInternal)
 
-    operator fun timesAssign(other: Number) {
-        nanos *= other.bigI
-    }
-
-    operator fun divAssign(other: INanoTime) {
-        nanos /= other.nanos
-    }
-
-    operator fun divAssign(other: Number) {
-        nanos /= other.bigI
-    }
-
-    operator fun remAssign(other: INanoTime) {
-        nanos %= other.nanos
-    }
-
-    operator fun remAssign(other: Number) {
-        nanos %= other.bigI
-    }
-
-    override fun compareTo(other: INanoTime): Int = nanos.compareTo(other.nanos)
-    override fun compare(p0: INanoTime, p1: INanoTime) = p0.nanos.compareTo(p1.nanos)
-
-    val micros: BigInteger
-        get() = (TimeUnit.N to TimeUnit.MC).convert(nanos)
-    val millis: BigInteger
-        get() = (TimeUnit.N to TimeUnit.MS).convert(nanos)
-    val seconds: BigInteger
-        get() = (TimeUnit.N to TimeUnit.S).convert(nanos)
-    val minutes: BigInteger
-        get() = (TimeUnit.N to TimeUnit.M).convert(nanos)
-    val hours: BigInteger
-        get() = (TimeUnit.N to TimeUnit.H).convert(nanos)
-    val days: BigInteger
-        get() = (TimeUnit.N to TimeUnit.D).convert(nanos)
-    val weeks: BigInteger
-        get() = (TimeUnit.N to TimeUnit.W).convert(nanos)
-    val months: BigInteger
-        get() = (TimeUnit.N to TimeUnit.MONTH).convert(nanos)
-    val years: BigInteger
-        get() = (TimeUnit.N to TimeUnit.YEAR).convert(nanos)
+    val micros: Number
+        get() = (N to MC).convert(base)
+    val millis: Number
+        get() = (N to MS).convert(base)
+    val seconds: Number
+        get() = (N to S).convert(base)
+    val minutes: Number
+        get() = (N to M).convert(base)
+    val hours: Number
+        get() = (N to H).convert(base)
+    val days: Number
+        get() = (N to D).convert(base)
+    val weeks: Number
+        get() = (N to W).convert(base)
+    val months: Number
+        get() = (N to MONTH).convert(base)
+    val years: Number
+        get() = (N to YEAR).convert(base)
 
     val notZero: Boolean
-        get() = nanos != 0.toBigInteger()
+        get() = base != 0.toBigInteger()
 
     val positive: Boolean
-        get() = nanos > 0.toBigInteger()
+        get() = base > 0
 
     val negative: Boolean
-        get() = nanos < 0.toBigInteger()
+        get() = base < 0
 }
 
 open class NanoTime(
-    override var nanos: BigInteger = System.nanoTime().toBigInteger()
+    override var baseType: BaseType = BaseType.MILLIS,
+    override var nanosInternal: BigInteger = System.nanoTime().bigI,
+    override var millisInternal: Long = System.currentTimeMillis(),
+    override var secondsInternal: Long = millisInternal / 1000
 ) : INanoTime {
 
     companion object {
 
-        val Pair<Long, Long>.big get() = first.bigI.shiftLeft(Long.SIZE_BITS) + second.bigI
+        private const val tsStart = 1970L
+        private val Number.leapYears get() = this / 4 - this / 100 + this / 400
+        private val to1970: BigInteger = tsStart.years.nanos + tsStart.leapYears.days
+        val Pair<Long, Long>.big: BigInteger
+            get() = first.bigI.add(to1970).toNanos(MS) + (second % 1000000).bigI
     }
 
     override fun equals(other: Any?): Boolean = other?.castSafe<INanoTime>()?.let {
-        nanos == it.nanos
+        base == it.base
     } == true
 
-    override fun hashCode(): Int = nanos.hashCode()
+    override fun hashCode(): Int = base.hashCode()
 }
 
-operator fun Number.compareTo(other: INanoTime) = bigI.compareTo(other.nanos)
+operator fun Number.compareTo(other: INanoTime): Int = bigI.compareTo(other.nanosInternal)
+operator fun Number.compareTo(other: Number): Int = toLong().compareTo(other.toLong())
 
 fun <T : INanoTime> min(a: T, b: T): T = if (a < b) a else b
 fun <T : INanoTime> max(a: T, b: T): T = if (a > b) a else b
 
-fun <T : INanoTime> List<T>.oldest(): T? = minBy { it.nanos }
-fun <T : INanoTime> List<T>.latest(): T? = maxBy { it.nanos }
-fun <T : INanoTime> List<T>.sort(): List<T> = sortedBy { it.nanos }
-fun <T : INanoTime> List<T>.sortDesc(): List<T> = sortedByDescending { it.nanos }
+fun <T : INanoTime> List<T>.oldest(): T? = minBy { it.nanosInternal }
+fun <T : INanoTime> List<T>.latest(): T? = maxBy { it.nanosInternal }
+fun <T : INanoTime> List<T>.sort(): List<T> = sortedBy { it.nanosInternal }
+fun <T : INanoTime> List<T>.sortDesc(): List<T> = sortedByDescending { it.nanosInternal }

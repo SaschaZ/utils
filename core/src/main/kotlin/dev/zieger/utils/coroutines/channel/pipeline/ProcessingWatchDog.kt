@@ -126,7 +126,7 @@ open class ProcessingWatchDog protected constructor(
                         e.hasClosed -> "closed"
                         e.hasFinished -> "finished"
                         e.isWaitingSince != null -> "waiting(${e.isWaitingSince})"
-                        else -> "active(${e.lastUpdateBefore})"
+                        else -> "active(${e.lastUpdateBefore.formatDuration()})"
                     }
         })
     }

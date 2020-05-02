@@ -46,13 +46,16 @@ class TimeUnitTest {
 
     @Test
     fun testFormatDuration() {
-        val duration = 10.seconds
-        duration.formatDuration() assert "10S"
+        val duration = 10.seconds + 100.milliseconds
+        duration.formatDuration() assert "10S 100MS"
 
         val duration2 = 2.years + 3.months + 10.days + 15.hours + 34.minutes
         duration2.formatDuration() assert "2Y 3M 1W 3D 15H 34MIN"
 
         val duration3 = 2020.years + 5.months + 2.days
         duration3.formatDuration() assert "2020Y 5M 2D"
+
+        val duration4 = TimeEx().toDuration()
+        duration4.formatDuration() assert "2020Y 5M 2D"
     }
 }

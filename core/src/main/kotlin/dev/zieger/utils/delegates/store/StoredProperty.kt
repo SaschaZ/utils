@@ -7,7 +7,6 @@ import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.json.DefaultSerializer
 import dev.zieger.utils.json.ISerializer
 import dev.zieger.utils.misc.asUnit
-import kotlinx.serialization.KSerializer
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -17,8 +16,7 @@ import kotlin.reflect.KProperty
 @Suppress("FunctionName")
 inline fun <reified P : IStoreContext, reified T : Any> StoredProperty(
     initial: T,
-    kSerializer: KSerializer<T>,
-    serializer: ISerializer<T> = DefaultSerializer(kSerializer),
+    serializer: ISerializer<T> = DefaultSerializer(),
     key: String? = null,
     noinline onChange: IOnChangedScope<*, T>.(T) -> Unit = {}
 ) = object : ReadWriteProperty<P, T> {

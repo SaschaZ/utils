@@ -2,13 +2,14 @@
 
 package dev.zieger.utils.misc
 
-import dev.zieger.utils.time.duration.milliseconds
+import dev.zieger.utils.time.base.compareTo
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.math.MathContext
 import kotlin.math.pow
 
-interface INumber {
+interface INumber : Comparable<INumber>, Comparator<INumber> {
+
     /**
      * Returns the value of this number as a [Double], which may involve rounding.
      */
@@ -55,7 +56,7 @@ interface INumber {
     fun toBigDecimal(): BigDecimal
 }
 
-open class NumberEx(internal val internal: Number) : Number(), INumber, Comparable<NumberEx> {
+open class NumberEx(internal val internal: Number) : Number(), INumber {
 
     constructor(value: Double) : this(value as Number)
     constructor(value: Float) : this(value as Number)
@@ -70,7 +71,8 @@ open class NumberEx(internal val internal: Number) : Number(), INumber, Comparab
     constructor(value: NumberEx) : this(value.internal)
 
 
-    override fun compareTo(other: NumberEx): Int = internal.milliseconds.compareTo(other.milliseconds)
+    override fun compareTo(other: INumber): Int = (other as? Number)?.let { internal.compareTo(it) } ?: 0
+    override fun compare(o1: INumber?, o2: INumber?): Int = whenNotNull(o1, o2) { a, b -> a.compareTo(b) } ?: 0
 
     override fun equals(other: Any?) = (other as? NumberEx)?.internal == internal || (other as? Number) == internal
 
