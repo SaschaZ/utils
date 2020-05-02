@@ -6,12 +6,11 @@ import dev.zieger.utils.delegates.store.IStoreContext
 import dev.zieger.utils.delegates.store.StoreContext
 import dev.zieger.utils.delegates.store.StoredProperty
 import dev.zieger.utils.misc.name
-import kotlinx.serialization.builtins.serializer
 import org.junit.jupiter.api.Test
 
 class StoredPropertyTest : IStoreContext by StoreContext(StoredPropertyTest::class.name) {
 
-    private var testProperty: Int by StoredProperty(0, Int.serializer())
+    private var testProperty: Int by StoredProperty(0)
 
     @Test
     fun testStoredProperty() = runTest {

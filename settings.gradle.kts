@@ -1,15 +1,4 @@
 pluginManagement {
-    resolutionStrategy {
-        eachPlugin {
-            if (requested.id.id == "org.jetbrains.kotlin.jvm") {
-                useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.71")
-            }
-            if (requested.id.id == "kotlinx-serialization") {
-                useModule("org.jetbrains.kotlin:kotlin-serialization:1.3.71")
-            }
-        }
-    }
-
     repositories {
         mavenCentral()
         jcenter()
