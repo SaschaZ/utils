@@ -6,7 +6,6 @@ import dev.zieger.utils.kotlinReflect
 
 plugins {
     kotlin("jvm")
-    kotlin("plugin.serialization") version "1.3.72"
     id("maven-publish")
     id("org.jetbrains.dokka")
     jacoco
