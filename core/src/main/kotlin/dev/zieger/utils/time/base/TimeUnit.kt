@@ -44,3 +44,6 @@ fun Pair<TimeUnit, TimeUnit>.convert(value: Long) =
     (value * first.factorMillis / second.factorMillis.toDouble()).toLong()
 
 fun Long.toMillis(unit: TimeUnit = MS): Long = (unit to MS).convert(this)
+
+val String.timeUnit: TimeUnit?
+    get() = TimeUnit.values().firstOrNull { it.shortChar == this }

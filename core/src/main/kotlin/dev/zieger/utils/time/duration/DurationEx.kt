@@ -7,8 +7,7 @@ import dev.zieger.utils.time.base.TimeUnit.*
 import dev.zieger.utils.time.base.toMillis
 
 open class DurationEx private constructor(
-    override val millis: Long = 0L,
-    override val nanos: Long = 0L
+    override val millis: Long = 0L
 ) : IDurationEx {
 
     companion object : TimeParseHelper()
@@ -17,9 +16,9 @@ open class DurationEx private constructor(
 
     override fun toString() = formatDuration()
     override fun equals(other: Any?) =
-        other?.castSafe<IDurationEx>()?.let { millis == it.millis && nanos == it.nanos } == true
+        other?.castSafe<IDurationEx>()?.let { millis == it.millis } == true
 
-    override fun hashCode() = millis.hashCode() + nanos.hashCode() + javaClass.hashCode()
+    override fun hashCode() = millis.hashCode() + javaClass.hashCode()
 }
 
 fun Number.toDuration() = toDuration(MS)

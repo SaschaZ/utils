@@ -22,39 +22,39 @@ import java.util.concurrent.atomic.AtomicReference
 
 interface IProcessingWatchDog {
 
-    val ticks: MutableMap<IProcessingUnit<*, *>, MutableMap<ITimeEx, ProcessingElementStage>>
+    val ticks: MutableMap<IProcessingUnit<*, *>, MutableMap<ITimeEx, MutableList<ProcessingElementStage>>>
     fun IProcessingUnit<*, *>.tick(stage: ProcessingElementStage, time: ITimeEx = TimeEx())
 
-    val Map<IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>.producer: Map<IProducer<*>, Map<ITimeEx, ProcessingElementStage>>?
+    val Map<IProcessingUnit<*, *>, Map<ITimeEx, List<ProcessingElementStage>>>.producer: Map<IProducer<*>, Map<ITimeEx, List<ProcessingElementStage>>>?
         get() = filter { it.key.isProducer }
 
-    val Map<IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>.processor: Map<IProcessor<*, *>, Map<ITimeEx, ProcessingElementStage>>?
+    val Map<IProcessingUnit<*, *>, Map<ITimeEx, List<ProcessingElementStage>>>.processor: Map<IProcessor<*, *>, Map<ITimeEx, List<ProcessingElementStage>>>?
         get() = filter { it.key.isProcessor }
 
-    val Map<IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>.parallelProcessor: Map<ParallelProcessor<*, *>, Map<ITimeEx, ProcessingElementStage>>?
+    val Map<IProcessingUnit<*, *>, Map<ITimeEx, List<ProcessingElementStage>>>.parallelProcessor: Map<ParallelProcessor<*, *>, Map<ITimeEx, List<ProcessingElementStage>>>?
         get() = filter { it.key.isParallelProcessor }
 
-    val Map<IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>.pipeline: Map<IPipeline<*, *>, Map<ITimeEx, ProcessingElementStage>>?
+    val Map<IProcessingUnit<*, *>, Map<ITimeEx, List<ProcessingElementStage>>>.pipeline: Map<IPipeline<*, *>, Map<ITimeEx, List<ProcessingElementStage>>>?
         get() = filter { it.key.isPipeline }
 
-    val Map<IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>.consumer: Map<IConsumer<*>, Map<ITimeEx, ProcessingElementStage>>?
+    val Map<IProcessingUnit<*, *>, Map<ITimeEx, List<ProcessingElementStage>>>.consumer: Map<IConsumer<*>, Map<ITimeEx, List<ProcessingElementStage>>>?
         get() = filter { it.key.isConsumer }
 
-    val Map<IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>.numPipeElements: Int
+    val Map<IProcessingUnit<*, *>, Map<ITimeEx, List<ProcessingElementStage>>>.numPipeElements: Int
         get() = size + entries.sumBy { (it.key as? IProcessingWatchDog)?.ticks?.numPipeElements ?: 0 }
 
     val IProcessingUnit<*, *>.numProcessed: Int
-        get() = ticks[this]?.count { it.value == PROCESSING } ?: 0
+        get() = ticks[this]?.values?.flatten()?.count { it.anyOf(PROCESSING, CONSUMING, PRODUCING) } ?: 0
 
     val IProcessingUnit<*, *>.numReceived: Int
-        get() = ticks[this]?.count { it.value == RECEIVE_INPUT } ?: 0
+        get() = ticks[this]?.values?.flatten()?.count { it == RECEIVE_INPUT } ?: 0
 
     val IProcessingUnit<*, *>.numSend: Int
-        get() = ticks[this]?.count { it.value == SEND_OUTPUT } ?: 0
+        get() = ticks[this]?.values?.flatten()?.count { it == SEND_OUTPUT } ?: 0
 
     val IProcessingUnit<*, *>.isWaitingSince: IDurationEx?
         get() = ticks[this]?.entries?.maxBy { it.key }?.run {
-            if (value == RECEIVE_INPUT)
+            if (value.lastOrNull() == RECEIVE_INPUT)
                 TimeEx() - key
             else null
         }
@@ -64,7 +64,7 @@ interface IProcessingWatchDog {
             ?: false
 
     val IProcessingUnit<*, *>.hasClosed: Boolean
-        get() = ticks[this]?.any { it.value == FINISHED_CLOSING } ?: false
+        get() = ticks[this]?.any { it.value.anyOf(FINISHED_CLOSING) } ?: false
 
     val IProcessingUnit<*, *>.lastUpdateBefore: IDurationEx
         get() = TimeEx() - (ticks[this]?.maxBy { it.key }?.key ?: 0.toTime())
@@ -104,7 +104,8 @@ open class ProcessingWatchDog protected constructor(
             ?: watchDog.updateAndGetLegacy { it ?: ProcessingWatchDog(scope, printInterval) }!!
     }
 
-    override val ticks = ConcurrentHashMap<IProcessingUnit<*, *>, MutableMap<ITimeEx, ProcessingElementStage>>()
+    override val ticks =
+        ConcurrentHashMap<IProcessingUnit<*, *>, MutableMap<ITimeEx, MutableList<ProcessingElementStage>>>()
 
     private val tickMutex = Mutex()
     private var outputJob: Job? = null
@@ -118,7 +119,7 @@ open class ProcessingWatchDog protected constructor(
         }
     }
 
-    private fun Map<out IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>.printStats(numTabs: Int = 1) {
+    private fun Map<out IProcessingUnit<*, *>, Map<ITimeEx, List<ProcessingElementStage>>>.printStats(numTabs: Int = 1) {
         println(entries.joinToString("\n") { (e, _) ->
             "${(0 until numTabs).joinToString("") { "\t" }}${e.id}: " +
                     "${e.numReceived}/${e.numProcessed}/${e.numSend}-" +
@@ -131,7 +132,7 @@ open class ProcessingWatchDog protected constructor(
         })
     }
 
-    protected open fun printStates(ticks: Map<IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>) {
+    protected open fun printStates(ticks: MutableMap<IProcessingUnit<*, *>, MutableMap<ITimeEx, MutableList<ProcessingElementStage>>>) {
         ticks.pipeline?.run {
             println("\tPipeline")
             printStats(1)
@@ -160,15 +161,14 @@ open class ProcessingWatchDog protected constructor(
         time: ITimeEx
     ) = scope.launchEx(mutex = tickMutex) {
         val element: IProcessingUnit<*, *> = this@tick
-        ticks.getOrPut(element) { ConcurrentHashMap() }[time] = stage
+        ticks.getOrPut(element) { ConcurrentHashMap() }.getOrPut(time) { ArrayList() }.add(stage)
     }.asUnit()
 
     override fun release() = outputJob?.cancel().asUnit()
 }
 
-inline fun <reified T : IProcessingUnit<*, *>> Map<IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>.filter(
-    filter: (Map.Entry<IProcessingUnit<*, *>, Map<ITimeEx, ProcessingElementStage>>) -> Boolean
-):
-        Map<T, Map<ITimeEx, ProcessingElementStage>>? =
+inline fun <reified T : IProcessingUnit<*, *>> Map<IProcessingUnit<*, *>, Map<ITimeEx, List<ProcessingElementStage>>>.filter(
+    filter: (Map.Entry<IProcessingUnit<*, *>, Map<ITimeEx, List<ProcessingElementStage>>>) -> Boolean
+): Map<T, Map<ITimeEx, List<ProcessingElementStage>>>? =
     entries.filter(filter).mapNotNull { it.key.castSafe<T>()?.let { s -> s to it.value } }
         .nullWhen { it.isEmpty() }?.toMap()

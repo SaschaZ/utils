@@ -5,6 +5,7 @@ package dev.zieger.utils.coroutines.channel.parallel
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.channel.pipeline.*
 import dev.zieger.utils.coroutines.channel.pipeline.ParallelProcessingType.*
+import dev.zieger.utils.coroutines.channel.pipeline.ProcessingElementStage.SEND_OUTPUT
 import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.misc.runEachIndexed
 import kotlinx.coroutines.channels.Channel
@@ -60,6 +61,7 @@ open class ParallelProcessor<out I : Any, out O : Any>(
                 @Suppress("UNCHECKED_CAST")
                 value.suspendUntilInPosition {
                     outputChannel.send(value)
+                    ProcessingWatchDog().run { tick(SEND_OUTPUT) }
                 }
             }
             Log.v("finished idx=$idx")

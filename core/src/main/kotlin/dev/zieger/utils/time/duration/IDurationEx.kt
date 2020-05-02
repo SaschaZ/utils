@@ -5,8 +5,6 @@ import dev.zieger.utils.time.base.TimeUnit
 
 interface IDurationEx : IDurationHolderComparator {
 
-    val nanos: Long
-
     fun formatDuration(
         align: Boolean = false,
         onlyDaysAndHours: Boolean = false,
