@@ -2,7 +2,7 @@
 
 package dev.zieger.utils.delegates.store
 
-import dev.zieger.utils.delegates.IOnChangedScope
+import dev.zieger.utils.delegates.IOnChangedScope2
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.json.DefaultSerializer
 import dev.zieger.utils.json.ISerializer
@@ -18,10 +18,10 @@ inline fun <reified P : IStoreContext, reified T : Any> StoredProperty(
     initial: T,
     serializer: ISerializer<T> = DefaultSerializer(),
     key: String? = null,
-    noinline onChange: IOnChangedScope<*, T>.(T) -> Unit = {}
+    noinline onChange: IOnChangedScope2<*, T>.(T) -> Unit = {}
 ) = object : ReadWriteProperty<P, T> {
 
-    private var internalValue: T by OnChanged(initial, onChange = onChange)
+    private var internalValue: T by OnChanged(initial, onChanged = onChange)
 
     override fun getValue(thisRef: P, property: KProperty<*>) =
         serializer.run { thisRef.readValue(key ?: property.name).deserialize() ?: initial }

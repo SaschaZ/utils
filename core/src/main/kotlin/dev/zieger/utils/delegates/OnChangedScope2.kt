@@ -1,5 +1,12 @@
+@file:Suppress("unused")
+
 package dev.zieger.utils.delegates
 
+
+/**
+ * Same as [IOnChangedScope2] but with [Any]? as parent type.
+ */
+interface IOnChangedScope<out T : Any?> : IOnChangedScope2<Any?, T>
 
 /**
  * Scope that describes the change of any property of type [T] hold by a parent of type [P].
@@ -10,7 +17,7 @@ package dev.zieger.utils.delegates
  * @property previousValues all previous values of the property
  * @property clearPreviousValues Lambda to clear the previous values
  */
-interface IOnChangedScope<P : Any?, out T : Any?> {
+interface IOnChangedScope2<P : Any?, out T : Any?> {
     val value: @UnsafeVariance T
     val thisRef: P?
     val previousValue: T?
@@ -19,12 +26,25 @@ interface IOnChangedScope<P : Any?, out T : Any?> {
 }
 
 /**
- * Simple implementation of [IOnChangedScope].
+ * Same as [OnChangedScope2] but with [Any]? as parent type.
  */
-data class OnChangedScope<P : Any?, out T : Any?>(
+open class OnChangedScope<out T : Any?>(
+    value: @UnsafeVariance T,
+    thisRef: Any?,
+    previousValue: T?,
+    previousValues: List<T?>,
+    clearPreviousValues: () -> Unit
+) : OnChangedScope2<Any?, T>(
+    value, thisRef, previousValue, previousValues, clearPreviousValues
+), IOnChangedScope<T>
+
+/**
+ * Simple implementation of [IOnChangedScope2].
+ */
+open class OnChangedScope2<P : Any?, out T : Any?>(
     override val value: @UnsafeVariance T,
     override val thisRef: P?,
     override val previousValue: T?,
     override val previousValues: List<T?>,
     override val clearPreviousValues: () -> Unit
-) : IOnChangedScope<P, T>
+) : IOnChangedScope2<P, T>

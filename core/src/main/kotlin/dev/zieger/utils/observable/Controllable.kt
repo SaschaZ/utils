@@ -1,9 +1,8 @@
 package dev.zieger.utils.observable
 
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.delegates.IOnChangedScope
 import dev.zieger.utils.delegates.OnChanged
-import dev.zieger.utils.delegates.OnChanged2
+import dev.zieger.utils.delegates.OnChangedBase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 
@@ -11,23 +10,29 @@ import kotlinx.coroutines.sync.Mutex
 /**
  * Same as [Controllable2] but without a parent type. Use this if you do not care who holds the observed property.
  */
-open class Controllable<T>(
+open class Controllable<out T : Any?>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
     override val notifyForExisting: Boolean = false,
     storeRecentValues: Boolean = false,
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
-    veto: (@UnsafeVariance T) -> Boolean = { false },
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
+    veto: (@UnsafeVariance T) -> Boolean = { false },
     onControl: Controller<T> = {}
-) : Controllable2<Any?, T>(
-    initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, scope, mutex, veto,
-    subscriberStateChanged, onControl
-)
+) : IControllable<T>, ControllableBase<Any?, T, IControlledChangedScope<T>>(
+    initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, scope, mutex,
+    subscriberStateChanged, veto, onControl
+) {
+    override fun newOnChangedScope(
+        newValue: @UnsafeVariance T,
+        previousValue: @UnsafeVariance T?
+    ): IControlledChangedScope<T> = ControlledChangedScope(newValue, previousThisRef.get(), previousValue, recentValues,
+        { clearRecentValues() }, { })
+}
 
 /**
- * Container that provides observing of the internal variable of type [T].
+ * Container that provides observing of the delegated property of type [T].
  *
  * @param T Type of the internal value.
  * @param initial Initial value for the internal variable. Will not notify any observers.
@@ -36,22 +41,53 @@ open class Controllable<T>(
  * @param subscriberStateChanged Is invoked when an observer is added or removed.
  * @param onControl Callback that is invoked when the internal values changes.
  */
-open class Controllable2<P : Any?, out T : Any?>(
+open class Controllable2<P : Any, out T : Any?>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
     override val notifyForExisting: Boolean = false,
     storeRecentValues: Boolean = false,
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
-    veto: (@UnsafeVariance T) -> Boolean = { false },
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
-    onControl: Controller2<P, T> = {}
-) : IControllable2<P, T>,
-    OnChanged2<P, T>(initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, scope, mutex,
-        vetoP = veto, onChange = {}) {
+    veto: (@UnsafeVariance T) -> Boolean = { false },
+    onControl: IControlledChangedScope2<P, T>.(T) -> Unit = {}
+) : IControllable2<P, T>, ControllableBase<P, T, IControlledChangedScope2<P, T>>(
+    initial,
+    onlyNotifyOnChanged,
+    notifyForExisting,
+    storeRecentValues,
+    scope,
+    mutex,
+    subscriberStateChanged,
+    veto,
+    onControl
+) {
 
-    private val controller = ArrayList<Controller2<P, T>>()
-    private val controllerS = ArrayList<Controller2S<P, T>>()
+    override fun newOnChangedScope(
+        newValue: @UnsafeVariance T,
+        previousValue: @UnsafeVariance T?
+    ): IControlledChangedScope2<P, T> =
+        ControlledChangedScope2(newValue, previousThisRef.get(), previousValue, recentValues, { clearRecentValues() }) {
+            value = it
+        }
+}
+
+abstract class ControllableBase<P : Any?, out T : Any?, out S : IControlledChangedScope2<P, T>>(
+    initial: T,
+    onlyNotifyOnChanged: Boolean = true,
+    override val notifyForExisting: Boolean = false,
+    storeRecentValues: Boolean = false,
+    scope: CoroutineScope? = null,
+    mutex: Mutex? = null,
+    subscriberStateChanged: ((Boolean) -> Unit)? = null,
+    veto: (@UnsafeVariance T) -> Boolean = { false },
+    onControl: S.(T) -> Unit = {}
+) : IControllableBase<P, T, S>,
+    OnChangedBase<P, T, S>(initial, onlyNotifyOnChanged, false, storeRecentValues,
+        scope, mutex, veto, onChanged = {}) {
+
+    private val controller = ArrayList<S.(T) -> Unit>()
+    private val controllerS = ArrayList<suspend S.(T) -> Unit>()
     private var subscribersAvailable by OnChanged(false) { new ->
         subscriberStateChanged?.invoke(new)
     }
@@ -61,19 +97,10 @@ open class Controllable2<P : Any?, out T : Any?>(
         control(onControl)
     }
 
-    private fun newControlledChangeScope(
-        newValue: @UnsafeVariance T,
-        thisRef: P?,
-        previousValue: T?,
-        previousValues: List<T?>
-    ) = ControlledChangedScope(newValue, thisRef, previousValue, previousValues, { clearRecentValues() }) {
-        value = it
-    }
-
-    override fun control(listener: Controller2<P, T>): () -> Unit {
+    override fun control(listener: S.(T) -> Unit): () -> Unit {
         controller.add(listener)
         if (notifyForExisting)
-            listener.let { newControlledChangeScope(value, null, null, emptyList()).it(value) }
+            listener.let { newOnChangedScope(value, null).it(value) }
         updateSubscriberState()
 
         return {
@@ -82,12 +109,12 @@ open class Controllable2<P : Any?, out T : Any?>(
         }
     }
 
-    override fun controlS(listener: Controller2S<P, T>): () -> Unit {
+    override fun controlS(listener: suspend S.(T) -> Unit): () -> Unit {
         controllerS.add(listener)
         if (notifyForExisting)
             listener.let {
                 scope?.launchEx(mutex = mutex) {
-                    newControlledChangeScope(value, null, null, emptyList()).it(value)
+                    newOnChangedScope(value, null).it(value)
                 }
             }
         updateSubscriberState()
@@ -98,14 +125,14 @@ open class Controllable2<P : Any?, out T : Any?>(
         }
     }
 
-    override fun IOnChangedScope<P, @UnsafeVariance T>.onChanged(value: @UnsafeVariance T) =
+    override fun (@UnsafeVariance S).onChangedInternal(value: @UnsafeVariance T) =
         ArrayList(controller).forEach {
-            newControlledChangeScope(value, thisRef, previousValue, previousValues).it(value)
+            newOnChangedScope(value, previousValue).it(value)
         }
 
-    override suspend fun IOnChangedScope<P, @UnsafeVariance T>.onChangedS(value: @UnsafeVariance T) =
+    override suspend fun (@UnsafeVariance S).onChangedSInternal(value: @UnsafeVariance T) =
         ArrayList(controllerS).forEach {
-            newControlledChangeScope(value, thisRef, previousValue, previousValues).it(value)
+            newOnChangedScope(value, previousValue).it(value)
         }
 
     private fun updateSubscriberState() {

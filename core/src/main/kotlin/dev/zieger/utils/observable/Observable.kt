@@ -1,10 +1,7 @@
 package dev.zieger.utils.observable
 
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.delegates.IOnChangedScope
-import dev.zieger.utils.delegates.OnChanged
-import dev.zieger.utils.delegates.OnChanged2
-import dev.zieger.utils.delegates.OnChangedScope
+import dev.zieger.utils.delegates.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlin.properties.ReadWriteProperty
@@ -21,10 +18,13 @@ open class Observable<out T : Any?>(
     mutex: Mutex? = null,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
     onChanged: Observer<T> = {}
-) : IObservable<T>, Observable2<Any?, T>(
+) : IObservableBase<Any?, T, IOnChangedScope<T>>, IObservable<T>, ObservableBase<Any?, T, IOnChangedScope<T>>(
     initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, scope, mutex,
     subscriberStateChanged, onChanged
-)
+) {
+    override fun newOnChangedScope(newValue: @UnsafeVariance T, previousValue: @UnsafeVariance T?): IOnChangedScope<T> =
+        OnChangedScope(newValue, previousThisRef.get(), previousValue, recentValues, { recentValues.clear() })
+}
 
 /**
  * [ReadWriteProperty] that can be used to add a read only observer to another property with the delegate pattern.
@@ -50,24 +50,45 @@ open class Observable2<P : Any?, out T : Any?>(
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
-    onChanged: Observer2<P, T> = {}
-) : IObservable2<P, T>,
-    OnChanged2<P, T>(
-        initial, storeRecentValues, notifyForExisting, onlyNotifyOnChanged, scope, mutex,
-        onChange = onChanged
+    onChanged: Observer2<P, T>? = null
+) : IObservable2<P, T>, ObservableBase<P, T, IOnChangedScope2<P, T>>(
+    initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, scope, mutex, subscriberStateChanged, onChanged
+) {
+    override fun newOnChangedScope(
+        newValue: @UnsafeVariance T,
+        previousValue: @UnsafeVariance T?
+    ): IOnChangedScope2<P, T> =
+        OnChangedScope2(newValue, previousThisRef.get(), previousValue, recentValues, { recentValues.clear() })
+}
+
+abstract class ObservableBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>(
+    initial: T,
+    onlyNotifyOnChanged: Boolean = true,
+    override val notifyForExisting: Boolean = false,
+    storeRecentValues: Boolean = false,
+    scope: CoroutineScope? = null,
+    mutex: Mutex? = null,
+    subscriberStateChanged: ((Boolean) -> Unit)? = null,
+    onChanged: (S.(T) -> Unit)? = null
+) : IObservableBase<P, T, S>,
+    OnChangedBase<P, T, S>(
+        initial, storeRecentValues, notifyForExisting, onlyNotifyOnChanged, scope, mutex
     ) {
 
-    private val observer = ArrayList<Observer2<@UnsafeVariance P, @UnsafeVariance T>>()
-    private val observerS = ArrayList<Observer2S<@UnsafeVariance P, @UnsafeVariance T>>()
+    private val observer = ArrayList<S.(T) -> Unit>()
+    private val observerS = ArrayList<suspend S.(T) -> Unit>()
     private var subscribersAvailable by OnChanged(false) { new ->
         subscriberStateChanged?.invoke(new)
     }
 
-    override fun observe(listener: Observer2<@UnsafeVariance P, @UnsafeVariance T>): () -> Unit {
+    init {
+        onChanged?.also { observe(onChanged) }
+    }
+
+    override fun observe(listener: S.(T) -> Unit): () -> Unit {
         observer.add(listener)
         if (notifyForExisting)
-            OnChangedScope<P, T>(value, null, null, emptyList(), { clearRecentValues() })
-                .listener(value)
+            newOnChangedScope(value, null).listener(value)
         updateSubscriberState()
 
         return {
@@ -76,12 +97,11 @@ open class Observable2<P : Any?, out T : Any?>(
         }
     }
 
-    override fun observeS(listener: Observer2S<@UnsafeVariance P, @UnsafeVariance T>): () -> Unit {
+    override fun observeS(listener: suspend S.(T) -> Unit): () -> Unit {
         observerS.add(listener)
         if (notifyForExisting)
             scope?.launchEx(mutex = mutex) {
-                OnChangedScope<P, T>(value, null, null, emptyList(), { clearRecentValues() })
-                    .listener(value)
+                newOnChangedScope(value, null).listener(value)
             }
         updateSubscriberState()
 
@@ -91,10 +111,10 @@ open class Observable2<P : Any?, out T : Any?>(
         }
     }
 
-    override fun IOnChangedScope<P, @UnsafeVariance T>.onChanged(value: @UnsafeVariance T) =
+    override fun (@UnsafeVariance S).onChangedInternal(value: @UnsafeVariance T) =
         observer.forEach { it(value) }
 
-    override suspend fun IOnChangedScope<P, @UnsafeVariance T>.onChangedS(value: @UnsafeVariance T) =
+    override suspend fun (@UnsafeVariance S).onChangedSInternal(value: @UnsafeVariance T) =
         observerS.forEach { it(value) }
 
     private fun updateSubscriberState() {

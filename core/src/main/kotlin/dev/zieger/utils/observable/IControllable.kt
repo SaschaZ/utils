@@ -1,38 +1,28 @@
+@file:Suppress("unused")
+
 package dev.zieger.utils.observable
 
-import dev.zieger.utils.delegates.IOnChanged2
+interface IControllable<out T : Any?> : IControllableBase<Any?, @UnsafeVariance T, IControlledChangedScope<T>>
 
 /**
  * Same as [IObservable] but allows to change the internal variable.
  */
-interface IControllable2<out P, out T> : IOnChanged2<@UnsafeVariance P, @UnsafeVariance T> {
+interface IControllable2<P, out T> : IControllableBase<P, @UnsafeVariance T, IControlledChangedScope2<P, T>>
 
-    /**
-     * Controlled variable.
-     * Changes on this variable will notify registered observers immediately.
-     */
-    override var value: @UnsafeVariance T
+interface IControllableBase<P : Any?, out T : Any?, out S : IControlledChangedScope2<P, T>> {
 
     /**
      * Observe to changes on the internal [value] and change internal value if needed.
      */
-    fun control(listener: Controller2<P, T>): () -> Unit
+    fun control(listener: S.(T) -> Unit): () -> Unit
 
     /**
      * Observe to changes on the internal [value] and change internal value if needed.
      */
-    fun controlS(listener: Controller2S<P, T>): () -> Unit
-}
+    fun controlS(listener: suspend S.(T) -> Unit): () -> Unit
 
-interface IControllable<out T> : IControllable2<Any?, T> {
-
-    /**
-     * Observe to changes on the internal [value] and change internal value if needed.
-     */
-    override fun control(listener: Controller<T>): () -> Unit
-
-    /**
-     * Observe to changes on the internal [value] and change internal value if needed.
-     */
-    override fun controlS(listener: ControllerS<T>): () -> Unit
+    fun newOnChangedScope(
+        newValue: @UnsafeVariance T,
+        previousValue: @UnsafeVariance T?
+    ): S
 }

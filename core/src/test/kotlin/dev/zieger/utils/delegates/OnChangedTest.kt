@@ -38,7 +38,7 @@ class OnChangedTest {
         notifyOnChangedValueOnly = notifyOnChangedOnly,
         scope = scope,
         mutex = mutex,
-        vetoP = veto
+        veto = veto
     ) {
         calledCnt.incrementAndGet()
         toTestOnChangeOldVar = previousValue
