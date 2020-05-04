@@ -18,13 +18,13 @@ class ControllableTest {
 
     @Test
     fun `test controllable`() = runTest {
-        val testObservable = Controllable("foo")
-        testObservable.value assert "foo" % "1"
+        val testControllable = Controllable("foo")
+        testControllable.value assert "foo" % "1"
 
-        testObservable.value = "boo"
+        testControllable.value = "boo"
         delay(100L)
 
-        testObservable.value assert "boo" % "2"
+        testControllable.value assert "boo" % "2"
     }
 
     @Test
@@ -38,17 +38,16 @@ class ControllableTest {
             param("mutex", Mutex(), null)
         ) {
             println(this)
-            val testClass = this
 
-            testClass.controllable.control { Log.d("111=$it"); if (value == "foo") value = "boo" }
+            controllable.control { Log.d("111=$it"); if (value == "foo") value = "boo" }
             delay(100L)
-            testClass.controllable.value assert (if (notifyForExisting) "boo" else "foo") % "1"
-            testClass.value assert (if (notifyForExisting) "boo" else "foo") % "2"
+            controllable.value assert (if (notifyForExisting) "boo" else "foo") % "1"
+            value assert (if (notifyForExisting) "boo" else "foo") % "2"
 
-            testClass.value = "moo"
+            value = "moo"
             delay(100L)
-            testClass.value assert "moo" % "3"
-            testClass.controllable.value assert "moo" % "4"
+            value assert "moo" % "3"
+            controllable.value assert "moo" % "4"
         }
     }
 

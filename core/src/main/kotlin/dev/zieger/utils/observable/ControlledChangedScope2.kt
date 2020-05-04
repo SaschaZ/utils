@@ -16,9 +16,10 @@ open class ControlledChangedScope<out T : Any?>(
     previousValue: T?,
     previousValues: List<T?>,
     onClearRecentValues: () -> Unit,
-    onNewValue: (T) -> Unit
+    onNewValue: (T) -> Unit,
+    isInitialNotification: Boolean = false
 ) : ControlledChangedScope2<Any?, T>(
-    current, thisRef, previousValue, previousValues, onClearRecentValues, onNewValue
+    current, thisRef, previousValue, previousValues, onClearRecentValues, onNewValue, isInitialNotification
 ), IControlledChangedScope<T>
 
 open class ControlledChangedScope2<P : Any?, out T : Any?>(
@@ -27,7 +28,8 @@ open class ControlledChangedScope2<P : Any?, out T : Any?>(
     override val previousValue: T?,
     override val previousValues: List<T?>,
     private val onClearRecentValues: () -> Unit,
-    private val onNewValue: (T) -> Unit
+    private val onNewValue: (T) -> Unit,
+    override val isInitialNotification: Boolean = false
 ) : IControlledChangedScope2<P, T> {
 
     override var value: @UnsafeVariance T = current

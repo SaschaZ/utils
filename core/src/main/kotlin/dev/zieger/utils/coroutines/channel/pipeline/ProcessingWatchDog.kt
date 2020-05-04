@@ -110,7 +110,7 @@ open class ProcessingWatchDog protected constructor(
     private val tickMutex = Mutex()
     private var outputJob: Job? = null
 
-    var watchDogActive by OnChanged(true, notifyForExisting = true) {
+    var watchDogActive by OnChanged(true, notifyForInitial = true) {
         outputJob?.cancel()
         if (it) {
             outputJob = scope.launchEx(interval = printInterval, mutex = tickMutex) {

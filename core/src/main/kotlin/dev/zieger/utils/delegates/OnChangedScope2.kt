@@ -23,6 +23,7 @@ interface IOnChangedScope2<P : Any?, out T : Any?> {
     val previousValue: T?
     val previousValues: List<T?>
     val clearPreviousValues: () -> Unit
+    val isInitialNotification: Boolean
 }
 
 /**
@@ -33,9 +34,10 @@ open class OnChangedScope<out T : Any?>(
     thisRef: Any?,
     previousValue: T?,
     previousValues: List<T?>,
-    clearPreviousValues: () -> Unit
+    clearPreviousValues: () -> Unit,
+    isInitialNotification: Boolean = false
 ) : OnChangedScope2<Any?, T>(
-    value, thisRef, previousValue, previousValues, clearPreviousValues
+    value, thisRef, previousValue, previousValues, clearPreviousValues, isInitialNotification
 ), IOnChangedScope<T>
 
 /**
@@ -46,5 +48,6 @@ open class OnChangedScope2<P : Any?, out T : Any?>(
     override val thisRef: P?,
     override val previousValue: T?,
     override val previousValues: List<T?>,
-    override val clearPreviousValues: () -> Unit
+    override val clearPreviousValues: () -> Unit,
+    override val isInitialNotification: Boolean = false
 ) : IOnChangedScope2<P, T>

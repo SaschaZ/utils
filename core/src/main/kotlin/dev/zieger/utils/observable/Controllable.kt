@@ -1,6 +1,7 @@
 package dev.zieger.utils.observable
 
 import dev.zieger.utils.coroutines.builder.launchEx
+import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.delegates.OnChangedBase
 import kotlinx.coroutines.CoroutineScope
@@ -13,7 +14,7 @@ import kotlinx.coroutines.sync.Mutex
 open class Controllable<out T : Any?>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
-    override val notifyForExisting: Boolean = false,
+    override val notifyForInitial: Boolean = false,
     storeRecentValues: Boolean = false,
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
@@ -21,14 +22,16 @@ open class Controllable<out T : Any?>(
     veto: (@UnsafeVariance T) -> Boolean = { false },
     onControl: Controller<T> = {}
 ) : IControllable<T>, ControllableBase<Any?, T, IControlledChangedScope<T>>(
-    initial, onlyNotifyOnChanged, notifyForExisting, storeRecentValues, scope, mutex,
+    initial, onlyNotifyOnChanged, notifyForInitial, storeRecentValues, scope, mutex,
     subscriberStateChanged, veto, onControl
 ) {
     override fun newOnChangedScope(
         newValue: @UnsafeVariance T,
-        previousValue: @UnsafeVariance T?
+        previousValue: @UnsafeVariance T?,
+        isInitialNotification: Boolean
     ): IControlledChangedScope<T> = ControlledChangedScope(newValue, previousThisRef.get(), previousValue, recentValues,
-        { clearRecentValues() }, { })
+        { clearRecentValues() }, { value = it }, isInitialNotification
+    )
 }
 
 /**
@@ -44,7 +47,7 @@ open class Controllable<out T : Any?>(
 open class Controllable2<P : Any, out T : Any?>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
-    override val notifyForExisting: Boolean = false,
+    override val notifyForInitial: Boolean = false,
     storeRecentValues: Boolean = false,
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
@@ -54,7 +57,7 @@ open class Controllable2<P : Any, out T : Any?>(
 ) : IControllable2<P, T>, ControllableBase<P, T, IControlledChangedScope2<P, T>>(
     initial,
     onlyNotifyOnChanged,
-    notifyForExisting,
+    notifyForInitial,
     storeRecentValues,
     scope,
     mutex,
@@ -65,17 +68,18 @@ open class Controllable2<P : Any, out T : Any?>(
 
     override fun newOnChangedScope(
         newValue: @UnsafeVariance T,
-        previousValue: @UnsafeVariance T?
+        previousValue: @UnsafeVariance T?,
+        isInitialNotification: Boolean
     ): IControlledChangedScope2<P, T> =
-        ControlledChangedScope2(newValue, previousThisRef.get(), previousValue, recentValues, { clearRecentValues() }) {
+        ControlledChangedScope2(newValue, previousThisRef.get(), previousValue, recentValues, { clearRecentValues() }, {
             value = it
-        }
+        }, isInitialNotification)
 }
 
 abstract class ControllableBase<P : Any?, out T : Any?, out S : IControlledChangedScope2<P, T>>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
-    override val notifyForExisting: Boolean = false,
+    override val notifyForInitial: Boolean = false,
     storeRecentValues: Boolean = false,
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
@@ -83,7 +87,7 @@ abstract class ControllableBase<P : Any?, out T : Any?, out S : IControlledChang
     veto: (@UnsafeVariance T) -> Boolean = { false },
     onControl: S.(T) -> Unit = {}
 ) : IControllableBase<P, T, S>,
-    OnChangedBase<P, T, S>(initial, onlyNotifyOnChanged, false, storeRecentValues,
+    OnChangedBase<P, T, S>(initial, onlyNotifyOnChanged, notifyForInitial, storeRecentValues,
         scope, mutex, veto, onChanged = {}) {
 
     private val controller = ArrayList<S.(T) -> Unit>()
@@ -93,13 +97,14 @@ abstract class ControllableBase<P : Any?, out T : Any?, out S : IControlledChang
     }
 
     init {
-        @Suppress("LeakingThis")
-        control(onControl)
+        (scope ?: DefaultCoroutineScope()).launchEx {
+            control(onControl)
+        }
     }
 
     override fun control(listener: S.(T) -> Unit): () -> Unit {
         controller.add(listener)
-        if (notifyForExisting)
+        if (notifyForInitial)
             listener.let { newOnChangedScope(value, null).it(value) }
         updateSubscriberState()
 
@@ -111,7 +116,7 @@ abstract class ControllableBase<P : Any?, out T : Any?, out S : IControlledChang
 
     override fun controlS(listener: suspend S.(T) -> Unit): () -> Unit {
         controllerS.add(listener)
-        if (notifyForExisting)
+        if (notifyForInitial)
             listener.let {
                 scope?.launchEx(mutex = mutex) {
                     newOnChangedScope(value, null).it(value)

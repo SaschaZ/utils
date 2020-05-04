@@ -23,6 +23,7 @@ interface IControllableBase<P : Any?, out T : Any?, out S : IControlledChangedSc
 
     fun newOnChangedScope(
         newValue: @UnsafeVariance T,
-        previousValue: @UnsafeVariance T?
+        previousValue: @UnsafeVariance T?,
+        isInitialNotification: Boolean = false
     ): S
 }
