@@ -135,10 +135,10 @@ abstract class ObservableBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P
     }
 
     override fun (@UnsafeVariance S).onChangedInternal(value: @UnsafeVariance T) =
-        observer.forEach { it(value) }
+        ArrayList(observer).forEach { it(value) }
 
     override suspend fun (@UnsafeVariance S).onChangedSInternal(value: @UnsafeVariance T) =
-        observerS.forEach { it(value) }
+        ArrayList(observerS).forEach { it(value) }
 
     private fun updateSubscriberState() {
         subscribersAvailable = observer.isNotEmpty() || observerS.isNotEmpty()

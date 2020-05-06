@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package dev.zieger.utils.android
 
 import android.content.Context
@@ -24,8 +26,8 @@ object AndroidLog : LogElement {
 
     fun initialize(context: Context, tag: String) {
         this.tag = tag
-        StringConverterDelegate.formatTime = { format, zone, local ->
-            "$local"
+        StringConverterDelegate.formatTime = { format, millis, zone ->
+            "$zone"
         }
         Log.clearElements(addTime = false, addLevelFilter = true)
         Log + this
