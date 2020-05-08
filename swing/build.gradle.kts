@@ -17,9 +17,6 @@ configModule("swing", JVM_LIB) {
 tasks {
     test {
         useJUnitPlatform()
-        testLogging {
-            events("passed", "skipped", "failed")
-        }
     }
 
     dokka {

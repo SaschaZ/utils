@@ -19,6 +19,3 @@ include(
     "jdk-testing",
     "swing"
 )
-
-//"channels",
-//"console",

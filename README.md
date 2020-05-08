@@ -1,6 +1,10 @@
 # utilsEx
 Kotlin Jvm Utilities 
-[![](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core) ![](https://github.com/SaschaZ/utils/workflows/Android%20CI/badge.svg) [![codecov](https://codecov.io/gh/SaschaZ/utils/branch/master/graph/badge.svg)](https://codecov.io/gh/SaschaZ/utils)
+[![jitPack](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core) 
+[![jitCI](https://jitci.com/gh/SaschaZ/utils/svg)](https://jitci.com/gh/SaschaZ/utils) 
+[![GitHub Actions](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fatrox%2Fsync-dotenv%2Fbadge&label=build&logo=none)](https://actions-badge.atrox.dev/atrox/sync-dotenv/goto) 
+[![codecov](https://codecov.io/gh/SaschaZ/utils/branch/master/graph/badge.svg)](https://codecov.io/gh/SaschaZ/utils)
+
 
 ## Contains utilities for
 - [utilsEx](#utilsex)
@@ -25,7 +29,6 @@ dependencies {
     implementation "dev.zieger.utils:core:$utilsVersion"// platform independent
     implementation "dev.zieger.utils:android:$utilsVersion" // android
     implementation "dev.zieger.utils:jdk:$utilsVersion" // jdk
-    implementation "dev.zieger.utils:swing:$utilsVersion" // swing
 
     // testing utils
     implementation "dev.zieger.utils:core-testing:$utilsVersion" // platform independent
@@ -35,7 +38,7 @@ dependencies {
 ```
 
 Where `utilsVersion` is the latest from
-[![](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core) ![](https://github.com/SaschaZ/utils/workflows/Android%20CI/badge.svg)
+[![](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core)
 #
 
 ## TimeEx, DurationEx
