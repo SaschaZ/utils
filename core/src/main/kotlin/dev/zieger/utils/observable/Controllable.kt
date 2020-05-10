@@ -1,7 +1,10 @@
+@file:Suppress("LeakingThis")
+
 package dev.zieger.utils.observable
 
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
+import dev.zieger.utils.delegates.IScope2Factory
+import dev.zieger.utils.delegates.IScopeFactory
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.delegates.OnChangedBase
 import kotlinx.coroutines.CoroutineScope
@@ -23,16 +26,8 @@ open class Controllable<out T : Any?>(
     onControl: Controller<T> = {}
 ) : IControllable<T>, ControllableBase<Any?, T, IControlledChangedScope<T>>(
     initial, onlyNotifyOnChanged, notifyForInitial, storeRecentValues, scope, mutex,
-    subscriberStateChanged, veto, onControl
-) {
-    override fun newOnChangedScope(
-        newValue: @UnsafeVariance T,
-        previousValue: @UnsafeVariance T?,
-        isInitialNotification: Boolean
-    ): IControlledChangedScope<T> = ControlledChangedScope(newValue, previousThisRef.get(), previousValue, recentValues,
-        { clearRecentValues() }, { value = it }, isInitialNotification
-    )
-}
+    subscriberStateChanged, ControlledChangedScopeFactory(), veto, onControl
+)
 
 /**
  * Container that provides observing of the delegated property of type [T].
@@ -62,19 +57,10 @@ open class Controllable2<P : Any, out T : Any?>(
     scope,
     mutex,
     subscriberStateChanged,
+    ControlledChangedScope2Factory(),
     veto,
     onControl
-) {
-
-    override fun newOnChangedScope(
-        newValue: @UnsafeVariance T,
-        previousValue: @UnsafeVariance T?,
-        isInitialNotification: Boolean
-    ): IControlledChangedScope2<P, T> =
-        ControlledChangedScope2(newValue, previousThisRef.get(), previousValue, recentValues, { clearRecentValues() }, {
-            value = it
-        }, isInitialNotification)
-}
+)
 
 abstract class ControllableBase<P : Any?, out T : Any?, out S : IControlledChangedScope2<P, T>>(
     initial: T,
@@ -84,11 +70,12 @@ abstract class ControllableBase<P : Any?, out T : Any?, out S : IControlledChang
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
+    scopeFactory: IScope2Factory<P, T, S>,
     veto: (@UnsafeVariance T) -> Boolean = { false },
     onControl: S.(T) -> Unit = {}
 ) : IControllableBase<P, T, S>,
-    OnChangedBase<P, T, S>(initial, onlyNotifyOnChanged, notifyForInitial, storeRecentValues,
-        scope, mutex, veto, onChanged = {}) {
+    OnChangedBase<P, T, S>(initial, onlyNotifyOnChanged, false, storeRecentValues,
+        scope, mutex, scopeFactory, veto, {}) {
 
     private val controller = ArrayList<S.(T) -> Unit>()
     private val controllerS = ArrayList<suspend S.(T) -> Unit>()
@@ -97,15 +84,16 @@ abstract class ControllableBase<P : Any?, out T : Any?, out S : IControlledChang
     }
 
     init {
-        (scope ?: DefaultCoroutineScope()).launchEx {
-            control(onControl)
-        }
+        control(onControl)
     }
 
     override fun control(listener: S.(T) -> Unit): () -> Unit {
         controller.add(listener)
         if (notifyForInitial)
-            listener.let { newOnChangedScope(value, null).it(value) }
+            listener.let {
+                createScope(value, previousThisRef.get(), null, recentValues,
+                    { recentValues.clear() }, true, { value = it }).it(value)
+            }
         updateSubscriberState()
 
         return {
@@ -119,7 +107,8 @@ abstract class ControllableBase<P : Any?, out T : Any?, out S : IControlledChang
         if (notifyForInitial)
             listener.let {
                 scope?.launchEx(mutex = mutex) {
-                    newOnChangedScope(value, null).it(value)
+                    createScope(value, previousThisRef.get(), null, recentValues,
+                        { recentValues.clear() }, true, { value = it }).it(value)
                 }
             }
         updateSubscriberState()
@@ -132,12 +121,14 @@ abstract class ControllableBase<P : Any?, out T : Any?, out S : IControlledChang
 
     override fun (@UnsafeVariance S).onChangedInternal(value: @UnsafeVariance T) =
         ArrayList(controller).forEach {
-            newOnChangedScope(value, previousValue).it(value)
+            createScope(value, previousThisRef.get(), null, recentValues,
+                { recentValues.clear() }, true, { this.value = it }).it(value)
         }
 
     override suspend fun (@UnsafeVariance S).onChangedSInternal(value: @UnsafeVariance T) =
         ArrayList(controllerS).forEach {
-            newOnChangedScope(value, previousValue).it(value)
+            createScope(value, previousThisRef.get(), null, recentValues,
+                { recentValues.clear() }, true, { this.value = it }).it(value)
         }
 
     private fun updateSubscriberState() {
@@ -145,3 +136,36 @@ abstract class ControllableBase<P : Any?, out T : Any?, out S : IControlledChang
     }
 }
 
+open class ControlledChangedScopeFactory<out T : Any?> :
+    IScopeFactory<T, IControlledChangedScope<@UnsafeVariance T>> {
+    override fun createScope(
+        value: @UnsafeVariance T,
+        thisRef: Any?,
+        previousValue: @UnsafeVariance T?,
+        previousValues: List<@UnsafeVariance T?>,
+        clearPreviousValues: () -> Unit,
+        isInitialNotification: Boolean,
+        setter: (T) -> Unit
+    ): IControlledChangedScope<T> =
+        ControlledChangedScope(
+            value, thisRef, previousValue, previousValues, clearPreviousValues, setter,
+            isInitialNotification
+        )
+}
+
+open class ControlledChangedScope2Factory<P : Any?, out T : Any?> :
+    IScope2Factory<P, T, IControlledChangedScope2<P, @UnsafeVariance T>> {
+    override fun createScope(
+        value: @UnsafeVariance T,
+        thisRef: P?,
+        previousValue: @UnsafeVariance T?,
+        previousValues: List<@UnsafeVariance T?>,
+        clearPreviousValues: () -> Unit,
+        isInitialNotification: Boolean,
+        setter: (T) -> Unit
+    ): IControlledChangedScope2<P, T> =
+        ControlledChangedScope2(
+            value, thisRef, previousValue, previousValues, clearPreviousValues, setter,
+            isInitialNotification
+        )
+}

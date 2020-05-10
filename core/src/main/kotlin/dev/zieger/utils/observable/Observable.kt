@@ -21,21 +21,8 @@ open class Observable<out T : Any?>(
     onChanged: Observer<T> = {}
 ) : IObservableBase<Any?, T, IOnChangedScope<T>>, IObservable<T>, ObservableBase<Any?, T, IOnChangedScope<T>>(
     initial, onlyNotifyOnChanged, notifyForInitial, storeRecentValues, scope, mutex,
-    subscriberStateChanged, onChanged
-) {
-    override fun newOnChangedScope(
-        newValue: @UnsafeVariance T, previousValue: @UnsafeVariance T?,
-        isInitialNotification: Boolean
-    ): IOnChangedScope<T> =
-        OnChangedScope(
-            newValue,
-            previousThisRef.get(),
-            previousValue,
-            recentValues,
-            { recentValues.clear() },
-            isInitialNotification
-        )
-}
+    subscriberStateChanged, onChanged, OnChangedScopeFactory()
+)
 
 /**
  * [ReadWriteProperty] that can be used to add a read only observer to another property with the delegate pattern.
@@ -63,22 +50,9 @@ open class Observable2<P : Any?, out T : Any?>(
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
     onChanged: Observer2<P, T>? = null
 ) : IObservable2<P, T>, ObservableBase<P, T, IOnChangedScope2<P, T>>(
-    initial, onlyNotifyOnChanged, notifyForInitial, storeRecentValues, scope, mutex, subscriberStateChanged, onChanged
-) {
-    override fun newOnChangedScope(
-        newValue: @UnsafeVariance T,
-        previousValue: @UnsafeVariance T?,
-        isInitialNotification: Boolean
-    ): IOnChangedScope2<P, T> =
-        OnChangedScope2(
-            newValue,
-            previousThisRef.get(),
-            previousValue,
-            recentValues,
-            { recentValues.clear() },
-            isInitialNotification
-        )
-}
+    initial, onlyNotifyOnChanged, notifyForInitial, storeRecentValues, scope, mutex, subscriberStateChanged, onChanged,
+    OnChangedScope2Factory()
+)
 
 abstract class ObservableBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>(
     initial: T,
@@ -88,10 +62,11 @@ abstract class ObservableBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
-    onChanged: (S.(T) -> Unit)? = null
+    onChanged: (S.(T) -> Unit)? = null,
+    scopeFactory: IScope2Factory<P, T, S>
 ) : IObservableBase<P, T, S>,
     OnChangedBase<P, T, S>(
-        initial, storeRecentValues, notifyForInitial, onlyNotifyOnChanged, scope, mutex
+        initial, storeRecentValues, notifyForInitial, onlyNotifyOnChanged, scope, mutex, scopeFactory
     ) {
 
     private val observer = ArrayList<S.(T) -> Unit>()
@@ -110,8 +85,9 @@ abstract class ObservableBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P
 
     override fun observe(listener: S.(T) -> Unit): () -> Unit {
         observer.add(listener)
-        if (notifyForInitial)
-            newOnChangedScope(value, null).listener(value)
+        if (notifyForInitial) createScope(value, previousThisRef.get(), recentValues.lastOrNull(), recentValues,
+            { recentValues.clear() }, true
+        ).listener(value)
         updateSubscriberState()
 
         return {
@@ -124,7 +100,9 @@ abstract class ObservableBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P
         observerS.add(listener)
         if (notifyForInitial)
             scope?.launchEx(mutex = mutex) {
-                newOnChangedScope(value, null).listener(value)
+                createScope(value, previousThisRef.get(), recentValues.lastOrNull(), recentValues,
+                    { recentValues.clear() }, true
+                ).listener(value)
             }
         updateSubscriberState()
 

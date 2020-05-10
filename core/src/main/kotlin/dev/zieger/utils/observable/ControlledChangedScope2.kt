@@ -1,9 +1,10 @@
 package dev.zieger.utils.observable
 
+import dev.zieger.utils.delegates.IOnChangedScope
 import dev.zieger.utils.delegates.IOnChangedScope2
 
 
-interface IControlledChangedScope<out T : Any?> : IControlledChangedScope2<Any?, T>
+interface IControlledChangedScope<out T : Any?> : IControlledChangedScope2<Any?, T>, IOnChangedScope<T>
 
 interface IControlledChangedScope2<P : Any?, out T : Any?> : IOnChangedScope2<P, T> {
 

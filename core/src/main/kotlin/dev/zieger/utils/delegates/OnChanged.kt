@@ -31,7 +31,7 @@ interface IOnChanged<out T : Any?> : IOnChangedBase<Any?, T, IOnChangedScope<T>>
 interface IOnChanged2<P : Any?, out T : Any?> : IOnChangedBase<P, T, IOnChangedScope2<P, T>>
 
 interface IOnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<@UnsafeVariance P, T>> :
-    ReadWriteProperty<P, @UnsafeVariance T> {
+    IScope2Factory<P, T, @UnsafeVariance S>, ReadWriteProperty<P, @UnsafeVariance T> {
     val value: @UnsafeVariance T
 
     val storeRecentValues: Boolean
@@ -39,11 +39,6 @@ interface IOnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<@Unsaf
     val notifyOnChangedValueOnly: Boolean
     val scope: CoroutineScope?
     val mutex: Mutex?
-
-    fun newOnChangedScope(
-        newValue: @UnsafeVariance T, previousValue: @UnsafeVariance T?,
-        isInitialNotification: Boolean = false
-    ): S
 
     /**
      * Is invoked before every change of the property. When returning `true` the new value is not assigned
@@ -71,6 +66,46 @@ interface IOnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<@Unsaf
     fun clearRecentValues()
 }
 
+interface IScope2Factory<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>> {
+    fun createScope(
+        value: @UnsafeVariance T,
+        thisRef: P?,
+        previousValue: @UnsafeVariance T?,
+        previousValues: List<@UnsafeVariance T?>,
+        clearPreviousValues: () -> Unit,
+        isInitialNotification: Boolean = false,
+        setter: (T) -> Unit = {}
+    ): S
+}
+
+class OnChangedScope2Factory<P : Any?, out T : Any?> : IScope2Factory<P, T, IOnChangedScope2<P, @UnsafeVariance T>> {
+    override fun createScope(
+        value: @UnsafeVariance T,
+        thisRef: P?,
+        previousValue: @UnsafeVariance T?,
+        previousValues: List<@UnsafeVariance T?>,
+        clearPreviousValues: () -> Unit,
+        isInitialNotification: Boolean,
+        setter: (T) -> Unit
+    ): IOnChangedScope2<P, @UnsafeVariance T> =
+        OnChangedScope2(value, thisRef, previousValue, previousValues, clearPreviousValues, isInitialNotification)
+}
+
+interface IScopeFactory<out T : Any?, out S : IOnChangedScope<T>> : IScope2Factory<Any?, T, S>
+
+class OnChangedScopeFactory<out T : Any?> : IScopeFactory<T, IOnChangedScope<@UnsafeVariance T>> {
+    override fun createScope(
+        value: @UnsafeVariance T,
+        thisRef: Any?,
+        previousValue: @UnsafeVariance T?,
+        previousValues: List<@UnsafeVariance T?>,
+        clearPreviousValues: () -> Unit,
+        isInitialNotification: Boolean,
+        setter: (T) -> Unit
+    ): IOnChangedScope<@UnsafeVariance T> =
+        OnChangedScope(value, thisRef, previousValue, previousValues, clearPreviousValues, isInitialNotification)
+}
+
 /**
  * Same as [OnChanged2] but with constant parent of [Any]?.
  */
@@ -85,15 +120,9 @@ open class OnChanged<out T : Any?>(
     onChangedS: suspend IOnChangedScope<@UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {},
     onChanged: IOnChangedScope<@UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {}
 ) : OnChangedBase<Any?, @UnsafeVariance T, IOnChangedScope<T>>(
-    initial, storeRecentValues, notifyForInitial, notifyOnChangedValueOnly, scope, mutex, veto, onChangedS, onChanged
-), IOnChanged<T> {
-    override fun newOnChangedScope(
-        newValue: @UnsafeVariance T,
-        previousValue: @UnsafeVariance T?,
-        isInitialNotification: Boolean
-    ): IOnChangedScope<T> =
-        OnChangedScope(newValue, previousThisRef.get(), previousValue, recentValues, { recentValues.clear() }, isInitialNotification)
-}
+    initial, storeRecentValues, notifyForInitial, notifyOnChangedValueOnly, scope, mutex, OnChangedScopeFactory(),
+    veto, onChangedS, onChanged
+), IOnChanged<T>
 
 /**
  * Simple implementation of [IOnChanged2].
@@ -125,34 +154,22 @@ open class OnChanged2<P : Any?, out T : Any?>(
     onChangedS: suspend IOnChangedScope2<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {},
     onChanged: IOnChangedScope2<P, @UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {}
 ) : OnChangedBase<P, T, IOnChangedScope2<P, T>>(
-    initial, storeRecentValues, notifyForInitial, notifyOnChangedValueOnly, scope, mutex, veto, onChangedS, onChanged
-) {
-    override fun newOnChangedScope(
-        newValue: @UnsafeVariance T,
-        previousValue: @UnsafeVariance T?,
-        isInitialNotification: Boolean
-    ): IOnChangedScope2<P, T> =
-        OnChangedScope2(
-            newValue,
-            previousThisRef.get(),
-            previousValue,
-            recentValues,
-            { recentValues.clear() },
-            isInitialNotification
-        )
-}
+    initial, storeRecentValues, notifyForInitial, notifyOnChangedValueOnly, scope, mutex, OnChangedScope2Factory(),
+    veto, onChangedS, onChanged
+), IOnChanged2<P, T>
 
-abstract class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>(
+open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>(
     initial: T,
     override val storeRecentValues: Boolean = false,
     notifyForInitial: Boolean = false,
     override val notifyOnChangedValueOnly: Boolean = true,
     override val scope: CoroutineScope? = null,
     override val mutex: Mutex? = null,
+    scopeFactory: IScope2Factory<P, T, S>,
     open val veto: (@UnsafeVariance T) -> Boolean = { false },
     open val onChangedS: suspend (@UnsafeVariance S).(@UnsafeVariance T) -> Unit = {},
     open val onChanged: (@UnsafeVariance S).(@UnsafeVariance T) -> Unit = {}
-) : IOnChangedBase<P, T, S> {
+) : IOnChangedBase<P, T, S>, IScope2Factory<P, T, @UnsafeVariance S> by scopeFactory {
 
     @Suppress("CanBePrimaryConstructorProperty")
     override val notifyForInitial: Boolean = notifyForInitial
@@ -173,7 +190,13 @@ abstract class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P,
         }
 
     init {
-        if (notifyForInitial) notifyListener(initial, null, true)
+        if (notifyForInitial) createScope(
+            initial, previousThisRef.get(), null, recentValues,
+            { recentValues.clear() }, true
+        ).apply {
+            onChanged(initial)
+            scope?.launchEx(mutex = mutex) { onChangedS(initial) }
+        }
     }
 
     override fun clearRecentValues() = recentValues.clear().asUnit()
@@ -189,10 +212,11 @@ abstract class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P,
     private fun notifyListener(
         new: @UnsafeVariance T, old: @UnsafeVariance T?,
         isInitialNotification: Boolean = false
-    ) = newOnChangedScope(new, old, isInitialNotification).apply {
-        onChangedInternal(new)
-        scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
-    }
+    ) = createScope(new, previousThisRef.get(), old, recentValues, { recentValues.clear() }, isInitialNotification)
+        .apply {
+            onChangedInternal(new)
+            scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
+        }
 
     override fun setValue(thisRef: P, property: KProperty<*>, value: @UnsafeVariance T) {
         previousThisRef.set(thisRef)
