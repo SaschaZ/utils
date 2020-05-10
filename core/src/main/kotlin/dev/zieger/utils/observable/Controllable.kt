@@ -75,7 +75,7 @@ abstract class ControllableBase<P : Any?, out T : Any?, out S : IControlledChang
     onControl: S.(T) -> Unit = {}
 ) : IControllableBase<P, T, S>,
     OnChangedBase<P, T, S>(initial, onlyNotifyOnChanged, false, storeRecentValues,
-        scope, mutex, scopeFactory, veto, {}) {
+        scope, mutex, scopeFactory, veto, {}, {}) {
 
     private val controller = ArrayList<S.(T) -> Unit>()
     private val controllerS = ArrayList<suspend S.(T) -> Unit>()

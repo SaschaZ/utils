@@ -66,7 +66,7 @@ abstract class ObservableBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P
     scopeFactory: IScope2Factory<P, T, S>
 ) : IObservableBase<P, T, S>,
     OnChangedBase<P, T, S>(
-        initial, storeRecentValues, notifyForInitial, onlyNotifyOnChanged, scope, mutex, scopeFactory
+        initial, storeRecentValues, notifyForInitial, onlyNotifyOnChanged, scope, mutex, scopeFactory, { false }, {}, {}
     ) {
 
     private val observer = ArrayList<S.(T) -> Unit>()

@@ -160,15 +160,15 @@ open class OnChanged2<P : Any?, out T : Any?>(
 
 open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>(
     initial: T,
-    override val storeRecentValues: Boolean = false,
-    notifyForInitial: Boolean = false,
-    override val notifyOnChangedValueOnly: Boolean = true,
-    scope: CoroutineScope? = null,
-    override val mutex: Mutex? = null,
+    override val storeRecentValues: Boolean,
+    notifyForInitial: Boolean,
+    override val notifyOnChangedValueOnly: Boolean,
+    scope: CoroutineScope?,
+    override val mutex: Mutex?,
     scopeFactory: IScope2Factory<P, T, S>,
-    open val veto: (@UnsafeVariance T) -> Boolean = { false },
-    open val onChangedS: suspend (@UnsafeVariance S).(@UnsafeVariance T) -> Unit = {},
-    open val onChanged: (@UnsafeVariance S).(@UnsafeVariance T) -> Unit = {}
+    open val veto: (@UnsafeVariance T) -> Boolean,
+    open val onChangedS: suspend (@UnsafeVariance S).(@UnsafeVariance T) -> Unit,
+    open val onChanged: (@UnsafeVariance S).(@UnsafeVariance T) -> Unit
 ) : IOnChangedBase<P, T, S>, IScope2Factory<P, T, @UnsafeVariance S> by scopeFactory {
 
     @Suppress("CanBePrimaryConstructorProperty")
