@@ -3,6 +3,7 @@ package dev.zieger.utils.observable
 import dev.zieger.utils.delegates.IOnChangedBase
 import dev.zieger.utils.delegates.IOnChangedScope
 import dev.zieger.utils.delegates.IOnChangedScope2
+import dev.zieger.utils.delegates.IOnChangedWritableBase
 
 /**
  * Describes a container that holds a variable of type [T] and provides methods to observe changes on this variable.
@@ -26,3 +27,6 @@ interface IObservableBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>
      */
     fun observeS(listener: suspend S.(@UnsafeVariance T) -> Unit): () -> Unit
 }
+
+interface IObservableWritableBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>> : IObservableBase<P, T, S>,
+    IOnChangedWritableBase<P, T, S>
