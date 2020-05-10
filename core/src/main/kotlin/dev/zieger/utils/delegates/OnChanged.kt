@@ -3,7 +3,6 @@
 package dev.zieger.utils.delegates
 
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.misc.asUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
@@ -93,7 +92,7 @@ open class OnChanged<out T : Any?>(
         previousValue: @UnsafeVariance T?,
         isInitialNotification: Boolean
     ): IOnChangedScope<T> =
-        OnChangedScope(newValue, previousThisRef.get(), previousValue, recentValues, { recentValues.clear() })
+        OnChangedScope(newValue, previousThisRef.get(), previousValue, recentValues, { recentValues.clear() }, isInitialNotification)
 }
 
 /**
@@ -146,7 +145,7 @@ open class OnChanged2<P : Any?, out T : Any?>(
 abstract class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>(
     initial: T,
     override val storeRecentValues: Boolean = false,
-    override val notifyForInitial: Boolean = false,
+    notifyForInitial: Boolean = false,
     override val notifyOnChangedValueOnly: Boolean = true,
     override val scope: CoroutineScope? = null,
     override val mutex: Mutex? = null,
@@ -155,7 +154,8 @@ abstract class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P,
     open val onChanged: (@UnsafeVariance S).(@UnsafeVariance T) -> Unit = {}
 ) : IOnChangedBase<P, T, S> {
 
-    private var triggeredChangeRunning = false
+    @Suppress("CanBePrimaryConstructorProperty")
+    override val notifyForInitial: Boolean = notifyForInitial
 
     protected var previousThisRef = AtomicReference<P?>(null)
     protected val recentValues = ArrayList<@UnsafeVariance T?>()
@@ -164,7 +164,6 @@ abstract class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P,
         set(newValue) {
             val block = {
                 if (!vetoInternal(newValue) && (field != newValue || !notifyOnChangedValueOnly)) {
-                    triggeredChangeRunning = false
                     val old = field
                     field = newValue
                     onPropertyChanged(value, old)
@@ -174,19 +173,16 @@ abstract class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P,
         }
 
     init {
-        (scope ?: DefaultCoroutineScope()).launchEx {
-            if (notifyForInitial) notifyListener(value, null, true)
-        }
+        if (notifyForInitial) notifyListener(initial, null, true)
     }
 
     override fun clearRecentValues() = recentValues.clear().asUnit()
 
     private fun onPropertyChanged(
         new: @UnsafeVariance T,
-        old: @UnsafeVariance T?,
-        isInitial: Boolean = false
+        old: @UnsafeVariance T?
     ) {
-        if (storeRecentValues && !isInitial) recentValues.add(old)
+        if (storeRecentValues) recentValues.add(old)
         notifyListener(new, old)
     }
 
@@ -194,8 +190,8 @@ abstract class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P,
         new: @UnsafeVariance T, old: @UnsafeVariance T?,
         isInitialNotification: Boolean = false
     ) = newOnChangedScope(new, old, isInitialNotification).apply {
-        scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
         onChangedInternal(new)
+        scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
     }
 
     override fun setValue(thisRef: P, property: KProperty<*>, value: @UnsafeVariance T) {

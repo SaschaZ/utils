@@ -29,21 +29,19 @@ interface IOnChangedScope2<P : Any?, out T : Any?> {
 /**
  * Same as [OnChangedScope2] but with [Any]? as parent type.
  */
-open class OnChangedScope<out T : Any?>(
-    value: @UnsafeVariance T,
-    thisRef: Any?,
-    previousValue: T?,
-    previousValues: List<T?>,
-    clearPreviousValues: () -> Unit,
-    isInitialNotification: Boolean = false
-) : OnChangedScope2<Any?, T>(
-    value, thisRef, previousValue, previousValues, clearPreviousValues, isInitialNotification
-), IOnChangedScope<T>
+data class OnChangedScope<out T : Any?>(
+    override val value: @UnsafeVariance T,
+    override val thisRef: Any?,
+    override val previousValue: T?,
+    override val previousValues: List<T?>,
+    override val clearPreviousValues: () -> Unit,
+    override val isInitialNotification: Boolean = false
+) : IOnChangedScope<T>
 
 /**
  * Simple implementation of [IOnChangedScope2].
  */
-open class OnChangedScope2<P : Any?, out T : Any?>(
+data class OnChangedScope2<P : Any?, out T : Any?>(
     override val value: @UnsafeVariance T,
     override val thisRef: P?,
     override val previousValue: T?,
