@@ -46,6 +46,7 @@ class OnChangedTest {
         val mutex: Mutex? by bind(map)
         val veto: (Int) -> Boolean by bind(map)
         val doClearPrevValues: (Int) -> Boolean by bind(map)
+        val suspendedListener: Boolean by bind(map)
     }
 
     data class TestValueContainer(
@@ -68,7 +69,8 @@ class OnChangedTest {
             param("scope", TestCoroutineScope(), null),
             param("mutex", Mutex(), null),
             param("veto", { value: Int -> Random.nextBoolean(0.1f) }),
-            param("doClearPrevValues", { value: Int -> Random.nextBoolean(0.1f) })
+            param("doClearPrevValues", { value: Int -> Random.nextBoolean(0.1f) }),
+            param("suspendedListener", true, false)
         ) {
             var newValue: Int = -1
             var newVeto = false
@@ -77,21 +79,18 @@ class OnChangedTest {
 
             var propertyValue: () -> TestValueContainer = { TestValueContainer() }
             var testProperty by OnChanged(TestValueContainer(), storePreviousValues, notifyForInitial,
-                notifyOnChangedOnly, scope, mutex, { newVeto }) { v ->
-                if (newClearCache) clearPreviousValues()
-                results.offer(
-                    OnChangedTestResultOutput(
-                        newValue, propertyValue().value, newVeto, newClearCache,
-                        OnChangedScope(
-                            value, thisRef, previousValue, ArrayList(previousValues),
-                            clearPreviousValues, isInitialNotification
-                        )
-                    )
-                )
-            }
+                notifyOnChangedOnly, scope, mutex, { newVeto },
+                { v ->
+                    if (suspendedListener && scope != null)
+                        onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
+                },
+                { v ->
+                    if (!suspendedListener || scope == null)
+                        onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
+                })
             propertyValue = { testProperty }
 
-            repeat(200) { i ->
+            repeat(1000) { i ->
                 newValueFactory(newValue).apply {
                     newValue = this
                     newVeto = veto(this)
@@ -106,11 +105,30 @@ class OnChangedTest {
         }.verify()
     }
 
+    private fun IOnChangedScope<@UnsafeVariance TestValueContainer>.onChangedListenerBlock(
+        newClearCache: Boolean,
+        results: Channel<OnChangedResults>,
+        newValue: Int,
+        propertyValue: () -> TestValueContainer,
+        newVeto: Boolean
+    ) {
+        if (newClearCache) clearPreviousValues()
+        results.offer(
+            OnChangedTestResultOutput(
+                newValue, propertyValue().value, newVeto, newClearCache,
+                OnChangedScope(
+                    value, thisRef, previousValue, ArrayList(previousValues),
+                    clearPreviousValues, isInitialNotification
+                )
+            )
+        )
+    }
+
     private suspend fun Map<OnChangedParams, Channel<OnChangedResults>>.verify() {
         delay(1000)
 
         for ((input, result) in this) {
-//            println("\n\n$input")
+            println("\n\n$input")
 
             var prevInIdx = -1
             var prevOutIdx = if (input.notifyForInitial) -2 else -1
@@ -120,10 +138,13 @@ class OnChangedTest {
             var isFirstNotification = true
 
             result.close()
-            result.toList().forEach { r ->
+            result.toList().sortedBy {
+                (it as? OnChangedTestResultInput)?.inputValue?.idx
+                    ?: (it as OnChangedTestResultOutput).onChangedScope.value.idx
+            }.forEach { r ->
                 when (r) {
                     is OnChangedTestResultInput -> {
-//                        println(r)
+                        println(r)
 
                         val idx = r.inputValue.idx
                         (idx - prevInIdx) assert 1
@@ -135,7 +156,7 @@ class OnChangedTest {
                         prevInIdx = idx
                     }
                     is OnChangedTestResultOutput -> {
-//                        println("\t$r")
+                        println("\t$r")
 
                         val (value, idx) = r.onChangedScope.value
 

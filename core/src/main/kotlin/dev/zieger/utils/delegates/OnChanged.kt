@@ -163,7 +163,7 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
     override val storeRecentValues: Boolean = false,
     notifyForInitial: Boolean = false,
     override val notifyOnChangedValueOnly: Boolean = true,
-    override val scope: CoroutineScope? = null,
+    scope: CoroutineScope? = null,
     override val mutex: Mutex? = null,
     scopeFactory: IScope2Factory<P, T, S>,
     open val veto: (@UnsafeVariance T) -> Boolean = { false },
@@ -173,6 +173,9 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
 
     @Suppress("CanBePrimaryConstructorProperty")
     override val notifyForInitial: Boolean = notifyForInitial
+
+    @Suppress("CanBePrimaryConstructorProperty")
+    override val scope: CoroutineScope? = scope
 
     protected var previousThisRef = AtomicReference<P?>(null)
     protected val recentValues = ArrayList<@UnsafeVariance T?>()
@@ -192,7 +195,7 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
     init {
         if (notifyForInitial) createScope(
             initial, previousThisRef.get(), null, recentValues,
-            { recentValues.clear() }, true
+            { clearRecentValues() }, true
         ).apply {
             onChanged(initial)
             scope?.launchEx(mutex = mutex) { onChangedS(initial) }
@@ -212,7 +215,7 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
     private fun notifyListener(
         new: @UnsafeVariance T, old: @UnsafeVariance T?,
         isInitialNotification: Boolean = false
-    ) = createScope(new, previousThisRef.get(), old, recentValues, { recentValues.clear() }, isInitialNotification)
+    ) = createScope(new, previousThisRef.get(), old, recentValues, { clearRecentValues() }, isInitialNotification)
         .apply {
             onChangedInternal(new)
             scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
