@@ -64,7 +64,7 @@ class OnChangedTest {
             param("storePreviousValues", true, false),
             param("notifyForInitial", true, false),
             param("notifyOnChangedOnly", true, false),
-            param<CoroutineScope>("scope", /*DefaultCoroutineScope(),*/ null),
+            param("scope", TestCoroutineScope(), null),
             param("mutex", Mutex(), null),
             param("veto", { value: Int -> Random.nextBoolean(0.1f) }),
             param("doClearPrevValues", { value: Int -> Random.nextBoolean(0.1f) })
@@ -119,7 +119,7 @@ class OnChangedTest {
             var isFirstNotification = true
 
             result.close()
-            result.toList()/*.sortedBy { it.onChangedScope.value.idx }*/.forEach { r ->
+            result.toList().forEach { r ->
                 when (r) {
                     is OnChangedTestResultInput -> {
                         println(r)
