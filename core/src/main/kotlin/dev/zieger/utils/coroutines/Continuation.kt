@@ -1,20 +1,8 @@
 package dev.zieger.utils.coroutines
 
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
-import dev.zieger.utils.misc.ifNull
 import dev.zieger.utils.time.duration.IDurationEx
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.withTimeout
 
-
-suspend inline fun withTimeout(
-    timeout: IDurationEx?,
-    crossinline block: suspend () -> Unit
-) {
-    timeout?.let {
-        withTimeout(timeout.millis) { block() }
-    } ifNull { block() }
-}
 
 interface IContinuation {
 
@@ -31,7 +19,6 @@ interface IContinuation {
 
 class Continuation(override val timeout: IDurationEx? = null) : IContinuation {
 
-    internal val scope = DefaultCoroutineScope()
     private val channel = Channel<Boolean>()
 
     override suspend fun suspendUntilTrigger() = withTimeout(timeout) { channel.receive() }

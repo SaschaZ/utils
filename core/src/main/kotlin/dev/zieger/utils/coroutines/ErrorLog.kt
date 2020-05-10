@@ -8,11 +8,12 @@ import dev.zieger.utils.misc.readString
 import dev.zieger.utils.misc.writeString
 import dev.zieger.utils.time.TimeEx
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.sync.Mutex
 
 private val errorLogMutex = Mutex()
 
-fun CoroutineScope.logToFile(throwable: Throwable) =
+fun CoroutineScope.logToFile(throwable: Throwable): Job =
     launchEx(mutex = errorLogMutex) {
         ERROR_LOG_FILE()?.also { file ->
             var log = "${TimeEx().formatTime()}: ${javaClass.simpleName}: $throwable.message\n"

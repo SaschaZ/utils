@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlin.coroutines.CoroutineContext
 
-fun launchEx(
+inline fun launchEx(
     coroutineScope: CoroutineScope = DefaultCoroutineScope(),
     interval: IDurationEx? = null,
     delayed: IDurationEx? = null,
@@ -20,9 +20,9 @@ fun launchEx(
     logStackTrace: Boolean = LOG_EXCEPTIONS,
     name: String? = null,
     isSuperVisionEnabled: Boolean = false,
-    onCatch: (suspend CoroutineScope.(t: Throwable) -> Unit)? = null,
-    onFinally: (suspend CoroutineScope.() -> Unit)? = null,
-    block: suspend CoroutineScope.(isRetry: Boolean) -> Unit
+    crossinline onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
+    crossinline onFinally: suspend CoroutineScope.() -> Unit = {},
+    crossinline block: suspend CoroutineScope.(isRetry: Boolean) -> Unit
 ) = coroutineScope.launchEx(
     coroutineScope.coroutineContext,
     interval,
@@ -39,7 +39,7 @@ fun launchEx(
     block
 )
 
-fun CoroutineScope.launchEx(
+inline fun CoroutineScope.launchEx(
     coroutineContext: CoroutineContext = this.coroutineContext,
     interval: IDurationEx? = null,
     delayed: IDurationEx? = null,
@@ -50,9 +50,9 @@ fun CoroutineScope.launchEx(
     logStackTrace: Boolean = LOG_EXCEPTIONS,
     name: String? = null,
     isSuperVisionEnabled: Boolean = false,
-    onCatch: (suspend CoroutineScope.(t: Throwable) -> Unit)? = null,
-    onFinally: (suspend CoroutineScope.() -> Unit)? = null,
-    block: suspend CoroutineScope.(isRetry: Boolean) -> Unit
+    crossinline onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
+    crossinline onFinally: suspend CoroutineScope.() -> Unit = {},
+    crossinline block: suspend CoroutineScope.(isRetry: Boolean) -> Unit
 ) = launch(buildContext(coroutineContext, name, isSuperVisionEnabled)) {
     executeExInternal(
         interval, delayed, mutex, Unit, maxExecutions, printStackTrace, logStackTrace,

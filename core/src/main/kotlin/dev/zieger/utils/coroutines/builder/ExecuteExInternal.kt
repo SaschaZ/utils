@@ -1,16 +1,21 @@
+@file:Suppress("REDUNDANT_INLINE_SUSPEND_FUNCTION_TYPE")
+
 package dev.zieger.utils.coroutines.builder
 
+import dev.zieger.utils.coroutines.withLock
 import dev.zieger.utils.misc.catch
 import dev.zieger.utils.time.base.minus
 import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.duration.IDurationEx
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.CoroutineContext
 import kotlin.system.measureTimeMillis
 
-internal suspend fun <T : Any?> executeExInternal(
+suspend inline fun <T : Any?> CoroutineScope.executeExInternal(
     interval: IDurationEx? = null,
     delayed: IDurationEx?,
     mutex: Mutex?,
@@ -18,24 +23,24 @@ internal suspend fun <T : Any?> executeExInternal(
     maxExecutions: Int,
     printStackTrace: Boolean,
     logStackTrace: Boolean,
-    onCatch: (suspend CoroutineScope.(t: Throwable) -> Unit)?,
-    onFinally: (suspend CoroutineScope.() -> Unit)?,
+    onCatch: suspend CoroutineScope.(t: Throwable) -> Unit,
+    onFinally: suspend CoroutineScope.() -> Unit,
     retryDelay: IDurationEx?,
     coroutineContext: CoroutineContext,
     block: suspend CoroutineScope.(isRetry: Boolean) -> T
 ): T {
+    val scope = this
     delayed?.also { delay(it) }
     if (!coroutineContext.isActive) return returnOnCatch
 
     var result: T = returnOnCatch
     do {
         val runtime = measureTimeMillis {
-            (mutex ?: Mutex()).withLock {
-                val scope = CoroutineScope(coroutineContext)
+            mutex.withLock {
                 catch(
                     Unit, maxExecutions, printStackTrace, logStackTrace,
-                    onCatch = { throwable -> onCatch?.also { scope.launch { onCatch(throwable) } } },
-                    onFinally = { if (onFinally != null) scope.launch { scope.onFinally() } }) { isRetry ->
+                    onCatch = { throwable -> scope.onCatch(throwable) },
+                    onFinally = { scope.onFinally() }) { isRetry ->
                     if (isRetry) retryDelay?.also { delay(it) }
                     result = scope.block(isRetry)
                 }
@@ -51,7 +56,7 @@ internal suspend fun <T : Any?> executeExInternal(
     return result
 }
 
-internal fun buildContext(
+fun buildContext(
     coroutineContext: CoroutineContext,
     name: String?,
     isSuperVisionEnabled: Boolean

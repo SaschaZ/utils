@@ -38,7 +38,7 @@ open class DataClass {
 
     override fun toString(): String = "${this::class.name}(" +
             "${properties().map { it.name to it.getter.call(this) }
-                .filter { (it.second as? Collection<*>)?.isEmpty() != true }
+                .filter { (it.second as? Collection<*>)?.isEmpty() != false }
                 .joinToString("; ") { "${it.first}=${it.second}" }})"
 }
 

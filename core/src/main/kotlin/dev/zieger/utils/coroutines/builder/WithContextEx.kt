@@ -1,3 +1,5 @@
+@file:Suppress("REDUNDANT_INLINE_SUSPEND_FUNCTION_TYPE")
+
 package dev.zieger.utils.coroutines.builder
 
 import dev.zieger.utils.UtilsSettings.LOG_EXCEPTIONS
@@ -9,7 +11,7 @@ import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
-suspend fun <T : Any?> withContextEx(
+suspend inline fun <T : Any?> withContextEx(
     resultOnCatch: T,
     context: CoroutineContext? = null,
     delayed: IDurationEx? = null,
@@ -20,9 +22,9 @@ suspend fun <T : Any?> withContextEx(
     logStackTrace: Boolean = LOG_EXCEPTIONS,
     name: String? = null,
     isSuperVisionEnabled: Boolean = false,
-    onCatch: (suspend CoroutineScope.(t: Throwable) -> Unit)? = null,
-    onFinally: (suspend CoroutineScope.() -> Unit)? = null,
-    block: suspend CoroutineScope.(isRetry: Boolean) -> T
+    noinline onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
+    noinline onFinally: suspend CoroutineScope.() -> Unit = {},
+    crossinline block: suspend CoroutineScope.(isRetry: Boolean) -> T
 ): T = withContext(
     buildContext(
         context ?: coroutineContext,

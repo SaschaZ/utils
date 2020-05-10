@@ -12,8 +12,8 @@ inline fun <T> catch(
     maxExecutions: Int = 1,
     printStackTrace: Boolean = PRINT_EXCEPTIONS,
     logStackTrace: Boolean = LOG_EXCEPTIONS,
-    noinline onCatch: ((Throwable) -> Unit)? = null,
-    noinline onFinally: (() -> Unit)? = null,
+    onCatch: (Throwable) -> Unit = {},
+    onFinally: () -> Unit = {},
     block: (isRetry: Boolean) -> T
 ): T {
     var result: T
@@ -25,7 +25,7 @@ inline fun <T> catch(
         } catch (throwable: Throwable) {
             if (throwable !is CancellationException) {
                 succeed = false
-                onCatch?.invoke(throwable)
+                onCatch(throwable)
                 if (printStackTrace) {
                     System.err.println("${throwable.javaClass.simpleName}: ${throwable.message}")
                     throwable.printStackTrace()
@@ -35,7 +35,7 @@ inline fun <T> catch(
             returnOnCatch ?: null as T
         } finally {
             if (succeed || retryIndex == maxExecutions - 1)
-                onFinally?.invoke()
+                onFinally()
         }
 
         if (succeed)

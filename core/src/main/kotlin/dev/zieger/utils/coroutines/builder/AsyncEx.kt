@@ -10,7 +10,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlin.coroutines.CoroutineContext
 
 @Suppress("DeferredIsResult")
-fun <T : Any?> CoroutineScope.asyncEx(
+inline fun <T : Any?> CoroutineScope.asyncEx(
     returnOnCatch: T,
     coroutineContext: CoroutineContext = this.coroutineContext,
     delayed: IDurationEx? = null,
@@ -21,9 +21,9 @@ fun <T : Any?> CoroutineScope.asyncEx(
     logStackTrace: Boolean = LOG_EXCEPTIONS,
     name: String? = null,
     isSuperVisionEnabled: Boolean = false,
-    onCatch: (suspend CoroutineScope.(t: Throwable) -> Unit)? = null,
-    onFinally: (suspend CoroutineScope.() -> Unit)? = null,
-    block: suspend CoroutineScope.(isRetry: Boolean) -> T
+    crossinline onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
+    crossinline onFinally: suspend CoroutineScope.() -> Unit = {},
+    crossinline block: suspend CoroutineScope.(isRetry: Boolean) -> T
 ): Deferred<T> = async(buildContext(coroutineContext, name, isSuperVisionEnabled)) {
     executeExInternal(
         null, delayed, mutex, returnOnCatch, maxExecutions, printStackTrace, logStackTrace,
