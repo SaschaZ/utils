@@ -25,7 +25,7 @@ class ObservableTest {
             param("scope", DefaultCoroutineScope(), null),
             param("mutex", Mutex(), null)
         ) {
-            println(this)
+//            println(this)
 
             val testClass = this
             testClass.observable.value assert "foo" % "initial observable.value"

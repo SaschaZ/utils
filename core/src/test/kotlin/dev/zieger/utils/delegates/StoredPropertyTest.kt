@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test
 class StoredPropertyTest : IStoreContext by StoreContext(StoredPropertyTest::class.name) {
 
     private var testProperty: Int by StoredProperty(0)
+    private var testProperty2: Int by StoredProperty(0, key = "testProperty")
 
     @Test
     fun testStoredProperty() = runTest {
@@ -19,5 +20,11 @@ class StoredPropertyTest : IStoreContext by StoreContext(StoredPropertyTest::cla
 
         testProperty = 2
         testProperty assert 2
+
+        testProperty2 assert 2
+
+        testProperty2 = 3
+        testProperty assert 3
+        testProperty2 assert 3
     }
 }

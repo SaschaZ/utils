@@ -37,7 +37,7 @@ class ControllableTest {
             param("scope", DefaultCoroutineScope(), null),
             param("mutex", Mutex(), null)
         ) {
-            println(this)
+//            println(this)
 
             controllable.control { Log.d("111=$it"); if (value == "foo") value = "boo" }
             delay(100L)
@@ -61,7 +61,7 @@ class ControllableTest {
             param("scope", DefaultCoroutineScope(), null),
             param("mutex", Mutex(), null)
         ) {
-            println(this)
+//            println(this)
             if (scope != null) {
                 val testClass = this
 
