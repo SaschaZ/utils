@@ -63,7 +63,7 @@ class OnChangedTest {
             param("storePreviousValues", true, false),
             param("notifyForInitial", true, false),
             param("notifyOnChangedOnly", true, false),
-            param<CoroutineScope>("scope", /*DefaultCoroutineScope(), */null),
+            param<CoroutineScope>("scope", /*DefaultCoroutineScope(),*/ null),
             param("mutex", Mutex(), null),
             param("veto", { value: Int -> Random.nextBoolean(0.1f) }),
             param("doClearPrevValues", { value: Int -> Random.nextBoolean(0.1f) })
