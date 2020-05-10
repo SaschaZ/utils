@@ -16,6 +16,5 @@ include(
     "core",
     "core-testing",
     "jdk",
-    "jdk-testing",
-    "swing"
+    "jdk-testing"
 )

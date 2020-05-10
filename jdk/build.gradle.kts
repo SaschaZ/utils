@@ -1,8 +1,5 @@
+import dev.zieger.utils.*
 import dev.zieger.utils.ModuleType.JVM_LIB
-import dev.zieger.utils.configModule
-import dev.zieger.utils.core
-import dev.zieger.utils.mordant
-import dev.zieger.utils.progressbar
 
 plugins {
     kotlin("jvm")
@@ -14,6 +11,7 @@ configModule("jdk", JVM_LIB) {
     core
     mordant
     progressbar
+    coroutinesSwing
 }
 
 tasks {
