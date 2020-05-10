@@ -7,6 +7,7 @@ import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.delegates.OnChangedTest.OnChangedResults.OnChangedTestResultInput
 import dev.zieger.utils.delegates.OnChangedTest.OnChangedResults.OnChangedTestResultOutput
 import dev.zieger.utils.misc.DataClass
+import dev.zieger.utils.time.duration.minutes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.toList
@@ -57,7 +58,7 @@ class OnChangedTest {
     }
 
     @Test
-    fun testOnChanged() = runTest {
+    fun testOnChanged() = runTest(1.minutes) {
         parameterMixCollect(
             { OnChangedParams(it) },
             param("newValueFactory", { old: Int? -> Random.nextInt(0..9) }),
@@ -109,7 +110,7 @@ class OnChangedTest {
         delay(1000)
 
         for ((input, result) in this) {
-            println("\n\n$input")
+//            println("\n\n$input")
 
             var prevInIdx = -1
             var prevOutIdx = if (input.notifyForInitial) -2 else -1
@@ -122,7 +123,7 @@ class OnChangedTest {
             result.toList().forEach { r ->
                 when (r) {
                     is OnChangedTestResultInput -> {
-                        println(r)
+//                        println(r)
 
                         val idx = r.inputValue.idx
                         (idx - prevInIdx) assert 1
@@ -134,7 +135,7 @@ class OnChangedTest {
                         prevInIdx = idx
                     }
                     is OnChangedTestResultOutput -> {
-                        println("\t$r")
+//                        println("\t$r")
 
                         val (value, idx) = r.onChangedScope.value
 
