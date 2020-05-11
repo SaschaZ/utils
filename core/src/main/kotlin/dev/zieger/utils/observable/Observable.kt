@@ -19,7 +19,7 @@ open class Observable<out T : Any?>(
     mutex: Mutex? = null,
     subscriberStateChanged: ((Boolean) -> Unit)? = null,
     onChanged: Observer<T> = {}
-) : IObservableBase<Any?, T, IOnChangedScope<T>>, IObservable<T>, ObservableBase<Any?, T, IOnChangedScope<T>>(
+) : IObservable<T>, ObservableBase<Any?, T, IOnChangedScope<T>>(
     initial, onlyNotifyOnChanged, notifyForInitial, storeRecentValues, scope, mutex,
     subscriberStateChanged, onChanged, OnChangedScopeFactory()
 )

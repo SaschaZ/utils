@@ -1,4 +1,4 @@
-@file:Suppress("unused", "MemberVisibilityCanBePrivate", "CanBeParameter")
+@file:Suppress("unused", "MemberVisibilityCanBePrivate", "CanBeParameter", "RemoveExplicitTypeArguments")
 
 package dev.zieger.utils.observables
 
@@ -6,8 +6,12 @@ import dev.zieger.utils.core_testing.*
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
+import dev.zieger.utils.delegates.IOnChangedScope2
 import dev.zieger.utils.log.Log
+import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.observable.IObservableBase
 import dev.zieger.utils.observable.Observable
+import dev.zieger.utils.observable.Observable2
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
@@ -15,16 +19,46 @@ import org.junit.jupiter.api.Test
 
 class ObservableTest {
 
+    private inline fun <T> params(
+        inputFactory: (Map<String, ParamInstance<*>>) -> T,
+        factory: T.() -> Unit
+    ) = parameterMix(
+        inputFactory,
+        param("storePreviousValues", true, false),
+        param("notifyForExisting", true, false),
+        param("notifyOnChangedOnly", true, false),
+        param("scope", DefaultCoroutineScope(), null),
+        param("mutex", Mutex(), null),
+        block = factory
+    )
+
     @Test
-    fun `test observable inside class`() = runTest {
-        parameterMix(
-            { TestClass("foo", it) },
-            param("storePreviousValues", true, false),
-            param("notifyForExisting", true, false),
-            param("notifyOnChangedOnly", true, false),
-            param("scope", DefaultCoroutineScope(), null),
-            param("mutex", Mutex(), null)
-        ) {
+    fun testObservable() = runTestForInputFactory {
+        TestClass("foo", it) { initial, notifyOnChangedOnly, notifyForExisting,
+                               storePreviousValues, scope, mutex ->
+            Observable(initial, notifyOnChangedOnly, notifyForExisting, storePreviousValues, scope, mutex)
+        }
+    }
+
+    @Test
+    fun testObservable2() = runTestForInputFactory {
+        TestClass("foo", it) { initial, notifyOnChangedOnly, notifyForExisting,
+                               storePreviousValues, scope, mutex ->
+            Observable2<Any?, String>(
+                initial,
+                notifyOnChangedOnly,
+                notifyForExisting,
+                storePreviousValues,
+                scope,
+                mutex
+            )
+        }
+    }
+
+    private fun <S : IOnChangedScope2<Any?, String>, O : IObservableBase<Any?, String, S>> runTestForInputFactory(
+        inputFactory: (Map<String, ParamInstance<*>>) -> TestClass<String, S, O>
+    ) = runTest {
+        params(inputFactory) {
 //            println(this)
 
             val testClass = this
@@ -48,13 +82,14 @@ class ObservableTest {
             latestObservedChanged assert "boo" % "after change observe"
             latestObservedChangedS assert (if (scope != null) "boo" else null) % "after change observe suspended"
         }
-    }
+    }.asUnit()
 
     companion object {
 
-        data class TestClass(
+        data class TestClass<T, out S : IOnChangedScope2<Any?, T>, O : IObservableBase<Any?, T, S>>(
             val initial: String,
-            val map: Map<String, ParamInstance<*>>
+            val map: Map<String, ParamInstance<*>>,
+            val factory: (String, Boolean, Boolean, Boolean, CoroutineScope?, Mutex?) -> O
         ) {
 
             val storePreviousValues: Boolean by bind(map)
@@ -63,9 +98,11 @@ class ObservableTest {
             val scope: CoroutineScope? by bind(map)
             val mutex: Mutex? by bind(map)
 
-            val observable =
-                Observable(initial, notifyOnChangedOnly, notifyForExisting, storePreviousValues, scope, mutex)
-            var value by observable
+            val observable = factory(
+                initial, notifyOnChangedOnly, notifyForExisting,
+                storePreviousValues, scope, mutex
+            )
+            var value: T by observable
         }
     }
 }

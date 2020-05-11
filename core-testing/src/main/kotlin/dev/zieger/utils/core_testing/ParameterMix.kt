@@ -24,10 +24,10 @@ inline fun <I, R> parameterMixCollect(
     block: I.() -> Channel<R>
 ): Map<I, Channel<R>> = params.toList().mix().runEach { inputFactory(this).run { block().let { this to it } } }.toMap()
 
-inline fun <I> parameterMix(
-    inputFactory: (Map<String, ParamInstance<*>>) -> I,
+inline fun <T> parameterMix(
+    inputFactory: (Map<String, ParamInstance<*>>) -> T,
     vararg params: Pair<String, Param<*>>,
-    block: I.() -> Unit
+    block: T.() -> Unit
 ): Unit = parameterMixCollect(inputFactory, *params) { block(); Channel<Any>() }.asUnit()
 
 fun List<Pair<String, Param<*>>>.mix(): List<Map<String, ParamInstance<*>>> {

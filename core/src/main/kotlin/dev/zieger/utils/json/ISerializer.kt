@@ -1,5 +1,7 @@
 package dev.zieger.utils.json
 
+import kotlin.reflect.KClass
+
 
 interface ISerializer<out T : Any> {
 
@@ -10,10 +12,12 @@ interface ISerializer<out T : Any> {
 }
 
 @Suppress("FunctionName")
-inline fun <reified T : Any> DefaultSerializer(): ISerializer<T> =
-    object : JsonConverter(), ISerializer<T> {
-        override fun T.serialize(): String? = toJson()
-        override fun List<T>.serialize(): String? = toJson()
-        override fun String.deserialize(): T? = fromJson()
-        override fun String.deserializeList(): List<T>? = fromJsonList()
-    }
+inline fun <reified T : Any> DefaultSerializer(): ISerializer<T> = DefaultJsonConverter(T::class)
+
+open class DefaultJsonConverter<out T : Any>(private val clazz: KClass<@UnsafeVariance T>) : JsonConverter(),
+    ISerializer<T> {
+    override fun @UnsafeVariance T.serialize(): String? = toJson(clazz.java)
+    override fun List<@UnsafeVariance T>.serialize(): String? = toJson(clazz.java)
+    override fun String.deserialize(): T? = fromJson(clazz.java)
+    override fun String.deserializeList(): List<T>? = fromJsonList(clazz.java)
+}
