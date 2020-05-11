@@ -9,7 +9,8 @@ interface IControllable<out T : Any?> : IControllableBase<Any?, @UnsafeVariance 
 /**
  * Same as [IObservable] but allows to change the internal variable.
  */
-interface IControllable2<P, out T> : IControllableBase<P, @UnsafeVariance T, IControlledChangedScope2<P, T>>
+interface IControllable2<P : Any?, out T : Any?> :
+    IControllableBase<P, @UnsafeVariance T, IControlledChangedScope2<P, T>>
 
 interface IControllableBase<P : Any?, out T : Any?, out S : IControlledChangedScope2<P, T>> : IOnChangedBase<P, T, S> {
 

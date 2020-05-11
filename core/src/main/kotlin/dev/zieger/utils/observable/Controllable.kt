@@ -39,7 +39,7 @@ open class Controllable<out T : Any?>(
  * @param subscriberStateChanged Is invoked when an observer is added or removed.
  * @param onControl Callback that is invoked when the internal values changes.
  */
-open class Controllable2<P : Any, out T : Any?>(
+open class Controllable2<P : Any?, out T : Any?>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
     override val notifyForInitial: Boolean = false,

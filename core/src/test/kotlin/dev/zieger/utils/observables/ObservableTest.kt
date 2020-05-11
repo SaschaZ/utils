@@ -7,7 +7,6 @@ import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.delegates.IOnChangedScope2
-import dev.zieger.utils.log.Log
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.observable.IObservableBase
 import dev.zieger.utils.observable.Observable
@@ -66,11 +65,11 @@ class ObservableTest {
             testClass.value assert "foo" % "initial value"
 
             var latestObservedChanged: String? = null
-            testClass.observable.observe { Log.d("observe -> value=$it"); latestObservedChanged = it }
+            testClass.observable.observe { /*Log.d("observe -> value=$it");*/ latestObservedChanged = it }
             latestObservedChanged assert (if (notifyForExisting) "foo" else null) % "after observe without changes"
 
             var latestObservedChangedS: String? = null
-            testClass.observable.observeS { Log.d("observeS -> value=$it"); latestObservedChangedS = it }
+            testClass.observable.observeS { /*Log.d("observeS -> value=$it");*/ latestObservedChangedS = it }
             delay(10L)
             latestObservedChangedS assert (if (notifyForExisting && scope != null) "foo" else null) % "after observe without changes suspended"
 
