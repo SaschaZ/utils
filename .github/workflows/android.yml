@@ -25,7 +25,7 @@ jobs:
          name:  "Releases"
          path:  "./build/publications"  
  
-    - name: Test & publish code coverage
+    - name: Codeclimate
       uses: paambaati/codeclimate-action@v2.6.0
       env:
          CC_TEST_REPORTER_ID: ${{secrets.CODE_CLIMATE_TOKEN}}
@@ -33,12 +33,6 @@ jobs:
       with:
         coverageCommand: ./gradlew test jacocoTestReport
         coverageLocations:  ./core/build/jacoco/test/jacocoTestReport.xml:jacoco
-    
-#    - name: Run codacy-coverage-reporter
-#      uses: codacy/codacy-coverage-reporter-action@master
-#      with:
-#        project-token: ${{secrets.CODACY_TOKEN}}
-#        coverage-reports: ./core/build/jacoco/test/jacocoTestReport.xml
   
     - name: Codecov
       uses: codecov/codecov-action@v1.0.7
@@ -46,6 +40,12 @@ jobs:
         name: "Utils coverage"
         file: "${{github.workspace}}/core/build/jacoco/test/jacocoTestReport.xml"
         token:  ${{ secrets.CODECOV_TOKEN }}
+    
+#    - name: Codacy
+#      uses: codacy/codacy-coverage-reporter-action@master
+#      with:
+#        project-token: ${{secrets.CODACY_TOKEN}}
+#        coverage-reports: ./core/build/jacoco/test/jacocoTestReport.xml
 
 #    - name: FTP-Deploy-Action
 #      uses: SamKirkland/FTP-Deploy-Action@3.0.0
