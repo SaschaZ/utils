@@ -38,7 +38,7 @@ jobs:
       uses: codacy/codacy-coverage-reporter-action@0.2.0
       with:
         project-token: ${{secrets.CODACY_TOKEN}}
-        coverage-reports: ${{github.workspace}}/core/build/jacoco/test/jacocoTestReport.xml:
+        coverage-reports: ./core/build/jacoco/test/jacocoTestReport.xml
 #    - name: FTP-Deploy-Action
 #      uses: SamKirkland/FTP-Deploy-Action@3.0.0
 #      with:
