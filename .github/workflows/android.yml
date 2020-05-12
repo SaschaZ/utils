@@ -38,10 +38,10 @@ jobs:
       uses: codacy/codacy-coverage-reporter-action@v0.2.0
       with:
         project-token: ${{secrets.CODACY_TOKEN}}
-        #coverage-reports: ./core/build/jacoco/test/jacocoTestReport.xml
+        coverage-reports: ./core/build/jacoco/test/jacocoTestReport.xml
   
     - name: Codecov
-      uses: codecov/codecov-action@v1.0.6
+      uses: codecov/codecov-action@master
       with:
         name: "Utils coverage"
         file: "${{github.workspace}}/core/build/jacoco/test/jacocoTestReport.xml"
