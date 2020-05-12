@@ -31,11 +31,11 @@ jobs:
       env:
          # Set CC_TEST_REPORTER_ID as secret of your repo
          CC_TEST_REPORTER_ID: ${{secrets.CODE_CLIMATE_TOKEN}}
-         JACOCO_SOURCE_PATH: "./core/src/main/kotlin"
+         JACOCO_SOURCE_PATH: "${{github.workspace}}/core/src/main/kotlin"
       with:
         # The report file must be there, otherwise Code Climate won't find it
         coverageCommand: ./gradlew test jacocoTestReport
-        coverageLocations: ./core/build/jacoco/test/jacocoTestReport.xml:jacoco
+        coverageLocations:  ${{github.workspace}}/core/build/jacoco/test/jacocoTestReport.xml:jacoco
 #    - name: FTP-Deploy-Action
 #      uses: SamKirkland/FTP-Deploy-Action@3.0.0
 #      with:
