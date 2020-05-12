@@ -30,7 +30,7 @@ jobs:
       uses: paambaati/codeclimate-action@v2.6.0
       env:
          # Set CC_TEST_REPORTER_ID as secret of your repo
-         CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
+         CC_TEST_REPORTER_ID: ${{secrets.CODE_CLIMATE_TOKEN}}
          JACOCO_SOURCE_PATH: "./core/src/main/kotlin"
       with:
         # The report file must be there, otherwise Code Climate won't find it
