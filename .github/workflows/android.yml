@@ -31,7 +31,7 @@ jobs:
          CC_TEST_REPORTER_ID: ${{secrets.CODE_CLIMATE_TOKEN}}
          JACOCO_SOURCE_PATH: "${{github.workspace}}/core/src/main/kotlin"
       with:
-        #coverageCommand: ./gradlew test jacocoTestReport
+        coverageCommand: ./gradlew test jacocoTestReport
         coverageLocations:  ./core/build/jacoco/test/jacocoTestReport.xml:jacoco
     
 #    - name: Run codacy-coverage-reporter
