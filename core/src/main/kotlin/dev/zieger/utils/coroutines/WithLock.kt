@@ -18,5 +18,3 @@ suspend inline fun Iterable<Mutex>.withLock(function: () -> Unit) {
     function()
     forEach { it.unlock() }
 }
-
-suspend inline fun <T> Mutex?.withLockOrDirect(block: () -> T) = this?.withLock(block) ?: block()

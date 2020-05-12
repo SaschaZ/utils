@@ -4,6 +4,7 @@ Kotlin Jvm Utilities
 [![jitCI](https://jitci.com/gh/SaschaZ/utils/svg)](https://jitci.com/gh/SaschaZ/utils) 
 [![GitHub Actions](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fatrox%2Fsync-dotenv%2Fbadge&label=build&logo=none)](https://actions-badge.atrox.dev/atrox/sync-dotenv/goto) 
 [![codecov](https://codecov.io/gh/SaschaZ/utils/branch/master/graph/badge.svg)](https://codecov.io/gh/SaschaZ/utils)
+[![codebeat badge](https://codebeat.co/badges/84495349-71cb-461f-9840-860e9678f593)](https://codebeat.co/projects/github-com-saschaz-utils-master)
 
 
 ## Contains utilities for
