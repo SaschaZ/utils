@@ -7,7 +7,9 @@ Kotlin Jvm Utilities
 [![codebeat badge](https://codebeat.co/badges/84495349-71cb-461f-9840-860e9678f593)](https://codebeat.co/projects/github-com-saschaz-utils-master)
 [![Maintainability](https://api.codeclimate.com/v1/badges/cbd0727a672b2178f75e/maintainability)](https://codeclimate.com/github/SaschaZ/utils/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/cbd0727a672b2178f75e/test_coverage)](https://codeclimate.com/github/SaschaZ/utils/test_coverage)
+[![Codacy](https://api.codacy.com/project/badge/Grade/13ba69ac93234d2da6a3b55474a4fcc7)](https://www.codacy.com/manual/SaschaZ/utils?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=SaschaZ/utils&amp;utm_campaign=Badge_Grade)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](https://raw.githubusercontent.com/SaschaZ/utils/master/LICENSE)
+
 
 ## Contains utilities for
 - [utilsEx](#utilsex)
