@@ -14,7 +14,7 @@ jobs:
       with:
         java-version: 1.8
     - name: Build with Gradle
-      run: ${{github.workspace}}/gradlew build jacocoTestReport publishToMavenLocal
+      run: ./gradlew build jacocoTestReport publishToMavenLocal
     - name: Upload artifact
       uses: actions/upload-artifact@v1.0.0
       with:
@@ -29,13 +29,11 @@ jobs:
     - name: Test & publish code coverage
       uses: paambaati/codeclimate-action@v2.6.0
       env:
-         # Set CC_TEST_REPORTER_ID as secret of your repo
          CC_TEST_REPORTER_ID: ${{secrets.CODE_CLIMATE_TOKEN}}
          JACOCO_SOURCE_PATH: "${{github.workspace}}/core/src/main/kotlin"
       with:
-        # The report file must be there, otherwise Code Climate won't find it
         coverageCommand: ./gradlew test jacocoTestReport
-        coverageLocations:  ${{github.workspace}}/core/build/jacoco/test/jacocoTestReport.xml:jacoco
+        coverageLocations:  ./core/build/jacoco/test/jacocoTestReport.xml:jacoco
     - name: Codacy Coverage Reporter
       uses: codacy/codacy-coverage-reporter-action@0.2.0
       with:
