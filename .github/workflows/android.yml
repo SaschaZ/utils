@@ -24,7 +24,7 @@ jobs:
       uses: codecov/codecov-action@v1.0.6
       with:
         name: "Utils coverage"
-        file: ./core/build/jacoco/test/jacocoTestReport.xml
+        file: "${{github.workspace}}/core/build/jacoco/test/jacocoTestReport.xml"
         token:  ${{ secrets.CODECOV_TOKEN }}
     - name: Test & publish code coverage
       uses: paambaati/codeclimate-action@v2.6.0
