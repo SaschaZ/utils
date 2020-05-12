@@ -35,13 +35,13 @@ jobs:
         coverageLocations:  ./core/build/jacoco/test/jacocoTestReport.xml:jacoco
     
     - name: Codacy Coverage Reporter
-      uses: codacy/codacy-coverage-reporter-action@v0.2.0
+      uses: codacy/codacy-coverage-reporter-action@master
       with:
         project-token: ${{secrets.CODACY_TOKEN}}
         coverage-reports: ./core/build/jacoco/test/jacocoTestReport.xml
   
     - name: Codecov
-      uses: codecov/codecov-action@master
+      uses: codecov/codecov-action@v1.0.7
       with:
         name: "Utils coverage"
         file: "${{github.workspace}}/core/build/jacoco/test/jacocoTestReport.xml"
