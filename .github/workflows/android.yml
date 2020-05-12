@@ -26,6 +26,16 @@ jobs:
       with:
          name:  "Releases"
          path:  "./build/publications"
+    - name: Test & publish code coverage
+      uses: paambaati/codeclimate-action@v2.6.0
+      env:
+         # Set CC_TEST_REPORTER_ID as secret of your repo
+         CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
+         JACOCO_SOURCE_PATH: "./core/src/main/kotlin"
+      with:
+        # The report file must be there, otherwise Code Climate won't find it
+        coverageCommand: ./gradlew test jacocoTestReport
+        coverageLocations: ./core/build/jacoco/test/jacocoTestReport.xml:jacoco
 #    - name: FTP-Deploy-Action
 #      uses: SamKirkland/FTP-Deploy-Action@3.0.0
 #      with:
