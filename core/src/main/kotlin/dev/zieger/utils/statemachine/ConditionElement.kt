@@ -15,8 +15,7 @@ import dev.zieger.utils.statemachine.IConditionElement.IMaster.IGroup.IEventGrou
 import dev.zieger.utils.statemachine.IConditionElement.IMaster.IGroup.IStateGroup
 import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle
 import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle.*
-import dev.zieger.utils.statemachine.IConditionElement.ISlave.IData
-import dev.zieger.utils.statemachine.IConditionElement.ISlave.IType
+import dev.zieger.utils.statemachine.IConditionElement.ISlave.*
 import dev.zieger.utils.statemachine.IConditionElement.UsedAs.DEFINITION
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
 import kotlin.reflect.KClass
@@ -36,6 +35,9 @@ interface IConditionElement {
         RUNTIME
     }
 
+    /**
+     * Result of the [MachineDsl.set] and [MachineDsl.execAndSet] calls.
+     */
     interface IActionResult
 
     interface IMaster : IConditionElement {
@@ -135,6 +137,9 @@ interface IConditionElement {
         }
     }
 
+    /**
+     * Slaves can be bound to a master to become a [IComboElement].
+     */
     interface ISlave : IConditionElement {
 
         interface IData : ISlave {
@@ -155,6 +160,7 @@ interface IConditionElement {
             }
         }
 
+        // FIXME do not allow to bind [IType] to a [IMaster] for an [IActionResult]
         interface IType<out T : IData> : ISlave {
             val type: KClass<@UnsafeVariance T>
 
@@ -173,6 +179,13 @@ interface IConditionElement {
                 }
             }
         }
+
+        interface IAny : ISlave {
+
+            override suspend fun match(other: IConditionElement?, previousStateChanges: List<OnStateChanged>): Boolean {
+                return true
+            }
+        }
     }
 
     interface IComboElement : IConditionElement, IActionResult {
@@ -180,7 +193,7 @@ interface IConditionElement {
         val master: IMaster
         var slave: ISlave?
         var usedAs: UsedAs
-        val ignoreSlave: Boolean
+        var ignoreSlave: Boolean
         var exclude: Boolean
 
         val event get() = master as? IEvent
@@ -369,13 +382,13 @@ sealed class ConditionElement : IConditionElement {
 
         sealed class Group<out T : ISingle>(override val type: KClass<@UnsafeVariance T>) : Master(), IGroup<T> {
 
-            abstract class EventGroup<out T : IEvent>(type: KClass<T>) :
+            open class EventGroup<out T : IEvent>(type: KClass<T>) :
                 Group<@UnsafeVariance T>(type),
                 IEventGroup<T> {
                 override fun toString(): String = type.name
             }
 
-            abstract class StateGroup<out T : IState>(type: KClass<T>) :
+            open class StateGroup<out T : IState>(type: KClass<T>) :
                 Group<@UnsafeVariance T>(type),
                 IStateGroup<T> {
                 override fun toString(): String = type.name
@@ -400,13 +413,18 @@ sealed class ConditionElement : IConditionElement {
 
             override fun toString(): String = type.name
         }
+
+        /**
+         * Matches every [ISlave] or none (if no [ISlave] is defined).
+         */
+        object Any : Slave(), IAny
     }
 
     data class ComboElement(
         override val master: IMaster,
         override var slave: ISlave? = null,
         override var usedAs: UsedAs = DEFINITION,
-        override val ignoreSlave: Boolean = false,
+        override var ignoreSlave: Boolean = false,
         override var exclude: Boolean = false
     ) : IComboElement {
         override fun toString() = "CE($master|$slave|$ignoreSlave|$exclude|${when (master) {
@@ -463,3 +481,5 @@ val IComboElement.isRuntime get() = usedAs == UsedAs.RUNTIME
 val IComboElement.noLogging: Boolean get() = (master as? IEvent)?.noLogging == true
 
 val IMaster.combo get() = ConditionElement.ComboElement(this)
+
+operator fun IMaster.unaryMinus(): IComboElement = combo

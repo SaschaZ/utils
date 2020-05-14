@@ -23,28 +23,44 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.memberProperties
 
-@Deprecated("use other divMod", ReplaceWith("Long.divMod(double): Pair<Double, Double>"), DeprecationLevel.WARNING)
-fun Long.divMod(div: Double, modulo: ((Long, Long) -> Unit)? = null) =
-    (this / div).also { modulo?.invoke(it.toLong(), (this % div).toLong()) }
-
+/**
+ * Returns the quotient and reminder of a division as a [Pair].
+ * ```
+ * val (q, r) = 5.divMod(2) // q => 2; r => 1
+ * ```
+ */
 @Suppress("UNCHECKED_CAST")
 fun <T : Number> T.divMod(div: T): Pair<T, T> = (this / div) as T to (this % div) as T
 
-fun List<Double?>.average(sizeForce: Int? = null, selector: ((Double?) -> Boolean)? = null): Double? {
-    val selected = filterNotNull().filter { selector?.invoke(it) ?: true }
-    if (selected.isEmpty()) return null
-    return selected.sumByDouble { it } / (sizeForce ?: selected.size)
+/**
+ * Calculates the average of the receiving [Double] [List].
+ *
+ * @receiver [List] of nullable [Double]s to calculate the average of.
+ * @param forceDivisor Instead using the number of non null elements as a divisor to get the average, [forceDivisor] is
+ * used when it is defined.
+ * @param selector Optional lambda to select specific elements from the receiver [List].
+ *
+ * @return Arithmetic average of the receiving [Double] [List].
+ */
+inline fun List<Double?>.average(
+    forceDivisor: Int? = null,
+    selector: (Double) -> Boolean = { true }
+): Double? {
+    val selected = filterNotNull().filter(selector).nullWhenEmpty()
+    return selected?.sumByDouble { it }?.div(forceDivisor ?: selected.size)
 }
 
-infix fun Double?.average(onNull: Double): Double = this?.let { (it + onNull) / 2 } ?: onNull
+/**
+ * @return Average of the receiving [Double] value and the provided [Double] parameter [other]. When receiving [Double]
+ * is null, [other] is returned.
+ */
+infix fun Double?.average(other: Double): Double = this?.let { (it + other) / 2 } ?: other
 
-fun Any?.equalsOne(vararg args: Any) = args.any { args == this }
-
-inline fun <E, K, V> List<E>.merge(key: (E) -> K, combine: (List<E>) -> V?): List<V> {
-    val list = ArrayList<V>()
-    groupBy { key(it) }.values.forEach { value -> combine(value)?.let { list.add(it) } }
-    return list
-}
+/**
+ * Groups a [List] of [E] by the [key] and [combine]s them to a single value.
+ */
+inline fun <E, K, V : Any> List<E>.merge(key: (E) -> K, combine: (List<E>) -> V?): List<V> =
+    groupBy { key(it) }.values.mapNotNull { value -> combine(value) }
 
 inline infix fun <T : Any> List<T>.take(block: (T) -> Boolean): List<T> =
     mapNotNull { if (block(it)) it else null }

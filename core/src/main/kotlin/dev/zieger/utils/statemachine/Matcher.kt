@@ -50,10 +50,7 @@ object Matcher {
         val matchingEventBindings = bindings.filter { match(it.key, event, state, previousChanges, EVENT) }
 
         return when (matchingEventBindings.size) {
-            1 -> matchingEventBindings.values.first().fire(event).also { newState ->
-                bindings.filter { match(it.key, event, newState, previousChanges, STATE) }
-                    .forEach { it.key.action?.invoke(execScope) }
-            }
+            1 -> matchingEventBindings.values.first().fire(event)
             0 -> {
                 val matchingEventConditions =
                     conditions.filter { match(it.value, event, state, previousChanges, EVENT) }

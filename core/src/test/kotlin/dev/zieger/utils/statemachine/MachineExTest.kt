@@ -5,98 +5,28 @@ package dev.zieger.utils.statemachine
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
 import dev.zieger.utils.core_testing.runTest
-import dev.zieger.utils.statemachine.ConditionElement.Master.Group.EventGroup
-import dev.zieger.utils.statemachine.ConditionElement.Master.Group.StateGroup
-import dev.zieger.utils.statemachine.ConditionElement.Master.Single.Event
-import dev.zieger.utils.statemachine.ConditionElement.Master.Single.State
-import dev.zieger.utils.statemachine.ConditionElement.Slave.Data
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
-import dev.zieger.utils.statemachine.MachineExTest.TestData.*
-import dev.zieger.utils.statemachine.MachineExTest.TestEvent.*
-import dev.zieger.utils.statemachine.MachineExTest.TestEvent.TEST_EVENT_GROUP.*
-import dev.zieger.utils.statemachine.MachineExTest.TestState.*
-import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DEFG.D
-import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DEFG.E
-import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG.F
-import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG.G
-import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.H
-import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.I
+import dev.zieger.utils.statemachine.TestData.*
+import dev.zieger.utils.statemachine.TestEvent.*
+import dev.zieger.utils.statemachine.TestEvent.TEST_EVENT_GROUP.*
+import dev.zieger.utils.statemachine.TestState.*
+import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_DEFG.D
+import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_DEFG.E
+import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG.F
+import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG.G
+import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_HI.H
+import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_HI.I
 import dev.zieger.utils.time.duration.seconds
 import org.junit.jupiter.api.Test
 
 class MachineExTest {
 
-    sealed class TestState : State() {
-
-        object INITIAL : TestState()
-        object A : TestState()
-        object B : TestState()
-        object C : TestState()
-
-        sealed class TEST_STATE_GROUP_DEFG : TestState() {
-            object D : TEST_STATE_GROUP_DEFG()
-            object E : TEST_STATE_GROUP_DEFG()
-
-            sealed class TEST_STATE_GROUP_FG : TestState() {
-                object F : TEST_STATE_GROUP_FG()
-                object G : TEST_STATE_GROUP_FG()
-
-                companion object : StateGroup<TEST_STATE_GROUP_FG>(TEST_STATE_GROUP_FG::class)
-            }
-
-            companion object : StateGroup<TEST_STATE_GROUP_DEFG>(TEST_STATE_GROUP_DEFG::class)
-        }
-
-        sealed class TEST_STATE_GROUP_HI : TestState() {
-            object H : TEST_STATE_GROUP_HI()
-            object I : TEST_STATE_GROUP_HI()
-
-            companion object : StateGroup<TEST_STATE_GROUP_HI>(TEST_STATE_GROUP_HI::class)
-        }
-
-        companion object : StateGroup<TestState>(TestState::class)
-    }
-
-    sealed class TestData : Data() {
-
-        data class TestEventData(val foo: String) : TestData() {
-            companion object : Type<TestEventData>(TestEventData::class)
-        }
-
-        data class TestEventData2(val foo: String) : TestData() {
-            companion object : Type<TestEventData2>(TestEventData2::class)
-        }
-
-        data class TestStateData(val moo: Boolean) : TestData() {
-            companion object : Type<TestStateData>(TestStateData::class)
-        }
-
-        companion object : Type<TestData>(TestData::class)
-    }
-
-    sealed class TestEvent : Event() {
-
-        object FIRST : TestEvent()
-        object SECOND : TestEvent()
-        object THIRD : TestEvent()
-
-        sealed class TEST_EVENT_GROUP : TestEvent() {
-            object FOURTH : TEST_EVENT_GROUP()
-            object FIFTH : TEST_EVENT_GROUP()
-            object SIXTH : TEST_EVENT_GROUP()
-
-            companion object : EventGroup<TEST_EVENT_GROUP>(TEST_EVENT_GROUP::class)
-        }
-
-        companion object : EventGroup<TestEvent>(TestEvent::class)
-    }
-
     @Test
     fun testComplex() = runTest(10.seconds) {
         var executed = 0
         var executed2 = 0
-        MachineEx(INITIAL) {
-            +FIRST + INITIAL set A * TestStateData(true)
+        MachineEx(TestState.INITIAL) {
+            +TestEvent.FIRST + INITIAL set A * TestStateData(true)
             +SECOND * TestEventData set C
             +FIFTH + A * TestStateData set E
             +FIRST + SECOND + THIRD + A + B + E set C

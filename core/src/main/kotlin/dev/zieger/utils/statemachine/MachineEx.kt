@@ -5,6 +5,7 @@ package dev.zieger.utils.statemachine
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
+import dev.zieger.utils.log.Log
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.statemachine.IConditionElement.IComboElement
 import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
@@ -15,7 +16,6 @@ import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel
 import dev.zieger.utils.statemachine.MachineEx.Companion.debugLevel
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -171,7 +171,7 @@ open class MachineEx(
     override val scope: CoroutineScopeEx = DefaultCoroutineScope(),
     private val previousChangesCacheSize: Int = 128,
     debugLevel: DebugLevel = DebugLevel.ERROR,
-    builder: suspend MachineDsl.() -> Unit
+    private val builder: suspend MachineDsl.() -> Unit
 ) : MachineDsl() {
 
     companion object {
@@ -185,6 +185,8 @@ open class MachineEx(
 
         internal var debugLevel: DebugLevel = DebugLevel.ERROR
             private set
+
+        private const val EVENT_CHANNEL_CAPACITY = 1024
     }
 
     override val mapper: IMachineExMapper = MachineExMapper()
@@ -194,13 +196,16 @@ open class MachineEx(
     private val finishedProcessingEvent = Channel<Boolean>()
 
     private val eventMutex = Mutex()
-    private val eventChannel = Channel<IComboElement>(Channel.BUFFERED)
+    private val eventChannel = Channel<IComboElement>(EVENT_CHANNEL_CAPACITY)
 
     override var event: IComboElement
         get() = currentEvent
         set(value) {
             submittedEventCount.incrementAndGet()
-            scope.launchEx(mutex = eventMutex) { eventChannel.send(value) }
+            if (!eventChannel.offer(value)) {
+                Log.w("Event channel is full (>$EVENT_CHANNEL_CAPACITY). Will launch new coroutine to forward event.")
+                scope.launchEx(mutex = eventMutex) { eventChannel.send(value) }
+            }
         }
 
     private lateinit var currentEvent: IComboElement
@@ -213,13 +218,13 @@ open class MachineEx(
         get() = submittedEventCount.get() != processedEventCount.get()
 
     init {
-        MachineEx.debugLevel = debugLevel
-        applyNewState(initialState.combo, initialState.combo, object : IEvent {
-            override val noLogging: Boolean
-                get() = false
-        }.combo)
         scope.launchEx {
-            this@MachineEx.builder()
+            MachineEx.debugLevel = debugLevel
+            applyNewState(initialState.combo, initialState.combo, object : IEvent {
+                override val noLogging: Boolean
+                    get() = false
+            }.combo)
+            builder()
             for (event in eventChannel) event.processEvent()
         }
     }
@@ -231,7 +236,7 @@ open class MachineEx(
         applyNewState(mapper.findStateForEvent(this, stateBefore, previousChanges), stateBefore, this)
         processedEventCount.incrementAndGet()
         if (!isProcessingActive)
-            scope.launch { finishedProcessingEvent.send(true) }
+            finishedProcessingEvent.send(true)
     }
 
     private fun applyNewState(

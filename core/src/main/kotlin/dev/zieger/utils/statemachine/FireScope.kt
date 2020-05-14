@@ -5,8 +5,6 @@ package dev.zieger.utils.statemachine
 import dev.zieger.utils.statemachine.IConditionElement.IComboElement
 import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
 
-val IMachineEx.fire get() = FireScope(this)
-
 class FireScope(machine: IMachineEx) : IMachineEx by machine {
 
     infix fun event(event: IEvent) = event(event.combo)

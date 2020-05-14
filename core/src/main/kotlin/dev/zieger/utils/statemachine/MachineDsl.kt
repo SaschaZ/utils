@@ -2,17 +2,21 @@
 
 package dev.zieger.utils.statemachine
 
-import dev.zieger.utils.statemachine.ConditionElement.*
+import dev.zieger.utils.statemachine.ConditionElement.Condition
+import dev.zieger.utils.statemachine.ConditionElement.InputElement
 import dev.zieger.utils.statemachine.ConditionElement.Master.Single.External
 import dev.zieger.utils.statemachine.IConditionElement.*
 import dev.zieger.utils.statemachine.IConditionElement.IConditionElementGroup.MatchType.*
+import dev.zieger.utils.statemachine.IConditionElement.IMaster.IGroup
 import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle
-import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
 import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle.IState
+import dev.zieger.utils.statemachine.IConditionElement.ISlave.IAny
 import kotlin.math.max
 
 
 abstract class MachineDsl : IMachineEx {
+
+    override suspend fun scope(block: suspend MachineDsl.() -> Unit) = apply { block() }
 
     // start entry with unary +
     operator fun IMaster.unaryPlus() = Condition(this)
@@ -29,6 +33,7 @@ abstract class MachineDsl : IMachineEx {
         return this
     }
 
+
     // link unwanted items with - operator
     operator fun Condition.minus(other: IMaster): Condition = minus(other.combo)
     operator fun Condition.minus(other: suspend MatchScope.() -> Boolean): Condition {
@@ -44,8 +49,15 @@ abstract class MachineDsl : IMachineEx {
 
     // apply Data with * operator
     operator fun ISingle.times(slave: ISlave?) = combo * slave
-    operator fun IComboElement.times(slave: ISlave?) = also { it.slave = slave }
-    operator fun IPrevElement.times(slave: ISlave?) = also { it.combo * slave }
+    operator fun IGroup<*>.times(slave: ISlave?) = combo * slave
+    operator fun IPrevElement.times(slave: ISlave?) = combo * slave
+    operator fun IComboElement.times(slave: ISlave?) = also {
+        it.slave = slave
+        when (slave) {
+            is IAny -> it.ignoreSlave = true
+        }
+    }
+
 
     // Only the case when slave is added to first item. unary operators are processed before.
     operator fun Condition.times(slave: ISlave?) = apply { start * slave }
@@ -143,22 +155,4 @@ abstract class MachineDsl : IMachineEx {
             }
         }
     }
-
-
-    /**
-     * Non DSL helper method to fire an [IEvent] with optional [Slave] and suspend until it was processed by the state
-     * machine.
-     */
-    override suspend fun fire(combo: IComboElement): IComboElement {
-        fire eventSync combo
-        return state
-    }
-
-    /**
-     * Non DSL helper method to add an [IEvent] with optional [Slave] to the [IEvent] processing queue and return
-     * immediately.
-     */
-    override fun fireAndForget(combo: IComboElement) =
-        fire event combo
-
 }
