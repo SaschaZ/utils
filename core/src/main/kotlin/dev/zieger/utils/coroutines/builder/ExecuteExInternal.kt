@@ -1,5 +1,6 @@
 package dev.zieger.utils.coroutines.builder
 
+import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.misc.catch
 import dev.zieger.utils.time.base.minus
 import dev.zieger.utils.time.delay
@@ -11,42 +12,45 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.system.measureTimeMillis
 
 internal suspend fun <T : Any?> executeExInternal(
-    interval: IDurationEx? = null,
-    delayed: IDurationEx?,
-    mutex: Mutex?,
-    returnOnCatch: T,
-    maxExecutions: Int,
-    printStackTrace: Boolean,
-    logStackTrace: Boolean,
-    onCatch: (suspend CoroutineScope.(t: Throwable) -> Unit)?,
-    onFinally: (suspend CoroutineScope.() -> Unit)?,
-    retryDelay: IDurationEx?,
     coroutineContext: CoroutineContext,
-    block: suspend CoroutineScope.(isRetry: Boolean) -> T
+    interval: IDurationEx? = null,
+    delayed: IDurationEx? = null,
+    mutex: Mutex? = null,
+    returnOnCatch: T,
+    maxExecutions: Int = Int.MAX_VALUE,
+    retryDelay: IDurationEx? = null,
+    timeout: IDurationEx? = null,
+    printStackTrace: Boolean = true,
+    logStackTrace: Boolean = false,
+    onCatch: (suspend CoroutineScope.(t: Throwable) -> Unit)? = null,
+    onFinally: (suspend CoroutineScope.() -> Unit)? = null,
+    block: suspend CoroutineScope.(isRetry: Boolean) -> T = { returnOnCatch }
 ): T {
     delayed?.also { delay(it) }
     if (!coroutineContext.isActive) return returnOnCatch
 
     var result: T = returnOnCatch
-    do {
-        val runtime = measureTimeMillis {
-            (mutex ?: Mutex()).withLock {
-                val scope = CoroutineScope(coroutineContext)
-                catch(
-                    Unit, maxExecutions, printStackTrace, logStackTrace,
-                    onCatch = { throwable -> onCatch?.also { scope.launch { onCatch(throwable) } } },
-                    onFinally = { if (onFinally != null) scope.launch { scope.onFinally() } }) { isRetry ->
-                    if (isRetry) retryDelay?.also { delay(it) }
-                    result = scope.block(isRetry)
+    withTimeout(timeout) {
+        do {
+            val runtime = measureTimeMillis {
+                (mutex ?: Mutex()).withLock {
+                    val scope = CoroutineScope(coroutineContext)
+                    catch(
+                        Unit, maxExecutions, printStackTrace, logStackTrace,
+                        onCatch = { throwable -> onCatch?.also { scope.launch { onCatch(throwable) } } },
+                        onFinally = { if (onFinally != null) scope.launch { scope.onFinally() } }) { isRetry ->
+                        if (isRetry) retryDelay?.also { delay(it) }
+                        result = scope.block(isRetry)
+                    }
                 }
             }
-        }
 
-        if (coroutineContext.isActive && interval != null) {
-            val intervalDiff = interval - runtime
-            if (intervalDiff.notZero) delay(intervalDiff)
-        }
-    } while (interval != null && coroutineContext.isActive)
+            if (coroutineContext.isActive && interval != null) {
+                val intervalDiff = interval - runtime
+                if (intervalDiff.notZero) delay(intervalDiff)
+            }
+        } while (interval != null && coroutineContext.isActive)
+    }
 
     return result
 }

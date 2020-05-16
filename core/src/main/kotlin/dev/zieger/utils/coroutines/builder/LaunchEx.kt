@@ -15,6 +15,7 @@ fun launchEx(
     delayed: IDurationEx? = null,
     maxExecutions: Int = 1,
     retryDelay: IDurationEx? = null,
+    timeout: IDurationEx? = null,
     mutex: Mutex? = null,
     printStackTrace: Boolean = PRINT_EXCEPTIONS,
     logStackTrace: Boolean = LOG_EXCEPTIONS,
@@ -24,19 +25,8 @@ fun launchEx(
     onFinally: (suspend CoroutineScope.() -> Unit)? = null,
     block: suspend CoroutineScope.(isRetry: Boolean) -> Unit
 ) = coroutineScope.launchEx(
-    coroutineScope.coroutineContext,
-    interval,
-    delayed,
-    maxExecutions,
-    retryDelay,
-    mutex,
-    printStackTrace,
-    logStackTrace,
-    name,
-    isSuperVisionEnabled,
-    onCatch,
-    onFinally,
-    block
+    coroutineScope.coroutineContext, interval, delayed, maxExecutions, retryDelay, timeout, mutex,
+    printStackTrace, logStackTrace, name, isSuperVisionEnabled, onCatch, onFinally, block
 )
 
 fun CoroutineScope.launchEx(
@@ -45,6 +35,7 @@ fun CoroutineScope.launchEx(
     delayed: IDurationEx? = null,
     maxExecutions: Int = 1,
     retryDelay: IDurationEx? = null,
+    timeout: IDurationEx? = null,
     mutex: Mutex? = null,
     printStackTrace: Boolean = PRINT_EXCEPTIONS,
     logStackTrace: Boolean = LOG_EXCEPTIONS,
@@ -55,7 +46,7 @@ fun CoroutineScope.launchEx(
     block: suspend CoroutineScope.(isRetry: Boolean) -> Unit
 ) = launch(buildContext(coroutineContext, name, isSuperVisionEnabled)) {
     executeExInternal(
-        interval, delayed, mutex, Unit, maxExecutions, printStackTrace, logStackTrace,
-        onCatch, onFinally, retryDelay, coroutineContext, block
+        coroutineContext, interval, delayed, mutex, Unit, maxExecutions, retryDelay, timeout, printStackTrace,
+        logStackTrace, onCatch, onFinally, block
     )
 }

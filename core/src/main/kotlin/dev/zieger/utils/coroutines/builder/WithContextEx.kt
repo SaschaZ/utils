@@ -15,6 +15,7 @@ suspend fun <T : Any?> withContextEx(
     delayed: IDurationEx? = null,
     maxExecutions: Int = 1,
     retryDelay: IDurationEx? = null,
+    timeout: IDurationEx? = null,
     mutex: Mutex? = null,
     printStackTrace: Boolean = PRINT_EXCEPTIONS,
     logStackTrace: Boolean = LOG_EXCEPTIONS,
@@ -31,7 +32,7 @@ suspend fun <T : Any?> withContextEx(
     )
 ) {
     executeExInternal(
-        null, delayed, mutex, resultOnCatch, maxExecutions, printStackTrace, logStackTrace,
-        onCatch, onFinally, retryDelay, coroutineContext, block
+        coroutineContext, null, delayed, mutex, resultOnCatch, maxExecutions, retryDelay, timeout,
+        printStackTrace, logStackTrace, onCatch, onFinally, block
     )
 }

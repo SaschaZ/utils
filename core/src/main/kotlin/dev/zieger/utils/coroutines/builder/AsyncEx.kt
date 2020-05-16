@@ -16,6 +16,7 @@ fun <T : Any?> CoroutineScope.asyncEx(
     delayed: IDurationEx? = null,
     maxExecutions: Int = 1,
     retryDelay: IDurationEx? = null,
+    timeout: IDurationEx? = null,
     mutex: Mutex? = null,
     printStackTrace: Boolean = PRINT_EXCEPTIONS,
     logStackTrace: Boolean = LOG_EXCEPTIONS,
@@ -26,7 +27,7 @@ fun <T : Any?> CoroutineScope.asyncEx(
     block: suspend CoroutineScope.(isRetry: Boolean) -> T
 ): Deferred<T> = async(buildContext(coroutineContext, name, isSuperVisionEnabled)) {
     executeExInternal(
-        null, delayed, mutex, returnOnCatch, maxExecutions, printStackTrace, logStackTrace,
-        onCatch, onFinally, retryDelay, coroutineContext, block
+        coroutineContext, null, delayed, mutex, returnOnCatch, maxExecutions, retryDelay, timeout,
+        printStackTrace, logStackTrace, onCatch, onFinally, block
     )
 }

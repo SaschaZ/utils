@@ -1,7 +1,6 @@
 package dev.zieger.utils.coroutines
 
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
-import dev.zieger.utils.misc.ifNull
 import dev.zieger.utils.time.duration.IDurationEx
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withTimeout
@@ -13,7 +12,7 @@ suspend inline fun withTimeout(
 ) {
     timeout?.let {
         withTimeout(timeout.millis) { block() }
-    } ifNull { block() }
+    } ?: block()
 }
 
 interface IContinuation {
