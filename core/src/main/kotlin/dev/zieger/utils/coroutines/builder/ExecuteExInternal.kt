@@ -11,20 +11,20 @@ import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.CoroutineContext
 import kotlin.system.measureTimeMillis
 
-internal suspend fun <T : Any?> executeExInternal(
+internal suspend inline fun <T : Any?> executeExInternal(
     coroutineContext: CoroutineContext,
+    returnOnCatch: T,
     interval: IDurationEx? = null,
     delayed: IDurationEx? = null,
     mutex: Mutex? = null,
-    returnOnCatch: T,
     maxExecutions: Int = Int.MAX_VALUE,
     retryDelay: IDurationEx? = null,
     timeout: IDurationEx? = null,
     printStackTrace: Boolean = true,
     logStackTrace: Boolean = false,
-    onCatch: (suspend CoroutineScope.(t: Throwable) -> Unit)? = null,
-    onFinally: (suspend CoroutineScope.() -> Unit)? = null,
-    block: suspend CoroutineScope.(isRetry: Boolean) -> T = { returnOnCatch }
+    crossinline onCatch: suspend CoroutineScope.(t: Throwable) -> Unit,
+    crossinline onFinally: suspend CoroutineScope.() -> Unit,
+    crossinline block: suspend CoroutineScope.(isRetry: Boolean) -> T
 ): T {
     delayed?.also { delay(it) }
     if (!coroutineContext.isActive) return returnOnCatch
@@ -37,8 +37,8 @@ internal suspend fun <T : Any?> executeExInternal(
                     val scope = CoroutineScope(coroutineContext)
                     catch(
                         Unit, maxExecutions, printStackTrace, logStackTrace,
-                        onCatch = { throwable -> onCatch?.also { scope.launch { onCatch(throwable) } } },
-                        onFinally = { if (onFinally != null) scope.launch { scope.onFinally() } }) { isRetry ->
+                        onCatch = { throwable -> scope.launch { onCatch(throwable) } },
+                        onFinally = { scope.launch { scope.onFinally() } }) { isRetry ->
                         if (isRetry) retryDelay?.also { delay(it) }
                         result = scope.block(isRetry)
                     }

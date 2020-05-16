@@ -21,8 +21,8 @@ fun launchEx(
     logStackTrace: Boolean = LOG_EXCEPTIONS,
     name: String? = null,
     isSuperVisionEnabled: Boolean = false,
-    onCatch: (suspend CoroutineScope.(t: Throwable) -> Unit)? = null,
-    onFinally: (suspend CoroutineScope.() -> Unit)? = null,
+    onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
+    onFinally: suspend CoroutineScope.() -> Unit = {},
     block: suspend CoroutineScope.(isRetry: Boolean) -> Unit
 ) = coroutineScope.launchEx(
     coroutineScope.coroutineContext, interval, delayed, maxExecutions, retryDelay, timeout, mutex,
@@ -41,12 +41,12 @@ fun CoroutineScope.launchEx(
     logStackTrace: Boolean = LOG_EXCEPTIONS,
     name: String? = null,
     isSuperVisionEnabled: Boolean = false,
-    onCatch: (suspend CoroutineScope.(t: Throwable) -> Unit)? = null,
-    onFinally: (suspend CoroutineScope.() -> Unit)? = null,
+    onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
+    onFinally: suspend CoroutineScope.() -> Unit = {},
     block: suspend CoroutineScope.(isRetry: Boolean) -> Unit
 ) = launch(buildContext(coroutineContext, name, isSuperVisionEnabled)) {
     executeExInternal(
-        coroutineContext, interval, delayed, mutex, Unit, maxExecutions, retryDelay, timeout, printStackTrace,
+        coroutineContext, Unit, interval, delayed, mutex, maxExecutions, retryDelay, timeout, printStackTrace,
         logStackTrace, onCatch, onFinally, block
     )
 }

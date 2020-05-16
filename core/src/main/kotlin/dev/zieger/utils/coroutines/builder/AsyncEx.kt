@@ -22,12 +22,12 @@ fun <T : Any?> CoroutineScope.asyncEx(
     logStackTrace: Boolean = LOG_EXCEPTIONS,
     name: String? = null,
     isSuperVisionEnabled: Boolean = false,
-    onCatch: (suspend CoroutineScope.(t: Throwable) -> Unit)? = null,
-    onFinally: (suspend CoroutineScope.() -> Unit)? = null,
+    onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
+    onFinally: suspend CoroutineScope.() -> Unit = {},
     block: suspend CoroutineScope.(isRetry: Boolean) -> T
 ): Deferred<T> = async(buildContext(coroutineContext, name, isSuperVisionEnabled)) {
     executeExInternal(
-        coroutineContext, null, delayed, mutex, returnOnCatch, maxExecutions, retryDelay, timeout,
+        coroutineContext, returnOnCatch, null, delayed, mutex, maxExecutions, retryDelay, timeout,
         printStackTrace, logStackTrace, onCatch, onFinally, block
     )
 }

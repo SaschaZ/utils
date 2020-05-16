@@ -21,8 +21,8 @@ suspend fun <T : Any?> withContextEx(
     logStackTrace: Boolean = LOG_EXCEPTIONS,
     name: String? = null,
     isSuperVisionEnabled: Boolean = false,
-    onCatch: (suspend CoroutineScope.(t: Throwable) -> Unit)? = null,
-    onFinally: (suspend CoroutineScope.() -> Unit)? = null,
+    onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
+    onFinally: suspend CoroutineScope.() -> Unit = {},
     block: suspend CoroutineScope.(isRetry: Boolean) -> T
 ): T = withContext(
     buildContext(
@@ -32,7 +32,7 @@ suspend fun <T : Any?> withContextEx(
     )
 ) {
     executeExInternal(
-        coroutineContext, null, delayed, mutex, resultOnCatch, maxExecutions, retryDelay, timeout,
+        coroutineContext, resultOnCatch, null, delayed, mutex, maxExecutions, retryDelay, timeout,
         printStackTrace, logStackTrace, onCatch, onFinally, block
     )
 }
