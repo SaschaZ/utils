@@ -1,9 +1,9 @@
 package dev.zieger.utils.statemachine
 
 import dev.zieger.utils.coroutines.scope.ICoroutineScopeEx
-import dev.zieger.utils.statemachine.IConditionElement.IComboElement
-import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
-import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle.IState
+import dev.zieger.utils.statemachine.conditionelements.IComboElement
+import dev.zieger.utils.statemachine.conditionelements.IEvent
+import dev.zieger.utils.statemachine.conditionelements.IState
 
 /**
  * TODO

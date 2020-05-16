@@ -2,9 +2,9 @@
 
 package dev.zieger.utils.statemachine
 
-import dev.zieger.utils.statemachine.IConditionElement.IComboElement
-import dev.zieger.utils.statemachine.IConditionElement.ISlave
-import dev.zieger.utils.statemachine.IConditionElement.ISlave.IData
+import dev.zieger.utils.statemachine.conditionelements.IComboElement
+import dev.zieger.utils.statemachine.conditionelements.IData
+import dev.zieger.utils.statemachine.conditionelements.ISlave
 
 data class ExecutorScope(
     val event: IComboElement,

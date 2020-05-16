@@ -6,13 +6,10 @@ import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.statemachine.IConditionElement.IComboElement
-import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
-import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle.IState
-import dev.zieger.utils.statemachine.IConditionElement.ISlave.IData
-import dev.zieger.utils.statemachine.IConditionElement.UsedAs.RUNTIME
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel
 import dev.zieger.utils.statemachine.MachineEx.Companion.debugLevel
+import dev.zieger.utils.statemachine.conditionelements.*
+import dev.zieger.utils.statemachine.conditionelements.UsedAs.RUNTIME
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch

@@ -1,6 +1,7 @@
 package dev.zieger.utils.statemachine
 
-import dev.zieger.utils.statemachine.IConditionElement.IComboElement
+import dev.zieger.utils.statemachine.conditionelements.IComboElement
+
 
 interface IMachineExHolder {
 

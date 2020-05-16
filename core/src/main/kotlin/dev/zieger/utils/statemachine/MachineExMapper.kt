@@ -4,12 +4,10 @@ package dev.zieger.utils.statemachine
 
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.log.LogFilter.Companion.GENERIC
-import dev.zieger.utils.statemachine.ConditionElement.Condition
-import dev.zieger.utils.statemachine.IConditionElement.IComboElement
-import dev.zieger.utils.statemachine.IConditionElement.ICondition
-import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
-import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle.IState
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.ERROR
+import dev.zieger.utils.statemachine.conditionelements.Condition
+import dev.zieger.utils.statemachine.conditionelements.IComboElement
+import dev.zieger.utils.statemachine.conditionelements.ICondition
 
 /**
  * Responsible to map the incoming [IEvent]s to their [IState]s defined by provided mappings.

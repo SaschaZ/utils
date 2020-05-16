@@ -2,13 +2,8 @@
 
 package dev.zieger.utils.statemachine
 
-import dev.zieger.utils.statemachine.ConditionElement.*
-import dev.zieger.utils.statemachine.ConditionElement.Master.Single.External
-import dev.zieger.utils.statemachine.IConditionElement.*
-import dev.zieger.utils.statemachine.IConditionElement.IConditionElementGroup.MatchType.*
-import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle
-import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle.IEvent
-import dev.zieger.utils.statemachine.IConditionElement.IMaster.ISingle.IState
+import dev.zieger.utils.statemachine.conditionelements.*
+import dev.zieger.utils.statemachine.conditionelements.IConditionElementGroup.MatchType.*
 import kotlin.math.max
 
 

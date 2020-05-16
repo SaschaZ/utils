@@ -1,0 +1,3 @@
+package dev.zieger.utils.statemachine.conditionelements
+
+interface IActionResult

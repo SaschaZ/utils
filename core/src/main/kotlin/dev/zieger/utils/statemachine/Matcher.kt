@@ -6,14 +6,14 @@ import dev.zieger.utils.log.Log
 import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.ifNull
-import dev.zieger.utils.statemachine.ConditionElement.InputElement
-import dev.zieger.utils.statemachine.IConditionElement.IComboElement
-import dev.zieger.utils.statemachine.IConditionElement.ICondition
-import dev.zieger.utils.statemachine.IConditionElement.ICondition.ConditionType
-import dev.zieger.utils.statemachine.IConditionElement.ICondition.ConditionType.EVENT
-import dev.zieger.utils.statemachine.IConditionElement.ICondition.ConditionType.STATE
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.ERROR
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
+import dev.zieger.utils.statemachine.conditionelements.IComboElement
+import dev.zieger.utils.statemachine.conditionelements.ICondition
+import dev.zieger.utils.statemachine.conditionelements.ICondition.ConditionType.EVENT
+import dev.zieger.utils.statemachine.conditionelements.ICondition.ConditionType.STATE
+import dev.zieger.utils.statemachine.conditionelements.InputElement
+import dev.zieger.utils.statemachine.conditionelements.noLogging
 
 /**
  * Holds methods that are used for matching the incoming events to a new state and/or action and to match the new state to actions.
@@ -42,25 +42,29 @@ object Matcher {
             "findStateForEvent()\n\tevent=$event;\n\tstate=$state;\n\t" +
                     "previousChanges=${previousChanges.toList().take(3).joinToStringTabbed(2)}",
             logFilter = GENERIC(
-                disableLog = event.disableLogging || MachineEx.debugLevel <= INFO
+                disableLog = event.noLogging || MachineEx.debugLevel <= INFO
             )
         )
 
         val execScope = ExecutorScope(event, state, previousChanges)
-        val matchingEventBindings = bindings.filter { match(it.key, event, state, previousChanges, EVENT) }
+        val matchingEventBindings = bindings.filter {
+            match(
+                it.key, event, state, previousChanges,
+                EVENT
+            )
+        }
 
         return when (matchingEventBindings.size) {
-            1 -> matchingEventBindings.values.first().fire(event).also { newState ->
-                bindings.filter { match(it.key, event, newState, previousChanges, STATE) }
-                    .forEach { it.key.action?.invoke(execScope) }
-            }
+            1 -> matchingEventBindings.values.first().fire(event).executePossibleStateConditions(
+                bindings, event, previousChanges, execScope, conditions, state
+            )
             0 -> {
                 val matchingEventConditions =
                     conditions.filter { match(it.value, event, state, previousChanges, EVENT) }
                 if (matchingEventConditions.isEmpty()) {
                     Log.i(
                         "No event condition matches for $event and $state.",
-                        GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel == ERROR)
+                        GENERIC(disableLog = event.noLogging || MachineEx.debugLevel == ERROR)
                     )
                     return null
                 }
@@ -78,35 +82,17 @@ object Matcher {
                 Log.v(
                     "\n\tnewState=$newState" +
                             "\n\tmatchingEventConditions=${matchingEventConditions.toList().joinToStringTabbed(2)}",
-                    GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel <= INFO)
+                    GENERIC(disableLog = event.noLogging || MachineEx.debugLevel <= INFO)
                 )
 
-                return newState?.also {
-                    bindings.filter { match(it.key, event, newState, previousChanges, STATE) }
-                        .forEach { it.key.action?.invoke(execScope) }
-
-                    val matchingStateConditions = conditions.filter {
-                        match(it.value, event, newState, previousChanges, STATE)
-                    }
-
-                    Log.v(
-                        "executing matching state conditions: \n" +
-                                matchingStateConditions.entries.joinToStringTabbed(2),
-                        GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel <= INFO)
-                    )
-
-                    matchingStateConditions.forEach { it.value.action?.invoke(execScope) }
-
-                    Log.d(
-                        "state changed from $state to $newState with event $event",
-                        GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel == ERROR)
-                    )
-                } ifNull {
+                return newState.executePossibleStateConditions(
+                    bindings, event, previousChanges, execScope, conditions, state
+                ) ifNull {
                     Log.i(
                         "No event condition matches for $event and $state. Had ${matchingEventConditions.size}" +
                                 " matches:${matchingEventConditions.values.joinToStringTabbed(2)}",
                         GENERIC(
-                            disableLog = matchingEventConditions.values.isNotEmpty() || event.disableLogging
+                            disableLog = matchingEventConditions.values.isNotEmpty() || event.noLogging
                                     || MachineEx.debugLevel <= INFO
                         )
                     )
@@ -117,15 +103,47 @@ object Matcher {
         }
     }
 
+    private suspend fun IComboElement?.executePossibleStateConditions(
+        bindings: Map<ICondition, IMachineEx>,
+        event: IComboElement,
+        previousChanges: List<OnStateChanged>,
+        execScope: ExecutorScope,
+        conditions: Map<Long, ICondition>,
+        state: IComboElement
+    ): IComboElement? {
+        val newState = this
+        return newState?.also {
+            bindings.filter { match(it.key, event, newState, previousChanges, STATE) }
+                .forEach { it.key.action?.invoke(execScope) }
+
+            val matchingStateConditions = conditions.filter {
+                match(it.value, event, newState, previousChanges, STATE)
+            }
+
+            Log.v(
+                "executing matching state conditions: \n" +
+                        matchingStateConditions.entries.joinToStringTabbed(2),
+                GENERIC(disableLog = event.noLogging || MachineEx.debugLevel <= INFO)
+            )
+
+            matchingStateConditions.forEach { it.value.action?.invoke(execScope) }
+
+            Log.d(
+                "state changed from $state to $newState with event $event",
+                GENERIC(disableLog = event.noLogging || MachineEx.debugLevel == ERROR)
+            )
+        }
+    }
+
     private suspend fun match(
         condition: ICondition,
         event: IComboElement,
         state: IComboElement,
         previousChanges: List<OnStateChanged>,
-        type: ConditionType
+        type: ICondition.ConditionType
     ) = (condition.type == type && condition.match(InputElement(event, state), previousChanges)) logV
             {
-                f = GENERIC(disableLog = event.disableLogging || MachineEx.debugLevel <= INFO)
+                f = GENERIC(disableLog = event.noLogging || MachineEx.debugLevel <= INFO)
                 m = "#R $it => ${type.name[0]} $condition <||> $event, $state"
             }
 }

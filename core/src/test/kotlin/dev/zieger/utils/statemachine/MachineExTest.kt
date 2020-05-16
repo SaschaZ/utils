@@ -5,11 +5,6 @@ package dev.zieger.utils.statemachine
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
 import dev.zieger.utils.core_testing.runTest
-import dev.zieger.utils.statemachine.ConditionElement.Master.Group.EventGroup
-import dev.zieger.utils.statemachine.ConditionElement.Master.Group.StateGroup
-import dev.zieger.utils.statemachine.ConditionElement.Master.Single.Event
-import dev.zieger.utils.statemachine.ConditionElement.Master.Single.State
-import dev.zieger.utils.statemachine.ConditionElement.Slave.Data
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
 import dev.zieger.utils.statemachine.MachineExTest.TestData.*
 import dev.zieger.utils.statemachine.MachineExTest.TestEvent.*
@@ -21,6 +16,7 @@ import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DE
 import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG.G
 import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.H
 import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.I
+import dev.zieger.utils.statemachine.conditionelements.*
 import dev.zieger.utils.time.duration.seconds
 import org.junit.jupiter.api.Test
 
