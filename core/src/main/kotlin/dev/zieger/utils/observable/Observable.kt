@@ -13,7 +13,7 @@ import kotlin.properties.ReadWriteProperty
 open class Observable<out T : Any?>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
-    override val notifyForInitial: Boolean = false,
+    override var notifyForInitial: Boolean = false,
     storeRecentValues: Boolean = false,
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
@@ -43,7 +43,7 @@ open class Observable<out T : Any?>(
 open class Observable2<P : Any?, out T : Any?>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
-    override val notifyForInitial: Boolean = false,
+    override var notifyForInitial: Boolean = false,
     storeRecentValues: Boolean = false,
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
@@ -57,7 +57,7 @@ open class Observable2<P : Any?, out T : Any?>(
 abstract class ObservableBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
-    override val notifyForInitial: Boolean = false,
+    override var notifyForInitial: Boolean = false,
     storeRecentValues: Boolean = false,
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,

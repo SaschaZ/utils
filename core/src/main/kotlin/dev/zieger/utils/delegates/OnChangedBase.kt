@@ -18,11 +18,11 @@ interface IOnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<@Unsaf
     IScope2Factory<P, T, @UnsafeVariance S>, ReadWriteProperty<P, @UnsafeVariance T> {
     val value: @UnsafeVariance T
 
-    val storeRecentValues: Boolean
-    val notifyForInitial: Boolean
-    val notifyOnChangedValueOnly: Boolean
-    val scope: CoroutineScope?
-    val mutex: Mutex?
+    var storeRecentValues: Boolean
+    var notifyForInitial: Boolean
+    var notifyOnChangedValueOnly: Boolean
+    var scope: CoroutineScope?
+    var mutex: Mutex?
 
     /**
      * When [storeRecentValues] is `true` this [List] contains all changed values since the last
@@ -41,7 +41,7 @@ interface IOnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<@Unsaf
      */
     suspend fun nextChange(
         timeout: IDurationEx? = null,
-        onChange: suspend S.(T) -> Unit = {}
+        onChanged: suspend S.(T) -> Unit = {}
     ): T
 
     /**
@@ -66,11 +66,11 @@ interface IOnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<@Unsaf
 
 open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>(
     initial: T,
-    override val storeRecentValues: Boolean,
+    override var storeRecentValues: Boolean,
     notifyForInitial: Boolean,
-    override val notifyOnChangedValueOnly: Boolean,
+    override var notifyOnChangedValueOnly: Boolean,
     scope: CoroutineScope?,
-    override val mutex: Mutex?,
+    override var mutex: Mutex?,
     scopeFactory: IScope2Factory<P, T, S>,
     open val veto: (@UnsafeVariance T) -> Boolean,
     open val onChangedS: suspend (@UnsafeVariance S).(@UnsafeVariance T) -> Unit,
@@ -78,10 +78,10 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
 ) : IOnChangedBase<P, T, S>, IScope2Factory<P, T, @UnsafeVariance S> by scopeFactory {
 
     @Suppress("CanBePrimaryConstructorProperty")
-    override val notifyForInitial: Boolean = notifyForInitial
+    override var notifyForInitial: Boolean = notifyForInitial
 
     @Suppress("CanBePrimaryConstructorProperty")
-    override val scope: CoroutineScope? = scope
+    override var scope: CoroutineScope? = scope
 
     protected var previousThisRef = AtomicReference<P?>(null)
     override val recentValues = ArrayList<@UnsafeVariance T?>()
@@ -113,8 +113,7 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
     override suspend fun nextChange(timeout: IDurationEx?, onChanged: suspend S.(T) -> Unit): T = withTimeout(timeout) {
         nextChangeContinuation.suspendUntilTrigger(timeout)
         createScope(
-            value, previousThisRef.get(), recentValues.lastOrNull(), recentValues, { recentValues.clear() },
-            false
+            value, previousThisRef.get(), recentValues.lastOrNull(), recentValues, { recentValues.clear() }, false
         ) { value = it }.onChanged(value)
         value
     }

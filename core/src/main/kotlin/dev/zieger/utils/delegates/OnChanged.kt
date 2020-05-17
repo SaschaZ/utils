@@ -15,11 +15,11 @@ interface IOnChanged<out T : Any?> : IOnChangedBase<Any?, T, IOnChangedScope<T>>
  */
 open class OnChanged<out T : Any?>(
     initial: T,
-    override val storeRecentValues: Boolean = false,
-    override val notifyForInitial: Boolean = false,
-    override val notifyOnChangedValueOnly: Boolean = true,
-    override val scope: CoroutineScope? = null,
-    override val mutex: Mutex? = null,
+    override var storeRecentValues: Boolean = false,
+    override var notifyForInitial: Boolean = false,
+    override var notifyOnChangedValueOnly: Boolean = true,
+    override var scope: CoroutineScope? = null,
+    override var mutex: Mutex? = null,
     veto: (@UnsafeVariance T) -> Boolean = { false },
     onChangedS: suspend IOnChangedScope<@UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {},
     onChanged: IOnChangedScope<@UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {}

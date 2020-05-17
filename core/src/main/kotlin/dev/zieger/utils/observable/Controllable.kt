@@ -17,7 +17,7 @@ import kotlinx.coroutines.sync.Mutex
 open class Controllable<out T : Any?>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
-    override val notifyForInitial: Boolean = false,
+    override var notifyForInitial: Boolean = false,
     storeRecentValues: Boolean = false,
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
@@ -42,7 +42,7 @@ open class Controllable<out T : Any?>(
 open class Controllable2<P : Any?, out T : Any?>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
-    override val notifyForInitial: Boolean = false,
+    override var notifyForInitial: Boolean = false,
     storeRecentValues: Boolean = false,
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
@@ -65,7 +65,7 @@ open class Controllable2<P : Any?, out T : Any?>(
 abstract class ControllableBase<P : Any?, out T : Any?, out S : IControlledChangedScope2<P, T>>(
     initial: T,
     onlyNotifyOnChanged: Boolean = true,
-    override val notifyForInitial: Boolean = false,
+    override var notifyForInitial: Boolean = false,
     storeRecentValues: Boolean = false,
     scope: CoroutineScope? = null,
     mutex: Mutex? = null,
