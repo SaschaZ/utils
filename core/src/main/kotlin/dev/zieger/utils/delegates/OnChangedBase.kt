@@ -2,8 +2,11 @@
 
 package dev.zieger.utils.delegates
 
+import dev.zieger.utils.coroutines.Continuation
 import dev.zieger.utils.coroutines.builder.launchEx
+import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.time.duration.IDurationEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.atomic.AtomicReference
@@ -22,10 +25,24 @@ interface IOnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<@Unsaf
     val mutex: Mutex?
 
     /**
+     * When [storeRecentValues] is `true` this [List] contains all changed values since the last
+     * [clearRecentValues] invocation.
+     */
+    val recentValues: ArrayList<@UnsafeVariance T?>
+
+    /**
      * Is invoked before every change of the property. When returning `true` the new value is not assigned
      * to the property.
      */
     fun vetoInternal(value: @UnsafeVariance T): Boolean
+
+    /**
+     * Suspends until the next change occurs. Will throw a runtime exception if the [timeout] is reached.
+     */
+    suspend fun nextChange(
+        timeout: IDurationEx? = null,
+        onChange: suspend S.(T) -> Unit = {}
+    ): T
 
     /**
      * Suspend on change callback. Only is invoked when [scope] is set.
@@ -67,7 +84,7 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
     override val scope: CoroutineScope? = scope
 
     protected var previousThisRef = AtomicReference<P?>(null)
-    protected val recentValues = ArrayList<@UnsafeVariance T?>()
+    override val recentValues = ArrayList<@UnsafeVariance T?>()
 
     override var value: @UnsafeVariance T = initial
         set(newValue) {
@@ -89,6 +106,17 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
             onChanged(initial)
             scope?.launchEx(mutex = mutex) { onChangedS(initial) }
         }
+    }
+
+    private val nextChangeContinuation = Continuation()
+
+    override suspend fun nextChange(timeout: IDurationEx?, onChanged: suspend S.(T) -> Unit): T = withTimeout(timeout) {
+        nextChangeContinuation.suspendUntilTrigger(timeout)
+        createScope(
+            value, previousThisRef.get(), recentValues.lastOrNull(), recentValues, { recentValues.clear() },
+            false
+        ) { value = it }.onChanged(value)
+        value
     }
 
     override fun clearRecentValues() = recentValues.clear().asUnit()

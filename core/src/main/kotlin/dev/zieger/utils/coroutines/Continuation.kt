@@ -45,7 +45,8 @@ class Continuation(
     private val scope: CoroutineScope = DefaultCoroutineScope()
 ) : IContinuation {
 
-    override suspend fun suspendUntilTrigger(timeout: IDurationEx?) = withTimeout(timeout) { channel.receive() }
+    override suspend fun suspendUntilTrigger(timeout: IDurationEx?) =
+        withTimeout(timeout) { channel.receive() }.asUnit()
 
     override suspend fun triggerS(timeout: IDurationEx?) = withTimeout(timeout) { channel.send(true) }
 
