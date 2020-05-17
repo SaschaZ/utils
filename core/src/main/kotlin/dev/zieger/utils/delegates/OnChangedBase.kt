@@ -133,6 +133,7 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
         isInitialNotification: Boolean = false
     ) = createScope(new, previousThisRef.get(), old, recentValues, { clearRecentValues() }, isInitialNotification)
         .apply {
+            nextChangeContinuation.trigger()
             onChangedInternal(new)
             scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
         }
