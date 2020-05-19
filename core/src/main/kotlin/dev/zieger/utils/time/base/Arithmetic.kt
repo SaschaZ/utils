@@ -92,7 +92,7 @@ operator fun ITimeEx.div(other: ITimeEx): IDurationEx =
 operator fun ITimeEx.div(other: IDurationEx): ITimeEx =
     TimeEx(millis / other.millis)
 
-operator fun IDurationEx.div(other: IDurationEx): Number =
+operator fun IDurationEx.div(other: IDurationEx): Long =
     millis / other.millis
 
 operator fun IDurationEx.div(other: ITimeEx): ITimeEx =
