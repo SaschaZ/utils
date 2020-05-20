@@ -56,10 +56,10 @@ operator fun Number.minus(other: ITimeEx): ITimeEx =
 
 
 operator fun ITimeEx.times(other: Number): ITimeEx =
-    TimeEx(millis * other.toLong())
+    TimeEx(millis * other.toDouble())
 
 operator fun IDurationEx.times(other: Number): IDurationEx =
-    DurationEx(millis * other.toLong())
+    DurationEx(millis * other.toDouble())
 
 operator fun ITimeEx.times(other: ITimeEx): IDurationEx =
     DurationEx(millis * other.millis)
@@ -81,10 +81,10 @@ operator fun Number.times(other: ITimeEx): ITimeEx =
 
 
 operator fun ITimeEx.div(other: Number): ITimeEx =
-    TimeEx(millis / other.toLong())
+    TimeEx(millis / other.toDouble())
 
 operator fun IDurationEx.div(other: Number): IDurationEx =
-    DurationEx(millis / other.toLong())
+    DurationEx(millis / other.toDouble())
 
 operator fun ITimeEx.div(other: ITimeEx): IDurationEx =
     DurationEx(millis / other.millis)
@@ -92,11 +92,11 @@ operator fun ITimeEx.div(other: ITimeEx): IDurationEx =
 operator fun ITimeEx.div(other: IDurationEx): ITimeEx =
     TimeEx(millis / other.millis)
 
-operator fun IDurationEx.div(other: IDurationEx): Long =
-    millis / other.millis
+operator fun IDurationEx.div(other: IDurationEx): Double =
+    millis / other.millis.toDouble()
 
-operator fun IDurationEx.div(other: ITimeEx): ITimeEx =
-    TimeEx(millis / other.millis)
+operator fun IDurationEx.div(other: ITimeEx): Double =
+    millis / other.millis.toDouble()
 
 operator fun Number.div(other: IDurationEx): IDurationEx =
     DurationEx(toDouble() / other.millis)
@@ -106,10 +106,10 @@ operator fun Number.div(other: ITimeEx): ITimeEx =
 
 
 operator fun ITimeEx.rem(other: Number): IDurationEx =
-    DurationEx(millis % other.toLong())
+    DurationEx(millis % other.toDouble())
 
 operator fun IDurationEx.rem(other: Number): IDurationEx =
-    DurationEx(millis % other.toLong())
+    DurationEx(millis % other.toDouble())
 
 operator fun ITimeEx.rem(other: ITimeEx): IDurationEx =
     DurationEx(millis % other.millis)
@@ -117,11 +117,11 @@ operator fun ITimeEx.rem(other: ITimeEx): IDurationEx =
 operator fun ITimeEx.rem(other: IDurationEx): IDurationEx =
     DurationEx(millis % other.millis)
 
-operator fun IDurationEx.rem(other: IDurationEx): IDurationEx =
-    DurationEx(millis % other.millis)
+operator fun IDurationEx.rem(other: IDurationEx): Double =
+    millis % other.millis.toDouble()
 
-operator fun IDurationEx.rem(other: ITimeEx): IDurationEx =
-    DurationEx(millis % other.millis)
+operator fun IDurationEx.rem(other: ITimeEx): Double =
+    millis % other.millis.toDouble()
 
 operator fun Number.rem(other: IDurationEx): IDurationEx =
     DurationEx(toLong() % other.millis)

@@ -18,7 +18,7 @@ class TimeProgressionTest {
         val start: ITimeEx = end - 2.weeks
         val step: IDurationEx = 1.minutes
         (start..end step (step * 750)).toList().also {
-            it.size assert (2.weeks / (step * 750)).millis.toInt()
+            it.size assert (2.weeks / (step * 750))
         }
     }
 }
