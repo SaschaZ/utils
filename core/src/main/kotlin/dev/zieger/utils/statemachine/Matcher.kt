@@ -123,7 +123,7 @@ object Matcher {
             Log.v(
                 "executing matching state conditions: \n" +
                         matchingStateConditions.entries.joinToStringTabbed(2),
-                GENERIC(disableLog = event.noLogging || MachineEx.debugLevel <= INFO)
+                GENERIC(disableLog = event.noLogging || MachineEx.debugLevel == ERROR)
             )
 
             matchingStateConditions.forEach { it.value.action?.invoke(execScope) }
