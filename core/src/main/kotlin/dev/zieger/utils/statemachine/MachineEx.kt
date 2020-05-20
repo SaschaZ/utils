@@ -193,6 +193,7 @@ open class MachineEx(
     private val eventMutex = Mutex()
     private val eventChannel = Channel<IComboElement>(Channel.BUFFERED)
 
+    // FIXME: use real suspendable method to make proper fire method possible
     override var event: IComboElement
         get() = currentEvent
         set(value) {

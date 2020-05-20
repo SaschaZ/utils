@@ -9,6 +9,7 @@ import dev.zieger.utils.core_testing.bind
 import dev.zieger.utils.core_testing.param
 import dev.zieger.utils.core_testing.parameterMix
 import dev.zieger.utils.delegates.nextInt
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
@@ -23,6 +24,7 @@ class CatchTest {
         val throwException: Boolean by bind(map)
     }
 
+    @Disabled
     @Test
     fun testCatch() {
         parameterMix(

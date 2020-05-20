@@ -64,7 +64,7 @@ object Matcher {
                 if (matchingEventConditions.isEmpty()) {
                     Log.i(
                         "No event condition matches for $event and $state.",
-                        GENERIC(disableLog = event.noLogging || MachineEx.debugLevel == ERROR)
+                        GENERIC(disableLog = event.noLogging || MachineEx.debugLevel <= INFO)
                     )
                     return null
                 }
