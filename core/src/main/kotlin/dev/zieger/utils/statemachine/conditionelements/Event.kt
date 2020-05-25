@@ -2,7 +2,7 @@
 
 package dev.zieger.utils.statemachine.conditionelements
 
-import dev.zieger.utils.log.LogFilter.Companion.GENERIC
+import dev.zieger.utils.log.ExternalFilter
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.statemachine.MachineEx
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
@@ -21,9 +21,8 @@ interface IEvent : ISingle {
             is IEventGroup<IEvent> -> other.match(this, previousStateChanges)
             else -> false
         } logV {
-            f =
-                GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
-            m = "#E $it => ${this@IEvent} <||> $other"
+            filters + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
+            "#E $it => ${this@IEvent} <||> $other"
         }
     }
 }

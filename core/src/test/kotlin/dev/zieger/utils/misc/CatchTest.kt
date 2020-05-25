@@ -24,7 +24,7 @@ class CatchTest {
         val throwException: Boolean by bind(map)
     }
 
-    @Disabled
+    @Disabled // TODO implement with KoTest
     @Test
     fun testCatch() {
         parameterMix(

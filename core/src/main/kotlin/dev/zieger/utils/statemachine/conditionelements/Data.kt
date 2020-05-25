@@ -2,7 +2,8 @@
 
 package dev.zieger.utils.statemachine.conditionelements
 
-import dev.zieger.utils.log.LogFilter.Companion.GENERIC
+import dev.zieger.utils.log.ExternalFilter
+
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.name
 import dev.zieger.utils.statemachine.MachineEx
@@ -21,9 +22,8 @@ interface IData : ISlave {
             null -> false
             else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
         } logV {
-            f =
-                GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
-            m = "#D $it => ${this@IData} <||> $other"
+            filters + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
+            "#D $it => ${this@IData} <||> $other"
         }
     }
 }

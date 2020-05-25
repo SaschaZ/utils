@@ -2,17 +2,14 @@
 
 package dev.zieger.utils.android
 
-import android.content.Context
-import dev.zieger.utils.log.Log
-import dev.zieger.utils.log.LogElement
-import dev.zieger.utils.log.LogLevel
-import dev.zieger.utils.time.StringConverterDelegate
+import dev.zieger.utils.log.*
+import dev.zieger.utils.log.LogElementMessageBuilder.Companion.DEFAULT_RELEASE_LOG_ELEMENTS
 
-object AndroidLog : LogElement {
+object AndroidLog : ILogOutput {
 
     private var tag = ""
 
-    override fun log(level: LogLevel?, msg: String): String {
+    override fun ILogMessageContext.write(msg: String) {
         when (level) {
             LogLevel.VERBOSE -> android.util.Log.v(tag, msg)
             LogLevel.DEBUG -> android.util.Log.d(tag, msg)
@@ -21,15 +18,9 @@ object AndroidLog : LogElement {
             LogLevel.EXCEPTION -> android.util.Log.e(tag, msg)
             else -> android.util.Log.v("", msg)
         }
-        return msg
     }
 
-    fun initialize(context: Context, tag: String) {
-        this.tag = tag
-        StringConverterDelegate.formatTime = { format, millis, zone ->
-            "$zone"
-        }
-        Log.clearElements(addTime = false, addLevelFilter = true)
-        Log + this
+    fun initialize() {
+        Log.configure(builder = LogElementMessageBuilder(DEFAULT_RELEASE_LOG_ELEMENTS), output = this)
     }
 }

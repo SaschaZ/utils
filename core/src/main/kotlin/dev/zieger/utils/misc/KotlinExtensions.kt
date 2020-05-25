@@ -280,4 +280,5 @@ suspend inline fun <T> ReceiveChannel<T>.runEach(block: T.() -> Unit) {
 }
 
 infix fun <T> T.anyOf(values: List<T>) = values.contains(this)
+infix fun String.startsWithAny(values: List<String>) = values.any { startsWith(it) }
 fun <T> T.anyOf(vararg values: T): Boolean = anyOf(values.toList())

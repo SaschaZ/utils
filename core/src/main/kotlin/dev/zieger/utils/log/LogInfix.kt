@@ -2,57 +2,25 @@
 
 package dev.zieger.utils.log
 
-import dev.zieger.utils.log.LogFilter.Companion.NONE
 
-open class LogContext(
-    var logFilter: LogFilter = NONE,
-    var message: String = ""
-) {
-    var f: LogFilter
-        get() = logFilter
-        set(value) {
-            logFilter = value
-        }
-
-    var m: String
-        get() = message
-        set(value) {
-            message = value
-        }
+inline infix fun <T : Any?> T.logV(crossinline block: ILogMessageContext.(T) -> String) = apply {
+    Log.run { logV { block(this@apply) } }
 }
 
-inline infix fun <T : Any?> T.logV(block: LogContext.(T) -> Unit) = apply {
-    LogContext().run { block(this@logV); Log.v(m, f) }
+inline infix fun <T : Any?> T.logD(crossinline block: ILogMessageContext.(T) -> String) = apply {
+    Log.run { logD { block(this@apply) } }
 }
 
-inline infix fun <T : Any?> T.logD(block: LogContext.(T) -> Unit) = apply {
-    LogContext().run { block(this@logD); Log.d(m, f) }
+inline infix fun <T : Any?> T.logI(crossinline block: ILogMessageContext.(T) -> String) = apply {
+    Log.run { logI { block(this@apply) } }
 }
 
-inline infix fun <T : Any?> T.logI(block: LogContext.(T) -> Unit) = apply {
-    LogContext().run { block(this@logI); Log.i(m, f) }
+inline infix fun <T : Any?> T.logW(crossinline block: ILogMessageContext.(T) -> String) = apply {
+    Log.run { logW { block(this@apply) } }
 }
 
-inline infix fun <T : Any?> T.logW(block: LogContext.(T) -> Unit) = apply {
-    LogContext().run { block(this@logW); Log.w(m, f) }
-}
-
-data class LogEContext(
-    var throwable: Throwable? = null
-) : LogContext() {
-
-    var t: Throwable?
-        get() = throwable
-        set(value) {
-            throwable = value
-        }
-}
-
-inline infix fun <T : Any?> T.logE(block: LogEContext.(T) -> Unit) = apply {
-    LogEContext().apply {
-        block(this@logE)
-        throwable?.also { Log.e(it, m, f) } ?: Log.e(m, f)
-    }
+inline infix fun <T : Any?> T.logE(crossinline block: ILogMessageContext.(T) -> String) = apply {
+    Log.run { logE { block(this@apply) } }
 }
 
 infix fun <T : Any?> T.logV(msg: String) = apply { Log.v(msg) }
@@ -61,8 +29,8 @@ infix fun <T : Any?> T.logI(msg: String) = apply { Log.i(msg) }
 infix fun <T : Any?> T.logW(msg: String) = apply { Log.w(msg) }
 infix fun <T : Any?> T.logE(msg: String) = apply { Log.e(msg) }
 
-fun <T : Any?> T.logV(msg: String, logFilter: LogFilter = NONE) = apply { Log.v(msg, logFilter) }
-fun <T : Any?> T.logD(msg: String, logFilter: LogFilter = NONE) = apply { Log.d(msg, logFilter) }
-fun <T : Any?> T.logI(msg: String, logFilter: LogFilter = NONE) = apply { Log.i(msg, logFilter) }
-fun <T : Any?> T.logW(msg: String, logFilter: LogFilter = NONE) = apply { Log.w(msg, logFilter) }
-fun <T : Any?> T.logE(msg: String, logFilter: LogFilter = NONE) = apply { Log.e(msg, logFilter) }
+fun <T : Any?> T.logV(msg: String, logFilter: ILogFilter? = null) = apply { Log.v(msg, filter = logFilter) }
+fun <T : Any?> T.logD(msg: String, logFilter: ILogFilter? = null) = apply { Log.d(msg, filter = logFilter) }
+fun <T : Any?> T.logI(msg: String, logFilter: ILogFilter? = null) = apply { Log.i(msg, filter = logFilter) }
+fun <T : Any?> T.logW(msg: String, logFilter: ILogFilter? = null) = apply { Log.w(msg, filter = logFilter) }
+fun <T : Any?> T.logE(msg: String, logFilter: ILogFilter? = null) = apply { Log.e(msg, filter = logFilter) }

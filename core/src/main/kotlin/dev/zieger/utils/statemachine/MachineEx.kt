@@ -185,6 +185,9 @@ open class MachineEx(
     }
 
     override val mapper: IMachineExMapper = MachineExMapper()
+    override suspend fun setEventSync(event: IComboElement) {
+        TODO("Not yet implemented")
+    }
 
     private val previousChanges: MutableList<OnStateChanged> = ArrayList()
 

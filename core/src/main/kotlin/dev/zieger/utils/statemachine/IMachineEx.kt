@@ -4,6 +4,7 @@ import dev.zieger.utils.coroutines.scope.ICoroutineScopeEx
 import dev.zieger.utils.statemachine.conditionelements.IComboElement
 import dev.zieger.utils.statemachine.conditionelements.IEvent
 import dev.zieger.utils.statemachine.conditionelements.IState
+import dev.zieger.utils.statemachine.conditionelements.combo
 
 /**
  * TODO
@@ -19,6 +20,8 @@ interface IMachineEx {
 
     val mapper: IMachineExMapper
 
+    suspend fun setEventSync(event: IComboElement)
+    suspend fun setEventSync(event: IEvent) = setEventSync(event.combo)
     suspend fun suspendUtilProcessingFinished()
 
     suspend fun fire(combo: IComboElement): IComboElement
