@@ -159,17 +159,18 @@ interface IGlobalLogContext : ILogContext {
     ): IGlobalLogContext = object : IGlobalLogContext, ILogContext by copy(settings, tags, filter, builder, output) {}
 }
 
-val Log get() = LogI.Log
+val Log get() = LogScope.Log
 
-internal var LogI: ILogScope = object : LogScope() {
+var LogScope: ILogScope = object : LogScopeImpl() {
     override fun configure(
         settings: ILogSettings,
         tags: ILogTags,
         filter: ILogFilters,
         builder: ILogMessageBuilder,
         output: ILogOutput
-    ): ILogContext = super.configure(settings, tags, filter, builder, output).also { LogI = LogScope(it) }
+    ): ILogContext = super.configure(settings, tags, filter, builder, output).also { LogScope = LogScopeImpl(it) }
 }
+    internal set
 
 /**
  * Log-Message-Context

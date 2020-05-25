@@ -11,16 +11,15 @@ object AndroidLog : ILogOutput {
 
     override fun ILogMessageContext.write(msg: String) {
         when (level) {
-            LogLevel.VERBOSE -> android.util.Log.v(tag, msg)
-            LogLevel.DEBUG -> android.util.Log.d(tag, msg)
-            LogLevel.INFO -> android.util.Log.i(tag, msg)
-            LogLevel.WARNING -> android.util.Log.w(tag, msg)
-            LogLevel.EXCEPTION -> android.util.Log.e(tag, msg)
-            else -> android.util.Log.v("", msg)
+            LogLevel.VERBOSE -> android.util.Log.v(tags.firstOrNull() ?: tag, msg)
+            LogLevel.DEBUG -> android.util.Log.d(tags.firstOrNull() ?: tag, msg)
+            LogLevel.INFO -> android.util.Log.i(tags.firstOrNull() ?: tag, msg)
+            LogLevel.WARNING -> android.util.Log.w(tags.firstOrNull() ?: tag, msg)
+            LogLevel.EXCEPTION -> android.util.Log.e(tags.firstOrNull() ?: tag, msg)
         }
     }
 
     fun initialize() {
-        Log.configure(builder = LogElementMessageBuilder(DEFAULT_RELEASE_LOG_ELEMENTS), output = this)
+        LogScope.configure(builder = LogElementMessageBuilder(DEFAULT_RELEASE_LOG_ELEMENTS), output = this)
     }
 }

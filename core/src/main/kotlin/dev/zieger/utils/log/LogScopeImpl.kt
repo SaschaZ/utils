@@ -17,7 +17,7 @@ interface ILogScope : ILogContext {
     ): ILogContext
 }
 
-open class LogScope(override val Log: ILogContext = LogContext()) : ILogScope, ILogContext by Log {
+open class LogScopeImpl(override val Log: ILogContext = LogContext()) : ILogScope, ILogContext by Log {
 
     constructor(
         logSettings: ILogSettings = LogSettings(),
@@ -34,5 +34,5 @@ open class LogScope(override val Log: ILogContext = LogContext()) : ILogScope, I
         filter: ILogFilters,
         builder: ILogMessageBuilder,
         output: ILogOutput
-    ): ILogContext = LogContext(settings, tags, filter, builder, output).also { LogI = LogScope(it) }
+    ): ILogContext = LogContext(settings, tags, filter, builder, output).also { LogScope = LogScopeImpl(it) }
 }

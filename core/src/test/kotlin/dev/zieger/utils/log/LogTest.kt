@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 
 private val cache = CachingOutput()
 
-internal class LogTest : ILogScope by LogScope(logOutput = cache) {
+internal class LogTest : ILogScope by LogScopeImpl(logOutput = cache) {
 
     @Test
     fun testSpamFilter() = runTest(15.seconds) {
