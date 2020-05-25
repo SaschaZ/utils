@@ -21,7 +21,7 @@ fun ILogContext.p(
 object LogColored : ILogOutput {
 
     fun initialize() {
-        Log.configure(output = this)
+        LogScope.configure(output = this)
     }
 
     override fun ILogMessageContext.write(msg: String) {
