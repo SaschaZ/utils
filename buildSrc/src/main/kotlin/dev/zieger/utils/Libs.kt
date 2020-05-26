@@ -91,3 +91,10 @@ val DependencyHandlerScope.mockk
     get() = "testImplementation"("io.mockk:mockk:${Versions.mockk}")
 val DependencyHandlerScope.junitJupiter
     get() = "testImplementation"("org.junit.jupiter:junit-jupiter:${Versions.junitJupiterEngine}")
+
+val DependencyHandlerScope.koTestRunner
+    get() = "testImplementation"("io.kotlintest:kotlintest-runner-junit5:${Versions.koTest}")
+val DependencyHandlerScope.koTestAssertions
+    get() = "testImplementation"("io.kotlintest:kotlintest-assertions:${Versions.koTest}")
+val DependencyHandlerScope.koTestProperty
+    get() = "testImplementation"("io.kotlintest:kotlintest-core:${Versions.koTest}")

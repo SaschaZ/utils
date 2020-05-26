@@ -11,12 +11,12 @@ import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.observable.IObservableBase
 import dev.zieger.utils.observable.Observable
 import dev.zieger.utils.observable.Observable2
+import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
-import org.junit.jupiter.api.Test
 
-class ObservableTest {
+class ObservableTest : AnnotationSpec() {
 
     private inline fun <T> params(
         inputFactory: (Map<String, ParamInstance<*>>) -> T,

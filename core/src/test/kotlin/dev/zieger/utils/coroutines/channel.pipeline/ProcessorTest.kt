@@ -4,9 +4,9 @@ import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.misc.runEachIndexed
 import dev.zieger.utils.time.duration.minutes
+import io.kotlintest.specs.AbstractAnnotationSpec.Test
 import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.delay
-import org.junit.jupiter.api.Test
 
 class ProcessorTest : IParamsHolder {
 

@@ -2,7 +2,7 @@ package dev.zieger.utils
 
 object Versions {
     const val kotlin = "1.3.72"
-    const val kotest = "3.4.2"
+    const val koTest = "3.4.2"
 
     const val coroutines = "1.3.5"
     const val multidex = "2.0.1"

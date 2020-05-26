@@ -10,7 +10,6 @@ plugins {
     id("kotlin-android-extensions")
     id("maven-publish")
     id("org.jetbrains.dokka")
-    id("de.mannodermaus.android-junit5")
 }
 
 configModule("android", ANDROID_LIB) {

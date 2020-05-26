@@ -5,11 +5,11 @@ import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.duration.milliseconds
 import dev.zieger.utils.time.duration.seconds
-import org.junit.jupiter.api.Test
+import io.kotlintest.specs.AnnotationSpec
 
 private val cache = CachingOutput()
 
-internal class LogTest : ILogScope by LogScopeImpl(logOutput = cache) {
+internal class LogTest : AnnotationSpec(), ILogScope by LogScopeImpl(logOutput = cache) {
 
     @Test
     fun testSpamFilter() = runTest(15.seconds) {

@@ -5,9 +5,9 @@ package dev.zieger.utils.time
 import dev.zieger.utils.time.base.TimeUnit
 import dev.zieger.utils.time.base.convert
 import dev.zieger.utils.time.duration.seconds
-import org.junit.jupiter.api.Test
+import io.kotlintest.specs.AnnotationSpec
 
-class TimeUnitTest {
+class TimeUnitTest : AnnotationSpec() {
 
     @Test
     fun testMillisToSeconds() {

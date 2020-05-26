@@ -6,6 +6,7 @@ import dev.zieger.utils.misc.lastOrNull
 import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.base.minus
 import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.duration.milliseconds
 
 /**
  * Log-Filter
@@ -42,7 +43,7 @@ interface IResetScope {
 }
 
 data class SpamFilter(
-    val minInterval: IDurationEx,
+    val minInterval: IDurationEx = 1.milliseconds,
     val id: String,
     val sameMessage: Boolean = false,
     val resetScope: IResetScope.() -> Unit = {}
