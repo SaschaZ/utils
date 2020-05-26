@@ -1,4 +1,4 @@
-name: Android CI
+name: GitHub CI
 
 on: [label, release, push, pull_request]
 
