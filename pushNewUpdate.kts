@@ -3,7 +3,7 @@
 //DEPS org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.5,org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.5
 //DEPS dev.zieger.utils:core:2.2.4
 
-@file:Suppress("UNREACHABLE_CODE")
+@file:Suppress("UNREACHABLE_CODE", "PropertyName")
 
 import dev.zieger.utils.coroutines.runCommand
 import dev.zieger.utils.misc.asUnit
@@ -18,7 +18,10 @@ import kotlin.math.pow
 import kotlin.system.exitProcess
 
 
-println("pushNewUpdate.kts started")
+
+
+val GLOBALS_FILE = "buildSrc/src/main/kotlin/dev/zieger/utils/Globals.kt"
+
 
 class GitHubTags : ArrayList<GitHubTagsItem>() {
     companion object {
@@ -80,9 +83,16 @@ data class SemanticVersion(var major: Int,
     }
 }
 
-val String?.semanticVersion get() = this?.let { SemanticVersion(it) }
+fun <T : Comparable<T>> max(vararg comparables: T): T {
+    if (comparables.isEmpty()) throw IllegalArgumentException("At least one Comparable is required.")
 
-println("requesting latest version from github")
+    var max: T? = null
+    for (comparable in comparables)
+        max = if (comparable >= max ?: comparable) comparable else max
+    return max!!
+}
+
+val String?.semanticVersion get() = this?.let { SemanticVersion(it) }
 
 suspend fun latestTag(): SemanticVersion {
     val client = HttpClient(Apache) {
@@ -94,22 +104,18 @@ suspend fun latestTag(): SemanticVersion {
         }
     }
 
-    val jitPack = JitPack.get(client)
-    val gitHub = GitHubTags.get(client).first()
-    println("jp: $jitPack; gh: $gitHub")
+    val jitPack = JitPack.get(client).version.semanticVersion!!
+    val gitHub = GitHubTags.get(client).first().name.semanticVersion!!
+    val git = "git describe --tags".runCommand()?.stdOutput.semanticVersion!!
 
-    val jpSv = jitPack.version.semanticVersion
-    val ghSv = gitHub.name.semanticVersion!!
-    println("jpSv: $jpSv; ghSv: $ghSv")
-
-    return jpSv?.let { if (it > ghSv) it else ghSv } ?: ghSv
+    return max(jitPack, gitHub, git)
 }
 
 fun File.replaceFirst(regex: Regex, replacement: String = "") =
         apply { writeText(readText().replaceFirst(regex, replacement)) }
 
 fun updateProjectGlobals(versionName: SemanticVersion) {
-    File("buildSrc/src/main/kotlin/dev/zieger/utils/Globals.kt")
+    File(GLOBALS_FILE)
             .replaceFirst("const val version = \".+\"".toRegex(), "const val version = \"$versionName\"")
             .apply {
                 val versionNumber = readText().split("\n")
@@ -119,16 +125,21 @@ fun updateProjectGlobals(versionName: SemanticVersion) {
             }
 }
 
-runBlocking {
-    val tag = latestTag() + 1
-    println("tag: $tag")
-    updateProjectGlobals(tag)
+val Int?.ok: String get() = if (this == 0) "ok" else "fail"
 
-    println("git pull".runCommand())
-    println("git add buildSrc/src/main/kotlin/dev/zieger/utils/Globals.kt".runCommand())
-    println("git commit -m \"$tag\"".runCommand())
-    println("git tag -s $tag".runCommand())
-    println("git push".runCommand())
+runBlocking {
+    print("git pull ... "); println("git pull".runCommand()?.code.ok)
+
+    print("build new tag ... ")
+    val tag = latestTag() + 1
+    print("$tag\nupdate project globals ... ")
+    updateProjectGlobals(tag)
+    println("ok")
+
+    print("git add ... "); println("git add $GLOBALS_FILE".runCommand()?.code.ok)
+    print("git commit ... "); println("git commit -m \"$tag\"".runCommand()?.code.ok)
+    print("git tag ... "); println("git tag $tag".runCommand()?.code.ok)
+    print("git push ... "); println("git push --tags".runCommand()?.code.ok)
 
     exitProcess(0).asUnit()
 }
