@@ -3,7 +3,10 @@
 //DEPS org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.5,org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.5
 //DEPS dev.zieger.utils:core:2.2.4
 
+@file:Suppress("UNREACHABLE_CODE")
+
 import dev.zieger.utils.coroutines.runCommand
+import dev.zieger.utils.misc.asUnit
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.features.json.GsonSerializer
@@ -12,6 +15,7 @@ import io.ktor.client.request.get
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import kotlin.math.pow
+import kotlin.system.exitProcess
 
 
 println("pushNewUpdate.kts started")
@@ -115,20 +119,16 @@ fun updateProjectGlobals(versionName: SemanticVersion) {
             }
 }
 
-suspend fun commit() {
-    "".runCommand()
-}
-
-fun tag(newTagName: String) {
-
-}
-
-fun push() {
-
-}
-
-
 runBlocking {
     val tag = latestTag() + 1
     println("tag: $tag")
+    updateProjectGlobals(tag)
+
+    println("git pull".runCommand())
+    println("git add buildSrc/src/main/kotlin/dev/zieger/utils/Globals.kt".runCommand())
+    println("git commit -m \"$tag\"".runCommand())
+    println("git tag -s $tag".runCommand())
+    println("git push".runCommand())
+
+    exitProcess(0).asUnit()
 }
