@@ -4,5 +4,5 @@ object Globals {
 
     const val group = "dev.zieger.utils"
     const val version = "2.2.5"
-    const val versionNumber = 135
+    const val versionNumber = 136
 }
