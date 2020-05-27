@@ -7,7 +7,7 @@ import dev.zieger.utils.statemachine.conditionelements.IConditionElementGroup.Ma
 import kotlin.math.max
 
 
-abstract class MachineDsl : IMachineEx {
+abstract class MachineDsl(private val mapper: IMachineExMapper) : IMachineEx {
 
     // start entry with unary +
     operator fun IMaster.unaryPlus() = Condition(this)
@@ -138,22 +138,4 @@ abstract class MachineDsl : IMachineEx {
             }
         }
     }
-
-
-    /**
-     * Non DSL helper method to fire an [IEvent] with optional [Slave] and suspend until it was processed by the state
-     * machine.
-     */
-    override suspend fun fire(combo: IComboElement): IComboElement {
-        fire eventSync combo
-        return state
-    }
-
-    /**
-     * Non DSL helper method to add an [IEvent] with optional [Slave] to the [IEvent] processing queue and return
-     * immediately.
-     */
-    override fun fireAndForget(combo: IComboElement) =
-        fire event combo
-
 }

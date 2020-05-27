@@ -1,4 +1,4 @@
-@file:Suppress("ClassName")
+@file:Suppress("ClassName", "unused")
 
 package dev.zieger.utils.log
 
@@ -54,10 +54,12 @@ sealed class LogOutputElement(override val out: ILogMessageContext.(msg: String)
 
     object MESSAGE : LogOutputElement({ it })
 
-    class CUSTOM(out: ILogMessageContext.(msg: String) -> String?) : LogOutputElement(out)
+    class CUSTOM(out: ILogMessageContext.(msg: String) -> String?) : LogOutputElement(out) {
+        constructor(out: String = "") : this({ out })
+    }
 }
 
-class LogElementMessageBuilder(override var logElements: List<ILogOutputElement> = DEFAULT_DEBUG_LOG_ELEMENTS) :
+open class LogElementMessageBuilder(override var logElements: List<ILogOutputElement> = DEFAULT_DEBUG_LOG_ELEMENTS) :
     ILogMessageBuilder {
 
     companion object {
