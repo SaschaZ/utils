@@ -92,3 +92,6 @@ open class LogElementMessageBuilder(override var logElements: List<ILogOutputEle
     override fun ILogMessageContext.build(msg: String): String =
         logElements.joinToString("") { it.run { out(msg) } ?: "" }
 }
+
+operator fun <T> T.unaryPlus(): List<T> = listOf(this)
+operator fun List<ILogOutputElement>.plus(text: String): List<ILogOutputElement> = this + CUSTOM(text)

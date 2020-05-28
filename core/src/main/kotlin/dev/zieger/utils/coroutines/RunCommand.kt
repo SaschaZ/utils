@@ -1,8 +1,12 @@
 package dev.zieger.utils.coroutines
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.coroutineContext
 
 data class CommandOutput(
     val code: Int,
@@ -12,11 +16,15 @@ data class CommandOutput(
 
 suspend fun String.runCommand(
     workingDir: File = File("."),
-    block: () -> Unit = {}
+    block: (inStr: InputStream, errStr: InputStream) -> Unit = { _, _ -> }
 ): CommandOutput? {
-    var instr: InputStream? = null
+    var inStr: InputStream? = null
     var errStr: InputStream? = null
     val input = this
+    val context = coroutineContext
+    val scope = object : CoroutineScope {
+        override val coroutineContext: CoroutineContext = context
+    }
     return executeNativeBlocking {
         try {
             val parts = input.split("\\s".toRegex())
@@ -25,21 +33,25 @@ suspend fun String.runCommand(
                 .redirectOutput(ProcessBuilder.Redirect.PIPE)
                 .redirectError(ProcessBuilder.Redirect.PIPE)
                 .start()
-
-            block()
-            process.waitFor()
-            instr = process.inputStream
+            inStr = process.inputStream
             errStr = process.errorStream
+
+            val job = scope.launch {
+                block(inStr!!, errStr!!)
+            }
+            process.waitFor()
+            job.cancel()
+
             CommandOutput(
                 process.exitValue(),
-                instr?.bufferedReader()?.readText(),
+                inStr?.bufferedReader()?.readText(),
                 errStr?.bufferedReader()?.readText()
             )
         } catch (e: IOException) {
             e.printStackTrace()
             null
         } finally {
-            instr?.close()
+            inStr?.close()
             errStr?.close()
         }
     }

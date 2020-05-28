@@ -53,3 +53,4 @@ class Continuation(
     override fun trigger(timeout: IDurationEx?) =
         if (!channel.offer(true)) scope.launchEx { triggerS(timeout) }.asUnit() else Unit
 }
+

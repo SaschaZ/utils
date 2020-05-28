@@ -18,10 +18,7 @@ import kotlin.math.pow
 import kotlin.system.exitProcess
 
 
-
-
-val GLOBALS_FILE = "buildSrc/src/main/kotlin/dev/zieger/utils/Globals.kt"
-
+println("pushNewUpdate.kts started")
 
 class GitHubTags : ArrayList<GitHubTagsItem>() {
     companion object {
@@ -83,14 +80,7 @@ data class SemanticVersion(var major: Int,
     }
 }
 
-fun <T : Comparable<T>> max(vararg comparables: T): T {
-    if (comparables.isEmpty()) throw IllegalArgumentException("At least one Comparable is required.")
-
-    var max: T? = null
-    for (comparable in comparables)
-        max = if (comparable >= max ?: comparable) comparable else max
-    return max!!
-}
+fun <T : Comparable<T>> max(vararg values: T) = values.toList().max()
 
 val String?.semanticVersion get() = this?.let { SemanticVersion(it) }
 
@@ -106,40 +96,38 @@ suspend fun latestTag(): SemanticVersion {
 
     val jitPack = JitPack.get(client).version.semanticVersion!!
     val gitHub = GitHubTags.get(client).first().name.semanticVersion!!
-    val git = "git describe --tags".runCommand()?.stdOutput.semanticVersion!!
+    val git = "git describe --tag --abbrev=0".runCommand()?.stdOutput.semanticVersion!!
+    println("jp: $jitPack; gh: $gitHub; git: $git")
 
-    return max(jitPack, gitHub, git)
+    return max(jitPack, gitHub, git)!!
 }
 
 fun File.replaceFirst(regex: Regex, replacement: String = "") =
-        apply { writeText(readText().replaceFirst(regex, replacement)) }
+    apply { writeText(readText().replaceFirst(regex, replacement)) }
+
+val GLOBAL_FILE = "buildSrc/src/main/kotlin/dev/zieger/utils/Globals.kt"
 
 fun updateProjectGlobals(versionName: SemanticVersion) {
-    File(GLOBALS_FILE)
-            .replaceFirst("const val version = \".+\"".toRegex(), "const val version = \"$versionName\"")
-            .apply {
-                val versionNumber = readText().split("\n")
-                        .first { it.trim().startsWith("const val versionNumber = ") }
-                        .split(" = ")[1].toInt() + 1
-                replaceFirst("const val versionNumber = \\d+".toRegex(), "const val versionNumber = $versionNumber")
-            }
+    File(GLOBAL_FILE)
+        .replaceFirst("const val version = \".+\"".toRegex(), "const val version = \"$versionName\"")
+        .apply {
+            val versionNumber = readText().split("\n")
+                .first { it.trim().startsWith("const val versionNumber = ") }
+                .split(" = ")[1].toInt() + 1
+            replaceFirst("const val versionNumber = \\d+".toRegex(), "const val versionNumber = $versionNumber")
+        }
 }
 
-val Int?.ok: String get() = if (this == 0) "ok" else "fail"
-
 runBlocking {
-    print("git pull ... "); println("git pull".runCommand()?.code.ok)
-
-    print("build new tag ... ")
     val tag = latestTag() + 1
-    print("$tag\nupdate project globals ... ")
+    println("new tag: $tag")
     updateProjectGlobals(tag)
-    println("ok")
 
-    print("git add ... "); println("git add $GLOBALS_FILE".runCommand()?.code.ok)
-    print("git commit ... "); println("git commit -m \"$tag\"".runCommand()?.code.ok)
-    print("git tag ... "); println("git tag $tag".runCommand()?.code.ok)
-    print("git push ... "); println("git push --tags".runCommand()?.code.ok)
+    println("git pull".runCommand())
+    println("git add $GLOBAL_FILE".runCommand())
+    println("git commit -m \"$tag\"".runCommand())
+    println("git tag $tag".runCommand())
+    println("git push --tags".runCommand())
 
     exitProcess(0).asUnit()
 }
