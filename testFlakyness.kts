@@ -8,116 +8,113 @@
 import TestFlakyness.TestResult.*
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.runCommand
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
-import dev.zieger.utils.log.console.ConsoleControl
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.time.duration.milliseconds
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.runBlocking
 import kotlin.system.exitProcess
 
 
-sealed class TestResult {
-    data class Succeed(val completed: Int, val failed: Int, val skipped: Int,
-                       val failedPercent: Float = failed / completed.toFloat() * 100f,
-                       val skippedPercent: Float = skipped / (completed + skipped).toFloat() * 100f) : TestResult()
+data class TestResult(val testsPerRun: Int = -1,
+                      val runCount: Int = 0,
+                      val failedRunCount: Int = 0,
+                      val failedTestCount: Int = 0,
+                      val failed: List<Failed> = emptyList()) {
 
-    data class Failed(val testClass: String,
+    data class Failed(val runIdx: Int,
+                      val testClass: String,
                       val testMethod: String,
                       val exception: String,
                       val codeOrigin: String = "",
                       val exception2: String = "",
-                      val codeOrigin2: String = "") : TestResult()
+                      val codeOrigin2: String = "")
 }
 
+val NUM_PARALLEL = 1
+
 runBlocking {
-    val runs = ArrayList<Succeed>()
-    val failed = ArrayList<Failed>()
-    var failedPrinted = 0
-    var runCount = 0
-    var failedRunCount = 0
-    var failedTestCount = 0
-    var lastMessage: String
+    println("test flakyness with $NUM_PARALLEL parallel jobs\n")
 
-    while (true) {
-        progress {
-            var runFailed = false
-            val result = "./gradlew test".runCommand()?.run {
-                (stdOutput?.reader()?.readText() ?: "") + (errOutput?.reader()?.readText() ?: "")
-            } ?: ""
-//            println(result)
+    progress { extra ->
+        (0 until NUM_PARALLEL).map {
+            launchEx {
+                var testResult = TestResult()
+                testResult.run {
+                    while (true) {
+                        var runFailed = false
+                        val result = "./gradlew test".runCommand()?.run {
+                            (stdOutput?.reader()?.readText() ?: "") + (errOutput?.reader()?.readText() ?: "")
+                        } ?: ""
+                        print(result)
 
-            "(\\d+) tests completed, (\\d+) failed, (\\d+) skipped".toRegex().find(result)?.groupValues?.run {
-                runs.add(Succeed(get(1).toInt(), get(2).toInt(), get(3).toInt()))
-            }
-            "(.*) > (.*) FAILED\\n *(.*) at (.*)\\n *Caused by: (.*) at (.*)".toRegex().findAll(result).forEach {
-                it.groupValues.run {
-                    val fail = Failed(get(1), get(2), get(3), get(4), get(5), get(6))
-                    if (!failed.contains(fail)) failed.add(fail)
-                    runFailed = true
-                    failedTestCount++
+                        "(\\d+) tests completed, (\\d+) failed, (\\d+) skipped".toRegex().find(result)?.groupValues?.run {
+                            testResult = copy(testsPerRun = get(1).toInt())
+                        }
+                        "(.*) > (.*) FAILED\\n *(.*) at (.*)\\n *Caused by: (.*) at (.*)".toRegex().findAll(result).forEach {
+                            it.groupValues.run {
+                                val fail = Failed(runCount, get(1), get(2), get(3), get(4), get(5), get(6))
+                                testResult = copy(failed = failed + fail,
+                                        failedTestCount = failedTestCount + 1)
+                                runFailed = true
+                            }
+                        }
+                        "Execution failed for task '(.*)'\\.\\n> A failure occurred while executing (.*)\\n *> (.*)".toRegex()
+                                .findAll(result).forEach {
+                                    it.groupValues.run {
+                                        val fail = Failed(runCount, get(1), get(2), get(3))
+                                        testResult = copy(failed = failed + fail, failedTestCount = failedTestCount + 1)
+                                        runFailed = true
+                                    }
+                                }
+
+                        testResult = copy(runCount = runCount + 1, failedRunCount = failedRunCount + if (runFailed) 1 else 0)
+                        extra()
+                    }
                 }
             }
-            "Execution failed for task '(.*)'\\.\\n> A failure occurred while executing (.*)\\n *> (.*)".toRegex().find(result)?.groupValues?.run {
-                val fail = Failed(get(1), get(2), get(3))
-                if (!failed.contains(fail)) failed.add(fail)
-                runFailed = true
-            }
-            runCount++
-            if (runFailed) failedRunCount++
-        }
-
-        ConsoleControl.carriageReturn()
-        repeat(100) { print(" ") }
-        ConsoleControl.carriageReturn()
-
-        if (failedPrinted < failed.size) {
-            failed.subList(failedPrinted, failed.size).forEach {
-                println("$it\n")
-            }
-            failedPrinted = failed.size
-        }
-
-        val failedTestsPercent = if (runs.isNotEmpty()) 100f * failedTestCount / (runs.avgNumCompleted * runCount) else 0f
-        val failedRunsPercent = if (runCount > 0) 100f * failedRunCount / runCount else 0f
-        lastMessage = "failed tests: ${String.format("%.2f", failedTestsPercent)}% - failed runs: ${String.format("%.2f", failedRunsPercent)}% ($runCount runs) "
-
-        print(lastMessage)
+        }.joinAll()
     }
     exitProcess(0).asUnit()
 }
 
-val List<Succeed>.numCompleted get() = sumByLong { it.completed.toLong() }
-val List<Succeed>.avgNumCompleted get() = if (isNotEmpty()) numCompleted / size else 0L
-
-inline infix fun <T> Iterable<T>.sumByLong(selector: (T) -> Long): Long {
-    var sum: Long = 0
-    for (element in this) {
-        sum += selector(element)
-    }
-    return sum
-}
-
-suspend fun progress(block: suspend () -> Unit) {
-    printProgress().let { block(); it() }
+suspend fun progress(block: suspend (TestResult.() -> Unit) -> Unit) {
+    var extra: TestResult? = null
+    printProgress { extra }.let { block { extra = this }; it() }
     repeat(3) { print("\b \b") }
 }
 
-fun printProgress(): () -> Unit {
+suspend fun printProgress(extra: suspend () -> TestResult?): () -> Unit {
     var idx = 0
-    var printed = false
-    val job = DefaultCoroutineScope().launchEx(interval = 75.milliseconds) {
-        if (printed) repeat(3) { print("\b \b") }
-        print("(${when (idx++) {
-            0 -> "|"
-            1 -> "/"
-            2 -> "-"
-            else -> {
-                idx = 0
-                "\\"
+    var testResult = TestResult()
+    var failedPrinted = 0
+    var prevLastLine = ""
+
+    val job = launchEx(interval = 75.milliseconds) {
+        testResult = (extra() ?: testResult).apply {
+            repeat(prevLastLine.length) { print("\b \b") }
+
+            if (failed.size > failedPrinted) {
+                val subList = failed.subList(failedPrinted, failed.size)
+                println(subList.joinToString("\n"))
+                failedPrinted = subList.size
             }
+
+            val testFailedPercent = 0f
+            val runFailedPercent = 0f
+            val extraString = "failed tests: ${String.format("%.2f", testFailedPercent)}% - " +
+                    "runs failed: ${String.format("%.2f", runFailedPercent)}% ($runCount runs) "
+            prevLastLine = "$extraString(${when (idx++) {
+                0 -> "|"
+                1 -> "/"
+                2 -> "-"
+                else -> {
+                    idx = 0
+                    "\\"
+                }
+            }
+            })"
+            print(prevLastLine)
         }
-        })")
-        printed = true
     }
     return { job.cancel() }
 }
