@@ -45,6 +45,14 @@ interface IOnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<@Unsaf
     ): T
 
     /**
+     * Suspends until the observed property changes to [wanted].
+     */
+    suspend fun suspendUntil(
+        wanted: @UnsafeVariance T,
+        timeout: IDurationEx? = null
+    )
+
+    /**
      * Suspend on change callback. Only is invoked when [scope] is set.
      * The [IOnChangedScope2] provides access to the previous values of this property (if [storeRecentValues] is `true`)
      * and the property holding object instance [P].
@@ -116,6 +124,16 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
             value, previousThisRef.get(), recentValues.lastOrNull(), recentValues, { recentValues.clear() }, false
         ) { value = it }.onChanged(value)
         value
+    }
+
+    override suspend fun suspendUntil(
+        wanted: @UnsafeVariance T,
+        timeout: IDurationEx?
+    ) = withTimeout(timeout) {
+        if (value == wanted) return@withTimeout
+
+        @Suppress("ControlFlowWithEmptyBody")
+        while (nextChange() != wanted);
     }
 
     override fun clearRecentValues() = recentValues.clear().asUnit()
