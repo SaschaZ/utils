@@ -11,6 +11,11 @@ private val cache = CachingOutput()
 
 internal class LogTest : AnnotationSpec(), ILogScope by LogScopeImpl(logOutput = cache) {
 
+    @BeforeEach
+    fun beforeEach() {
+        cache.reset()
+    }
+
     @Test
     fun testSpamFilter() = runTest(15.seconds) {
         Log.w("before test")
@@ -22,6 +27,25 @@ internal class LogTest : AnnotationSpec(), ILogScope by LogScopeImpl(logOutput =
             delay(100.milliseconds)
             Log.logV { tag = "kkfftt"; "hö?" }
         }
+        delay(1.seconds)
         cache.getCached().count() assert 112
+    }
+
+    @Test
+    fun testExternalFilter() = runTest(15.seconds) {
+        val testVar = 10
+        testVar logD {
+            filters += ExternalFilter(true)
+            "boofoo"
+        }
+        delay(1.seconds)
+        cache.getCached().count() assert 0
+
+        testVar logD {
+            filters += ExternalFilter(false)
+            "fooboo"
+        }
+        delay(1.seconds)
+        cache.getCached().count() assert 1
     }
 }

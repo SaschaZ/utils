@@ -15,6 +15,7 @@ configModule("jdk-testing", JVM_LIB) {
 tasks {
     test {
         useJUnitPlatform()
+        outputs.upToDateWhen {false}
     }
 
     dokka {

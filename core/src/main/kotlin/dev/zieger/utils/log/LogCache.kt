@@ -18,6 +18,7 @@ interface ILogCache : ILogOutput {
     )
 
     fun getCached(minLevel: LogLevel = LogLevel.VERBOSE): List<LogMessage>
+    fun reset()
 }
 
 class CachingOutput(
@@ -35,7 +36,7 @@ class CachingOutput(
     private val cacheInput = Channel<LogMessage>(CACHE_SIZE * 2)
 
     init {
-        LogLevel.values().forEach { logLevel -> cache[logLevel] = FiFo(CACHE_SIZE) }
+        reset()
 
         scope.launchEx {
             for (logMessage in cacheInput) logMessage.run {
@@ -55,4 +56,9 @@ class CachingOutput(
 
     override fun getCached(minLevel: LogLevel): List<LogMessage> =
         cache.entries.filter { it.key >= minLevel }.flatMap { it.value }.sortedBy { it.context.createdAt }
+
+    override fun reset() {
+        cache.clear()
+        LogLevel.values().forEach { logLevel -> cache[logLevel] = FiFo(CACHE_SIZE) }
+    }
 }

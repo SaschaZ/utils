@@ -41,7 +41,8 @@ open class LogContext(
 
     protected open fun ILogMessageContext.out(msg: String) {
         message = msg
-        val action = { write(build(msg)) }
+        val outputMessage = build(msg)
+        val action = { write(outputMessage) }
         val lambdas = ArrayList<() -> Unit>()
         var idx = 0
         for (filter in filters.reversed()) {

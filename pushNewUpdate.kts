@@ -5,7 +5,9 @@
 
 @file:Suppress("UNREACHABLE_CODE", "PropertyName")
 
+import dev.zieger.utils.coroutines.CommandOutput
 import dev.zieger.utils.coroutines.runCommand
+import dev.zieger.utils.misc.anyOf
 import dev.zieger.utils.misc.asUnit
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
@@ -74,9 +76,9 @@ data class SemanticVersion(var major: Int,
 
     companion object {
 
-        val String.major get() = split(".")[0].toInt()
-        val String.minor get() = split(".")[1].toInt()
-        val String.patch get() = split(".")[2].toInt()
+        val String.major get() = filterNot { it.anyOf('\'', '"', '\n') }.split(".")[0].toInt()
+        val String.minor get() = filterNot { it.anyOf('\'', '"', '\n') }.split(".")[1].toInt()
+        val String.patch get() = filterNot { it.anyOf('\'', '"', '\n') }.split(".")[2].toInt()
     }
 }
 
@@ -111,23 +113,31 @@ fun updateProjectGlobals(versionName: SemanticVersion) {
     File(GLOBAL_FILE)
         .replaceFirst("const val version = \".+\"".toRegex(), "const val version = \"$versionName\"")
         .apply {
-            val versionNumber = readText().split("\n")
+            val versionNumber = readText().filterNot { it.anyOf("'", "\"") }.split("\n")
                 .first { it.trim().startsWith("const val versionNumber = ") }
                 .split(" = ")[1].toInt() + 1
             replaceFirst("const val versionNumber = \\d+".toRegex(), "const val versionNumber = $versionNumber")
         }
 }
 
-runBlocking {
-    val tag = latestTag() + 1
-    println("new tag: $tag")
-    updateProjectGlobals(tag)
+val CommandOutput?.ok get() = if (this?.code == 0) "ok" else throw IllegalStateException("fail")
 
-    println("git pull".runCommand())
-    println("git add $GLOBAL_FILE".runCommand())
-    println("git commit -m \"$tag\"".runCommand())
-    println("git tag $tag".runCommand())
-    println("git push --tags".runCommand())
+suspend fun updateGit(tag: SemanticVersion) {
+    print("git pull ... "); println("git pull".runCommand().ok)
+    print("git add ... "); println("git add $GLOBAL_FILE".runCommand().ok)
+    print("git commit ... "); println("git commit -m \"$tag\"".runCommand().ok)
+    print("git tag ... "); println("git tag $tag".runCommand().ok)
+    print("git push ... "); println("git push --tags".runCommand().ok)
+}
+
+runBlocking {
+    print("build new tag ... ")
+    val tag = latestTag() + 1
+    print("$tag\nupdate project globals ... ")
+    updateProjectGlobals(tag)
+    println("ok")
+
+    updateGit(tag)
 
     exitProcess(0).asUnit()
 }
