@@ -99,7 +99,6 @@ suspend fun latestTag(): SemanticVersion {
     val jitPack = JitPack.get(client).version.semanticVersion!!
     val gitHub = GitHubTags.get(client).first().name.semanticVersion!!
     val git = "git describe --tag --abbrev=0".runCommand()?.stdOutput.semanticVersion!!
-//    println("jp: $jitPack; gh: $gitHub; git: $git")
 
     return max(jitPack, gitHub, git)!!
 }
@@ -124,7 +123,7 @@ val CommandOutput?.ok get() = if (this?.code == 0) "ok" else throw IllegalStateE
 
 suspend fun updateGit(tag: SemanticVersion) {
     print("git pull ... "); println("git pull".runCommand().ok)
-    print("git add ... "); println("git add $GLOBAL_FILE".runCommand().ok)
+    print("git add ... "); println("git add $GLOBAL_FILE; git add README.md".runCommand().ok)
     print("git commit ... "); println("git commit -m \"$tag\"".runCommand().ok)
     print("git tag ... "); println("git tag $tag".runCommand().ok)
     print("git push ... "); println("git push --tags".runCommand().ok)
@@ -136,8 +135,19 @@ runBlocking {
     print("$tag\nupdate project globals ... ")
     updateProjectGlobals(tag)
     println("ok")
+    print("update README ... ")
+    updateReadme(tag)
+    println("ok")
 
     updateGit(tag)
 
     exitProcess(0).asUnit()
 }
+
+fun updateReadme(tag: SemanticVersion) =
+    File("README.md").apply {
+        writeText(readText().replace("\"dev\\.zieger\\.utils:(.+):.+\"".toRegex()) {
+            "\"dev.zieger.utils:${it.groupValues[1]}:$tag\""
+        })
+    }
+

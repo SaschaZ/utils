@@ -43,10 +43,6 @@ dependencies {
 }
 ```
 
-Where `utilsVersion` is the latest from
-[![](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core)
-#
-
 ## TimeEx, DurationEx
 
 ```kotlin
