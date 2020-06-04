@@ -55,7 +55,7 @@ class CachingOutput(
     }
 
     override fun getCached(minLevel: LogLevel): List<LogMessage> =
-        cache.entries.filter { it.key >= minLevel }.flatMap { it.value }.sortedBy { it.context.createdAt }
+        HashMap(cache).entries.filter { it.key >= minLevel }.flatMap { it.value }.sortedBy { it.context.createdAt }
 
     override fun reset() {
         cache.clear()
