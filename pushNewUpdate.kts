@@ -123,7 +123,7 @@ val CommandOutput?.ok get() = if (this?.code == 0) "ok" else throw IllegalStateE
 
 suspend fun updateGit(tag: SemanticVersion) {
     print("git pull ... "); println("git pull".runCommand().ok)
-    print("git add ... "); println("git add $GLOBAL_FILE; git add README.md".runCommand().ok)
+    print("git add ... "); println("git add $GLOBAL_FILE README.md".runCommand().ok)
     print("git commit ... "); println("git commit -m \"$tag\"".runCommand().ok)
     print("git tag ... "); println("git tag $tag".runCommand().ok)
     print("git push ... "); println("git push --tags".runCommand().ok)
