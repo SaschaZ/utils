@@ -7,7 +7,7 @@ import dev.zieger.utils.time.duration.milliseconds
 import dev.zieger.utils.time.duration.seconds
 import io.kotlintest.specs.AnnotationSpec
 
-private val cache = CachingOutput()
+private val cache = LogCache()
 
 internal class LogTest : AnnotationSpec(), ILogScope by LogScopeImpl(logOutput = cache) {
 

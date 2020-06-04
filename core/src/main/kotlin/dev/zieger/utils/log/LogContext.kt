@@ -35,17 +35,22 @@ open class LogContext(
     logTags: ILogTags = LogTags(),
     logFilter: ILogFilters = +LogLevelFilter,
     logMsgBuilder: ILogMessageBuilder = LogElementMessageBuilder(),
-    logOutput: ILogOutput = SystemPrintOutput
+    logOutput: ILogOutput = SystemPrintOutput,
+    logPreHook: ILogPreHook = EmptyLogPreHook
 ) : ILogContext, ILogSettings by logSettings, ILogTags by logTags, ILogFilters by logFilter,
-    ILogMessageBuilder by logMsgBuilder, ILogOutput by logOutput {
+    ILogMessageBuilder by logMsgBuilder, ILogOutput by logOutput, ILogPreHook by logPreHook {
 
     protected open fun ILogMessageContext.out(msg: String) {
         message = msg
         val outputMessage = build(msg)
-        val action = { write(outputMessage) }
+        messageFilter filter { onPreHook(outputMessage) }
+        filters + messageFilter filter { write(outputMessage) }
+    }
+
+    private infix fun List<ILogFilter>.filter(action: () -> Unit) {
         val lambdas = ArrayList<() -> Unit>()
         var idx = 0
-        for (filter in filters.reversed()) {
+        for (filter in reversed()) {
             val lambda = when (idx++) {
                 0 -> action
                 else -> lambdas[idx - 2]
@@ -64,48 +69,45 @@ open class LogContext(
      * Log-Calls
      */
     override fun v(msg: String, vararg tag: String, filter: ILogFilter?) =
-        messageContext(VERBOSE, tags = tags + tag, filter = filter).out(msg)
+        messageContext(VERBOSE, tags = tags + tag, messageFilter = +filter).out(msg)
 
     override fun d(msg: String, vararg tag: String, filter: ILogFilter?) =
-        messageContext(DEBUG, tags = tags + tag, filter = filter).out(msg)
+        messageContext(DEBUG, tags = tags + tag, messageFilter = +filter).out(msg)
 
     override fun i(msg: String, vararg tag: String, filter: ILogFilter?) =
-        messageContext(INFO, tags = tags + tag, filter = filter).out(msg)
+        messageContext(INFO, tags = tags + tag, messageFilter = +filter).out(msg)
 
     override fun w(msg: String, vararg tag: String, filter: ILogFilter?) =
-        messageContext(WARNING, tags = tags + tag, filter = filter).out(msg)
+        messageContext(WARNING, tags = tags + tag, messageFilter = +filter).out(msg)
 
     override fun e(msg: String, vararg tag: String, filter: ILogFilter?) =
-        messageContext(EXCEPTION, tags = tags + tag, filter = filter).out(msg)
+        messageContext(EXCEPTION, tags = tags + tag, messageFilter = +filter).out(msg)
 
     override fun e(throwable: Throwable, msg: String, vararg tag: String, filter: ILogFilter?) =
-        messageContext(EXCEPTION, throwable = throwable, filter = filter, tags = tags + tag).out(msg)
+        messageContext(EXCEPTION, throwable = throwable, messageFilter = +filter, tags = tags + tag).out(msg)
 
 
     /**
      * Log-Coroutine-Calls
      */
     override fun CoroutineScope.v(msg: String, vararg tag: String, filter: ILogFilter?) =
-        messageContext(VERBOSE, tags = tags + tag, filter = filter, coroutineScope = this).out(msg)
+        messageContext(VERBOSE, tags = tags + tag, messageFilter = +filter, coroutineScope = this).out(msg)
 
     override fun CoroutineScope.d(msg: String, vararg tag: String, filter: ILogFilter?) =
-        messageContext(DEBUG, tags = tags + tag, filter = filter, coroutineScope = this).out(msg)
+        messageContext(DEBUG, tags = tags + tag, messageFilter = +filter, coroutineScope = this).out(msg)
 
     override fun CoroutineScope.i(msg: String, vararg tag: String, filter: ILogFilter?) =
-        messageContext(INFO, tags = tags + tag, filter = filter, coroutineScope = this).out(msg)
+        messageContext(INFO, tags = tags + tag, messageFilter = +filter, coroutineScope = this).out(msg)
 
     override fun CoroutineScope.w(msg: String, vararg tag: String, filter: ILogFilter?) =
-        messageContext(WARNING, tags = tags + tag, filter = filter, coroutineScope = this).out(msg)
+        messageContext(WARNING, tags = tags + tag, messageFilter = +filter, coroutineScope = this).out(msg)
 
     override fun CoroutineScope.e(msg: String, vararg tag: String, filter: ILogFilter?) =
-        messageContext(EXCEPTION, tags = tags + tag, filter = filter, coroutineScope = this).out(msg)
+        messageContext(EXCEPTION, tags = tags + tag, messageFilter = +filter, coroutineScope = this).out(msg)
 
     override fun CoroutineScope.e(throwable: Throwable, msg: String, vararg tag: String, filter: ILogFilter?) =
         messageContext(
-            EXCEPTION,
-            throwable = throwable,
-            filter = filter,
-            coroutineScope = this,
+            EXCEPTION, throwable = throwable, messageFilter = +filter, coroutineScope = this,
             tags = tags
         ).out(msg)
 
@@ -113,23 +115,22 @@ open class LogContext(
      * Log-Inline-Calls
      */
     override fun <T> T.logV(msg: String, vararg tag: String, filter: ILogFilter?): T =
-        apply { messageContext(VERBOSE, tags = tags + tag, filter = filter).out(msg) }
+        apply { messageContext(VERBOSE, tags = tags + tag, messageFilter = +filter).out(msg) }
 
     override fun <T> T.logD(msg: String, vararg tag: String, filter: ILogFilter?): T =
-        apply { messageContext(DEBUG, tags = tags + tag, filter = filter).out(msg) }
+        apply { messageContext(DEBUG, tags = tags + tag, messageFilter = +filter).out(msg) }
 
     override fun <T> T.logI(msg: String, vararg tag: String, filter: ILogFilter?): T =
-        apply { messageContext(INFO, tags = tags + tag, filter = filter).out(msg) }
+        apply { messageContext(INFO, tags = tags + tag, messageFilter = +filter).out(msg) }
 
     override fun <T> T.logW(msg: String, vararg tag: String, filter: ILogFilter?): T =
-        apply { messageContext(WARNING, tags = tags + tag, filter = filter).out(msg) }
+        apply { messageContext(WARNING, tags = tags + tag, messageFilter = +filter).out(msg) }
 
     override fun <T> T.logE(msg: String, vararg tag: String, filter: ILogFilter?): T =
-        apply { messageContext(EXCEPTION, tags = tags + tag, filter = filter).out(msg) }
+        apply { messageContext(EXCEPTION, tags = tags + tag, messageFilter = +filter).out(msg) }
 
     override fun <T> T.logE(throwable: Throwable, msg: String, vararg tag: String, filter: ILogFilter?): T =
-        apply { messageContext(EXCEPTION, throwable = throwable, filter = filter, tags = tags + tag).out(msg) }
-
+        apply { messageContext(EXCEPTION, throwable = throwable, messageFilter = +filter, tags = tags + tag).out(msg) }
 
     /**
      * Log-Inline-Builder-Calls
@@ -182,6 +183,7 @@ interface ILogMessageContext : ILogContext {
     var coroutineScope: CoroutineScope?
     val createdAt: ITimeEx
     var message: String
+    var messageFilter: List<ILogFilter>
 }
 
 private class LogMessageContext(
@@ -190,6 +192,7 @@ private class LogMessageContext(
     override var throwable: Throwable? = null,
     override var coroutineScope: CoroutineScope? = null,
     override var message: String = "",
+    override var messageFilter: List<ILogFilter> = emptyList(),
     override val createdAt: ITimeEx = TimeEx()
 ) : ILogContext by logContext, ILogMessageContext
 
@@ -197,9 +200,11 @@ private fun ILogContext.messageContext(
     level: LogLevel,
     message: String = "",
     throwable: Throwable? = null,
-    filter: ILogFilter? = null,
     coroutineScope: CoroutineScope? = null,
-    tags: Set<String> = this@messageContext.tags
+    tags: Set<String> = this@messageContext.tags,
+    messageFilter: List<ILogFilter> = emptyList()
 ): ILogMessageContext =
-    LogMessageContext(copy(tags = LogTags(tags.toMutableSet())), level, throwable, coroutineScope, message)
-        .apply { filter?.let { filters.add(it) } }
+    LogMessageContext(
+        copy(tags = LogTags(tags.toMutableSet())),
+        level, throwable, coroutineScope, message, messageFilter
+    )

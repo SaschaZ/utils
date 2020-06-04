@@ -126,7 +126,7 @@ suspend fun updateGit(tag: SemanticVersion) {
     print("git add ... "); println("git add $GLOBAL_FILE README.md".runCommand().ok)
     print("git commit ... "); println("git commit -m \"$tag\"".runCommand().ok)
     print("git tag ... "); println("git tag $tag".runCommand().ok)
-    print("git push ... "); println("git push; git push --tags".runCommand().ok)
+    print("git push ... "); println("git push && git push --tags".runCommand().ok)
 }
 
 runBlocking {

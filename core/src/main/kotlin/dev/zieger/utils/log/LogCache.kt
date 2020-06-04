@@ -10,7 +10,7 @@ import dev.zieger.utils.time.ITimeEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 
-interface ILogCache : ILogOutput {
+interface ILogCache : ILogPreHook {
 
     data class LogMessage(
         val msg: String,
@@ -21,8 +21,7 @@ interface ILogCache : ILogOutput {
     fun reset()
 }
 
-class CachingOutput(
-    private val printOutput: ILogOutput = SystemPrintOutput,
+class LogCache(
     private val scope: CoroutineScope = DefaultCoroutineScope(),
     private val listener: ILogCache.(lvl: LogLevel, msg: String, time: ITimeEx) -> Unit = { _, _, _ -> }
 ) : ILogCache {
@@ -46,9 +45,7 @@ class CachingOutput(
         }
     }
 
-    override fun ILogMessageContext.write(msg: String) {
-        printOutput.run { write(msg) }
-
+    override val onPreHook: ILogMessageContext.(String) -> Unit = { msg ->
         val message = LogMessage(msg, this)
         if (!cacheInput.offer(message))
             scope.launchEx { cacheInput.send(message) }
