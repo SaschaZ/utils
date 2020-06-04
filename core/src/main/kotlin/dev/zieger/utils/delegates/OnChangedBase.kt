@@ -96,14 +96,11 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
 
     override var value: @UnsafeVariance T = initial
         set(newValue) {
-            val block = {
-                if (!vetoInternal(newValue) && (field != newValue || !notifyOnChangedValueOnly)) {
-                    val old = field
-                    field = newValue
-                    onPropertyChanged(value, old)
-                }
+            if (!vetoInternal(newValue) && (field != newValue || !notifyOnChangedValueOnly)) {
+                val old = field
+                field = newValue
+                onPropertyChanged(value, old)
             }
-            scope?.launchEx(mutex = mutex) { block() } ?: block()
         }
 
     init {

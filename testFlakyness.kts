@@ -21,15 +21,15 @@ import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.runCommand
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.time.duration.milliseconds
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.runBlocking
 import java.io.File
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import kotlin.coroutines.coroutineContext
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlin.system.exitProcess
 
 
@@ -123,7 +123,7 @@ suspend fun TestResult.runTests(folder: File) {
     val result = "./gradlew test".runCommand(folder)?.run {
         (stdOutput?.reader()?.readText() ?: "") + (errOutput?.reader()?.readText() ?: "")
     } ?: ""
-//                print(result)
+//    println(result)
 
     "(\\d+) tests completed, (\\d+) failed, (\\d+) skipped".toRegex().find(result)?.groupValues?.run {
         testsPerRun = get(1).toInt()
@@ -194,16 +194,4 @@ runBlocking {
 
     progress { channel -> (0 until NUM_PARALLEL).map { channel.launchJob(it) }.joinAll() }
     exitProcess(0).asUnit()
-}
-
-val threadPool: ExecutorService = Executors.newFixedThreadPool(4)
-
-suspend inline fun <T> executeNativeBlocking(crossinline block: () -> T): T = suspendCancellableCoroutine { cont ->
-    threadPool.execute {
-        try {
-            cont.resume(block())
-        } catch (e: Throwable) {
-            if (!cont.isCompleted) cont.resumeWithException(e)
-        }
-    }
 }

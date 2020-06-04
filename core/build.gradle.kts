@@ -28,7 +28,51 @@ configModule("core", JVM_LIB) {
 tasks {
     test {
         useJUnitPlatform()
-        outputs.upToDateWhen {false}
+        outputs.upToDateWhen { false }
+
+        testLogging {
+//            events = setOf(
+//                TestLogEvent.FAILED,
+//                TestLogEvent.PASSED,
+//                TestLogEvent.SKIPPED,
+//                TestLogEvent.STANDARD_ERROR,
+//                TestLogEvent.STANDARD_OUT
+//            )
+//            exceptionFormat = TestExceptionFormat.FULL
+//            showExceptions = true
+//            showCauses = true
+//            showStackTraces = true
+//
+//            debug {
+//                events = setOf(
+//                    TestLogEvent.STARTED,
+//                    TestLogEvent.FAILED,
+//                    TestLogEvent.PASSED,
+//                    TestLogEvent.SKIPPED,
+//                    TestLogEvent.STANDARD_ERROR,
+//                    TestLogEvent.STANDARD_OUT
+//                )
+//                exceptionFormat = TestExceptionFormat.FULL
+//            }
+//            info.events = debug.events
+//            info.exceptionFormat = debug.exceptionFormat
+
+//            afterSuite(object : groovy.lang.Closure<Any>(this) {
+//                override fun call(vararg args: Any?): Any {
+//                    return super.call(*args)
+//                }
+//            })
+//            { desc, result ->
+//                if (!desc.parent) { // will match the outermost suite
+//                    val output =
+//                        "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} passed, ${result.failedTestCount} failed, ${result.skippedTestCount} skipped)"
+//                    val startItem = '|  '
+//                    val endItem = '  |'
+//                    val repeatLength = startItem.length() + output.length() + endItem.length()
+//                    println('\n' + ('-' * repeatLength) + '\n' + startItem + output + endItem + '\n' + ('-' * repeatLength))
+//                }
+//            }
+        }
     }
 
     dokka {

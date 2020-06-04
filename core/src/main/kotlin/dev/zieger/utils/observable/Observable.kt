@@ -1,7 +1,6 @@
 package dev.zieger.utils.observable
 
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.delegates.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
@@ -76,16 +75,13 @@ abstract class ObservableBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P
     }
 
     init {
-        onChanged?.also {
-            (scope ?: DefaultCoroutineScope()).launchEx {
-                observe(onChanged)
-            }
-        }
+        onChanged?.also { observe(onChanged) }
     }
 
     override fun observe(listener: S.(T) -> Unit): () -> Unit {
         observer.add(listener)
-        if (notifyForInitial) createScope(value, previousThisRef.get(), recentValues.lastOrNull(), recentValues,
+        if (notifyForInitial) createScope(
+            value, previousThisRef.get(), recentValues.lastOrNull(), recentValues,
             { recentValues.clear() }, true
         ).listener(value)
         updateSubscriberState()
@@ -100,7 +96,8 @@ abstract class ObservableBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P
         observerS.add(listener)
         if (notifyForInitial)
             scope?.launchEx(mutex = mutex) {
-                createScope(value, previousThisRef.get(), recentValues.lastOrNull(), recentValues,
+                createScope(
+                    value, previousThisRef.get(), recentValues.lastOrNull(), recentValues,
                     { recentValues.clear() }, true
                 ).listener(value)
             }
