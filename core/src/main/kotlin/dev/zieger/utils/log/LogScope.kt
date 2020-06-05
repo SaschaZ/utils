@@ -13,8 +13,9 @@ interface ILogScope : ILogContext {
         tags: ILogTags = Log,
         filter: ILogFilters = Log.cast<ILogFilters>().run { copy() },
         builder: ILogMessageBuilder = Log,
-        output: ILogOutput = Log
-    ): ILogContext
+        output: ILogOutput = Log,
+        preHook: ILogPreHook = Log
+    ): ILogScope
 }
 
 open class LogScopeImpl(override val Log: ILogContext = LogContext()) : ILogScope, ILogContext by Log {
@@ -24,15 +25,16 @@ open class LogScopeImpl(override val Log: ILogContext = LogContext()) : ILogScop
         logTags: ILogTags = LogTags(),
         logFilter: ILogFilters = +LogLevelFilter,
         logMsgBuilder: ILogMessageBuilder = LogElementMessageBuilder(),
-        logOutput: ILogOutput = SystemPrintOutput
-    ) :
-            this(LogContext(logSettings, logTags, logFilter, logMsgBuilder, logOutput))
+        logOutput: ILogOutput = SystemPrintOutput,
+        logPreHook: ILogPreHook = EmptyLogPreHook
+    ) : this(LogContext(logSettings, logTags, logFilter, logMsgBuilder, logOutput, logPreHook))
 
     override fun configure(
         settings: ILogSettings,
         tags: ILogTags,
         filter: ILogFilters,
         builder: ILogMessageBuilder,
-        output: ILogOutput
-    ): ILogContext = LogContext(settings, tags, filter, builder, output).also { LogScope = LogScopeImpl(it) }
+        output: ILogOutput,
+        preHook: ILogPreHook
+    ): ILogScope = LogScopeImpl(LogContext(settings, tags, filter, builder, output, preHook)).also { LogScope = it }
 }

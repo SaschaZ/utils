@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package dev.zieger.utils.log
 
 import dev.zieger.utils.core_testing.assertion.assert
@@ -9,7 +11,7 @@ import io.kotlintest.specs.AnnotationSpec
 
 private val cache = LogCache()
 
-internal class LogTest : AnnotationSpec(), ILogScope by LogScopeImpl(logOutput = cache) {
+internal class LogTest : AnnotationSpec(), ILogScope by LogScope.configure(preHook = cache) {
 
     @BeforeEach
     fun beforeEach() {
@@ -25,7 +27,7 @@ internal class LogTest : AnnotationSpec(), ILogScope by LogScopeImpl(logOutput =
             Log.v("das ist ein test $it", "logTest", "moofoo",
                 filter = SpamFilter(1.seconds, "someId") { if (it == 55 || it == 60) reset() })
             delay(100.milliseconds)
-            Log.logV { tag = "kkfftt"; "hö?" }
+            Log.v("hö?", "kkfftt")
         }
         delay(1.seconds)
         cache.getCached().count() assert 112
@@ -35,14 +37,14 @@ internal class LogTest : AnnotationSpec(), ILogScope by LogScopeImpl(logOutput =
     fun testExternalFilter() = runTest(15.seconds) {
         val testVar = 10
         testVar logD {
-            filters += ExternalFilter(true)
+            messageFilter += ExternalFilter(true)
             "boofoo"
         }
         delay(1.seconds)
         cache.getCached().count() assert 0
 
         testVar logD {
-            filters += ExternalFilter(false)
+            messageFilter += ExternalFilter(false)
             "fooboo"
         }
         delay(1.seconds)

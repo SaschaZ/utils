@@ -25,6 +25,7 @@ object AndroidLog : ILogOutput {
         tags: ILogTags = Log,
         filter: ILogFilters = Log.cast<ILogFilters>().run { copy() },
         builder: ILogMessageBuilder = LogElementMessageBuilder(DEFAULT_RELEASE_LOG_ELEMENTS),
-        output: ILogOutput = this
-    ) = LogScope.configure(settings, tags, filter, builder, output)
+        output: ILogOutput = this,
+        preHook: ILogPreHook = EmptyLogPreHook
+    ) = LogScope.configure(settings, tags, filter, builder, output, preHook)
 }

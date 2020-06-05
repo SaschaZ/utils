@@ -13,7 +13,7 @@ import kotlinx.coroutines.CoroutineScope
  * Log-Scope
  */
 interface ILogContext : ILogSettings, ILogTags, ILogCalls, ICoroutineLogCalls, IInlineLogCalls, IInlineLogBuilder,
-    ILogFilters, ILogMessageBuilder, ILogOutput {
+    ILogFilters, ILogMessageBuilder, ILogOutput, ILogPreHook {
 
     var tag: String?
         get() = tags.lastOrNull()
@@ -26,8 +26,9 @@ interface ILogContext : ILogSettings, ILogTags, ILogCalls, ICoroutineLogCalls, I
         tags: ILogTags = this,
         filter: ILogFilters = LogFilters(ArrayList(filters)),
         builder: ILogMessageBuilder = this,
-        output: ILogOutput = this
-    ): ILogContext = LogContext(settings, tags, filter, builder, output)
+        output: ILogOutput = this,
+        preHook: ILogPreHook = this
+    ): ILogContext = LogContext(settings, tags, filter, builder, output, preHook)
 }
 
 open class LogContext(
@@ -43,11 +44,14 @@ open class LogContext(
     protected open fun ILogMessageContext.out(msg: String) {
         message = msg
         val outputMessage = build(msg)
-        messageFilter filter { onPreHook(outputMessage) }
-        filters + messageFilter filter { write(outputMessage) }
+        messageFilter.filterWithAction(this) { onPreHook(outputMessage) }
+        (filters + messageFilter).filterWithAction(this) { write(outputMessage) }
     }
 
-    private infix fun List<ILogFilter>.filter(action: () -> Unit) {
+    private fun List<ILogFilter>.filterWithAction(
+        context: ILogMessageContext,
+        action: () -> Unit
+    ) = context.apply {
         val lambdas = ArrayList<() -> Unit>()
         var idx = 0
         for (filter in reversed()) {
@@ -61,7 +65,7 @@ open class LogContext(
                 }
             }
         }
-        lambdas.lastOrNull()?.invoke()
+        (lambdas.lastOrNull() ?: action).invoke()
     }
 
 
@@ -157,21 +161,14 @@ interface IGlobalLogContext : ILogContext {
         tags: ILogTags = this,
         filter: ILogFilters = cast<ILogFilters>().copy(),
         builder: ILogMessageBuilder = this,
-        output: ILogOutput = this
+        output: ILogOutput = this,
+        preHook: ILogPreHook = this
     ): IGlobalLogContext = object : IGlobalLogContext, ILogContext by copy(settings, tags, filter, builder, output) {}
 }
 
 val Log get() = LogScope.Log
 
-var LogScope: ILogScope = object : LogScopeImpl() {
-    override fun configure(
-        settings: ILogSettings,
-        tags: ILogTags,
-        filter: ILogFilters,
-        builder: ILogMessageBuilder,
-        output: ILogOutput
-    ): ILogContext = super.configure(settings, tags, filter, builder, output).also { LogScope = LogScopeImpl(it) }
-}
+var LogScope: ILogScope = LogScopeImpl()
     internal set
 
 /**
@@ -183,7 +180,7 @@ interface ILogMessageContext : ILogContext {
     var coroutineScope: CoroutineScope?
     val createdAt: ITimeEx
     var message: String
-    var messageFilter: List<ILogFilter>
+    val messageFilter: MutableList<ILogFilter>
 }
 
 private class LogMessageContext(
@@ -192,7 +189,7 @@ private class LogMessageContext(
     override var throwable: Throwable? = null,
     override var coroutineScope: CoroutineScope? = null,
     override var message: String = "",
-    override var messageFilter: List<ILogFilter> = emptyList(),
+    override val messageFilter: MutableList<ILogFilter> = ArrayList(),
     override val createdAt: ITimeEx = TimeEx()
 ) : ILogContext by logContext, ILogMessageContext
 
@@ -202,7 +199,7 @@ private fun ILogContext.messageContext(
     throwable: Throwable? = null,
     coroutineScope: CoroutineScope? = null,
     tags: Set<String> = this@messageContext.tags,
-    messageFilter: List<ILogFilter> = emptyList()
+    messageFilter: MutableList<ILogFilter> = ArrayList()
 ): ILogMessageContext =
     LogMessageContext(
         copy(tags = LogTags(tags.toMutableSet())),

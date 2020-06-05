@@ -93,5 +93,5 @@ open class LogElementMessageBuilder(override var logElements: List<ILogOutputEle
         logElements.joinToString("") { it.run { out(msg) } ?: "" }
 }
 
-operator fun <T : Any> T?.unaryPlus(): List<T> = listOfNotNull(this)
+operator fun <T : Any> T?.unaryPlus(): MutableList<T> = listOfNotNull(this).toMutableList()
 operator fun List<ILogOutputElement>.plus(text: String): List<ILogOutputElement> = this + CUSTOM(text)
