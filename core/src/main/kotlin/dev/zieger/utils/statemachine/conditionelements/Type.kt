@@ -2,7 +2,7 @@
 
 package dev.zieger.utils.statemachine.conditionelements
 
-import dev.zieger.utils.log.ExternalFilter
+import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.name
@@ -24,8 +24,8 @@ interface IType<out T : IData> : ISlave {
             null -> false
             else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
         } logV {
-            filters + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
-            "#T $it => ${this@IType} <||> $other"
+            f = GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
+            m = "#T $it => ${this@IType} <||> $other"
         }
     }
 }

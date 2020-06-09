@@ -3,7 +3,7 @@
 package dev.zieger.utils.statemachine.conditionelements
 
 
-import dev.zieger.utils.log.ExternalFilter
+import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.statemachine.MachineEx
@@ -22,8 +22,8 @@ interface IState : ISingle, IActionResult {
             is IStateGroup<State> -> other.match(this, previousStateChanges)
             else -> false
         } logV {
-            filters + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
-            "#ST $it => ${this@IState} <||> $other"
+            f = GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
+            m = "#ST $it => ${this@IState} <||> $other"
         }
     }
 }

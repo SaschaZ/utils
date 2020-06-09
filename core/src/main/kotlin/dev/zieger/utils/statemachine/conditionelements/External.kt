@@ -2,7 +2,7 @@
 
 package dev.zieger.utils.statemachine.conditionelements
 
-import dev.zieger.utils.log.ExternalFilter
+import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.statemachine.MachineEx
@@ -19,8 +19,8 @@ interface IExternal : ISingle {
         previousStateChanges: List<OnStateChanged>
     ): Boolean =
         MatchScope(previousStateChanges).condition() logV {
-            filters + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
-            "#EX $it => ${this@IExternal} <||> $other"
+            f = GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
+            m = "#EX $it => ${this@IExternal} <||> $other"
         }
 }
 

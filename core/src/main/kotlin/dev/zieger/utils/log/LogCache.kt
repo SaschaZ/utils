@@ -1,61 +1,66 @@
-@file:Suppress("MemberVisibilityCanBePrivate")
-
 package dev.zieger.utils.log
 
 import dev.zieger.utils.coroutines.builder.launchEx
+import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
-import dev.zieger.utils.log.ILogCache.LogMessage
 import dev.zieger.utils.misc.FiFo
-import dev.zieger.utils.time.ITimeEx
-import kotlinx.coroutines.CoroutineScope
+import dev.zieger.utils.misc.name
+import dev.zieger.utils.time.duration.milliseconds
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
+import kotlinx.coroutines.channels.ReceiveChannel
 
-interface ILogCache : ILogPreHook {
-
-    data class LogMessage(
-        val msg: String,
-        val context: ILogMessageContext
-    )
-
-    fun getCached(minLevel: LogLevel = LogLevel.VERBOSE): List<LogMessage>
-    fun reset()
-}
-
-class LogCache(
-    private val scope: CoroutineScope = DefaultCoroutineScope(),
-    private val listener: ILogCache.(lvl: LogLevel, msg: String, time: ITimeEx) -> Unit = { _, _, _ -> }
-) : ILogCache {
+class LogCache private constructor(private val scope: CoroutineScopeEx = DefaultCoroutineScope(LogCache::class.name)) :
+    LogElement {
 
     companion object {
 
-        const val CACHE_SIZE = 1024
+        fun initialize() = LogCache().apply {
+            Log + this
+        }
+
+        private const val INPUT_CAPACITY = 1024
+        private const val FIFO_CAPACITY = 1024
     }
 
-    private val cache = HashMap<LogLevel, FiFo<LogMessage>>()
-    private val cacheInput = Channel<LogMessage>(CACHE_SIZE * 2)
+    private var outputJob: Job? = null
+    private var outputCancelCount = 0
+
+    private val fifo = FiFo<Triple<LogLevel?, String, Long>>(FIFO_CAPACITY)
+    private val input = Channel<Triple<LogLevel?, String, Long>>(INPUT_CAPACITY)
+    private val output = Channel<List<Triple<LogLevel?, String, Long>>>(CONFLATED)
+    val out = output as ReceiveChannel<List<Triple<LogLevel?, String, Long>>>
 
     init {
-        reset()
-
         scope.launchEx {
-            for (logMessage in cacheInput) logMessage.run {
-                cache[context.level]!!.put(logMessage)
-                listener(context.level, msg, context.createdAt)
+            for (triple in input) {
+                fifo.put(triple)
+                logOutputInvalidated()
             }
         }
     }
 
-    override val onPreHook: ILogMessageContext.(String) -> Unit = { msg ->
-        val message = LogMessage(msg, this)
-        if (!cacheInput.offer(message))
-            scope.launchEx { cacheInput.send(message) }
+    private fun logOutputInvalidated() {
+        if (outputCancelCount == 10) {
+            outputJob?.cancel()
+            outputCancelCount = 0
+            scope.launchEx { output.send(ArrayList(fifo)) }
+        } else {
+            outputJob?.cancel()
+            outputCancelCount++
+            outputJob = scope.launchEx(delayed = 100.milliseconds) {
+                outputCancelCount = 0
+                output.send(ArrayList(fifo))
+            }
+        }
     }
 
-    override fun getCached(minLevel: LogLevel): List<LogMessage> =
-        HashMap(cache).entries.filter { it.key >= minLevel }.flatMap { it.value }.sortedBy { it.context.createdAt }
-
-    override fun reset() {
-        cache.clear()
-        LogLevel.values().forEach { logLevel -> cache[logLevel] = FiFo(CACHE_SIZE) }
+    override fun log(level: LogLevel?, msg: String): String {
+        val logMessage = level to msg to System.nanoTime()
+        if (!input.offer(logMessage)) scope.launchEx { input.send(logMessage) }
+        return msg
     }
 }
+
+infix fun <A, B, C> Pair<A, B>.to(c: C) = Triple(first, second, c)

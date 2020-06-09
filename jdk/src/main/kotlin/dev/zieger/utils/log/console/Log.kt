@@ -5,11 +5,13 @@ package dev.zieger.utils.log.console
 import com.github.ajalt.mordant.TermColors
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
-import dev.zieger.utils.log.*
+import dev.zieger.utils.log.Log
+import dev.zieger.utils.log.LogElement
+import dev.zieger.utils.log.LogLevel
 import kotlinx.coroutines.CoroutineScope
 import me.tongfei.progressbar.ProgressBar
 
-fun ILogContext.p(
+fun Log.p(
     title: String = "",
     scope: CoroutineScope = DefaultCoroutineScope(),
     max: Long = 100L,
@@ -18,16 +20,12 @@ fun ILogContext.p(
     ProgressBar(title, max).use { it.block() }
 }
 
-object LogColored : ILogOutput {
+object LogColored : LogElement {
 
-    fun initialize() {
-        LogScope.configure(output = this)
-    }
-
-    override fun ILogMessageContext.write(msg: String) {
+    override fun log(level: LogLevel?, msg: String): String? {
         with(TermColors()) {
             println(
-                when (this@write.level) {
+                when (level) {
                     LogLevel.VERBOSE -> brightGreen(msg)
                     LogLevel.DEBUG -> brightBlue(msg)
                     LogLevel.INFO -> brightCyan(msg)
@@ -37,5 +35,11 @@ object LogColored : ILogOutput {
                 }
             )
         }
+        return msg
+    }
+
+    fun initialize() {
+        Log.clearElements(addLevelFilter = true)
+        Log + this
     }
 }
