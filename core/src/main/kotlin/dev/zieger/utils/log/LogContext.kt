@@ -44,7 +44,7 @@ open class LogContext(
     protected open fun ILogMessageContext.out(msg: String) {
         message = msg
         val outputMessage = build(msg)
-        messageFilter.filterWithAction(this) { onPreHook(outputMessage) }
+        messageFilter.map { it.copy() }.filterWithAction(this) { onPreHook(outputMessage) }
         (filters + messageFilter).filterWithAction(this) { write(outputMessage) }
     }
 
@@ -153,17 +153,6 @@ open class LogContext(
 
     override infix fun <T> T.logE(msg: ILogMessageContext.(T) -> String): T =
         apply { messageContext(EXCEPTION).run { out(msg(this@apply)) } }
-}
-
-interface IGlobalLogContext : ILogContext {
-    fun configure(
-        settings: ILogSettings = cast<ILogSettings>().copy(),
-        tags: ILogTags = this,
-        filter: ILogFilters = cast<ILogFilters>().copy(),
-        builder: ILogMessageBuilder = this,
-        output: ILogOutput = this,
-        preHook: ILogPreHook = this
-    ): IGlobalLogContext = object : IGlobalLogContext, ILogContext by copy(settings, tags, filter, builder, output) {}
 }
 
 val Log get() = LogScope.Log

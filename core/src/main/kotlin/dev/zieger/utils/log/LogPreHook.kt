@@ -2,7 +2,7 @@ package dev.zieger.utils.log
 
 
 interface ILogPreHook {
-    val onPreHook: ILogMessageContext.(wrappedMessage: String) -> Unit
+    val onPreHook: ILogMessageContext.(message: String) -> Unit
 }
 
 object EmptyLogPreHook : ILogPreHook {

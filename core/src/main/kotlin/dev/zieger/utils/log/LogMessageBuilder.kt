@@ -14,7 +14,7 @@ import kotlinx.coroutines.CoroutineName
  * Log-Message-Builder
  */
 interface ILogMessageBuilder {
-    val logElements: List<ILogOutputElement>
+    var logElements: List<ILogOutputElement>
 
     fun ILogMessageContext.build(msg: String): String
 }

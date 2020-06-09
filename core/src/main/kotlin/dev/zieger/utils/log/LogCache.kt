@@ -6,9 +6,8 @@ import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.log.ILogCache.LogMessage
 import dev.zieger.utils.misc.FiFo
-import dev.zieger.utils.time.ITimeEx
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.sync.Mutex
 
 interface ILogCache : ILogPreHook {
 
@@ -17,13 +16,16 @@ interface ILogCache : ILogPreHook {
         val context: ILogMessageContext
     )
 
-    fun getCached(minLevel: LogLevel = LogLevel.VERBOSE): List<LogMessage>
+    var cacheLogLevel: LogLevel
+    val messages: List<LogMessage>
+
     fun reset()
 }
 
 class LogCache(
     private val scope: CoroutineScope = DefaultCoroutineScope(),
-    private val listener: ILogCache.(lvl: LogLevel, msg: String, time: ITimeEx) -> Unit = { _, _, _ -> }
+    override var cacheLogLevel: LogLevel = LogLevel.VERBOSE,
+    private val listener: suspend ILogCache.(messages: List<LogMessage>) -> Unit = {}
 ) : ILogCache {
 
     companion object {
@@ -31,28 +33,25 @@ class LogCache(
         const val CACHE_SIZE = 1024
     }
 
+    private val mutex = Mutex()
     private val cache = HashMap<LogLevel, FiFo<LogMessage>>()
-    private val cacheInput = Channel<LogMessage>(CACHE_SIZE * 2)
+    override val messages
+        get() = cache.entries.filter { it.key >= cacheLogLevel }.flatMap { it.value }
+            .sortedBy { it.context.createdAt }
 
     init {
         reset()
-
-        scope.launchEx {
-            for (logMessage in cacheInput) logMessage.run {
-                cache[context.level]!!.put(logMessage)
-                listener(context.level, msg, context.createdAt)
-            }
-        }
     }
 
     override val onPreHook: ILogMessageContext.(String) -> Unit = { msg ->
-        val message = LogMessage(msg, this)
-        if (!cacheInput.offer(message))
-            scope.launchEx { cacheInput.send(message) }
-    }
+        val ctx = this
+        scope.launchEx(mutex = mutex) {
+            val message = LogMessage(msg, ctx)
+            cache[message.context.level]?.put(message)
 
-    override fun getCached(minLevel: LogLevel): List<LogMessage> =
-        HashMap(cache).entries.filter { it.key >= minLevel }.flatMap { it.value }.sortedBy { it.context.createdAt }
+            listener(messages)
+        }
+    }
 
     override fun reset() {
         cache.clear()

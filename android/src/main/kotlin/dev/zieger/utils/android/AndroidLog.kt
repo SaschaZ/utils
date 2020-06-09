@@ -4,6 +4,7 @@ package dev.zieger.utils.android
 
 import dev.zieger.utils.log.*
 import dev.zieger.utils.log.LogElementMessageBuilder.Companion.DEFAULT_RELEASE_LOG_ELEMENTS
+import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.cast
 
 object AndroidLog : ILogOutput {
@@ -17,7 +18,7 @@ object AndroidLog : ILogOutput {
             LogLevel.INFO -> android.util.Log.i(tags.firstOrNull() ?: tag, msg)
             LogLevel.WARNING -> android.util.Log.w(tags.firstOrNull() ?: tag, msg)
             LogLevel.EXCEPTION -> android.util.Log.e(tags.firstOrNull() ?: tag, msg)
-        }
+        }.asUnit()
     }
 
     fun initialize(

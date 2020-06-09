@@ -25,7 +25,7 @@ class ContinuationTest : AnnotationSpec() {
     @Test
     fun testDirect() = runTest {
         launchEx {
-            continuation.suspendUntilTrigger()
+            continuation.suspend()
             continued = true
         }
 

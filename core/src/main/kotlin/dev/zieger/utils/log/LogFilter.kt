@@ -16,10 +16,10 @@ interface ILogFilters {
 
     operator fun plus(filter: ILogFilter): ILogFilters = apply { filters.add(filter) }
 
-    fun ILogFilters.copy(filters: List<ILogFilter> = this.filters): ILogFilters
+    fun ILogFilters.copy(filters: List<ILogFilter> = this.filters.map { it.copy() }): ILogFilters
 }
 
-class LogFilters(override val filters: MutableList<ILogFilter> = ArrayList()) :
+class LogFilters(override var filters: MutableList<ILogFilter> = ArrayList()) :
     ILogFilters {
     constructor(filter: ILogFilter) : this(mutableListOf(filter))
 
@@ -31,11 +31,15 @@ operator fun ILogFilter.unaryPlus(): ILogFilters =
 
 interface ILogFilter {
     fun ILogMessageContext.filter(action: () -> Unit)
+
+    fun copy(): ILogFilter
 }
 
 object LogLevelFilter : ILogFilter {
     override fun ILogMessageContext.filter(action: () -> Unit) =
         if (minLogLevel <= level) action() else Unit
+
+    override fun copy(): ILogFilter = LogLevelFilter
 }
 
 interface IResetScope {
@@ -75,6 +79,8 @@ data class SpamFilter(
     }
 
     override fun reset() = idTimeMap.remove(id).asUnit()
+
+    override fun copy(): ILogFilter = SpamFilter(minInterval, "${id}Copy", sameMessage, resetScope)
 }
 
 class ExternalFilter(val block: () -> Boolean) : ILogFilter {
@@ -82,4 +88,6 @@ class ExternalFilter(val block: () -> Boolean) : ILogFilter {
 
     override fun ILogMessageContext.filter(action: () -> Unit) =
         if (!block()) action() else Unit
+
+    override fun copy(): ILogFilter = ExternalFilter(block)
 }
