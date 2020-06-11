@@ -17,12 +17,17 @@ interface IMachineEx {
     val state: IComboElement
     fun state() = state.master as? IState
 
-    val mapper: IMachineExMapper
-
     suspend fun suspendUtilProcessingFinished()
 
-    suspend fun fire(combo: IComboElement): IComboElement
-    fun fireAndForget(combo: IComboElement)
+    suspend fun fire(combo: IComboElement): IComboElement {
+        fireAndForget(combo)
+        suspendUtilProcessingFinished()
+        return state
+    }
+
+    fun fireAndForget(combo: IComboElement) {
+        event = combo
+    }
 
     fun clearPreviousChanges()
 

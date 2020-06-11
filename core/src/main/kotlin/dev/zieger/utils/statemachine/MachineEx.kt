@@ -167,9 +167,10 @@ open class MachineEx(
     private val initialState: IState,
     override val scope: CoroutineScopeEx = DefaultCoroutineScope(),
     private val previousChangesCacheSize: Int = 128,
+    private val mapper: IMachineExMapper = MachineExMapper(),
     debugLevel: DebugLevel = DebugLevel.ERROR,
     builder: suspend MachineDsl.() -> Unit
-) : MachineDsl() {
+) : MachineDsl(mapper) {
 
     companion object {
 
@@ -184,8 +185,6 @@ open class MachineEx(
             private set
     }
 
-    override val mapper: IMachineExMapper = MachineExMapper()
-
     private val previousChanges: MutableList<OnStateChanged> = ArrayList()
 
     private val finishedProcessingEvent = Channel<Boolean>()
@@ -193,7 +192,6 @@ open class MachineEx(
     private val eventMutex = Mutex()
     private val eventChannel = Channel<IComboElement>(Channel.BUFFERED)
 
-    // FIXME: use real suspendable method to make proper fire method possible
     override var event: IComboElement
         get() = currentEvent
         set(value) {
@@ -212,10 +210,12 @@ open class MachineEx(
 
     init {
         MachineEx.debugLevel = debugLevel
+
         applyNewState(initialState.combo, initialState.combo, object : IEvent {
             override val noLogging: Boolean
                 get() = false
         }.combo)
+
         scope.launchEx {
             this@MachineEx.builder()
             for (event in eventChannel) event.processEvent()

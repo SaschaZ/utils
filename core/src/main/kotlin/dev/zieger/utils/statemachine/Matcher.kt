@@ -2,11 +2,10 @@
 
 package dev.zieger.utils.statemachine
 
+import dev.zieger.utils.log.ExternalFilter
+import dev.zieger.utils.log.ILogContext
 import dev.zieger.utils.log.Log
-import dev.zieger.utils.log.LogFilter.Companion.GENERIC
-import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.ifNull
-import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.ERROR
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
 import dev.zieger.utils.statemachine.conditionelements.IComboElement
 import dev.zieger.utils.statemachine.conditionelements.ICondition
@@ -18,7 +17,7 @@ import dev.zieger.utils.statemachine.conditionelements.noLogging
 /**
  * Holds methods that are used for matching the incoming events to a new state and/or action and to match the new state to actions.
  */
-object Matcher {
+object Matcher : ILogContext by Log {
 
     /**
      * Is called to determine the next state when a new event is processed.
@@ -41,9 +40,7 @@ object Matcher {
         Log.v(
             "findStateForEvent()\n\tevent=$event;\n\tstate=$state;\n\t" +
                     "previousChanges=${previousChanges.toList().take(3).joinToStringTabbed(2)}",
-            logFilter = GENERIC(
-                disableLog = event.noLogging || MachineEx.debugLevel <= INFO
-            )
+            element = ExternalFilter(event.noLogging || MachineEx.debugLevel <= INFO)
         )
 
         val execScope = ExecutorScope(event, state, previousChanges)
@@ -64,7 +61,7 @@ object Matcher {
                 if (matchingEventConditions.isEmpty()) {
                     Log.i(
                         "No event condition matches for $event and $state.",
-                        GENERIC(disableLog = event.noLogging || MachineEx.debugLevel <= INFO)
+                        element = ExternalFilter(event.noLogging || MachineEx.debugLevel <= INFO)
                     )
                     return null
                 }
@@ -82,7 +79,7 @@ object Matcher {
                 Log.v(
                     "\n\tnewState=$newState" +
                             "\n\tmatchingEventConditions=${matchingEventConditions.toList().joinToStringTabbed(2)}",
-                    GENERIC(disableLog = event.noLogging || MachineEx.debugLevel <= INFO)
+                    element = ExternalFilter(event.noLogging || MachineEx.debugLevel <= INFO)
                 )
 
                 return newState.executePossibleStateConditions(
@@ -91,8 +88,8 @@ object Matcher {
                     Log.i(
                         "No event condition matches for $event and $state. Had ${matchingEventConditions.size}" +
                                 " matches:${matchingEventConditions.values.joinToStringTabbed(2)}",
-                        GENERIC(
-                            disableLog = matchingEventConditions.values.isNotEmpty() || event.noLogging
+                        element = ExternalFilter(
+                            matchingEventConditions.values.isNotEmpty() || event.noLogging
                                     || MachineEx.debugLevel <= INFO
                         )
                     )
@@ -123,14 +120,13 @@ object Matcher {
             Log.v(
                 "executing matching state conditions: \n" +
                         matchingStateConditions.entries.joinToStringTabbed(2),
-                GENERIC(disableLog = event.noLogging || MachineEx.debugLevel == ERROR)
+                element = ExternalFilter(event.noLogging || MachineEx.debugLevel <= INFO)
             )
 
             matchingStateConditions.forEach { it.value.action?.invoke(execScope) }
 
             Log.d(
-                "state changed from $state to $newState with event $event",
-                GENERIC(disableLog = event.noLogging || MachineEx.debugLevel == ERROR)
+                "state changed from $state to $newState with event $event"
             )
         }
     }
@@ -143,7 +139,7 @@ object Matcher {
         type: ICondition.ConditionType
     ) = (condition.type == type && condition.match(InputElement(event, state), previousChanges)) logV
             {
-                f = GENERIC(disableLog = event.noLogging || MachineEx.debugLevel <= INFO)
-                m = "#R $it => ${type.name[0]} $condition <||> $event, $state"
+                elements + ExternalFilter(event.noLogging || MachineEx.debugLevel <= INFO)
+                "#R $it => ${type.name[0]} $condition <||> $event, $state"
             }
 }
