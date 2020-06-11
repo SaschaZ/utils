@@ -1,6 +1,7 @@
 package dev.zieger.utils.coroutines.channel.pipeline
 
 import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
+import dev.zieger.utils.log.Log
 import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.TimeEx
 import kotlinx.coroutines.sync.Mutex
@@ -75,7 +76,7 @@ open class ProducerScope<out T : Any>(
     ) = mutex.withLock { rawValue.withParallelIdx(parallelIdx, parallelType).apply { sender(this) } }
 
     override suspend fun close() {
-        dev.zieger.utils.log.Log.v("producing finished")
+        Log.v("producing finished")
         closer()
     }
 }

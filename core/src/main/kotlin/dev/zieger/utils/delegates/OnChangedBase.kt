@@ -3,6 +3,7 @@
 package dev.zieger.utils.delegates
 
 import dev.zieger.utils.coroutines.Continuation
+import dev.zieger.utils.coroutines.ContinuationResult.Success
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.misc.asUnit
@@ -43,6 +44,14 @@ interface IOnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<@Unsaf
         timeout: IDurationEx? = null,
         onChanged: suspend S.(T) -> Unit = {}
     ): T
+
+    /**
+     * Suspends until the observed property changes to [wanted].
+     */
+    suspend fun suspendUntil(
+        wanted: @UnsafeVariance T,
+        timeout: IDurationEx? = null
+    )
 
     /**
      * Suspend on change callback. Only is invoked when [scope] is set.
@@ -88,14 +97,11 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
 
     override var value: @UnsafeVariance T = initial
         set(newValue) {
-            val block = {
-                if (!vetoInternal(newValue) && (field != newValue || !notifyOnChangedValueOnly)) {
-                    val old = field
-                    field = newValue
-                    onPropertyChanged(value, old)
-                }
+            if (!vetoInternal(newValue) && (field != newValue || !notifyOnChangedValueOnly)) {
+                val old = field
+                field = newValue
+                onPropertyChanged(value, old)
             }
-            scope?.launchEx(mutex = mutex) { block() } ?: block()
         }
 
     init {
@@ -111,11 +117,21 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
     private val nextChangeContinuation = Continuation()
 
     override suspend fun nextChange(timeout: IDurationEx?, onChanged: suspend S.(T) -> Unit): T = withTimeout(timeout) {
-        nextChangeContinuation.suspendUntilTrigger(timeout)
+        nextChangeContinuation.suspend(timeout)
         createScope(
             value, previousThisRef.get(), recentValues.lastOrNull(), recentValues, { recentValues.clear() }, false
         ) { value = it }.onChanged(value)
         value
+    }
+
+    override suspend fun suspendUntil(
+        wanted: @UnsafeVariance T,
+        timeout: IDurationEx?
+    ) = withTimeout(timeout) {
+        if (value == wanted) return@withTimeout
+
+        @Suppress("ControlFlowWithEmptyBody")
+        while (nextChange() != wanted);
     }
 
     override fun clearRecentValues() = recentValues.clear().asUnit()
@@ -133,7 +149,7 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
         isInitialNotification: Boolean = false
     ) = createScope(new, previousThisRef.get(), old, recentValues, { clearRecentValues() }, isInitialNotification)
         .apply {
-            nextChangeContinuation.trigger()
+            nextChangeContinuation.trigger(Success(Unit))
             onChangedInternal(new)
             scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
         }

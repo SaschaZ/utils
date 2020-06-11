@@ -189,13 +189,13 @@ inline infix fun <K0, V0, K1, V1> ConcurrentHashMap<K0, V0>.mapToMap(
     return newMap
 }
 
-fun Any?.nullToBlank() = this?.let { it } ?: ""
-
 fun <T : Any?> T?.nullWhenZero() = this?.let { if (it == 0) null else this }
 
 inline infix fun <T : Any?> T?.nullWhen(condition: (T) -> Boolean) = this?.let { if (condition(it)) null else this }
 
 fun <T : Number> T?.negativeToNull() = nullWhen { (it as Number).ex <= 0.ex }
+
+fun String?.nullToBlank() = ""
 
 fun List<String?>.toQueryParameter(): String =
     asSequence().filterNotNull().joinToString("&").let { if (it.isNotBlank()) "?$it" else "" }
@@ -280,4 +280,5 @@ suspend inline fun <T> ReceiveChannel<T>.runEach(block: T.() -> Unit) {
 }
 
 infix fun <T> T.anyOf(values: List<T>) = values.contains(this)
+infix fun String.startsWithAny(values: List<String>) = values.any { startsWith(it) }
 fun <T> T.anyOf(vararg values: T): Boolean = anyOf(values.toList())

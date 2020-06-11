@@ -52,7 +52,7 @@ abstract class AbsParallelProcessedValueMerger<out T : Any>(protected open val p
             processNextValidValues()
         }))
         processNextValidValues()
-        continuation.suspendUntilTrigger()
+        continuation.suspend()
     }
 }
 

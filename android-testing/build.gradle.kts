@@ -40,6 +40,10 @@ android {
 }
 
 tasks {
+    withType<Test>().configureEach {
+        outputs.upToDateWhen {false}
+    }
+
     // config JVM target to 1.8 for kotlin compilation tasks
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions.jvmTarget = "1.8"

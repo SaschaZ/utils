@@ -2,8 +2,8 @@ package dev.zieger.utils.misc
 
 abstract class AbsFiFo<out T>(
     initial: List<T> = emptyList(),
-    protected val values: MutableList<@UnsafeVariance T?> = ArrayList(initial)
-) : List<T> by initial {
+    protected val values: MutableList<@UnsafeVariance T> = ArrayList(initial)
+) : List<T> by values {
 
     abstract val isFull: Boolean
     open val isNotFull: Boolean
