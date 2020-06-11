@@ -8,12 +8,12 @@ import dev.zieger.utils.coroutines.channel.parallel.ParallelProcessor
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.coroutines.scope.ICoroutineScopeEx
 import dev.zieger.utils.misc.asUnit
+import io.kotlintest.specs.AbstractAnnotationSpec.Test
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel.Factory.RENDEZVOUS
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 
 abstract class ProcessorBaseTest(
     protected val type: ParallelProcessingType = ParallelProcessingType.UNIQUE,

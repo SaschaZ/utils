@@ -11,12 +11,12 @@ import dev.zieger.utils.observable.Controllable2
 import dev.zieger.utils.observable.IControllableBase
 import dev.zieger.utils.observable.IControlledChangedScope2
 import dev.zieger.utils.time.duration.seconds
+import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
-import org.junit.jupiter.api.Test
 
-class ControllableTest {
+class ControllableTest : AnnotationSpec() {
 
     @Test
     fun `test controllable`() = runTest {

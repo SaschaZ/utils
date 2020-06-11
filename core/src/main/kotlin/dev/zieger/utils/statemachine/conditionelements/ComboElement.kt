@@ -2,7 +2,7 @@
 
 package dev.zieger.utils.statemachine.conditionelements
 
-import dev.zieger.utils.log.ExternalFilter
+import dev.zieger.utils.log.LogFilter
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.name
 import dev.zieger.utils.statemachine.MachineEx
@@ -52,8 +52,9 @@ interface IComboElement : IConditionElement, IActionResult {
             other == null -> false
             else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
         } logV {
-            elements + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
-            "#CE $it => ${this@IComboElement} <||> $other"
+            logFilter =
+                LogFilter.Companion.GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
+            m = "#CE $it => ${this@IComboElement} <||> $other"
         }
     }
 }

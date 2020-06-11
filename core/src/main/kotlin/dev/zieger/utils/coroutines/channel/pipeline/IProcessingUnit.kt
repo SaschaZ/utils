@@ -5,6 +5,7 @@ package dev.zieger.utils.coroutines.channel.pipeline
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.channel.pipeline.ProcessingElementStage.*
 import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
+import dev.zieger.utils.log.Log
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel

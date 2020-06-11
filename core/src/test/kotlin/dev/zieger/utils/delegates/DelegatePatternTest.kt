@@ -3,9 +3,9 @@
 package dev.zieger.utils.delegates
 
 import dev.zieger.utils.core_testing.assertion.assert
-import org.junit.jupiter.api.Test
+import io.kotlintest.specs.AnnotationSpec
 
-class DelegatePatternTest {
+class DelegatePatternTest : AnnotationSpec() {
 
     interface TestInterface {
         fun foo(): String = boo()

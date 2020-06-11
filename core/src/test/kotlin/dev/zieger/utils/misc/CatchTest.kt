@@ -9,11 +9,11 @@ import dev.zieger.utils.core_testing.bind
 import dev.zieger.utils.core_testing.param
 import dev.zieger.utils.core_testing.parameterMix
 import dev.zieger.utils.delegates.nextInt
+import io.kotlintest.specs.AnnotationSpec
 import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
-class CatchTest {
+class CatchTest : AnnotationSpec() {
 
     data class CatchTestData(val map: Map<String, ParamInstance<*>>) {
         val result: Boolean by bind(map)
@@ -24,7 +24,7 @@ class CatchTest {
         val throwException: Boolean by bind(map)
     }
 
-    @Disabled
+    @Disabled // TODO implement with KoTest
     @Test
     fun testCatch() {
         parameterMix(

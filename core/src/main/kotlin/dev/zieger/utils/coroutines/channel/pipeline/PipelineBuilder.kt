@@ -1,5 +1,7 @@
 package dev.zieger.utils.coroutines.channel.pipeline
 
+import dev.zieger.utils.log.Log
+
 data class PipelineBuilder<out P : Any, out I : Any, out O : Any, C : Any>(
     val producer: IProducer<@UnsafeVariance P>,
     val processor: IProcessor<I, O>,

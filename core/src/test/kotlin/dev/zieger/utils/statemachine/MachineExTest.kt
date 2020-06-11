@@ -18,9 +18,9 @@ import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI
 import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.I
 import dev.zieger.utils.statemachine.conditionelements.*
 import dev.zieger.utils.time.duration.seconds
-import org.junit.jupiter.api.Test
+import io.kotlintest.specs.AnnotationSpec
 
-class MachineExTest {
+class MachineExTest : AnnotationSpec() {
 
     sealed class TestState : State() {
 

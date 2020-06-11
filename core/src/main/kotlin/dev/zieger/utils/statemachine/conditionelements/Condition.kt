@@ -2,8 +2,8 @@
 
 package dev.zieger.utils.statemachine.conditionelements
 
-import dev.zieger.utils.log.ExternalFilter
 
+import dev.zieger.utils.log.LogFilter
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.name
 import dev.zieger.utils.statemachine.ExecutorScope
@@ -52,8 +52,8 @@ interface ICondition : IConditionElement {
             null -> false
             else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
         } logV {
-            elements + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
-            "#C $it => ${this@ICondition} <||> $other"
+            f = LogFilter.Companion.GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
+            m = "#C $it => ${this@ICondition} <||> $other"
         }
     }
 }

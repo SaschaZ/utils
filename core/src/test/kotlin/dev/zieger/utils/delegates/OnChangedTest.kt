@@ -8,15 +8,15 @@ import dev.zieger.utils.delegates.OnChangedTest.OnChangedResults.OnChangedTestRe
 import dev.zieger.utils.delegates.OnChangedTest.OnChangedResults.OnChangedTestResultOutput
 import dev.zieger.utils.misc.DataClass
 import dev.zieger.utils.time.duration.minutes
+import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
-import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
-class OnChangedTest {
+class OnChangedTest : AnnotationSpec() {
 
     sealed class OnChangedResults {
         data class OnChangedTestResultInput(

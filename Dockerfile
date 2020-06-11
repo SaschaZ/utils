@@ -26,21 +26,15 @@ RUN wget -q -O tools.zip https://dl.google.com/android/repository/sdk-tools-linu
     rm -fr $ANDROID_HOME tools.zip && \
     mkdir -p $ANDROID_HOME && \
     mv tools $ANDROID_HOME/tools && \
-
-    # Install Android components
     cd $ANDROID_HOME && \
-    
+    # Install Android components
     yes | tools/bin/sdkmanager --licenses && \
-    
     echo "Install android-${ANDROID_PLATFORM_VERSION}" && \
     tools/bin/sdkmanager "platforms;android-${ANDROID_PLATFORM_VERSION}" && \
-
     echo "Install platform-tools" && \
     tools/bin/sdkmanager "platform-tools" && \
-
     echo "Install build-tools-${ANDROID_BUILD_TOOLS_VERSION}" && \
     tools/bin/sdkmanager "build-tools;${ANDROID_BUILD_TOOLS_VERSION}" && \
-
     echo "Install tools" && \
     tools/bin/sdkmanager "tools"
 
@@ -53,8 +47,12 @@ ENV TERM dumb
 ENV JAVA_OPTS "-Xms512m -Xmx1536m"
 ENV GRADLE_OPTS "-XX:+UseG1GC -XX:MaxGCPauseMillis=1000"
 
+# Add Project
 ADD . /project
 WORKDIR /project
-RUN rm ./local.properties
-RUN ./gradlew assemble
+
+# Remove possible temporary build files
+RUN rm ./local.properties && \
+    find . -name build -print0 | xargs -0 rm -rf
+
 CMD ["./gradlew", "publishToMavenLocal"]
