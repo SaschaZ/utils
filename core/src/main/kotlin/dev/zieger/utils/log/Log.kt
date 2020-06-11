@@ -115,10 +115,11 @@ object Log {
         addWrapper: Boolean = true,
         addTime: Boolean = true,
         addLevelFilter: Boolean = false,
-        addStdOut: Boolean = false
+        addStdOut: Boolean = false,
+        printCallOrigin: Boolean = false
     ) {
         elements.clear()
-        if (addWrapper) this + WrapMessage(addTime)
+        if (addWrapper) this + WrapMessage(addTime, printCallOrigin)
         if (addLevelFilter) this + LogLevelFilter
         if (addStdOut) this + PrintLn
     }

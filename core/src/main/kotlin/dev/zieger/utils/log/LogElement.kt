@@ -3,6 +3,10 @@ package dev.zieger.utils.log
 import dev.zieger.utils.misc.nullWhen
 
 
+interface LogElement {
+    fun log(level: LogLevel?, msg: String): String?
+}
+
 object PrintLn : LogElement {
     override fun log(level: LogLevel?, msg: String): String? {
         println(msg)
@@ -10,16 +14,13 @@ object PrintLn : LogElement {
     }
 }
 
-interface LogElement {
-    fun log(level: LogLevel?, msg: String): String?
-}
-
 open class WrapMessage(
-    val addTime: Boolean = true,
-    private val builder: MessageBuilder = MessageBuilder
+    addTime: Boolean = true,
+    printCallOrigin: Boolean = false,
+    private val builder: MessageBuilder = MessageBuilder(printCallOrigin, addTime)
 ) : LogElement {
     override fun log(level: LogLevel?, msg: String) =
-        builder.wrapMessage(null, level?.short ?: "", msg, addTime)
+        builder.wrapMessage(null, level?.short ?: "", msg)
 }
 
 object LogLevelFilter : LogElement {

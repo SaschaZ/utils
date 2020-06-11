@@ -15,6 +15,9 @@ plugins {
 configModule("android", ANDROID_LIB) {
     core
     androidXrecyclerView
+
+    "testImplementation"(project(":android"))
+    "testImplementation"(project(":core-testing"))
 }
 
 android {
@@ -42,6 +45,7 @@ android {
 
 tasks {
     withType<Test>().configureEach {
+        useJUnitPlatform()
         outputs.upToDateWhen {false}
     }
 

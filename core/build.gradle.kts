@@ -3,6 +3,8 @@ import dev.zieger.utils.Versions
 import dev.zieger.utils.configModule
 import dev.zieger.utils.coreTesting
 import dev.zieger.utils.kotlinReflect
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     kotlin("jvm")
@@ -31,37 +33,37 @@ tasks {
         outputs.upToDateWhen { false }
 
         testLogging {
-//            events = setOf(
-//                TestLogEvent.FAILED,
-//                TestLogEvent.PASSED,
-//                TestLogEvent.SKIPPED,
-//                TestLogEvent.STANDARD_ERROR,
-//                TestLogEvent.STANDARD_OUT
-//            )
-//            exceptionFormat = TestExceptionFormat.FULL
-//            showExceptions = true
-//            showCauses = true
-//            showStackTraces = true
-//
-//            debug {
-//                events = setOf(
-//                    TestLogEvent.STARTED,
-//                    TestLogEvent.FAILED,
-//                    TestLogEvent.PASSED,
-//                    TestLogEvent.SKIPPED,
-//                    TestLogEvent.STANDARD_ERROR,
-//                    TestLogEvent.STANDARD_OUT
-//                )
-//                exceptionFormat = TestExceptionFormat.FULL
-//            }
-//            info.events = debug.events
-//            info.exceptionFormat = debug.exceptionFormat
+            events = setOf(
+                TestLogEvent.FAILED,
+                TestLogEvent.PASSED,
+                TestLogEvent.SKIPPED,
+                TestLogEvent.STANDARD_ERROR,
+                TestLogEvent.STANDARD_OUT
+            )
+            exceptionFormat = TestExceptionFormat.FULL
+            showExceptions = true
+            showCauses = true
+            showStackTraces = true
 
-//            afterSuite(object : groovy.lang.Closure<Any>(this) {
-//                override fun call(vararg args: Any?): Any {
-//                    return super.call(*args)
-//                }
-//            })
+            debug {
+                events = setOf(
+                    TestLogEvent.STARTED,
+                    TestLogEvent.FAILED,
+                    TestLogEvent.PASSED,
+                    TestLogEvent.SKIPPED,
+                    TestLogEvent.STANDARD_ERROR,
+                    TestLogEvent.STANDARD_OUT
+                )
+                exceptionFormat = TestExceptionFormat.FULL
+            }
+            info.events = debug.events
+            info.exceptionFormat = debug.exceptionFormat
+
+            afterSuite(object : groovy.lang.Closure<Any>(this) {
+                override fun call(vararg args: Any?): Any {
+                    return super.call(*args)
+                }
+            })
 //            { desc, result ->
 //                if (!desc.parent) { // will match the outermost suite
 //                    val output =
