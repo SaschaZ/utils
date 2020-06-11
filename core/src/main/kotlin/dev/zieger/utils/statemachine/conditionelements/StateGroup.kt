@@ -23,7 +23,7 @@ interface IStateGroup<out T : State> : IGroup<T> {
             null -> false
             else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
         } logV {
-            filters + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
+            elements + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
             "#SG $it => ${this@IStateGroup} <||> $other"
         }
     }

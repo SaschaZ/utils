@@ -6,7 +6,7 @@ package dev.zieger.utils.log
 interface ILogSettings {
     /**
      * Minimum [LogLevel] to print.
-     * Is used by [LogLevelFilter] that is added to every [LogContext] by default.
+     * Is used by [LogLevelElement] that is added to every [LogContext] by default.
      */
     var minLogLevel: LogLevel
 

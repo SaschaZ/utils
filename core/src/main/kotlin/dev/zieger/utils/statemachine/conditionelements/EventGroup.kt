@@ -23,7 +23,7 @@ interface IEventGroup<out T : IEvent> : IGroup<T> {
             null -> false
             else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
         } logV {
-            filters + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
+            elements + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
             "#EG $it => ${this@IEventGroup} <||> $other"
         }
     }

@@ -29,8 +29,8 @@ infix fun <T : Any?> T.logI(msg: String) = apply { Log.i(msg) }
 infix fun <T : Any?> T.logW(msg: String) = apply { Log.w(msg) }
 infix fun <T : Any?> T.logE(msg: String) = apply { Log.e(msg) }
 
-fun <T : Any?> T.logV(msg: String, logFilter: ILogFilter? = null) = apply { Log.v(msg, filter = logFilter) }
-fun <T : Any?> T.logD(msg: String, logFilter: ILogFilter? = null) = apply { Log.d(msg, filter = logFilter) }
-fun <T : Any?> T.logI(msg: String, logFilter: ILogFilter? = null) = apply { Log.i(msg, filter = logFilter) }
-fun <T : Any?> T.logW(msg: String, logFilter: ILogFilter? = null) = apply { Log.w(msg, filter = logFilter) }
-fun <T : Any?> T.logE(msg: String, logFilter: ILogFilter? = null) = apply { Log.e(msg, filter = logFilter) }
+fun <T : Any?> T.logV(msg: String, logElement: ILogElement? = null) = apply { Log.v(msg, element = logElement) }
+fun <T : Any?> T.logD(msg: String, logElement: ILogElement? = null) = apply { Log.d(msg, element = logElement) }
+fun <T : Any?> T.logI(msg: String, logElement: ILogElement? = null) = apply { Log.i(msg, element = logElement) }
+fun <T : Any?> T.logW(msg: String, logElement: ILogElement? = null) = apply { Log.w(msg, element = logElement) }
+fun <T : Any?> T.logE(msg: String, logElement: ILogElement? = null) = apply { Log.e(msg, element = logElement) }

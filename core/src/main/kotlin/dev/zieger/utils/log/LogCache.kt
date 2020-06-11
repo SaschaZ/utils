@@ -9,7 +9,7 @@ import dev.zieger.utils.misc.FiFo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 
-interface ILogCache : ILogPreHook {
+interface ILogCache : ILogElement {
 
     data class LogMessage(
         val msg: String,
@@ -43,15 +43,17 @@ class LogCache(
         reset()
     }
 
-    override val onPreHook: ILogMessageContext.(String) -> Unit = { msg ->
+    override fun ILogMessageContext.log(action: ILogMessageContext.() -> Unit) {
         val ctx = this
         scope.launchEx(mutex = mutex) {
-            val message = LogMessage(msg, ctx)
+            val message = LogMessage(message, ctx)
             cache[message.context.level]?.put(message)
 
             listener(messages)
         }
     }
+
+    override fun copy(): ILogElement = LogCache()
 
     override fun reset() {
         cache.clear()

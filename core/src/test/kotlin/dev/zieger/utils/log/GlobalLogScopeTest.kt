@@ -17,7 +17,7 @@ class GlobalLogScopeTest : AnnotationSpec() {
     fun beforeEach() {
         output.reset()
         cache.reset()
-        LogScope.configure(output = output, preHook = cache)
+        LogScope.configure(elements = LogElements(cache + LogScope), output = output)
     }
 
     @Test

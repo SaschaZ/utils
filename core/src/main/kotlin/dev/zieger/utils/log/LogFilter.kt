@@ -11,35 +11,51 @@ import dev.zieger.utils.time.duration.milliseconds
 /**
  * Log-Filter
  */
-interface ILogFilters {
-    val filters: MutableList<ILogFilter>
+interface ILogElements {
 
-    operator fun plus(filter: ILogFilter): ILogFilters = apply { filters.add(filter) }
+    var elements: List<ILogElement>
 
-    fun ILogFilters.copy(filters: List<ILogFilter> = this.filters.map { it.copy() }): ILogFilters
+    operator fun plusAssign(element: ILogElement) {
+        elements = elements + element
+    }
+
+    operator fun plusAssign(element: List<ILogElement>) {
+        elements = elements + element
+    }
+
+    operator fun plusAssign(element: ILogElements) {
+        elements = elements + element.elements
+    }
+
+    operator fun plus(element: ILogElement?): ILogElements =
+        LogElements(element?.let { elements + it } ?: elements)
+
+    fun ILogElements.copy(elements: List<ILogElement> = this.elements.map { it.copy() }): ILogElements
 }
 
-class LogFilters(override var filters: MutableList<ILogFilter> = ArrayList()) :
-    ILogFilters {
-    constructor(filter: ILogFilter) : this(mutableListOf(filter))
+open class LogElements(override var elements: List<ILogElement> = emptyList()) : ILogElements {
 
-    override fun ILogFilters.copy(filters: List<ILogFilter>): ILogFilters = LogFilters(filters.toMutableList())
+    constructor(element: ILogElement) : this(listOf(element))
+
+    override fun ILogElements.copy(elements: List<ILogElement>): ILogElements = LogElements(elements)
 }
 
-operator fun ILogFilter.unaryPlus(): ILogFilters =
-    LogFilters(this)
+operator fun ILogElement.unaryPlus(): List<ILogElement> = listOf(this)
+operator fun ILogElement.plus(elements: ILogElements): List<ILogElement> = +this + elements.elements
 
-interface ILogFilter {
-    fun ILogMessageContext.filter(action: () -> Unit)
+interface ILogElement {
 
-    fun copy(): ILogFilter
+    fun ILogMessageContext.log(action: ILogMessageContext.() -> Unit)
+
+    fun copy(): ILogElement
 }
 
-object LogLevelFilter : ILogFilter {
-    override fun ILogMessageContext.filter(action: () -> Unit) =
+object LogLevelElement : ILogElement {
+
+    override fun ILogMessageContext.log(action: ILogMessageContext.() -> Unit) =
         if (minLogLevel <= level) action() else Unit
 
-    override fun copy(): ILogFilter = LogLevelFilter
+    override fun copy(): ILogElement = LogLevelElement
 }
 
 interface IResetScope {
@@ -51,7 +67,7 @@ data class SpamFilter(
     val id: String,
     val sameMessage: Boolean = false,
     val resetScope: IResetScope.() -> Unit = {}
-) : ILogFilter, IResetScope {
+) : ILogElement, IResetScope {
 
     companion object {
         private val idTimeMap = HashMap<String, ITimeEx>()
@@ -60,7 +76,7 @@ data class SpamFilter(
         private const val MESSAGE_FIFO_SIZE = 128
     }
 
-    override fun ILogMessageContext.filter(action: () -> Unit) {
+    override fun ILogMessageContext.log(action: ILogMessageContext.() -> Unit) {
         resetScope()
 
         idMessageMap.getOrPut(id) { FiFo(MESSAGE_FIFO_SIZE) }.also { fifo ->
@@ -80,14 +96,15 @@ data class SpamFilter(
 
     override fun reset() = idTimeMap.remove(id).asUnit()
 
-    override fun copy(): ILogFilter = SpamFilter(minInterval, "${id}Copy", sameMessage, resetScope)
+    override fun copy(): ILogElement = SpamFilter(minInterval, "${id}Copy", sameMessage, resetScope)
 }
 
-class ExternalFilter(val block: () -> Boolean) : ILogFilter {
+class ExternalFilter(val block: ILogMessageContext.() -> Boolean) : ILogElement {
+
     constructor(fixed: Boolean) : this({ fixed })
 
-    override fun ILogMessageContext.filter(action: () -> Unit) =
+    override fun ILogMessageContext.log(action: ILogMessageContext.() -> Unit) =
         if (!block()) action() else Unit
 
-    override fun copy(): ILogFilter = ExternalFilter(block)
+    override fun copy(): ILogElement = ExternalFilter(block)
 }

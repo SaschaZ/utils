@@ -24,7 +24,7 @@ interface IMachineExMapper {
         condition: Condition,
         action: suspend ExecutorScope.() -> IComboElement?
     ): Long = newId.also { id ->
-        Log.v("add condition: $id => $condition", filter = ExternalFilter(MachineEx.debugLevel <= INFO))
+        Log.v("add condition: $id => $condition", element = ExternalFilter(MachineEx.debugLevel <= INFO))
         conditions[id] = condition.copy(action = action)
     }
 

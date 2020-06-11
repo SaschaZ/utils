@@ -21,7 +21,7 @@ interface IEvent : ISingle {
             is IEventGroup<IEvent> -> other.match(this, previousStateChanges)
             else -> false
         } logV {
-            filters + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
+            elements + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
             "#E $it => ${this@IEvent} <||> $other"
         }
     }

@@ -22,7 +22,7 @@ interface IState : ISingle, IActionResult {
             is IStateGroup<State> -> other.match(this, previousStateChanges)
             else -> false
         } logV {
-            filters + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
+            elements + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
             "#ST $it => ${this@IState} <||> $other"
         }
     }

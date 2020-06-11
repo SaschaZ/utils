@@ -23,8 +23,8 @@ interface ILogOutputElement {
     val out: ILogMessageContext.(msg: String) -> String?
 }
 
-sealed class LogOutputElement(override val out: ILogMessageContext.(msg: String) -> String?) :
-    ILogOutputElement {
+sealed class LogOutputElement(override val out: ILogMessageContext.(msg: String) -> String?) : ILogOutputElement {
+
     class DATE(format: DateFormat = DateFormat.TIME_ONLY) : LogOutputElement({
         createdAt.formatTime(format)
     })
@@ -34,18 +34,16 @@ sealed class LogOutputElement(override val out: ILogMessageContext.(msg: String)
     object TAGS : LogOutputElement({ if (tags.isNotEmpty()) "[${tags.joinToString("|")}]" else "" })
 
     object COROUTINE_NAME : LogOutputElement({
-        coroutineScope?.coroutineContext?.get(
-            CoroutineName
-        )?.name
+        coroutineScope?.coroutineContext?.get(CoroutineName)?.name
     })
 
     class CALL_ORIGIN(
-        packages: List<String> = listOf("dev.zieger.utils.log.", "dev.zieger.utils.coroutines.", "kotlin"),
-        files: List<String> = listOf("Controllable.kt", "Observable.kt", "ExecuteExInternal.kt")
+        ignorePackages: List<String> = listOf("dev.zieger.utils.log.", "dev.zieger.utils.coroutines.", "kotlin"),
+        ignoreFiles: List<String> = listOf("Controllable.kt", "Observable.kt", "ExecuteExInternal.kt")
     ) : LogOutputElement({
         Exception().stackTrace.firstOrNull { trace ->
-            !trace.className.startsWithAny(packages)
-                    && trace.fileName?.anyOf(files) == false
+            !trace.className.startsWithAny(ignorePackages)
+                    && trace.fileName?.anyOf(ignoreFiles) == false
         }?.run {
             "[(${fileName}:${lineNumber})#${(className.split(".").last().split("$").getOrNull(1)
                 ?: methodName).nullWhen { it == "DefaultImpls" } ?: ""}]"
@@ -54,7 +52,7 @@ sealed class LogOutputElement(override val out: ILogMessageContext.(msg: String)
 
     object MESSAGE : LogOutputElement({ it })
 
-    class CUSTOM(out: ILogMessageContext.(msg: String) -> String?) : LogOutputElement(out) {
+    open class CUSTOM(out: ILogMessageContext.(msg: String) -> String?) : LogOutputElement(out) {
         constructor(out: String = "") : this({ out })
     }
 }
@@ -64,29 +62,11 @@ open class LogElementMessageBuilder(override var logElements: List<ILogOutputEle
 
     companion object {
 
-        val DEFAULT_RELEASE_LOG_ELEMENTS = listOf(
-            LOG_LEVEL,
-            CUSTOM { "#" },
-            COROUTINE_NAME,
-            TAGS,
-            CUSTOM { " " },
-            DATE(FILENAME_TIME),
-            CUSTOM { ": " },
-            MESSAGE
-        )
+        val DEFAULT_RELEASE_LOG_ELEMENTS =
+            +LOG_LEVEL + "#" + COROUTINE_NAME + TAGS + " " + DATE(FILENAME_TIME) + ": " + MESSAGE
 
-        val DEFAULT_DEBUG_LOG_ELEMENTS = listOf(
-            LOG_LEVEL,
-            CUSTOM { "#" },
-            COROUTINE_NAME,
-            TAGS,
-            CUSTOM { " " },
-            CALL_ORIGIN(),
-            CUSTOM { " " },
-            DATE(FILENAME_TIME),
-            CUSTOM { ": " },
-            MESSAGE
-        )
+        val DEFAULT_DEBUG_LOG_ELEMENTS =
+            +LOG_LEVEL + "#" + COROUTINE_NAME + TAGS + " " + CALL_ORIGIN() + " " + DATE(FILENAME_TIME) + ": " + MESSAGE
     }
 
     override fun ILogMessageContext.build(msg: String): String =

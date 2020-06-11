@@ -19,7 +19,7 @@ interface IExternal : ISingle {
         previousStateChanges: List<OnStateChanged>
     ): Boolean =
         MatchScope(previousStateChanges).condition() logV {
-            filters + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
+            elements + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
             "#EX $it => ${this@IExternal} <||> $other"
         }
 }

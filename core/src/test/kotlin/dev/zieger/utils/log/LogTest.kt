@@ -32,7 +32,10 @@ class TestLogOutput : ILogOutput {
 private val output = TestLogOutput()
 private val cache = LogCache()
 
-internal class LogTest : AnnotationSpec(), ILogScope by LogScope.configure(output = output, preHook = cache) {
+internal class LogTest : AnnotationSpec(), ILogScope by LogScope.configure(
+    elements = LogElements(cache + LogScope),
+    output = output
+) {
 
     @BeforeEach
     fun beforeEach() {
@@ -47,7 +50,7 @@ internal class LogTest : AnnotationSpec(), ILogScope by LogScope.configure(outpu
 
         repeat(100) {
             Log.i("das ist ein test $it", "logTest", "moofoo",
-                filter = SpamFilter(1.seconds, "someId") { if (it == 55 || it == 60) reset() })
+                element = SpamFilter(1.seconds, "someId") { if (it == 55 || it == 60) reset() })
             delay(100.milliseconds)
             Log.i("hö?", "kkfftt")
         }
@@ -61,7 +64,7 @@ internal class LogTest : AnnotationSpec(), ILogScope by LogScope.configure(outpu
     fun testExternalFilter() = runTest(15.seconds) {
         val testVar = 10
         testVar logI {
-            messageFilter += ExternalFilter(true)
+            elements = ExternalFilter(true) + this
             "boofoo"
         }
         delay(1.seconds)
@@ -70,7 +73,7 @@ internal class LogTest : AnnotationSpec(), ILogScope by LogScope.configure(outpu
         cache.messages.count() assert 0
 
         testVar logI {
-            messageFilter += ExternalFilter(false)
+            elements = ExternalFilter(false) + this
             "fooboo"
         }
         delay(1.seconds)
