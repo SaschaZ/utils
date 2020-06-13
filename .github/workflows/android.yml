@@ -41,11 +41,11 @@ jobs:
         file: "${{github.workspace}}/core/build/jacoco/test/jacocoTestReport.xml"
         token:  ${{ secrets.CODECOV_TOKEN }}
     
-#    - name: Codacy
-#      uses: codacy/codacy-coverage-reporter-action@master
-#      with:
-#        project-token: ${{secrets.CODACY_TOKEN}}
-#        coverage-reports: ./core/build/jacoco/test/jacocoTestReport.xml
+    - name: Codacy
+      uses: codacy/codacy-coverage-reporter-action@master
+      with:
+        project-token: ${{secrets.CODACY_TOKEN}}
+        coverage-reports: ./core/build/jacoco/test/jacocoTestReport.xml
 
 #    - name: FTP-Deploy-Action
 #      uses: SamKirkland/FTP-Deploy-Action@3.0.0
