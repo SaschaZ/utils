@@ -40,12 +40,18 @@ jobs:
         name: "Utils coverage"
         file: "./core/build/jacoco/test/jacocoTestReport.xml"
         token:  ${{ secrets.CODECOV_TOKEN }}
-    
-    - name: Codacy
+
+    - name: Run codacy-coverage-reporter
       uses: codacy/codacy-coverage-reporter-action@master
       with:
         project-token: ${{secrets.CODACY_TOKEN}}
         coverage-reports: ./core/build/jacoco/test/jacocoTestReport.xml
+   
+#    - name: Codacy
+#      uses: codacy/codacy-coverage-reporter-action@master
+#      with:
+#        project-token: ${{secrets.CODACY_TOKEN}}
+#        coverage-reports: ./core/build/jacoco/test/jacocoTestReport.xml
 
 #    - name: FTP-Deploy-Action
 #      uses: SamKirkland/FTP-Deploy-Action@3.0.0
