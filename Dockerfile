@@ -48,7 +48,7 @@ ENV JAVA_OPTS "-Xms512m -Xmx1536m"
 ENV GRADLE_OPTS "-XX:+UseG1GC -XX:MaxGCPauseMillis=1000"
 
 # Add Project
-ADD . /project
+COPY . /project
 WORKDIR /project
 
 # Remove possible temporary build files
