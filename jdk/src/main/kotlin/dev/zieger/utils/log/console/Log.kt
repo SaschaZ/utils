@@ -40,6 +40,6 @@ object LogColored : LogElement {
 
     fun initialize() {
         Log.clearElements(addLevelFilter = true)
-        Log + this
+        Log.plusAssign(this)
     }
 }

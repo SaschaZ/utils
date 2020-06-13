@@ -1,19 +1,29 @@
 package dev.zieger.utils.time
 
+import dev.zieger.utils.misc.catch
 import java.text.SimpleDateFormat
 import java.util.*
 
 open class TimeParseHelper {
 
+    companion object {
+
+        private val COMMON_DATA_FORMATS = listOf(
+            "yyyy-MM-dd'T'HH:mm:ss.SSSX",
+            "yyyy-MM-dd'T'HH:mm:ss"
+        )
+    }
+
     protected fun String.stringToMillis(timeZone: TimeZone): Long {
-        return try {
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.getDefault())
-            dateFormat.timeZone = timeZone
-            val result = dateFormat.parse(this)
-            result.time
-        } catch (t: Throwable) {
-            throw IllegalArgumentException("Can not parse Date from $this")
+        COMMON_DATA_FORMATS.forEach { format ->
+            catch<Long?>(null, printStackTrace = false) {
+                val dateFormat = SimpleDateFormat(format, Locale.getDefault())
+                dateFormat.timeZone = timeZone
+                val result = dateFormat.parse(this)
+                result.time
+            }?.also { return it }
         }
+        throw IllegalArgumentException("Can not parse Date from $this")
     }
 }
 

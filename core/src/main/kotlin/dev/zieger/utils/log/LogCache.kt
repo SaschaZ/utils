@@ -17,7 +17,7 @@ class LogCache private constructor(private val scope: CoroutineScopeEx = Default
     companion object {
 
         fun initialize() = LogCache().apply {
-            Log + this
+            Log.plusAssign(this)
         }
 
         private const val INPUT_CAPACITY = 1024

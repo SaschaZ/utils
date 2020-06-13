@@ -5,16 +5,14 @@ package dev.zieger.utils.android
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.log.LogElement
 import dev.zieger.utils.log.LogLevel
-import dev.zieger.utils.misc.nullWhenBlank
+import dev.zieger.utils.log.PrintLn
 
 object AndroidLog : LogElement {
 
     var tag = ""
-    var useSystemOut = false
 
     override fun log(level: LogLevel?, msg: String): String {
-        if (useSystemOut) println("${tag.nullWhenBlank()?.let { "<:$it:> " } ?: ""}$msg")
-        else when (level) {
+        when (level) {
             LogLevel.VERBOSE -> android.util.Log.v(tag, msg)
             LogLevel.DEBUG -> android.util.Log.d(tag, msg)
             LogLevel.INFO -> android.util.Log.i(tag, msg)
@@ -29,11 +27,11 @@ object AndroidLog : LogElement {
         tag: String? = null,
         addTime: Boolean = false,
         addCallOrigin: Boolean = false,
-        useSystemOut: Boolean = false
+        useSystemOut: Boolean = false,
+        logLevel: LogLevel = if (BuildConfig.DEBUG) LogLevel.VERBOSE else LogLevel.WARNING
     ) {
         this.tag = tag ?: this.tag
-        this.useSystemOut = useSystemOut
         Log.clearElements(addTime = addTime, printCallOrigin = addCallOrigin, addLevelFilter = true)
-        Log + this
+        Log.plusAssign(if (useSystemOut) PrintLn else this)
     }
 }

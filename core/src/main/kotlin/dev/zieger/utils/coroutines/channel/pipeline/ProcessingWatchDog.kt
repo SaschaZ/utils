@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicReference
 
 interface IProcessingWatchDog {
 
+    var watchDogActive: Boolean
+
     val ticks: MutableMap<IProcessingUnit<*, *>, MutableMap<ITimeEx, MutableList<ProcessingElementStage>>>
     fun IProcessingUnit<*, *>.tick(stage: ProcessingElementStage, time: ITimeEx = TimeEx())
 
@@ -110,7 +112,7 @@ open class ProcessingWatchDog protected constructor(
     private val tickMutex = Mutex()
     private var outputJob: Job? = null
 
-    var watchDogActive by OnChanged(true, notifyForInitial = true) {
+    override var watchDogActive by OnChanged(false, notifyForInitial = true) {
         outputJob?.cancel()
         if (it) {
             outputJob = scope.launchEx(interval = printInterval, mutex = tickMutex) {

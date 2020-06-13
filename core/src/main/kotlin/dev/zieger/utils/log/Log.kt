@@ -103,25 +103,25 @@ object Log {
 
     internal val elements = ArrayList(listOf(WrapMessage(true), LogLevelFilter, PrintLn))
 
-    operator fun plus(element: LogElement) {
+    operator fun plusAssign(element: LogElement) {
         elements.add(element)
     }
 
-    operator fun minus(element: LogElement) {
+    operator fun minusAssign(element: LogElement) {
         elements.remove(element)
     }
 
     fun clearElements(
         addWrapper: Boolean = true,
         addTime: Boolean = true,
-        addLevelFilter: Boolean = false,
-        addStdOut: Boolean = false,
+        addLevelFilter: Boolean = true,
+        useStdOut: Boolean = false,
         printCallOrigin: Boolean = false
     ) {
         elements.clear()
-        if (addWrapper) this + WrapMessage(addTime, printCallOrigin)
-        if (addLevelFilter) this + LogLevelFilter
-        if (addStdOut) this + PrintLn
+        if (addWrapper) this += WrapMessage(addTime, printCallOrigin)
+        if (addLevelFilter) this += LogLevelFilter
+        if (useStdOut) this += PrintLn
     }
 }
 

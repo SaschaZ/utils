@@ -3,6 +3,7 @@
 package dev.zieger.utils.log.console
 
 import dev.zieger.utils.coroutines.executeNativeBlocking
+import dev.zieger.utils.coroutines.runCommand
 import dev.zieger.utils.misc.asUnit
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -36,4 +37,7 @@ object ConsoleControl {
     fun backspace(num: Int = 1) = AsciiControlCharacters.BS(num)
     fun carriageReturn() = AsciiControlCharacters.CR(1)
     fun horizontalTab(num: Int = 1) = AsciiControlCharacters.HT(num)
+
+    fun clearLine() = print("${carriageReturn()}${(0..100).joinToString { " " }}${carriageReturn()}")
+    suspend fun clearScreen() = "clear".runCommand()
 }
