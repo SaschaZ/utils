@@ -21,15 +21,16 @@ data class JsonConverterContext(override val converter: JsonConverter = JsonConv
 
 open class JsonConverter(vararg adapter: Any) {
 
-    val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).also { m -> adapter.forEach { m.add(it) } }.build()!!
+    private val moshi =
+        Moshi.Builder().add(KotlinJsonAdapterFactory()).also { m -> adapter.forEach { m.add(it) } }.build()!!
 
     fun <T : Any> T.toJson(type: Type): String? =
-        catch(null, onCatch = { print(it) }) {
+        catch(null, onCatch = { print("catch: $it") }) {
             moshi.adapter<T>(type).toJson(this)
         }
 
     fun <T : Any> List<T>.toJson(type: Type): String? =
-        catch(null, onCatch = { print(it) }) {
+        catch(null, onCatch = { print("catch: $it") }) {
             val typeToUse: Type = Types.newParameterizedType(
                 List::class.java, type
             )
@@ -37,12 +38,12 @@ open class JsonConverter(vararg adapter: Any) {
         }
 
     fun <T : Any> String.fromJson(type: Type): T? =
-        catch(null, onCatch = { print(it) }) {
+        catch(null, onCatch = { print("catch: $it") }) {
             moshi.adapter<T>(type).fromJson(this)
         }
 
     fun <T : Any> String.fromJsonList(type: Type): List<T>? =
-        catch(null, onCatch = { print(it) }) {
+        catch(null, onCatch = { print("catch: $it") }) {
             val typeToUse: Type = Types.newParameterizedType(
                 List::class.java, type
             )

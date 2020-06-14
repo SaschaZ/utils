@@ -3,8 +3,6 @@ import dev.zieger.utils.Versions
 import dev.zieger.utils.configModule
 import dev.zieger.utils.coreTesting
 import dev.zieger.utils.kotlinReflect
-import org.gradle.api.tasks.testing.logging.TestExceptionFormat
-import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     kotlin("jvm")

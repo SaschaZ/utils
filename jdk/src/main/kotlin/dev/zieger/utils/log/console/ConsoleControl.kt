@@ -4,9 +4,11 @@ package dev.zieger.utils.log.console
 
 import dev.zieger.utils.coroutines.executeNativeBlocking
 import dev.zieger.utils.coroutines.runCommand
+import dev.zieger.utils.log.console.AsciiControlCharacters.*
 import dev.zieger.utils.misc.asUnit
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import java.io.PrintStream
 
 object ConsoleControl {
 
@@ -18,7 +20,7 @@ object ConsoleControl {
         flush()
         delay(2000)
 
-        backspace(3)
+        clearLine()
 
         flush()
 
@@ -27,17 +29,21 @@ object ConsoleControl {
         flush()
 
         delay(2000)
-        carriageReturn()
+        clearLine()
         print("WooMoo")
         flush()
     }.asUnit()
 
+    private val FULL_LINE_CHARACTER_RANGE = 0..80
+
     suspend fun flush() = executeNativeBlocking { System.out.flush() }
 
-    fun backspace(num: Int = 1) = AsciiControlCharacters.BS(num)
-    fun carriageReturn() = AsciiControlCharacters.CR(1)
-    fun horizontalTab(num: Int = 1) = AsciiControlCharacters.HT(num)
+    fun backspace(num: Int = 1, stream: PrintStream = System.out) = BS(num)
+    fun carriageReturn(stream: PrintStream = System.out) = CR()
+    fun horizontalTab(num: Int = 1, stream: PrintStream = System.out) = HT(num)
 
-    fun clearLine() = print("${carriageReturn()}${(0..100).joinToString { " " }}${carriageReturn()}")
+    fun clearLine(stream: PrintStream = System.out) =
+        stream.print("${CR.character}\r${FULL_LINE_CHARACTER_RANGE.joinToString("") { " " }}${CR.character}\r")
+
     suspend fun clearScreen() = "clear".runCommand()
 }

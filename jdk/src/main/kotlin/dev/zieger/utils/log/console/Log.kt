@@ -8,16 +8,27 @@ import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.log.LogElement
 import dev.zieger.utils.log.LogLevel
+import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.duration.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import me.tongfei.progressbar.ProgressBar
+import me.tongfei.progressbar.ProgressBarStyle
+import java.text.DecimalFormat
 
 fun Log.p(
     title: String = "",
-    scope: CoroutineScope = DefaultCoroutineScope(),
     max: Long = 100L,
+    updateInterval: IDurationEx = 100.milliseconds,
+    unitName: String = "",
+    unitSize: Long = 1L,
+    showSpeed: Boolean = false,
+    scope: CoroutineScope = DefaultCoroutineScope(),
     block: suspend ProgressBar.() -> Unit
 ) = scope.launchEx {
-    ProgressBar(title, max).use { it.block() }
+    ProgressBar(
+        title, max, updateInterval.millis.toInt(), System.out, ProgressBarStyle.COLORFUL_UNICODE_BLOCK,
+        unitName, unitSize, showSpeed, DecimalFormat("###,###,###,###")
+    ).use { it.block() }
 }
 
 object LogColored : LogElement {
