@@ -34,7 +34,7 @@ object ConsoleControl {
         flush()
     }.asUnit()
 
-    private val FULL_LINE_CHARACTER_RANGE = 0..80
+    private const val FULL_LINE_CHARACTER_COUNT = 80
 
     suspend fun flush() = executeNativeBlocking { System.out.flush() }
 
@@ -43,7 +43,7 @@ object ConsoleControl {
     fun horizontalTab(num: Int = 1, stream: PrintStream = System.out) = HT(num)
 
     fun clearLine(stream: PrintStream = System.out) =
-        stream.print("${CR.character}\r${FULL_LINE_CHARACTER_RANGE.joinToString("") { " " }}${CR.character}\r")
+        stream.print("${CR.character}\r${(0..FULL_LINE_CHARACTER_COUNT).joinToString("") { " " }}${CR.character}\r")
 
     suspend fun clearScreen() = "clear".runCommand()
 }

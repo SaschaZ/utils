@@ -15,10 +15,13 @@ import me.tongfei.progressbar.ProgressBar
 import me.tongfei.progressbar.ProgressBarStyle
 import java.text.DecimalFormat
 
+private const val DEFAULT_MAXIMUM_PROGRESS = 100L
+private val DEFAULT_UPDATE_INTERVAL = 100.milliseconds
+
 fun Log.p(
     title: String = "",
-    max: Long = 100L,
-    updateInterval: IDurationEx = 100.milliseconds,
+    max: Long = DEFAULT_MAXIMUM_PROGRESS,
+    updateInterval: IDurationEx = DEFAULT_UPDATE_INTERVAL,
     unitName: String = "",
     unitSize: Long = 1L,
     showSpeed: Boolean = false,

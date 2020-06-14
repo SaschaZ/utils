@@ -98,7 +98,10 @@ object ResultPrinter {
 
     suspend fun progress(block: suspend (SendChannel<TestRunResult>) -> Unit) {
         val channel = Channel<TestRunResult>()
-        printProgress(channel as ReceiveChannel<TestRunResult>).let { block(channel as SendChannel<TestRunResult>); it() }
+        printProgress(channel as ReceiveChannel<TestRunResult>).let {
+            block(channel as SendChannel<TestRunResult>)
+            it()
+        }
         repeat(3) { print("\b \b") }
     }
 
@@ -155,7 +158,7 @@ object ResultPrinter {
         val failedTestsPercent = (100f * failedTests) / executedTests
 
         printFailed(results)
-        repeat(100) { print("\b \b") }
+        ConsoleControl.clearLine()
         print(
             "failed tests: ${"%.2f%%".format(failedTestsPercent)} ($failedTests/$executedTests) - " +
                     "failed runs: ${"%.2f%%".format(failedRunsPercent)} ($runsWithFailedTests/$executedRuns) "
