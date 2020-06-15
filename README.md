@@ -32,14 +32,14 @@ repositories {
 
 dependencies {
     // utils
-    implementation "dev.zieger.utils:core:2.2.13"// platform independent
-    implementation "dev.zieger.utils:android:2.2.13" // android
-    implementation "dev.zieger.utils:jdk:2.2.13" // jdk
+    implementation "dev.zieger.utils:core:2.2.15"// platform independent
+    implementation "dev.zieger.utils:android:2.2.15" // android
+    implementation "dev.zieger.utils:jdk:2.2.15" // jdk
 
     // testing utils
-    implementation "dev.zieger.utils:core-testing:2.2.13" // platform independent
-    implementation "dev.zieger.utils:android-testing:2.2.13" // android
-    implementation "dev.zieger.utils:jdk-testing:2.2.13" // jdk
+    implementation "dev.zieger.utils:core-testing:2.2.15" // platform independent
+    implementation "dev.zieger.utils:android-testing:2.2.15" // android
+    implementation "dev.zieger.utils:jdk-testing:2.2.15" // jdk
 }
 ```
 
