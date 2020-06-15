@@ -219,7 +219,7 @@ Also works with attached `Data`.
 
 # Changelog
 
-##### 2.2.14
+##### 2.2.17
 
 * added GKoin
     * manages multiple Koin instances inside one process
