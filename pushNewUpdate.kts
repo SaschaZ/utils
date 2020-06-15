@@ -127,7 +127,7 @@ fun String.updateVersions(tag: SemanticVersion): String = replace(""""dev\.ziege
 
 private val String.updateChangeLog: String
     get() = replace(
-        """(# Changelog[\w\W]+$)""".toRegex(),
+        """(## Changelog[\w\W]+$)""".toRegex(),
         File("CHANGELOG.md").readText()
     )
 
@@ -144,7 +144,8 @@ suspend fun updateGit(tag: SemanticVersion) {
     print("git add ... "); println("git add $GLOBAL_FILE README.md".runCommand().ok)
     print("git commit ... "); println("git commit -m \"$tag\"".runCommand().ok)
     print("git tag ... "); println("git tag $tag".runCommand().ok)
-    print("git push ... "); println("git push; git push --tags".runCommand().ok)
+    print("git push ... "); println("git push".runCommand().ok)
+    print("git push tags ... "); println("git push --tags".runCommand().ok)
 }
 
 runBlocking {
