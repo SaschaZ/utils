@@ -1,17 +1,18 @@
-package dev.zieger.utils.koin
+@file:Suppress("unused")
 
-import dev.zieger.utils.koin.GlobalDiHolder.SINGLE_GLOBAL_DI_KEY
+package dev.zieger.utils.koin.global
+
+import dev.zieger.utils.koin.global.GKoin.getDi
 import org.koin.core.parameter.ParametersDefinition
 import org.koin.core.qualifier.Qualifier
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
 inline fun <reified T> inject(
+    key: String,
     qualifier: Qualifier? = null,
-    noinline parameters: ParametersDefinition? = null,
-    key: String = SINGLE_GLOBAL_DI_KEY
+    noinline parameters: ParametersDefinition? = null
 ) = object : ReadOnlyProperty<Any?, T> {
-
     override fun getValue(thisRef: Any?, property: KProperty<*>): T =
-        getKoinComponent(key, false)!!.getKoin().get(qualifier, parameters)
+        getDi(key).getKoin().get(qualifier, parameters)
 }

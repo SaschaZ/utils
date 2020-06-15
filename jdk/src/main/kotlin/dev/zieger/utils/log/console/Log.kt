@@ -54,6 +54,8 @@ object LogColored : LogElement {
 
     fun initialize() {
         Log.clearElements(addLevelFilter = true)
-        Log.plusAssign(this)
+        Log += this
     }
 }
+
+inline fun termColored(block: TermColors.() -> Unit) = with(TermColors(), block)

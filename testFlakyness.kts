@@ -1,9 +1,14 @@
 #!/usr/bin/env kscript
-//DEPS io.ktor:ktor-client-apache:1.3.0,io.ktor:ktor-client-gson:1.3.0
-//DEPS org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.6,org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.6
-//DEPS dev.zieger.utils:core:2.2.14,dev.zieger.utils:jdk:2.2.14
-//DEPS org.apache.commons:commons-lang3:3.10
-// DO NOT REMOVE COMMENTS ABOVE. THEY ARE NEEDED FOR kscript.
+@file:KotlinOpts("-J-Xmx5g")
+@file:KotlinOpts("-J-server")
+@file:CompilerOpts("-jvm-target 1.8")
+@file:DependsOnMaven("io.ktor:ktor-client-apache:1.3.0")
+@file:DependsOnMaven("io.ktor:ktor-client-gson:1.3.0")
+@file:DependsOnMaven("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.6")
+@file:DependsOnMaven("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.6")
+@file:DependsOnMaven("dev.zieger.utils:core:2.2.14")
+@file:DependsOnMaven("dev.zieger.utils:jdk:2.2.14")
+@file:DependsOnMaven("org.apache.commons:commons-lang3:3.10")
 @file:Suppress("UNREACHABLE_CODE", "PropertyName", "LocalVariableName")
 
 
@@ -18,12 +23,11 @@
  * project to test.
  */
 
-import TestFlakyness.CpuLoadProvider.cpuLoad
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.runCommand
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
-import dev.zieger.utils.coroutines.scope.ICoroutineScopeEx
-import dev.zieger.utils.misc.FiFo
+import dev.zieger.utils.log.console.ConsoleControl
+import dev.zieger.utils.log.console.LogColored
+import dev.zieger.utils.log.console.LogColored.scope
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.base.TimeUnit
@@ -35,34 +39,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4
-import java.io.BufferedReader
 import java.io.File
-import java.io.FileReader
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import kotlin.coroutines.coroutineContext
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlin.system.exitProcess
-
-
-object Utils {
-
-    private const val THREAD_POOL_SIZE = 4
-
-    val threadPool: ExecutorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE)
-
-    suspend inline fun <T> executeNativeBlocking(crossinline block: () -> T): T = suspendCancellableCoroutine { cont ->
-        threadPool.execute {
-            try {
-                cont.resume(block())
-            } catch (e: Throwable) {
-                if (!cont.isCompleted) cont.resumeWithException(e)
-            }
-        }
-    }
-}
-
 
 data class TestCase(
     val name: String,
@@ -117,56 +96,73 @@ object ResultPrinter {
 
 
     private fun printProgress(channel: ReceiveChannel<TestRunResult>): () -> Unit {
-        var idx = 0
-        var lastOutputLength = 0
-        val progressJob = launchEx(interval = 75.milliseconds) {
-            if (lastOutputLength > 0) repeat(lastOutputLength) { print("\b \b") }
+        scope {
+            var idx = 0
+            var lastOutputLength = 0
+            val progressJob = launchEx(interval = 500.milliseconds) {
+                if (lastOutputLength > 0) repeat(lastOutputLength) { print("\b \b") }
 
-            channel.getAllAvailable().forEach { printResult(it) }
+                printResult(channel)
 
-            val output = "load: ${"%6.2f%%".format(cpuLoad)} " +
-                    "(${when (idx++) {
-                        0 -> "|"
-                        1 -> "/"
-                        2 -> "-"
-                        else -> {
-                            idx = 0
-                            "\\"
-                        }
+                val progress = "  ${red("(")}${when (idx++) {
+                    0 -> green("|")
+                    1 -> green("/")
+                    2 -> green("-")
+                    else -> {
+                        idx = 0
+                        green("\\")
                     }
-                    })"
+                }
+                }${red(")")}  "
 
-            print(output)
-            lastOutputLength = output.length
+                print(progress)
+                lastOutputLength = progress.length
+            }
+            return { progressJob.cancel() }
         }
-
-        return { progressJob.cancel() }
+        return {}
     }
 
     private var executedRuns = 0
     private var runsWithFailedTests = 0
     private var executedTests = 0
     private var failedTests = 0
+    private val printedFailures = HashSet<Failure>()
+    private var printed = false
+    private var lastResultOutput = ""
 
-    private fun printResult(results: TestRunResult) {
-        executedRuns++
-        if (results.failedTests > 0) runsWithFailedTests++
-        executedTests += results.executedTests
-        failedTests += results.failedTests
+    private fun printResult(channel: ReceiveChannel<TestRunResult>) {
+        scope {
+            channel.getAllAvailable().forEach { testRun ->
+                printed = true
+                executedRuns++
+                if (testRun.failedTests > 0) runsWithFailedTests++
+                executedTests += testRun.executedTests
+                failedTests += testRun.failedTests
 
-        val failedRunsPercent = (100f * runsWithFailedTests) / executedRuns
-        val failedTestsPercent = (100f * failedTests) / executedTests
+                val failedRunsPercent = (100f * runsWithFailedTests) / executedRuns
+                val failedTestsPercent = (100f * failedTests) / executedTests
 
-        printFailed(results)
-        ConsoleControl.clearLine()
-        print(
-            "failed tests: ${"%.2f%%".format(failedTestsPercent)} ($failedTests/$executedTests) - " +
-                    "failed runs: ${"%.2f%%".format(failedRunsPercent)} ($runsWithFailedTests/$executedRuns) "
-        )
+                printFailed(testRun)
+                lastResultOutput = green(
+                    "failed tests: ${"%.2f%%".format(failedTestsPercent)} ($failedTests/$executedTests) - " +
+                            "failed runs: ${"%.2f%%".format(failedRunsPercent)} ($runsWithFailedTests/$executedRuns) "
+                )
+            }
+            ConsoleControl.clearLine()
+            repeat(1000) { print("\b \b") }
+            if (lastResultOutput.isBlank()) print(cyan("No runs have finished yet."))
+            else print(lastResultOutput)
+        }
     }
 
-    private fun printFailed(results: TestRunResult) {
-        results.suites.flatMap { it.failure }.forEach { println("\n$it") }
+    private fun printFailed(testRun: TestRunResult) {
+        testRun.suites.flatMap { it.failure }.forEach {
+            if (!printedFailures.contains(it)) {
+                println(it)
+                printedFailures.add(it)
+            }
+        }
     }
 }
 
@@ -244,7 +240,7 @@ object ResultParser {
             """<testcase name="([a-zA-Z0-9]+)" classname="([a-zA-Z0-9.]+)" time="([0-9.]+)">\n\W+<failure message="(.*)" type="(.+)">([^<>]*)</failure>""".toRegex()
         testSuiteResult = testSuiteResult?.copy(failure = failureRegex.findAll(content).mapNotNull {
             it.groupValues.run {
-                Failure(unescapeHtml4(get(1)), unescapeHtml4(get(2)), unescapeHtml4(get(3)))
+                Failure(unescapeHtml4(get(1)), unescapeHtml4(get(2)), unescapeHtml4(get(6)))
             }
         }.toList())
 
@@ -253,65 +249,18 @@ object ResultParser {
 }
 
 
-object CpuLoadProvider : ICoroutineScopeEx by DefaultCoroutineScope() {
-
-    private const val CPU_READ_INTERVAL = 500L
-    private const val CPU_LOAD_FIFO_SIZE = 3
-
-    fun init() {
-        launchEx { readCpuLoad() }
-    }
-
-    private val cpuLoadFiFo = FiFo<Double>(CPU_LOAD_FIFO_SIZE)
-
-    private suspend fun readCpuLoad() {
-        while (true) {
-            val nanoBefore = System.nanoTime()
-            val cpuBefore = cpuT
-
-            delay(CPU_READ_INTERVAL)
-
-            val cpuAfter = cpuT
-            val nanoAfter = System.nanoTime()
-
-            val percent = if (nanoAfter > nanoBefore)
-                ((cpuAfter - cpuBefore) * 1000000.0) / (nanoAfter - nanoBefore)
-            else 0.0
-
-            cpuLoadFiFo.put(percent * 100)
-        }
-    }
-
-    private val cpuT: Long
-        get() {
-            val reader = BufferedReader(FileReader("/proc/stat"))
-            val line = reader.readLine()
-            val pattern = """cpu +(\d+) +(\d+) +(\d+) +(\d+)""".toRegex()
-            val groups = pattern.find(line)?.groupValues
-
-            var cpuUser = 0L
-            var cpuSystem = 0L
-            if (groups?.isNotEmpty() == true) {
-                cpuUser = groups[1].toLong()
-                cpuSystem = groups[3].toLong()
-            } else println("COULD NOT ACCESS CPU DATA")
-            return cpuUser + cpuSystem
-        }
-
-    val cpuLoad: Double get() = ArrayList(cpuLoadFiFo).average()
-}
-
-
 runBlocking {
     val NUM_PARALLEL = 6
+    LogColored.initialize()
 
     val jobs = if (args.getOrNull(0) == "-j")
         args.getOrNull(1)?.toInt() ?: throw IllegalArgumentException("invalid arguments: ${args.joinToString()}")
     else NUM_PARALLEL
 
-    println("test flakyness with $jobs parallel jobs\n")
+    scope {
+        println(brightBlue("test flakyness with ${(bold + cyan)("$jobs")} parallel jobs\n"))
+    }
 
-    CpuLoadProvider.init()
     ResultPrinter.progress { channel -> (0 until jobs).map { channel.launchJob(it) }.joinAll() }
     exitProcess(0).asUnit()
 }

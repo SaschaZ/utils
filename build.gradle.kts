@@ -37,12 +37,6 @@ allprojects {
         kotlinOptions {
             jvmTarget = "1.8"
             suppressWarnings = true
-            freeCompilerArgs = listOf(
-                "-Xuse-experimental=kotlin.Experimental",
-                "-Xuse-experimental=kotlinx.coroutines.ObsoleteCoroutinesApi",
-                "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi",
-                "-Xuse-experimental=kotlin.ExperimentalStdlibApi"
-            )
         }
     }
 }
