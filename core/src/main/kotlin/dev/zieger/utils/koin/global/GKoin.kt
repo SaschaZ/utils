@@ -7,6 +7,7 @@ import dev.zieger.utils.koin.global.GKoin.getKoin
 import dev.zieger.utils.koin.global.GKoin.startKoin
 import dev.zieger.utils.koin.global.GKoin.stopKoin
 import org.koin.core.Koin
+import org.koin.core.KoinApplication
 import org.koin.dsl.KoinAppDeclaration
 import java.util.concurrent.ConcurrentHashMap
 
@@ -22,6 +23,9 @@ object GKoin {
     private val diMap = ConcurrentHashMap<String, GKoinComponent>()
 
     fun getDi(key: String): GKoinComponent = getDi(key, false)!!
+
+    private fun GKoinComponent.startKoin(appDeclaration: KoinAppDeclaration): KoinApplication =
+        org.koin.core.context.startKoin(appDeclaration).also { kApp = it }
 
     fun getDi(
         key: String,
@@ -41,7 +45,9 @@ object GKoin {
     fun startKoin(
         key: String,
         appDeclaration: KoinAppDeclaration
-    ) = getDi(key).startKoin(appDeclaration)
+    ) = getDi(key).run {
+        org.koin.core.context.startKoin(appDeclaration).also { kApp = it }
+    }
 
     fun stopKoin(key: String) = getKoin(key, true)?.close()
 }
