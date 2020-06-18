@@ -7,7 +7,7 @@ import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.name
 import dev.zieger.utils.statemachine.MachineEx
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
-import dev.zieger.utils.statemachine.OnStateChanged
+import dev.zieger.utils.statemachine.Matcher.IMatchScope
 import dev.zieger.utils.statemachine.conditionelements.UsedAs.DEFINITION
 import dev.zieger.utils.statemachine.conditionelements.UsedAs.RUNTIME
 
@@ -33,24 +33,25 @@ interface IComboElement : IConditionElement, IActionResult {
     val hasEventGroup get() = eventGroup != null
     val hasExternal get() = external != null
 
-    override suspend fun match(
-        other: IConditionElement?,
-        previousStateChanges: List<OnStateChanged>
+    override suspend fun IMatchScope.match(
+        other: IConditionElement?
     ): Boolean {
         return when {
-            hasExternal -> external?.match(other, previousStateChanges) ?: false
+            hasExternal -> external?.run { match(other) } ?: false
             other is IComboElement -> {
                 when {
-                    other.hasExternal -> other.external?.match(this, previousStateChanges) ?: false
-                    else -> master.match(other.master, previousStateChanges)
+                    other.hasExternal -> other.external?.run { match(this@IComboElement) } ?: false
+                    else -> master.run { match(other.master) }
                             && (slave == null && other.slave == null
                             || ignoreSlave || other.ignoreSlave
-                            || slave?.match(other.slave, previousStateChanges) == true)
+                            || slave?.run { match(other.slave) } == true)
                 }
             }
-            other is IInputElement -> other.match(this, previousStateChanges)
+            other is IInputElement -> other.run { match(this@IComboElement) }
             other == null -> false
-            else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
+            else -> throw IllegalArgumentException("Can not match ${this@IComboElement::class.name} " +
+                    "with ${other.let { it::class.name }}"
+            )
         } logV {
             f = GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
             m = "#CE $it => ${this@IComboElement} <||> $other"

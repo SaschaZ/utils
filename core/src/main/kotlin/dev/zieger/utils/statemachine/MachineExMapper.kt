@@ -5,6 +5,8 @@ package dev.zieger.utils.statemachine
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
+import dev.zieger.utils.statemachine.Matcher.IMatchScope
+import dev.zieger.utils.statemachine.Matcher.MatchScope
 import dev.zieger.utils.statemachine.conditionelements.Condition
 import dev.zieger.utils.statemachine.conditionelements.IComboElement
 import dev.zieger.utils.statemachine.conditionelements.ICondition
@@ -22,26 +24,26 @@ interface IMachineExMapper {
      */
     fun addCondition(
         condition: Condition,
-        action: suspend ExecutorScope.() -> IComboElement?
+        action: suspend IMatchScope.() -> IComboElement?
     ): Long = newId.also { id ->
         Log.v("add condition: $id => $condition", logFilter = GENERIC(disableLog = MachineEx.debugLevel <= INFO))
         conditions[id] = condition.copy(action = action)
     }
 
+    fun bind(condition: ICondition, machine: IMachineEx) {
+        bindings[condition] = machine
+    }
+
     var lastId: Long
 
-    private val newId: Long
-        get() = ++lastId
+    private val newId: Long get() = ++lastId
 
     suspend fun findStateForEvent(
         event: IComboElement,
         state: IComboElement,
         previousChanges: List<OnStateChanged>
-    ): IComboElement? =
-        Matcher.findStateForEvent(event, state, previousChanges, conditions, bindings)
-
-    fun bind(condition: ICondition, machine: IMachineEx) {
-        bindings[condition] = machine
+    ): IComboElement? = Matcher.run {
+        MatchScope(event, state, previousChanges, conditions, bindings).findStateForEvent()
     }
 }
 

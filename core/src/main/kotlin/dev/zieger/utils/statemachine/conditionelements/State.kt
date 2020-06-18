@@ -4,22 +4,21 @@ package dev.zieger.utils.statemachine.conditionelements
 
 
 import dev.zieger.utils.log.LogFilter.Companion.GENERIC
-
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.statemachine.MachineEx
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
+import dev.zieger.utils.statemachine.Matcher.IMatchScope
 import dev.zieger.utils.statemachine.OnStateChanged
 
 interface IState : ISingle, IActionResult {
     fun OnStateChanged.activeStateChanged(isActive: Boolean) = Unit
 
-    override suspend fun match(
-        other: IConditionElement?,
-        previousStateChanges: List<OnStateChanged>
+    override suspend fun IMatchScope.match(
+        other: IConditionElement?
     ): Boolean {
         return when (other) {
-            is State -> this === other
-            is IStateGroup<State> -> other.match(this, previousStateChanges)
+            is State -> this@IState === other
+            is IStateGroup<State> -> other.run { match(this@IState) }
             else -> false
         } logV {
             f = GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)

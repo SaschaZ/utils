@@ -2,6 +2,7 @@
 
 package dev.zieger.utils.statemachine
 
+import dev.zieger.utils.statemachine.Matcher.IMatchScope
 import dev.zieger.utils.statemachine.conditionelements.*
 import dev.zieger.utils.statemachine.conditionelements.IConditionElementGroup.MatchType.*
 import kotlin.math.max
@@ -14,7 +15,7 @@ abstract class MachineDsl(private val mapper: IMachineExMapper) : IMachineEx {
 
     // link wanted items with + operator
     operator fun Condition.plus(other: IMaster): Condition = plus(other.combo)
-    operator fun Condition.plus(other: suspend MatchScope.() -> Boolean): Condition {
+    operator fun Condition.plus(other: suspend IMatchScope.() -> Boolean): Condition {
         items.first { it.matchType == ALL }.elements.add(External(other).combo)
         return this
     }
@@ -26,7 +27,7 @@ abstract class MachineDsl(private val mapper: IMachineExMapper) : IMachineEx {
 
     // link unwanted items with - operator
     operator fun Condition.minus(other: IMaster): Condition = minus(other.combo)
-    operator fun Condition.minus(other: suspend MatchScope.() -> Boolean): Condition {
+    operator fun Condition.minus(other: suspend IMatchScope.() -> Boolean): Condition {
         items.first { it.matchType == NONE }.elements.add(External(other).combo)
         return this
     }
@@ -77,18 +78,18 @@ abstract class MachineDsl(private val mapper: IMachineExMapper) : IMachineEx {
         }
     }
 
-    private suspend fun MatchScope.matchPrev(other: IPrevElement): Boolean {
+    private suspend fun IMatchScope.matchPrev(other: IPrevElement): Boolean {
         return when {
             other.range == X ->
                 previousChanges.any {
-                    InputElement(it.event, it.stateBefore).match(other.combo, previousChanges)
+                    InputElement(it.event, it.stateBefore).run { match(other.combo) }
                 }
             other.range.run { endInclusive - start } > 0 ->
                 other.range.any { idx ->
-                    previousChanges.stateChanged(idx) { match(other.combo, previousChanges) }
+                    previousChanges.stateChanged(idx) { match(other.combo) }
                 }
             else ->
-                previousChanges.stateChanged(other.idx) { match(other.combo, previousChanges) }
+                previousChanges.stateChanged(other.idx) { match(other.combo) }
         }
     }
 
@@ -123,12 +124,12 @@ abstract class MachineDsl(private val mapper: IMachineExMapper) : IMachineEx {
     /**
      *
      */
-    suspend infix fun Condition.exec(block: suspend ExecutorScope.() -> Unit) = execAndSet { block(); null }
+    suspend infix fun Condition.exec(block: suspend IMatchScope.() -> Unit) = execAndSet { block(); null }
 
     /**
      *
      */
-    suspend infix fun <T : IActionResult> Condition.execAndSet(block: suspend ExecutorScope.() -> T?) {
+    suspend infix fun <T : IActionResult> Condition.execAndSet(block: suspend IMatchScope.() -> T?) {
         mapper.addCondition(this) {
             when (val result = block()) {
                 is IState -> result.combo

@@ -1,15 +1,13 @@
-@file:Suppress("RemoveCurlyBracesFromTemplate")
+@file:Suppress("RemoveCurlyBracesFromTemplate", "unused")
 
 package dev.zieger.utils.statemachine.conditionelements
 
 import dev.zieger.utils.log.LogFilter.Companion.GENERIC
-
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.name
-import dev.zieger.utils.statemachine.ExecutorScope
 import dev.zieger.utils.statemachine.MachineEx
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
-import dev.zieger.utils.statemachine.OnStateChanged
+import dev.zieger.utils.statemachine.Matcher.IMatchScope
 import dev.zieger.utils.statemachine.conditionelements.ICondition.ConditionType.*
 import dev.zieger.utils.statemachine.conditionelements.IConditionElementGroup.MatchType.*
 
@@ -19,7 +17,7 @@ interface ICondition : IConditionElement {
     val any: IConditionElementGroup get() = items.first { it.matchType == ANY }
     val all: IConditionElementGroup get() = items.first { it.matchType == ALL }
     val none: IConditionElementGroup get() = items.first { it.matchType == NONE }
-    val action: (suspend ExecutorScope.() -> IComboElement?)?
+    val action: (suspend IMatchScope.() -> IComboElement?)?
 
     val start: IComboElement get() = items.first { it.matchType == ALL }.elements.first()
 
@@ -39,18 +37,17 @@ interface ICondition : IConditionElement {
             else -> throw IllegalArgumentException("Unexpected first element $start")
         }
 
-    override suspend fun match(
-        other: IConditionElement?,
-        previousStateChanges: List<OnStateChanged>
-    ): Boolean {
+    override suspend fun IMatchScope.match(other: IConditionElement?): Boolean {
         return when (other) {
             is IInputElement -> {
-                any.match(other, previousStateChanges)
-                        && all.match(other, previousStateChanges)
-                        && none.match(other, previousStateChanges)
+                any.run { match(other) }
+                        && all.run { match(other) }
+                        && none.run { match(other) }
             }
             null -> false
-            else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
+            else -> throw IllegalArgumentException("Can not match ${this@ICondition::class.name} " +
+                    "with ${other.let { it::class.name }}"
+            )
         } logV {
             f = GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
             m = "#C $it => ${this@ICondition} <||> $other"
@@ -60,7 +57,7 @@ interface ICondition : IConditionElement {
 
 data class Condition(
     override val items: List<IConditionElementGroup> = INITIAL_ITEMS,
-    override val action: (suspend ExecutorScope.() -> IComboElement?)? = null
+    override val action: (suspend IMatchScope.() -> IComboElement?)? = null
 ) : ICondition {
 
     constructor(master: IMaster) :

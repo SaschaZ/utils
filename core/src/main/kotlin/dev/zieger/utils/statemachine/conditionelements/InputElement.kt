@@ -8,23 +8,25 @@ import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.name
 import dev.zieger.utils.statemachine.MachineEx
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
-import dev.zieger.utils.statemachine.OnStateChanged
+import dev.zieger.utils.statemachine.Matcher.IMatchScope
 
 interface IInputElement : IConditionElement {
 
     val event: IComboElement
     val state: IComboElement
 
-    override suspend fun match(other: IConditionElement?, previousStateChanges: List<OnStateChanged>): Boolean {
+    override suspend fun IMatchScope.match(other: IConditionElement?): Boolean {
         return when (other) {
-            is ICondition -> other.match(this, previousStateChanges)
+            is ICondition -> other.run { match(this@IInputElement) }
             is IComboElement -> when {
-                other.hasEvent || other.hasEventGroup -> event.match(other, previousStateChanges)
-                other.hasState || other.hasStateGroup -> state.match(other, previousStateChanges)
+                other.hasEvent || other.hasEventGroup -> event.run { match(other) }
+                other.hasState || other.hasStateGroup -> state.run { match(other) }
                 else -> false
             }
             null -> false
-            else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
+            else -> throw IllegalArgumentException("Can not match ${this@IInputElement::class.name} " +
+                    "with ${other.let { it::class.name }}"
+            )
         } logV {
             f = GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
             m = "#IE $it => ${this@IInputElement} <||> $other"
