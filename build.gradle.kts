@@ -35,8 +35,7 @@ allprojects {
 
     tasks.withType(KotlinJvmCompile::class.java).all {
         kotlinOptions {
-            jvmTarget = "1.8"
-            suppressWarnings = true
+            jvmTarget = "11"
         }
     }
 }
