@@ -35,7 +35,7 @@ allprojects {
 
     tasks.withType(KotlinJvmCompile::class.java).all {
         kotlinOptions {
-            jvmTarget = "11"
+            jvmTarget = "1.8"
         }
     }
 }
