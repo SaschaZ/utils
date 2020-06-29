@@ -9,19 +9,18 @@ abstract class AbsFiFo<out T>(
     open val isNotFull: Boolean
         get() = !isFull
 
-    open fun put(value: @UnsafeVariance T, update: Boolean = false): List<T?> {
+    open fun put(value: @UnsafeVariance T, update: Boolean = false): T? =
         if (update) onUpdate(value) else onInsert(value)
-        return values
+
+    protected open fun onUpdate(value: @UnsafeVariance T): T = value.also {
+        if (isNotEmpty()) values[values.lastIndex] = it
+        else values.add(it)
     }
 
-    protected open fun onUpdate(value: @UnsafeVariance T) {
-        if (isNotEmpty()) values[values.lastIndex] = value
-        else values.add(value)
-    }
-
-    protected open fun onInsert(value: @UnsafeVariance T) {
-        if (isFull) values.removeAt(0)
+    protected open fun onInsert(value: @UnsafeVariance T): T? {
+        val removed = if (isFull) values.removeAt(0) else null
         values.add(value)
+        return removed
     }
 
     open fun reset() = values.clear()

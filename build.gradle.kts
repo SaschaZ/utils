@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
-
 buildscript {
     repositories {
         mavenLocal()
@@ -32,10 +30,9 @@ allprojects {
         maven { url = uri("https://kotlin.bintray.com/ktor") }
         maven { url = uri("https://kotlin.bintray.com/kotlinx") }
     }
-
-    tasks.withType(KotlinJvmCompile::class.java).all {
-        kotlinOptions {
-            jvmTarget = "1.8"
-        }
-    }
+//    tasks.withType(KotlinJvmCompile::class.java).all {
+//        kotlinOptions {
+//            jvmTarget = "11"
+//        }
+//    }
 }

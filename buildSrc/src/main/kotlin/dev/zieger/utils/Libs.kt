@@ -19,7 +19,7 @@ val DependencyHandlerScope.androidTesting
     get() = "testImplementation"(project(":android-testing"))
 
 val DependencyHandlerScope.kotlin
-    get() = "implementation"("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${Versions.kotlin}")
+    get() = "implementation"("org.jetbrains.kotlin:kotlin-stdlib:${Versions.kotlin}")
 val DependencyHandlerScope.kotlinReflect
     get() = "implementation"("org.jetbrains.kotlin:kotlin-reflect:${Versions.kotlin}")
 val DependencyHandlerScope.kotlinTest

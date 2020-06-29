@@ -22,8 +22,8 @@ enum class DateFormat {
 
 interface StringConverter : IDurationHolder, ITimeZoneHolder {
 
-    fun formatTime(format: DateFormat = COMPLETE): String =
-        StringConverterDelegate.formatTime(format, millis, zone)
+    fun formatTime(format: DateFormat = COMPLETE, altZone: TimeZone? = null): String =
+        StringConverterDelegate.formatTime(format, millis, altZone ?: zone)
 }
 
 object StringConverterDelegate {

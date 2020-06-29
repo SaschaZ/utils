@@ -16,7 +16,7 @@ open class TimeParseHelper {
 
     protected fun String.stringToMillis(timeZone: TimeZone): Long {
         COMMON_DATA_FORMATS.forEach { format ->
-            catch<Long?>(null, printStackTrace = false) {
+            catch<Long?>(null, printStackTrace = false, logStackTrace = false) {
                 val dateFormat = SimpleDateFormat(format, Locale.getDefault())
                 dateFormat.timeZone = timeZone
                 val result = dateFormat.parse(this)
@@ -27,4 +27,4 @@ open class TimeParseHelper {
     }
 }
 
-fun String.parse() = TimeEx(this)
+fun String.parse(zone: TimeZone = TimeZone.getDefault()) = TimeEx(this, zone)

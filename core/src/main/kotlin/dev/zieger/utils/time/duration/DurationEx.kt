@@ -1,5 +1,6 @@
 package dev.zieger.utils.time.duration
 
+import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.castSafe
 import dev.zieger.utils.time.TimeParseHelper
 import dev.zieger.utils.time.base.TimeUnit
@@ -13,6 +14,9 @@ open class DurationEx private constructor(
     companion object : TimeParseHelper()
 
     constructor(value: Number, timeUnit: TimeUnit = MS) : this(value.toLong().toMillis(timeUnit))
+
+    @Suppress("ReplaceWithEnumMap")
+    override val timeUnitLengthMap: HashMap<TimeUnit, FiFo<Int>> = HashMap()
 
     override fun toString() = formatDuration()
     override fun equals(other: Any?) =
