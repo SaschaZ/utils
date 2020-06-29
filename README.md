@@ -32,14 +32,14 @@ repositories {
 
 dependencies {
     // utils
-    implementation "dev.zieger.utils:core:2.2.17"// platform independent
-    implementation "dev.zieger.utils:android:2.2.17" // android
-    implementation "dev.zieger.utils:jdk:2.2.17" // jdk
+    implementation "dev.zieger.utils:core:2.2.19"// platform independent
+    implementation "dev.zieger.utils:android:2.2.19" // android
+    implementation "dev.zieger.utils:jdk:2.2.19" // jdk
 
     // testing utils
-    implementation "dev.zieger.utils:core-testing:2.2.17" // platform independent
-    implementation "dev.zieger.utils:android-testing:2.2.17" // android
-    implementation "dev.zieger.utils:jdk-testing:2.2.17" // jdk
+    implementation "dev.zieger.utils:core-testing:2.2.19" // platform independent
+    implementation "dev.zieger.utils:android-testing:2.2.19" // android
+    implementation "dev.zieger.utils:jdk-testing:2.2.19" // jdk
 }
 ```
 
@@ -219,7 +219,7 @@ Also works with attached `Data`.
 
 # Changelog
 
-##### 2.2.17
+##### 2.2.19
 
 * added GKoin
     * manages multiple Koin instances inside one process
