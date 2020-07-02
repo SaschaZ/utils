@@ -16,7 +16,7 @@ open class DurationEx private constructor(
     constructor(value: Number, timeUnit: TimeUnit = MS) : this(value.toLong().toMillis(timeUnit))
 
     @Suppress("ReplaceWithEnumMap")
-    override val timeUnitLengthMap: HashMap<TimeUnit, FiFo<Int>> = HashMap()
+    override val timeUnitLengthMap: HashMap<Long, FiFo<Int>> = HashMap()
 
     override fun toString() = formatDuration()
     override fun equals(other: Any?) =

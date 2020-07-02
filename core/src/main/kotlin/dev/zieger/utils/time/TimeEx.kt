@@ -25,7 +25,7 @@ open class TimeEx(
             this(date.time, timeZone)
 
     @Suppress("ReplaceWithEnumMap")
-    override val timeUnitLengthMap: HashMap<TimeUnit, FiFo<Int>> = HashMap()
+    override val timeUnitLengthMap: HashMap<Long, FiFo<Int>> = HashMap()
 
     override fun toString() = formatTime(DateFormat.COMPLETE)
     override fun equals(other: Any?) = millis == (other as? ITimeEx)?.millis
