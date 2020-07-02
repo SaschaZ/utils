@@ -32,5 +32,5 @@ object Versions {
     const val bouncyCastle = "1.46"
 
     const val dokka = "0.10.1"
-    const val jacoco = "0.8.5"
+    const val jacoco = "0.8.6-SNAPSHOT"
 }

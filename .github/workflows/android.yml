@@ -5,7 +5,7 @@ on: [label, release, push, pull_request]
 jobs:
   build:
 
-    runs-on: self-hosted
+    runs-on: ubuntu-18.04
 
     steps:
     
@@ -17,7 +17,7 @@ jobs:
         java-version: 1.8
       
     - name: Build with Gradle
-      run: ./build.sh ${{secrets.CODACY_TOKEN}}
+      run: ./build.sh ${{secrets. CODACY_TOKEN}}
     
     - name: Upload artifact
       uses: actions/upload-artifact@v1.0.0
@@ -31,14 +31,14 @@ jobs:
          CC_TEST_REPORTER_ID: ${{secrets.CODE_CLIMATE_TOKEN}}
          JACOCO_SOURCE_PATH: "${{github.workspace}}/core/src/main/kotlin"
       with:
-        coverageCommand: ./gradlew test jacocoTestReport
-        coverageLocations:  ./core/build/jacoco/test/jacocoTestReport.xml:jacoco
+        coverageCommand: ./gradlew build jacocoTestReport
+        coverageLocations:  ./core/build/jacoco/jacocoTestReport.xml:jacoco
   
     - name: Codecov
       uses: codecov/codecov-action@v1.0.7
       with:
         name: "Utils coverage"
-        file: "./core/build/jacoco/test/jacocoTestReport.xml"
+        file: "./core/build/jacoco/jacocoTestReport.xml"
         token:  ${{ secrets.CODECOV_TOKEN }}
 
 #    - name: FTP-Deploy-Action
