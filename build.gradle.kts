@@ -32,9 +32,9 @@ allprojects {
         maven { url = uri("https://kotlin.bintray.com/ktor") }
         maven { url = uri("https://kotlin.bintray.com/kotlinx") }
     }
-//    tasks.withType(KotlinJvmCompile::class.java).all {
-//        kotlinOptions {
-//            jvmTarget = "11"
-//        }
-//    }
+    tasks.withType(org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile::class.java).all {
+        kotlinOptions {
+            jvmTarget = "1.8"
+        }
+    }
 }

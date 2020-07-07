@@ -10,7 +10,19 @@ open class TimeParseHelper {
 
         private val COMMON_DATA_FORMATS = listOf(
             "yyyy-MM-dd'T'HH:mm:ss.SSSX",
-            "yyyy-MM-dd'T'HH:mm:ss"
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "dd.MM.yyyy-HH:mm:ss",
+            "dd.MM.yyyy-HH:mm",
+            "yyyy.MM.dd-HH:mm:ss",
+            "yyyy.MM.dd-HH:mm",
+            "dd.MM.yyyy HH:mm:ss",
+            "dd.MM.yyyy HH:mm",
+            "yyyy.MM.dd HH:mm:ss",
+            "yyyy.MM.dd HH:mm",
+            "dd-MM-yyyy HH:mm:ss",
+            "dd-MM-yyyy HH:mm",
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd HH:mm"
         )
     }
 

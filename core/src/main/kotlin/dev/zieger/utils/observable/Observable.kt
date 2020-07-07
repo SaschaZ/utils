@@ -2,26 +2,10 @@ package dev.zieger.utils.observable
 
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.delegates.*
+import dev.zieger.utils.misc.DataClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlin.properties.ReadWriteProperty
-
-/**
- * Same as [Observable2] but without a parent type. Use this if you do not care who holds the observed property.
- */
-open class Observable<out T : Any?>(
-    initial: T,
-    onlyNotifyOnChanged: Boolean = true,
-    override var notifyForInitial: Boolean = false,
-    storeRecentValues: Boolean = false,
-    scope: CoroutineScope? = null,
-    mutex: Mutex? = null,
-    subscriberStateChanged: ((Boolean) -> Unit)? = null,
-    onChanged: Observer<T> = {}
-) : IObservable<T>, ObservableBase<Any?, T, IOnChangedScope<T>>(
-    initial, onlyNotifyOnChanged, notifyForInitial, storeRecentValues, scope, mutex,
-    subscriberStateChanged, onChanged, OnChangedScopeFactory()
-)
 
 /**
  * [ReadWriteProperty] that can be used to add a read only observer to another property with the delegate pattern.
@@ -39,50 +23,36 @@ open class Observable<out T : Any?>(
  *  }
  * ```
  */
-open class Observable2<P : Any?, out T : Any?>(
-    initial: T,
-    onlyNotifyOnChanged: Boolean = true,
-    override var notifyForInitial: Boolean = false,
-    storeRecentValues: Boolean = false,
-    scope: CoroutineScope? = null,
-    mutex: Mutex? = null,
-    subscriberStateChanged: ((Boolean) -> Unit)? = null,
-    onChanged: Observer2<P, T>? = null
-) : IObservable2<P, T>, ObservableBase<P, T, IOnChangedScope2<P, T>>(
-    initial, onlyNotifyOnChanged, notifyForInitial, storeRecentValues, scope, mutex, subscriberStateChanged, onChanged,
-    OnChangedScope2Factory()
-)
+open class Observable2<P : Any?, T : Any?>(
+    params: IObservableParams2<P, T>
+) : IObservable2<P, T>, ObservableBase<P, T>(params) {
+    constructor(initial: T, onChanged: IOnChangedScope2<P, T>.(T) -> Unit = {}) :
+            this(ObservableParams2(initial, onChanged = onChanged))
+}
 
-abstract class ObservableBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>(
-    initial: T,
-    onlyNotifyOnChanged: Boolean = true,
-    override var notifyForInitial: Boolean = false,
-    storeRecentValues: Boolean = false,
-    scope: CoroutineScope? = null,
-    mutex: Mutex? = null,
-    subscriberStateChanged: ((Boolean) -> Unit)? = null,
-    onChanged: (S.(T) -> Unit)? = null,
-    scopeFactory: IScope2Factory<P, T, S>
-) : IObservableBase<P, T, S>,
-    OnChangedBase<P, T, S>(
-        initial, storeRecentValues, notifyForInitial, onlyNotifyOnChanged, scope, mutex, scopeFactory, { false }, {}, {}
-    ) {
+typealias Observable<T> = Observable2<Any?, T>
 
-    private val observer = ArrayList<S.(T) -> Unit>()
-    private val observerS = ArrayList<suspend S.(T) -> Unit>()
+abstract class ObservableBase<P : Any?, T : Any?>(
+    params: IObservableParams2<P, T>
+) : IObservable2<P, T>,
+    OnChanged2<P, T>(params) {
+
+    private val observer = ArrayList<IOnChangedScope2<P, T>.(T) -> Unit>()
+    private val observerS = ArrayList<suspend IOnChangedScope2<P, T>.(T) -> Unit>()
     private var subscribersAvailable by OnChanged(false) { new ->
-        subscriberStateChanged?.invoke(new)
+        params.subscriberStateChanged?.invoke(new)
     }
 
     init {
-        onChanged?.also { observe(onChanged) }
+        @Suppress("LeakingThis")
+        observe(params.onChanged)
     }
 
-    override fun observe(listener: S.(T) -> Unit): () -> Unit {
+    override fun observe(listener: IOnChangedScope2<P, T>.(T) -> Unit): () -> Unit {
         observer.add(listener)
-        if (notifyForInitial) createScope(
+        if (notifyForInitial) OnChangedScope2(
             value, previousThisRef.get(), recentValues.lastOrNull(), recentValues,
-            { recentValues.clear() }, true
+            { recentValues.reset() }, true
         ).listener(value)
         updateSubscriberState()
 
@@ -92,13 +62,13 @@ abstract class ObservableBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P
         }
     }
 
-    override fun observeS(listener: suspend S.(T) -> Unit): () -> Unit {
+    override fun observeS(listener: suspend IOnChangedScope2<P, T>.(T) -> Unit): () -> Unit {
         observerS.add(listener)
         if (notifyForInitial)
             scope?.launchEx(mutex = mutex) {
-                createScope(
+                OnChangedScope2(
                     value, previousThisRef.get(), recentValues.lastOrNull(), recentValues,
-                    { recentValues.clear() }, true
+                    { recentValues.reset() }, true
                 ).listener(value)
             }
         updateSubscriberState()
@@ -109,13 +79,33 @@ abstract class ObservableBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P
         }
     }
 
-    override fun (@UnsafeVariance S).onChangedInternal(value: @UnsafeVariance T) =
+    override fun IOnChangedScope2<P, T>.onChangedInternal(value: T) =
         ArrayList(observer).forEach { it(value) }
 
-    override suspend fun (@UnsafeVariance S).onChangedSInternal(value: @UnsafeVariance T) =
+    override suspend fun IOnChangedScope2<P, T>.onChangedSInternal(value: T) =
         ArrayList(observerS).forEach { it(value) }
 
     private fun updateSubscriberState() {
         subscribersAvailable = observer.isNotEmpty() || observerS.isNotEmpty()
     }
 }
+
+interface IObservableParams2<P : Any?, T : Any?> : IOnChangedParams2<P, T> {
+    val subscriberStateChanged: ((Boolean) -> Unit)?
+}
+
+class ObservableParams2<P : Any?, T : Any?>(
+    override val initial: T,
+    storeRecentValues: Boolean = false,
+    override val recentValueSize: Int = if (storeRecentValues) 100 else 0,
+    override val notifyForInitial: Boolean = false,
+    override val notifyOnChangedValueOnly: Boolean = true,
+    override val scope: CoroutineScope? = null,
+    override val mutex: Mutex? = null,
+    override val subscriberStateChanged: ((Boolean) -> Unit)? = {},
+    override val veto: (T) -> Boolean = { false },
+    override val onChangedS: suspend IOnChangedScope2<P, T>.(T) -> Unit = {},
+    override val onChanged: IOnChangedScope2<P, T>.(T) -> Unit = {}
+) : DataClass(), IObservableParams2<P, T>
+
+typealias ObservableParams<T> = ObservableParams2<Any?, T>

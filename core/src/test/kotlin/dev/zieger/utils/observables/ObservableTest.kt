@@ -6,11 +6,11 @@ import dev.zieger.utils.core_testing.*
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
-import dev.zieger.utils.delegates.IOnChangedScope2
 import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.observable.IObservableBase
+import dev.zieger.utils.observable.IObservable2
 import dev.zieger.utils.observable.Observable
-import dev.zieger.utils.observable.Observable2
+import dev.zieger.utils.observable.ObservableParams
+import dev.zieger.utils.observable.ObservableParams2
 import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -35,7 +35,13 @@ class ObservableTest : AnnotationSpec() {
     fun testObservable() = runTestForInputFactory {
         TestClass("foo", it) { initial, notifyOnChangedOnly, notifyForExisting,
                                storePreviousValues, scope, mutex ->
-            Observable(initial, notifyOnChangedOnly, notifyForExisting, storePreviousValues, scope, mutex)
+            Observable(
+                ObservableParams2(
+                    initial, notifyOnChangedValueOnly = notifyOnChangedOnly,
+                    notifyForInitial = notifyForExisting,
+                    storeRecentValues = storePreviousValues, scope = scope, mutex = mutex
+                )
+            )
         }
     }
 
@@ -43,19 +49,21 @@ class ObservableTest : AnnotationSpec() {
     fun testObservable2() = runTestForInputFactory {
         TestClass("foo", it) { initial, notifyOnChangedOnly, notifyForExisting,
                                storePreviousValues, scope, mutex ->
-            Observable2<Any?, String>(
-                initial,
-                notifyOnChangedOnly,
-                notifyForExisting,
-                storePreviousValues,
-                scope,
-                mutex
+            Observable<String>(
+                ObservableParams(
+                    initial,
+                    notifyOnChangedValueOnly = notifyOnChangedOnly,
+                    notifyForInitial = notifyForExisting,
+                    storeRecentValues = storePreviousValues,
+                    scope = scope,
+                    mutex = mutex
+                )
             )
         }
     }
 
-    private fun <S : IOnChangedScope2<Any?, String>, O : IObservableBase<Any?, String, S>> runTestForInputFactory(
-        inputFactory: (Map<String, ParamInstance<*>>) -> TestClass<String, S, O>
+    private fun <O : IObservable2<Any?, String>> runTestForInputFactory(
+        inputFactory: (Map<String, ParamInstance<*>>) -> TestClass<String, O>
     ) = runTest {
         params(inputFactory) {
 //            println(this)
@@ -85,7 +93,7 @@ class ObservableTest : AnnotationSpec() {
 
     companion object {
 
-        data class TestClass<T, out S : IOnChangedScope2<Any?, T>, O : IObservableBase<Any?, T, S>>(
+        data class TestClass<T, O : IObservable2<Any?, T>>(
             val initial: String,
             val map: Map<String, ParamInstance<*>>,
             val factory: (String, Boolean, Boolean, Boolean, CoroutineScope?, Mutex?) -> O

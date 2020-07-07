@@ -1,22 +1,24 @@
 package dev.zieger.utils.time.duration
 
-import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.castSafe
 import dev.zieger.utils.time.TimeParseHelper
 import dev.zieger.utils.time.base.TimeUnit
 import dev.zieger.utils.time.base.TimeUnit.*
 import dev.zieger.utils.time.base.toMillis
+import java.util.concurrent.atomic.AtomicLong
 
 open class DurationEx private constructor(
     override val millis: Long = 0L
 ) : IDurationEx {
 
-    companion object : TimeParseHelper()
+    companion object : TimeParseHelper() {
+        private var lastId = AtomicLong(-1L)
+        private val newId get() = lastId.incrementAndGet()
+    }
 
     constructor(value: Number, timeUnit: TimeUnit = MS) : this(value.toLong().toMillis(timeUnit))
 
-    @Suppress("ReplaceWithEnumMap")
-    override val timeUnitLengthMap: HashMap<Long, FiFo<Int>> = HashMap()
+    override val id: Long = newId
 
     override fun toString() = formatDuration()
     override fun equals(other: Any?) =

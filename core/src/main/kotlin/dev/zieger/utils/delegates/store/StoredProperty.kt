@@ -6,7 +6,7 @@ import dev.zieger.utils.delegates.IOnChangedScope
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.json.DefaultJsonConverter
 import dev.zieger.utils.json.DefaultSerializer
-import dev.zieger.utils.json.ISerializer
+import dev.zieger.utils.json.IConverter
 import dev.zieger.utils.misc.asUnit
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
@@ -18,18 +18,18 @@ import kotlin.reflect.KProperty
 @Suppress("FunctionName")
 inline fun <reified T : Any> StoredProperty(
     initial: T,
-    serializer: ISerializer<T> = DefaultSerializer(),
+    serializer: IConverter<T> = DefaultSerializer(),
     key: String? = null,
     noinline onChange: IOnChangedScope<@UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {}
-) = StoredProperty<T>(initial, T::class, serializer, key, onChange)
+): ReadWriteProperty<IStoreContext, T> = StoredProperty<T>(initial, T::class, serializer, key, onChange)
 
-open class StoredProperty<out T : Any>(
+open class StoredProperty<T : Any>(
     private val initial: T,
     private val clazz: KClass<T>,
-    private val serializer: ISerializer<T> = DefaultJsonConverter(clazz),
+    private val serializer: IConverter<T> = DefaultJsonConverter(clazz),
     private val key: String? = null,
-    private val onChanged: IOnChangedScope<@UnsafeVariance T>.(@UnsafeVariance T) -> Unit = {}
-) : ReadWriteProperty<IStoreContext, @UnsafeVariance T> {
+    private val onChanged: IOnChangedScope<T>.(T) -> Unit = {}
+) : ReadWriteProperty<IStoreContext, T> {
 
     private var internalValue: T by OnChanged(initial, onChanged = onChanged)
 

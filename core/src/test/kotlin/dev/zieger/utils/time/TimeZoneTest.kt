@@ -12,7 +12,7 @@ class TimeZoneTest : AnnotationSpec() {
         val testDate = "2018-07-08T10:00:00".parse(GMT)
         println(testDate)
         JsonConverter().run {
-            println(testDate.toJson(ITimeEx::class.java))
+            println(testDate.toJson(ITimeEx::class))
         }
     }
 }
