@@ -7,8 +7,6 @@ import dev.zieger.utils.log.Log
 import dev.zieger.utils.log.LogElement
 import dev.zieger.utils.log.LogLevel
 import dev.zieger.utils.time.duration.milliseconds
-import me.tongfei.progressbar.ProgressBar
-import me.tongfei.progressbar.ProgressBarStyle
 
 private const val DEFAULT_MAXIMUM_PROGRESS = 100L
 private val DEFAULT_UPDATE_INTERVAL = 100.milliseconds
@@ -32,15 +30,15 @@ private val DEFAULT_UPDATE_INTERVAL = 100.milliseconds
 object LogColored : LogElement {
 
     override fun log(level: LogLevel?, msg: String): String? {
-        with(TermColors()) {
+        termColored {
             println(
                 when (level) {
-                    LogLevel.VERBOSE -> brightGreen(msg)
-                    LogLevel.DEBUG -> brightBlue(msg)
-                    LogLevel.INFO -> brightCyan(msg)
-                    LogLevel.WARNING -> brightYellow(msg)
+                    LogLevel.VERBOSE -> brightBlue(msg)
+                    LogLevel.DEBUG -> green(msg)
+                    LogLevel.INFO -> yellow(msg)
+                    LogLevel.WARNING -> brightMagenta(msg)
                     LogLevel.EXCEPTION -> brightRed(msg)
-                    else -> brightMagenta(msg)
+                    else -> cyan(msg)
                 }
             )
         }
@@ -53,4 +51,4 @@ object LogColored : LogElement {
     }
 }
 
-inline fun termColored(block: TermColors.() -> Unit) = with(TermColors(), block)
+inline fun <T> termColored(block: TermColors.() -> T): T = with(TermColors(), block)

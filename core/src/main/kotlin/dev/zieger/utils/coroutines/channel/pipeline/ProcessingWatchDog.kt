@@ -7,6 +7,7 @@ import dev.zieger.utils.coroutines.channel.parallel.ParallelProcessor
 import dev.zieger.utils.coroutines.channel.pipeline.ProcessingElementStage.*
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.delegates.OnChanged
+import dev.zieger.utils.delegates.OnChangedParams
 import dev.zieger.utils.misc.*
 import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.TimeEx
@@ -112,14 +113,14 @@ open class ProcessingWatchDog protected constructor(
     private val tickMutex = Mutex()
     private var outputJob: Job? = null
 
-    override var watchDogActive by OnChanged(false, notifyForInitial = true) {
+    override var watchDogActive by OnChanged(OnChangedParams(false, notifyForInitial = true) {
         outputJob?.cancel()
         if (it) {
             outputJob = scope.launchEx(interval = printInterval, mutex = tickMutex) {
                 printStates(ticks)
             }
         }
-    }
+    })
 
     private fun Map<out IProcessingUnit<*, *>, Map<ITimeEx, List<ProcessingElementStage>>>.printStats(numTabs: Int = 1) {
         println(entries.joinToString("\n") { (e, _) ->

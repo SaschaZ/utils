@@ -1,4 +1,4 @@
-@file:Suppress("unused")
+@file:Suppress("unused", "MemberVisibilityCanBePrivate")
 
 package dev.zieger.utils.json
 
@@ -8,6 +8,7 @@ import com.squareup.moshi.ToJson
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dev.zieger.utils.misc.catch
+import dev.zieger.utils.time.ClosedTimeRangeJsonAdapter
 import dev.zieger.utils.time.DurationExJsonAdapter
 import dev.zieger.utils.time.TimeExJsonAdapter
 import java.lang.reflect.Type
@@ -37,11 +38,12 @@ open class JsonConverter(vararg adapter: Any) {
         private val <T> T.CATCH_MESSAGE: (T) -> String get() = { "catch $it" }
     }
 
-    private val moshi =
+    protected val moshi =
         Moshi.Builder()
             .add(KotlinJsonAdapterFactory())
             .add(TimeExJsonAdapter())
             .add(DurationExJsonAdapter())
+            .add(ClosedTimeRangeJsonAdapter())
             .also { m -> adapter.forEach { m.add(it) } }.build()!!
 
     fun <T : Any> T.toJson(type: Type): String? =
@@ -70,3 +72,13 @@ open class JsonConverter(vararg adapter: Any) {
             moshi.adapter<List<T>>(typeToUse).fromJson(this)
         }
 }
+
+object UtilsJsonConverter : JsonConverter() {
+
+    inline fun <reified T : Any> T.toJson(): String? = toJson(T::class.java)
+    inline fun <reified T : Any> List<T>.toJson(): String? = toJson(T::class.java)
+
+    inline fun <reified T : Any> String.fromJson(): T? = fromJson(T::class.java)
+    inline fun <reified T : Any> String.fromJsonList(): List<T>? = fromJsonList(T::class.java)
+}
+

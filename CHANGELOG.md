@@ -1,8 +1,13 @@
 # Changelog
 
+##### 2.2.20
+
+* removed `Controllable(2)` and made `value` of `OnChangedScope` writeable
+* replaced `OnChanged` and `Observable` classes with typealiases
+* some minor fixes to the Json helper
+
 ##### 2.2.19
 
-* removed `-jvm-target "1.8"` parameter
 * added `MatchScope` to `MachineEx` (allows accessing event, states and previous changes in external condition)
 * added `TypeContinuation` (same as `Continuation` except it allows sending a value over the trigger event that can be 
 received from the suspender)

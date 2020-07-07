@@ -11,11 +11,11 @@ enum class TimeUnit(
     val isCloned: Boolean = false
 ) {
 
-    MILLI(1.0 to -3, "MS"),
+    MILLI(1.0 to -3, "m"),
     MS(MILLI),
-    SECOND(1.0 to 0, "S"),
+    SECOND(1.0 to 0, "s"),
     S(SECOND),
-    MINUTE(6.0 to 1, "MIN"),
+    MINUTE(6.0 to 1, "M"),
     M(MINUTE),
     HOUR(3.6 to 3, "H"),
     H(HOUR),
@@ -23,7 +23,7 @@ enum class TimeUnit(
     D(DAY),
     WEEK(6.048 to 5, "W"),
     W(WEEK),
-    MONTH(2.592 to 6, "M"),
+    MONTH(2.592 to 6, "Ⅿ"),
     YEAR(3.1536 to 7, "Y");
 
     constructor(unit: TimeUnit) : this(unit.factor, unit.exponent, unit.shortChar, true)

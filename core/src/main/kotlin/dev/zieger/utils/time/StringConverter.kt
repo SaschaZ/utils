@@ -37,7 +37,7 @@ object StringConverterDelegate {
                 HuM -> "HH:mm"
                 PLOT -> "yyyy-MM-dd HH:mm:ss"
                 FILENAME -> "yyyy-MM-dd-HH-mm-ss"
-                FILENAME_DATE -> "yyy-MM-dd"
+                FILENAME_DATE -> "yyyy-MM-dd"
                 FILENAME_TIME -> "HH-mm-ss"
                 EXCHANGE -> "yyyy-MM-dd HH:mm:ss"
             }, Locale.getDefault()

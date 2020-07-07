@@ -1,50 +1,31 @@
 package dev.zieger.utils.delegates
 
 
-interface IScope2Factory<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>> {
+interface IScope2Factory<P : Any?, T : Any?> {
     fun createScope(
-        value: @UnsafeVariance T,
+        value: T,
         thisRef: P?,
-        previousValue: @UnsafeVariance T?,
-        previousValues: List<@UnsafeVariance T?>,
+        previousValue: T?,
+        previousValues: List<T?>,
         clearPreviousValues: () -> Unit,
         isInitialNotification: Boolean = false,
         setter: (T) -> Unit = {}
-    ): S
+    ): IOnChangedScope2<P, T>
 }
 
-class OnChangedScope2Factory<P : Any?, out T : Any?> : IScope2Factory<P, T, IOnChangedScope2<P, @UnsafeVariance T>> {
+class OnChangedScope2Factory<P : Any?, T : Any?> : IScope2Factory<P, T> {
     override fun createScope(
-        value: @UnsafeVariance T,
+        value: T,
         thisRef: P?,
-        previousValue: @UnsafeVariance T?,
-        previousValues: List<@UnsafeVariance T?>,
+        previousValue: T?,
+        previousValues: List<T?>,
         clearPreviousValues: () -> Unit,
         isInitialNotification: Boolean,
         setter: (T) -> Unit
-    ): IOnChangedScope2<P, @UnsafeVariance T> =
+    ): IOnChangedScope2<P, T> =
         OnChangedScope2(value, thisRef, previousValue, previousValues, clearPreviousValues, isInitialNotification)
 }
 
-interface IScopeFactory<out T : Any?, out S : IOnChangedScope<T>> : IScope2Factory<Any?, T, S>
+typealias IScopeFactory<T> = IScope2Factory<Any?, T>
 
-class OnChangedScopeFactory<out T : Any?> :
-    IScopeFactory<T, IOnChangedScope<@UnsafeVariance T>> {
-    override fun createScope(
-        value: @UnsafeVariance T,
-        thisRef: Any?,
-        previousValue: @UnsafeVariance T?,
-        previousValues: List<@UnsafeVariance T?>,
-        clearPreviousValues: () -> Unit,
-        isInitialNotification: Boolean,
-        setter: (T) -> Unit
-    ): IOnChangedScope<@UnsafeVariance T> =
-        OnChangedScope(
-            value,
-            thisRef,
-            previousValue,
-            previousValues,
-            clearPreviousValues,
-            isInitialNotification
-        )
-}
+typealias OnChangedScopeFactory<T> = OnChangedScope2Factory<Any?, T>

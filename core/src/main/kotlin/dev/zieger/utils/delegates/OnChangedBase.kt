@@ -5,50 +5,43 @@ package dev.zieger.utils.delegates
 import dev.zieger.utils.coroutines.Continuation
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.withTimeout
+import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.time.duration.IDurationEx
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 
-interface IOnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<@UnsafeVariance P, T>> :
-    IScope2Factory<P, T, @UnsafeVariance S>, ReadWriteProperty<P, @UnsafeVariance T> {
-    val value: @UnsafeVariance T
-
-    var storeRecentValues: Boolean
-    var notifyForInitial: Boolean
-    var notifyOnChangedValueOnly: Boolean
-    var scope: CoroutineScope?
-    var mutex: Mutex?
+interface IOnChangedBase<P : Any?, T : Any?> : IOnChangedParams2<P, T>,
+    IScope2Factory<P, T>, ReadWriteProperty<P, T> {
+    var value: T
 
     /**
      * When [storeRecentValues] is `true` this [List] contains all changed values since the last
      * [clearRecentValues] invocation.
      */
-    val recentValues: ArrayList<@UnsafeVariance T?>
+    val recentValues: FiFo<T?>
 
     /**
      * Is invoked before every change of the property. When returning `true` the new value is not assigned
      * to the property.
      */
-    fun vetoInternal(value: @UnsafeVariance T): Boolean
+    fun vetoInternal(value: T): Boolean
 
     /**
      * Suspends until the next change occurs. Will throw a runtime exception if the [timeout] is reached.
      */
     suspend fun nextChange(
         timeout: IDurationEx? = null,
-        onChanged: suspend S.(T) -> Unit = {}
+        onChanged: suspend IOnChangedScope2<P, T>.(T) -> Unit = {}
     ): T
 
     /**
      * Suspends until the observed property changes to [wanted].
      */
     suspend fun suspendUntil(
-        wanted: @UnsafeVariance T,
+        wanted: T,
         timeout: IDurationEx? = null
     )
 
@@ -57,14 +50,14 @@ interface IOnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<@Unsaf
      * The [IOnChangedScope2] provides access to the previous values of this property (if [storeRecentValues] is `true`)
      * and the property holding object instance [P].
      */
-    suspend fun (@UnsafeVariance S).onChangedSInternal(value: @UnsafeVariance T)
+    suspend fun IOnChangedScope2<P, T>.onChangedSInternal(value: T)
 
     /**
      * Unsuspended on change callback. Will be called immediately when a new value is set.
      * The [IOnChangedScope2] provides access to the previous values of this property (if [storeRecentValues] is `true`)
      * and the property holding object instance [P].
      */
-    fun (@UnsafeVariance S).onChangedInternal(value: @UnsafeVariance T)
+    fun IOnChangedScope2<P, T>.onChangedInternal(value: T)
 
     /**
      * Clears the recent value storage.
@@ -72,29 +65,15 @@ interface IOnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<@Unsaf
     fun clearRecentValues()
 }
 
-open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>(
-    initial: T,
-    override var storeRecentValues: Boolean,
-    notifyForInitial: Boolean,
-    override var notifyOnChangedValueOnly: Boolean,
-    scope: CoroutineScope?,
-    override var mutex: Mutex?,
-    scopeFactory: IScope2Factory<P, T, S>,
-    open val veto: (@UnsafeVariance T) -> Boolean,
-    open val onChangedS: suspend (@UnsafeVariance S).(@UnsafeVariance T) -> Unit,
-    open val onChanged: (@UnsafeVariance S).(@UnsafeVariance T) -> Unit
-) : IOnChangedBase<P, T, S>, IScope2Factory<P, T, @UnsafeVariance S> by scopeFactory {
 
-    @Suppress("CanBePrimaryConstructorProperty")
-    override var notifyForInitial: Boolean = notifyForInitial
-
-    @Suppress("CanBePrimaryConstructorProperty")
-    override var scope: CoroutineScope? = scope
+open class OnChangedBase<P : Any?, T : Any?>(
+    params: IOnChangedParams2<P, T>
+) : IOnChangedBase<P, T>, IOnChangedParams2<P, T> by params, IScope2Factory<P, T> by params.scopeFactory {
 
     protected var previousThisRef = AtomicReference<P?>(null)
-    override val recentValues = ArrayList<@UnsafeVariance T?>()
+    override val recentValues = FiFo<T?>(recentValueSize)
 
-    override var value: @UnsafeVariance T = initial
+    override var value: T = initial
         set(newValue) {
             if (!vetoInternal(newValue) && (field != newValue || !notifyOnChangedValueOnly)) {
                 val old = field
@@ -115,16 +94,19 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
 
     private val nextChangeContinuation = Continuation()
 
-    override suspend fun nextChange(timeout: IDurationEx?, onChanged: suspend S.(T) -> Unit): T = withTimeout(timeout) {
+    override suspend fun nextChange(
+        timeout: IDurationEx?,
+        onChanged: suspend IOnChangedScope2<P, T>.(T) -> Unit
+    ): T = withTimeout(timeout) {
         nextChangeContinuation.suspendUntilTrigger(timeout)
         createScope(
-            value, previousThisRef.get(), recentValues.lastOrNull(), recentValues, { recentValues.clear() }, false
+            value, previousThisRef.get(), recentValues.lastOrNull(), recentValues, { recentValues.reset() }, false
         ) { value = it }.onChanged(value)
         value
     }
 
     override suspend fun suspendUntil(
-        wanted: @UnsafeVariance T,
+        wanted: T,
         timeout: IDurationEx?
     ) = withTimeout(timeout) {
         if (value == wanted) return@withTimeout
@@ -133,18 +115,18 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
         while (nextChange() != wanted);
     }
 
-    override fun clearRecentValues() = recentValues.clear().asUnit()
+    override fun clearRecentValues() = recentValues.reset().asUnit()
 
     private fun onPropertyChanged(
-        new: @UnsafeVariance T,
-        old: @UnsafeVariance T?
+        new: T,
+        old: T?
     ) {
-        if (storeRecentValues) recentValues.add(old)
+        if (recentValueSize > 0) recentValues.put(old)
         notifyListener(new, old)
     }
 
     private fun notifyListener(
-        new: @UnsafeVariance T, old: @UnsafeVariance T?,
+        new: T, old: T?,
         isInitialNotification: Boolean = false
     ) = createScope(new, previousThisRef.get(), old, recentValues, { clearRecentValues() }, isInitialNotification)
         .apply {
@@ -154,17 +136,16 @@ open class OnChangedBase<P : Any?, out T : Any?, out S : IOnChangedScope2<P, T>>
         }
 
     @Suppress("LeakingThis")
-    override fun setValue(thisRef: P, property: KProperty<*>, value: @UnsafeVariance T) {
+    override fun setValue(thisRef: P, property: KProperty<*>, value: T) {
         previousThisRef.set(thisRef)
         this.value = value
     }
 
     override fun getValue(thisRef: P, property: KProperty<*>): T = value
 
-    override fun vetoInternal(value: @UnsafeVariance T): Boolean = veto(value)
+    override fun vetoInternal(value: T): Boolean = veto(value)
 
-    override suspend fun @UnsafeVariance S.onChangedSInternal(value: @UnsafeVariance T) =
-        onChangedS(value)
+    override suspend fun IOnChangedScope2<P, T>.onChangedSInternal(value: T) = onChangedS(value)
 
-    override fun @UnsafeVariance S.onChangedInternal(value: @UnsafeVariance T) = onChanged(value)
+    override fun IOnChangedScope2<P, T>.onChangedInternal(value: T) = onChanged(value)
 }
