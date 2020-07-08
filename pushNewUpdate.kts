@@ -1,7 +1,7 @@
 #!/usr/bin/env kscript
 //DEPS io.ktor:ktor-client-apache:1.3.0,io.ktor:ktor-client-gson:1.3.0
-//DEPS org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.5,org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.5
-//DEPS dev.zieger.utils:core:2.2.4
+//DEPS org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.6,org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.6
+//DEPS dev.zieger.utils:core:2.2.19
 
 @file:Suppress("UNREACHABLE_CODE", "PropertyName")
 
