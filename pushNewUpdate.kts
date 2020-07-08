@@ -22,7 +22,7 @@ import kotlin.system.exitProcess
 class GitHubTags : ArrayList<GitHubTagsItem>() {
     companion object {
         suspend fun get(client: HttpClient): GitHubTags =
-            client.get("https://api.github.com/repos/SaschaZ/utils/tags")
+                client.get("https://api.github.com/repos/SaschaZ/utils/tags")
     }
 }
 
@@ -116,20 +116,19 @@ fun updateProjectGlobals(versionName: SemanticVersion) {
         }
 }
 
-fun updateReadme(tag: SemanticVersion) =
+fun updateReadme(tag: SemanticVersion? = null) =
     File("README.md").apply {
-        writeText(readText().updateVersions(tag).updateChangeLog)
+        writeText(readText().updateChangeLog().run { tag?.let { t -> updateVersions(t) } ?: this })
     }
 
 fun String.updateVersions(tag: SemanticVersion): String = replace(""""dev\.zieger\.utils:(.+):.+"""".toRegex()) {
     "\"dev.zieger.utils:${it.groupValues[1]}:$tag\""
 }
 
-private val String.updateChangeLog: String
-    get() = replace(
-        """(## Changelog[\w\W]+$)""".toRegex(),
-        File("CHANGELOG.md").readText()
-    )
+fun String.updateChangeLog(): String = replaceFirst(
+    """(# Changelog[\w\W]+$)""".toRegex(),
+    File("CHANGELOG.md").readText()
+)
 
 private val CommandOutput?.ok
     get() = if (this?.code == 0) "ok" else
@@ -149,16 +148,24 @@ suspend fun updateGit(tag: SemanticVersion) {
 }
 
 runBlocking {
-    print("build new tag ... ")
-    val tag = latestTag() + 1
-    print("$tag\nupdate project globals ... ")
-    updateProjectGlobals(tag)
-    println("ok")
-    print("update README ... ")
-    updateReadme(tag)
-    println("ok")
+    when {
+        args.contains("-c") -> {
+            print("copy changelog into readme ... ")
+            updateReadme()
+            println("done")
+        }
+        else -> {
+            print("build new tag ... ")
+            val tag = latestTag() + 1
+            print("$tag\nupdate project globals ... ")
+            updateProjectGlobals(tag)
+            println("ok")
+            print("update README ... ")
+            updateReadme(tag)
+            println("ok")
 
-    updateGit(tag)
-
+            updateGit(tag)
+        }
+    }
     exitProcess(0).asUnit()
 }

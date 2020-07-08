@@ -12,7 +12,7 @@
 * added `TypeContinuation` (same as `Continuation` except it allows sending a value over the trigger event that can be 
 received from the suspender)
 
-##### 2.2.17
+##### 2.2.18
 
 * added GKoin
     * manages multiple Koin instances inside one process
