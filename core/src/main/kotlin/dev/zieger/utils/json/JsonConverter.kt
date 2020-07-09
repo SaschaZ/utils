@@ -36,24 +36,19 @@ open class JsonConverter(vararg adapter: Any) {
             .add(ClosedTimeRangeJsonAdapter())
             .also { m -> adapter.forEach { m.add(it) } }.build()!!
 
-    fun <T : Any> T.toJson(type: KClass<*>): String? =
+    fun <T : Any> T.toJson(rawType: KClass<*>, vararg genericTypes: KClass<*>): String? =
         catch(null, onCatch = { print(it.CATCH_MESSAGE) }) {
-            moshi.adapter<T>(type.java).toJson(this)
+            moshi.adapter<T>(rawType.with(*genericTypes)).toJson(this)
         }
 
-    fun <T : Any> List<T>.toJson(type: KClass<*>): String? =
-        catch(null, onCatch = { print(it.CATCH_MESSAGE) }) {
-            adapter<List<T>>(type).toJson(this)
-        }
+    fun <T : Any> List<T>.toJson(type: KClass<*>): String? = toJson(List::class, type)
 
     fun <K : Any, V : Any> Map<K, V>.toJson(keyType: KClass<*>, valueType: KClass<*>): String? =
-        catch(null, onCatch = { print(it.CATCH_MESSAGE) }) {
-            adapter<Map<K, V>>().toJson(this)
-        }
+        toJson(Map::class, keyType, valueType)
 
-    fun <T : Any> String.fromJson(type: KClass<*>): T? =
+    fun <T : Any> String.fromJson(rawType: KClass<*>, vararg genericTypes: KClass<*>): T? =
         catch(null, onCatch = { print(it.CATCH_MESSAGE) }) {
-            moshi.adapter<T>(type.java).fromJson(this)
+            moshi.adapter<T>(rawType.with(*genericTypes)).fromJson(this)
         }
 
     fun <T : Any> String.fromJsonList(type: KClass<*>): List<T>? =
@@ -67,7 +62,8 @@ open class JsonConverter(vararg adapter: Any) {
         }
 
     private fun KClass<*>.with(vararg types: KClass<*>): Type =
-        Types.newParameterizedType(java, *types.map { it.java }.toTypedArray())
+        if (types.isEmpty()) java
+        else Types.newParameterizedType(java, *types.map { it.java }.toTypedArray())
 
     private inline fun <reified T : Any> adapter(vararg types: KClass<*>): JsonAdapter<T> =
         moshi.adapter<T>(T::class.with(*types))
@@ -81,4 +77,6 @@ object UtilsJsonConverter : JsonConverter() {
     inline fun <reified T : Any> String.fromJson(): T? = fromJson(T::class)
     inline fun <reified T : Any> String.fromJsonList(): List<T>? = fromJsonList(T::class)
 }
+
+inline fun <T> json(block: () -> T): T = UtilsJsonConverter.run { block() }
 
