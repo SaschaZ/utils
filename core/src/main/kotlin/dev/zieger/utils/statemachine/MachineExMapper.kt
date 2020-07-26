@@ -5,6 +5,7 @@ package dev.zieger.utils.statemachine
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 import dev.zieger.utils.log.logV
+import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.ERROR
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
 import dev.zieger.utils.statemachine.conditionelements.*
 import dev.zieger.utils.statemachine.conditionelements.ICondition.ConditionType.EVENT
@@ -85,11 +86,13 @@ interface IMachineExMapper {
                 in 0..1 -> it.firstOrNull()
                 else -> throw IllegalStateException("More than one matching event condition for $this.")
             }
-        }?.log
+        }?.log(newEvent)
 
-    private val IComboElement.log: IComboElement get() = this.apply {
-        Log.v("Found matching state $this.",
-            logFilter = GENERIC(disableLog = noLogging || MachineEx.debugLevel <= INFO))
+    private fun IComboElement.log(event: IComboElement): IComboElement = this.apply {
+        Log.i(
+            "Found new state $this for event $event.",
+            logFilter = GENERIC(disableLog = noLogging || MachineEx.debugLevel <= ERROR)
+        )
     }
 
     private suspend fun IMatchScope.matchingEventConditions(): Collection<ICondition> =
