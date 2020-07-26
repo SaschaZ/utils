@@ -1,14 +1,11 @@
 package dev.zieger.utils.coroutines
 
+import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.asyncEx
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.builder.withContextEx
 import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.time.base.minus
-import dev.zieger.utils.time.base.plus
-import dev.zieger.utils.time.delay
-import dev.zieger.utils.time.duration.milliseconds
-import dev.zieger.utils.time.duration.seconds
+import dev.zieger.utils.time.*
 import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.runBlocking
 
@@ -23,19 +20,17 @@ class BuilderTest : AnnotationSpec() {
     }.asUnit()
 
     @Test
-    fun testLaunchExDelayed() = runBlocking {
+    fun testLaunchExDelayed() = runTest {
         var executed = false
         val delayDuration = 5.seconds
         val checkDuration = 2.seconds
         withContextEx(null) {
             launchEx(delayed = delayDuration) { executed = true }
         }
-        withContextEx(null) {
-            delay(checkDuration)
-            assert(!executed) { "executed is true" }
-            delay(delayDuration - checkDuration + 100.milliseconds)
-            assert(executed) { "executed is false" }
-        }
+        delay(checkDuration)
+        assert(!executed) { "executed is true" }
+        delay(delayDuration - checkDuration + 100.milliseconds)
+        assert(executed) { "executed is false" }
     }.asUnit()
 
     @Test

@@ -2,29 +2,29 @@
 
 package dev.zieger.utils.statemachine.conditionelements
 
-import dev.zieger.utils.log.ExternalFilter
-
+import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.name
+import dev.zieger.utils.statemachine.IMatchScope
 import dev.zieger.utils.statemachine.MachineEx
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
-import dev.zieger.utils.statemachine.OnStateChanged
 import kotlin.reflect.KClass
 
 interface IEventGroup<out T : IEvent> : IGroup<T> {
 
-    override suspend fun match(
-        other: IConditionElement?,
-        previousStateChanges: List<OnStateChanged>
+    override suspend fun IMatchScope.match(
+        other: IConditionElement?
     ): Boolean {
         return when (other) {
             is IEvent -> type.isInstance(other)
             is IEventGroup<*> -> other.type == type
             null -> false
-            else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
+            else -> throw IllegalArgumentException("Can not match ${this@IEventGroup::class.name} " +
+                    "with ${other.let { it::class.name }}"
+            )
         } logV {
-            elements + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
-            "#EG $it => ${this@IEventGroup} <||> $other"
+            f = GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
+            m = "#EG $it => ${this@IEventGroup} <||> $other"
         }
     }
 }

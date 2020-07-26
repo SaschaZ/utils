@@ -2,8 +2,8 @@ package dev.zieger.utils.coroutines.channel.pipeline
 
 import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
 import dev.zieger.utils.log.Log
-import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.TimeEx
+import dev.zieger.utils.time.base.ITimeEx
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 

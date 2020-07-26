@@ -1,15 +1,20 @@
 package dev.zieger.utils.time
 
+import dev.zieger.utils.misc.INumber
+import dev.zieger.utils.misc.NumberEx
+import dev.zieger.utils.time.base.IDurationHolder
+import dev.zieger.utils.time.base.ITimeEx
 import dev.zieger.utils.time.base.TimeUnit
 import dev.zieger.utils.time.base.TimeUnit.MS
 import dev.zieger.utils.time.base.toMillis
-import dev.zieger.utils.time.duration.IDurationHolder
+import dev.zieger.utils.time.string.DateFormat
+import dev.zieger.utils.time.string.TimeParseHelper
 import java.util.*
 
 open class TimeEx(
     override val millis: Long = System.currentTimeMillis(),
     override val zone: TimeZone = TimeZone.getDefault()
-) : ITimeEx {
+) : INumber by NumberEx(millis), ITimeEx {
 
     companion object : TimeParseHelper()
 
@@ -30,7 +35,8 @@ open class TimeEx(
 }
 
 
-fun Number.toTime() = toTime(MS)
+fun Number.toTime(zone: TimeZone = TimeZone.getDefault()) = toTime(MS, zone)
+fun Number.toTime(unit: TimeUnit, zone: TimeZone = TimeZone.getDefault()) = TimeEx(this, unit, zone)
 infix fun Number.toTime(unit: TimeUnit) = TimeEx(this, unit)
 
 val IDurationHolder.time: ITimeEx

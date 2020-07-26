@@ -4,7 +4,7 @@ import dev.zieger.utils.coroutines.builder.asyncEx
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.builder.withContextEx
 import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.time.duration.milliseconds
+import dev.zieger.utils.time.milliseconds
 import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive

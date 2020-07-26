@@ -3,39 +3,36 @@
 package dev.zieger.utils.log.console
 
 import com.github.ajalt.mordant.TermColors
-import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
-import dev.zieger.utils.log.*
-import kotlinx.coroutines.CoroutineScope
-import me.tongfei.progressbar.ProgressBar
+import dev.zieger.utils.log.Log
+import dev.zieger.utils.log.LogElement
+import dev.zieger.utils.log.LogLevel
+import dev.zieger.utils.time.milliseconds
 
-fun ILogContext.p(
-    title: String = "",
-    scope: CoroutineScope = DefaultCoroutineScope(),
-    max: Long = 100L,
-    block: suspend ProgressBar.() -> Unit
-) = scope.launchEx {
-    ProgressBar(title, max).use { it.block() }
-}
+private const val DEFAULT_MAXIMUM_PROGRESS = 100L
+private val DEFAULT_UPDATE_INTERVAL = 100.milliseconds
 
-object LogColored : ILogOutput {
+object LogColored : LogElement {
 
-    fun initialize() {
-        LogScope.configure(output = this)
-    }
-
-    override fun ILogMessageContext.write(msg: String) {
-        with(TermColors()) {
+    override fun log(level: LogLevel?, msg: String): String? {
+        termColored {
             println(
-                when (this@write.level) {
-                    LogLevel.VERBOSE -> brightGreen(msg)
-                    LogLevel.DEBUG -> brightBlue(msg)
-                    LogLevel.INFO -> brightCyan(msg)
-                    LogLevel.WARNING -> brightYellow(msg)
+                when (level) {
+                    LogLevel.VERBOSE -> brightBlue(msg)
+                    LogLevel.DEBUG -> green(msg)
+                    LogLevel.INFO -> yellow(msg)
+                    LogLevel.WARNING -> brightMagenta(msg)
                     LogLevel.EXCEPTION -> brightRed(msg)
-                    else -> brightMagenta(msg)
+                    else -> cyan(msg)
                 }
             )
         }
+        return msg
+    }
+
+    fun initialize() {
+        Log.clearElements(addLevelFilter = true)
+        Log += this
     }
 }
+
+inline fun <T> termColored(block: TermColors.() -> T): T = with(TermColors(), block)

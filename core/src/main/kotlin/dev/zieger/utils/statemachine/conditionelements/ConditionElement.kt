@@ -2,15 +2,12 @@ package dev.zieger.utils.statemachine.conditionelements
 
 
 import dev.zieger.utils.misc.name
-import dev.zieger.utils.statemachine.OnStateChanged
+import dev.zieger.utils.statemachine.IMatchScope
 
 
 interface IConditionElement {
 
-    suspend fun match(
-        other: IConditionElement?,
-        previousStateChanges: List<OnStateChanged>
-    ): Boolean
+    suspend fun IMatchScope.match(other: IConditionElement?): Boolean
 }
 
 /**

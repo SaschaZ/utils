@@ -15,6 +15,9 @@ plugins {
 configModule("android", ANDROID_LIB) {
     core
     androidXrecyclerView
+
+    "testImplementation"(project(":android"))
+    "testImplementation"(project(":core-testing"))
 }
 
 android {
@@ -42,12 +45,8 @@ android {
 
 tasks {
     withType<Test>().configureEach {
+        useJUnitPlatform()
         outputs.upToDateWhen {false}
-    }
-
-    // config JVM target to 1.8 for kotlin compilation tasks
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-        kotlinOptions.jvmTarget = "1.8"
     }
 
     dokka {

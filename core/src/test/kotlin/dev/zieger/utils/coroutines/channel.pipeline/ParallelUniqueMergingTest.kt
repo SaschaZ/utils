@@ -2,7 +2,7 @@ package dev.zieger.utils.coroutines.channel.pipeline
 
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.runTest
-import dev.zieger.utils.time.duration.seconds
+import dev.zieger.utils.time.seconds
 import io.kotlintest.specs.AbstractAnnotationSpec.Test
 
 class ParallelUniqueMergingTest : ProcessorBaseTest(ParallelProcessingType.UNIQUE) {

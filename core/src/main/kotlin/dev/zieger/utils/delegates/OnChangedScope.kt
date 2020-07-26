@@ -2,12 +2,6 @@
 
 package dev.zieger.utils.delegates
 
-
-/**
- * Same as [IOnChangedScope2] but with [Any]? as parent type.
- */
-interface IOnChangedScope<out T : Any?> : IOnChangedScope2<Any?, T>
-
 /**
  * Scope that describes the change of any property of type [T] hold by a parent of type [P].
  *
@@ -17,35 +11,32 @@ interface IOnChangedScope<out T : Any?> : IOnChangedScope2<Any?, T>
  * @property previousValues all previous values of the property
  * @property clearPreviousValues Lambda to clear the previous values
  */
-interface IOnChangedScope2<P : Any?, out T : Any?> {
-    val value: @UnsafeVariance T
+interface IOnChangedScope2<out P : Any?, T : Any?> {
+    var value: T
     val thisRef: P?
     val previousValue: T?
     val previousValues: List<T?>
     val clearPreviousValues: () -> Unit
     val isInitialNotification: Boolean
+    val valueChangedListener: (T) -> Unit
 }
 
-/**
- * Same as [OnChangedScope2] but with [Any]? as parent type.
- */
-data class OnChangedScope<out T : Any?>(
-    override val value: @UnsafeVariance T,
-    override val thisRef: Any?,
-    override val previousValue: T?,
-    override val previousValues: List<T?>,
-    override val clearPreviousValues: () -> Unit,
-    override val isInitialNotification: Boolean = false
-) : IOnChangedScope<T>
+typealias IOnChangedScope<T> = IOnChangedScope2<Any?, T>
 
 /**
  * Simple implementation of [IOnChangedScope2].
  */
-data class OnChangedScope2<P : Any?, out T : Any?>(
-    override val value: @UnsafeVariance T,
+class OnChangedScope2<P : Any?, T : Any?>(
+    initial: T,
     override val thisRef: P?,
     override val previousValue: T?,
     override val previousValues: List<T?>,
     override val clearPreviousValues: () -> Unit,
-    override val isInitialNotification: Boolean = false
-) : IOnChangedScope2<P, T>
+    override val isInitialNotification: Boolean = false,
+    override val valueChangedListener: (T) -> Unit = {}
+) : IOnChangedScope2<P, T> {
+
+    override var value: T by OnChanged(initial) { valueChangedListener(it) }
+}
+
+typealias OnChangedScope<T> = OnChangedScope2<Any?, T>

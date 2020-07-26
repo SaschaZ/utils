@@ -6,8 +6,8 @@ import dev.zieger.utils.coroutines.builder.asyncEx
 import dev.zieger.utils.coroutines.executeNativeBlocking
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.time.TimeEx
-import dev.zieger.utils.time.duration.IDurationHolder
-import dev.zieger.utils.time.duration.latest
+import dev.zieger.utils.time.base.IDurationHolder
+import dev.zieger.utils.time.base.latest
 import dev.zieger.utils.time.toTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel

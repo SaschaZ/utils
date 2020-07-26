@@ -19,7 +19,7 @@ val DependencyHandlerScope.androidTesting
     get() = "testImplementation"(project(":android-testing"))
 
 val DependencyHandlerScope.kotlin
-    get() = "implementation"("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${Versions.kotlin}")
+    get() = "implementation"("org.jetbrains.kotlin:kotlin-stdlib:${Versions.kotlin}")
 val DependencyHandlerScope.kotlinReflect
     get() = "implementation"("org.jetbrains.kotlin:kotlin-reflect:${Versions.kotlin}")
 val DependencyHandlerScope.kotlinTest
@@ -91,6 +91,11 @@ val DependencyHandlerScope.mockk
     get() = "testImplementation"("io.mockk:mockk:${Versions.mockk}")
 val DependencyHandlerScope.junitJupiter
     get() = "testImplementation"("org.junit.jupiter:junit-jupiter:${Versions.junitJupiterEngine}")
+
+val DependencyHandlerScope.ktorClientGson
+    get() = "implementation"("io.ktor:ktor-client-gson:1.3.2")
+val DependencyHandlerScope.ktorServerGson
+    get() = "implementation"("io.ktor:ktor-jackson:1.3.2")
 
 val DependencyHandlerScope.koTestRunner
     get() = "testImplementation"("io.kotlintest:kotlintest-runner-junit5:${Versions.koTest}")

@@ -4,7 +4,7 @@ object Versions {
     const val kotlin = "1.3.72"
     const val koTest = "3.4.2"
 
-    const val coroutines = "1.3.5"
+    const val coroutines = "1.3.6"
     const val multidex = "2.0.1"
     const val androidXappCompat = "1.1.0"
     const val androidXcoreKtx = "1.1.0"
@@ -32,5 +32,5 @@ object Versions {
     const val bouncyCastle = "1.46"
 
     const val dokka = "0.10.1"
-    const val jacoco = "0.8.5"
+    const val jacoco = "0.8.6-SNAPSHOT"
 }

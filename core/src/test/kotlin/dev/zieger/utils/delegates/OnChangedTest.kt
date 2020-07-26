@@ -7,7 +7,7 @@ import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.delegates.OnChangedTest.OnChangedResults.OnChangedTestResultInput
 import dev.zieger.utils.delegates.OnChangedTest.OnChangedResults.OnChangedTestResultOutput
 import dev.zieger.utils.misc.DataClass
-import dev.zieger.utils.time.duration.minutes
+import dev.zieger.utils.time.minutes
 import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
@@ -81,16 +81,20 @@ class OnChangedTest : AnnotationSpec() {
 
             var propertyValue: () -> TestValueContainer = { TestValueContainer() }
             var testProperty by OnChanged(
-                TestValueContainer(), storePreviousValues, notifyForInitial,
-                notifyOnChangedOnly, scope, mutex, { newVeto },
-                { v ->
-                    if (suspendedListener && scope != null)
-                        onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
-                },
-                { v ->
-                    if (!suspendedListener || scope == null)
-                        onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
-                })
+                OnChangedParams(
+                    TestValueContainer(), storeRecentValues = storePreviousValues,
+                    notifyForInitial = notifyForInitial,
+                    notifyOnChangedValueOnly = notifyOnChangedOnly,
+                    scope = scope, mutex = mutex, veto = { newVeto },
+                    onChangedS = { v ->
+                        if (suspendedListener && scope != null)
+                            onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
+                    },
+                    onChanged = { v ->
+                        if (!suspendedListener || scope == null)
+                            onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
+                    })
+            )
             propertyValue = { testProperty }
 
             repeat(1000) { i ->
@@ -117,16 +121,21 @@ class OnChangedTest : AnnotationSpec() {
             val results = Channel<OnChangedResults>(Channel.UNLIMITED)
 
             var propertyValue: () -> TestValueContainer = { TestValueContainer() }
-            var testProperty by OnChanged2(TestValueContainer(), storePreviousValues, notifyForInitial,
-                notifyOnChangedOnly, scope, mutex, { newVeto },
-                { v ->
-                    if (suspendedListener && scope != null)
-                        onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
-                },
-                { v ->
-                    if (!suspendedListener || scope == null)
-                        onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
-                })
+            var testProperty by OnChanged2(
+                OnChangedParams2(
+                    TestValueContainer(), storeRecentValues = storePreviousValues,
+                    notifyForInitial = notifyForInitial,
+                    notifyOnChangedValueOnly = notifyOnChangedOnly,
+                    scope = scope, mutex = mutex, veto = { newVeto },
+                    onChangedS = { v ->
+                        if (suspendedListener && scope != null)
+                            onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
+                    },
+                    onChanged = { v ->
+                        if (!suspendedListener || scope == null)
+                            onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
+                    })
+            )
             propertyValue = { testProperty }
 
             repeat(1000) { i ->

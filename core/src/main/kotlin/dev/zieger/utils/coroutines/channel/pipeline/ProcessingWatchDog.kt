@@ -7,12 +7,13 @@ import dev.zieger.utils.coroutines.channel.parallel.ParallelProcessor
 import dev.zieger.utils.coroutines.channel.pipeline.ProcessingElementStage.*
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.delegates.OnChanged
+import dev.zieger.utils.delegates.OnChangedParams
 import dev.zieger.utils.misc.*
-import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.TimeEx
-import dev.zieger.utils.time.base.minus
-import dev.zieger.utils.time.duration.IDurationEx
-import dev.zieger.utils.time.duration.seconds
+import dev.zieger.utils.time.base.IDurationEx
+import dev.zieger.utils.time.base.ITimeEx
+import dev.zieger.utils.time.minus
+import dev.zieger.utils.time.seconds
 import dev.zieger.utils.time.toTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -21,6 +22,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
 interface IProcessingWatchDog {
+
+    var watchDogActive: Boolean
 
     val ticks: MutableMap<IProcessingUnit<*, *>, MutableMap<ITimeEx, MutableList<ProcessingElementStage>>>
     fun IProcessingUnit<*, *>.tick(stage: ProcessingElementStage, time: ITimeEx = TimeEx())
@@ -110,14 +113,14 @@ open class ProcessingWatchDog protected constructor(
     private val tickMutex = Mutex()
     private var outputJob: Job? = null
 
-    var watchDogActive by OnChanged(true, notifyForInitial = true) {
+    override var watchDogActive by OnChanged(OnChangedParams(false, notifyForInitial = true) {
         outputJob?.cancel()
         if (it) {
             outputJob = scope.launchEx(interval = printInterval, mutex = tickMutex) {
                 printStates(ticks)
             }
         }
-    }
+    })
 
     private fun Map<out IProcessingUnit<*, *>, Map<ITimeEx, List<ProcessingElementStage>>>.printStats(numTabs: Int = 1) {
         println(entries.joinToString("\n") { (e, _) ->

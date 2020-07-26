@@ -2,14 +2,13 @@
 
 package dev.zieger.utils.statemachine.conditionelements
 
-import dev.zieger.utils.log.ExternalFilter
-
+import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.anyOf
 import dev.zieger.utils.misc.name
+import dev.zieger.utils.statemachine.IMatchScope
 import dev.zieger.utils.statemachine.MachineEx
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
-import dev.zieger.utils.statemachine.OnStateChanged
 import dev.zieger.utils.statemachine.conditionelements.IConditionElementGroup.MatchType
 import dev.zieger.utils.statemachine.conditionelements.IConditionElementGroup.MatchType.*
 
@@ -24,10 +23,7 @@ interface IConditionElementGroup : IConditionElement {
     val matchType: MatchType
     val elements: MutableList<IComboElement>
 
-    override suspend fun match(
-        other: IConditionElement?,
-        previousStateChanges: List<OnStateChanged>
-    ): Boolean {
+    override suspend fun IMatchScope.match(other: IConditionElement?): Boolean {
         return when (other) {
             is IInputElement -> {
                 val filtered = elements.filter {
@@ -36,16 +32,18 @@ interface IConditionElementGroup : IConditionElement {
                             || it.hasExternal && matchType.anyOf(ALL, NONE)
                 }
                 filtered.isEmpty() || when (matchType) {
-                    ALL -> filtered.all { it.match(other, previousStateChanges) }
-                    ANY -> filtered.any { it.match(other, previousStateChanges) }
-                    NONE -> filtered.none { it.match(other, previousStateChanges) }
+                    ALL -> filtered.all { it.run { match(other) } }
+                    ANY -> filtered.any { it.run { match(other) } }
+                    NONE -> filtered.none { it.run { match(other) } }
                 }
             }
             null -> false
-            else -> throw IllegalArgumentException("Can not match ${this::class.name} with ${other.let { it::class.name }}")
+            else -> throw IllegalArgumentException("Can not match ${this@IConditionElementGroup::class.name} " +
+                    "with ${other.let { it::class.name }}"
+            )
         } logV {
-            elements + ExternalFilter(noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
-            "#CG $it => ${this@IConditionElementGroup} <||> $other"
+            f = GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
+            m = "#CG $it => ${this@IConditionElementGroup} <||> $other"
         }
     }
 }

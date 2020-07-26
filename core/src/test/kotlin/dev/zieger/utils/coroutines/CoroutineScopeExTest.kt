@@ -3,7 +3,7 @@ package dev.zieger.utils.coroutines
 import dev.zieger.utils.core_testing.TestCoroutineScope
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.time.delay
-import dev.zieger.utils.time.duration.milliseconds
+import dev.zieger.utils.time.milliseconds
 import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive

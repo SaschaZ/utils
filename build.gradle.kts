@@ -1,11 +1,10 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
-
 buildscript {
     repositories {
         mavenLocal()
         mavenCentral()
         google()
         jcenter()
+        maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
         maven { url = uri("https://jitpack.io") }
         maven { url = uri("https://kotlin.bintray.com/ktor") }
         maven { url = uri("https://kotlin.bintray.com/kotlinx") }
@@ -28,21 +27,14 @@ allprojects {
         mavenCentral()
         google()
         jcenter()
+        maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
         maven { url = uri("https://jitpack.io") }
         maven { url = uri("https://kotlin.bintray.com/ktor") }
         maven { url = uri("https://kotlin.bintray.com/kotlinx") }
     }
-
-    tasks.withType(KotlinJvmCompile::class.java).all {
+    tasks.withType(org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile::class.java).all {
         kotlinOptions {
             jvmTarget = "1.8"
-            suppressWarnings = true
-            freeCompilerArgs = listOf(
-                "-Xuse-experimental=kotlin.Experimental",
-                "-Xuse-experimental=kotlinx.coroutines.ObsoleteCoroutinesApi",
-                "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi",
-                "-Xuse-experimental=kotlin.ExperimentalStdlibApi"
-            )
         }
     }
 }

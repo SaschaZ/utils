@@ -1,12 +1,8 @@
 package dev.zieger.utils.time
 
 import dev.zieger.utils.core_testing.assertion.assert
-import dev.zieger.utils.time.base.div
-import dev.zieger.utils.time.base.minus
-import dev.zieger.utils.time.base.times
-import dev.zieger.utils.time.duration.IDurationEx
-import dev.zieger.utils.time.duration.minutes
-import dev.zieger.utils.time.duration.weeks
+import dev.zieger.utils.time.base.IDurationEx
+import dev.zieger.utils.time.base.ITimeEx
 import dev.zieger.utils.time.progression.step
 import io.kotlintest.specs.AnnotationSpec
 

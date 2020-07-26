@@ -2,7 +2,13 @@
 
 package dev.zieger.utils.log.console
 
-enum class AsciiControlCharacters(val character: Char) : (Int) -> Unit {
+import java.io.PrintStream
+
+enum class AsciiControlCharacters(val character: Char) :
+        (Int, PrintStream) -> Unit,
+        (Int) -> Unit,
+        () -> Unit {
+
     NULL(0),
     SOH(1), // Start of Header
     STX(2), // Start of Text
@@ -45,7 +51,11 @@ enum class AsciiControlCharacters(val character: Char) : (Int) -> Unit {
         fun valueForCharacter(c: Char) = values().find { it.character == c }
     }
 
-    override fun invoke(num: Int) = repeat(num) { print(character) }
+    override fun invoke(num: Int, stream: PrintStream) =
+        stream.print((0..num).joinToString("") { "$character" })
+
+    override fun invoke(num: Int) = invoke(num, System.out)
+    override fun invoke() = invoke(1)
 
     override fun toString() = "$name[${character.toByte().toHex(false)}]"
 }

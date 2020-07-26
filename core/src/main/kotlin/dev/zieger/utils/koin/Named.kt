@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package dev.zieger.utils.koin
 
 import org.koin.core.definition.BeanDefinition

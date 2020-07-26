@@ -1,10 +1,6 @@
 package dev.zieger.utils.time
 
-import dev.zieger.utils.time.base.div
-import dev.zieger.utils.time.base.minus
-import dev.zieger.utils.time.base.times
-import dev.zieger.utils.time.duration.minutes
-import dev.zieger.utils.time.duration.years
+import dev.zieger.utils.time.base.ITimeEx
 import io.kotlintest.specs.AnnotationSpec
 
 class TimeExTest : AnnotationSpec() {
@@ -18,5 +14,16 @@ class TimeExTest : AnnotationSpec() {
         println("${10.minutes * 6}")
         val difference = firstTime - secondTime
         println("$difference")
+
+        val millis = System.currentTimeMillis()
+        val years = (millis / 1.years).millis
+        println(years)
+        val days = (millis % 1.years) / 1.days
+        println(days)
+        val daySum = 31 + 28 + 31 + 30 + 31 + 30 + 16
+        println(daySum)
+        println(TimeEx(millis).leapYears())
     }
+
+    fun ITimeEx.leapYears(since: Int = 1970): Long = (this / 1.years / 4).toLong()
 }

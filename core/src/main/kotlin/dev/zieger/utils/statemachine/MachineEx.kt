@@ -2,10 +2,13 @@
 
 package dev.zieger.utils.statemachine
 
+import dev.zieger.utils.coroutines.TypeContinuation
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
+import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.statemachine.MachineEx.Companion.DEFAULT_PREVIOUS_CHANGES_SIZE
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel
 import dev.zieger.utils.statemachine.MachineEx.Companion.debugLevel
 import dev.zieger.utils.statemachine.conditionelements.*
@@ -13,7 +16,6 @@ import dev.zieger.utils.statemachine.conditionelements.UsedAs.RUNTIME
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -138,7 +140,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * }
  * ```
  * There are several methods and properties to access current and previous [IEvent]s, [IState]s and [IData].
- * See [ExecutorScope] for more details.
+ * See [IMatchScope] for more details.
  *
  * # **Exclude**
  *
@@ -159,20 +161,22 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * @property initialState [IState] that is activated initially in the state machine.
  * @property scope [CoroutineScopeEx] that is used for all Coroutine operations.
- * @property previousChangesCacheSize Size of the cache that store the state changes.
+ * @property previousChangesCacheSize Size of the cache that store the state changes. Defaulting to
+ * [DEFAULT_PREVIOUS_CHANGES_SIZE].
  * @property debugLevel [DebugLevel] for log messages used in the whole state machine.
  * @param builder Lambda that defines all state machine conditions. See [MachineDsl] for more details.
  */
 open class MachineEx(
     private val initialState: IState,
     override val scope: CoroutineScopeEx = DefaultCoroutineScope(),
-    private val previousChangesCacheSize: Int = 128,
-    private val mapper: IMachineExMapper = MachineExMapper(),
+    private val previousChangesCacheSize: Int = DEFAULT_PREVIOUS_CHANGES_SIZE,
     debugLevel: DebugLevel = DebugLevel.ERROR,
     builder: suspend MachineDsl.() -> Unit
-) : MachineDsl(mapper) {
+) : MachineDsl() {
 
     companion object {
+
+        const val DEFAULT_PREVIOUS_CHANGES_SIZE = 128
 
         @Suppress("unused")
         enum class DebugLevel {
@@ -189,19 +193,18 @@ open class MachineEx(
 
     private val finishedProcessingEvent = Channel<Boolean>()
 
-    private val eventMutex = Mutex()
-    private val eventChannel = Channel<IComboElement>(Channel.BUFFERED)
+    private val eventChannel = Channel<Pair<IComboElement, (IComboElement) -> Unit>>(Channel.RENDEZVOUS)
 
-    override var event: IComboElement
-        get() = currentEvent
-        set(value) {
-            submittedEventCount.incrementAndGet()
-            scope.launchEx(mutex = eventMutex) { eventChannel.send(value) }
-        }
+    override lateinit var eventCombo: IComboElement
 
-    private lateinit var currentEvent: IComboElement
+    override suspend fun setEvent(event: IComboElement): IComboElement {
+        val cont = TypeContinuation<IComboElement>()
+        eventChannel.send(event to { state -> cont.trigger(state) })
+        return cont.suspendUntilTrigger()!!
+    }
 
-    override var state: IComboElement = initialState.combo
+    private val stateComboObservable = OnChanged<IComboElement>(initialState.combo)
+    override var stateCombo: IComboElement by stateComboObservable
 
     private val submittedEventCount = AtomicInteger(0)
     private val processedEventCount = AtomicInteger(0)
@@ -222,14 +225,18 @@ open class MachineEx(
         }
     }
 
-    private suspend fun IComboElement.processEvent() {
-        currentEvent = this
-        currentEvent.usedAs = RUNTIME
-        val stateBefore = this@MachineEx.state
-        applyNewState(mapper.findStateForEvent(this, stateBefore, previousChanges), stateBefore, this)
+    private suspend fun Pair<IComboElement, (IComboElement) -> Unit>.processEvent() {
+        eventCombo = first
+        eventCombo.usedAs = RUNTIME
+        val stateBefore = stateCombo
+
+        applyNewState(mapper.processEvent(first, stateBefore, previousChanges), stateBefore, first)
         processedEventCount.incrementAndGet()
+
         if (!isProcessingActive)
             scope.launch { finishedProcessingEvent.send(true) }
+
+        second(stateCombo)
     }
 
     private fun applyNewState(
@@ -237,7 +244,7 @@ open class MachineEx(
         stateBefore: IComboElement,
         event: IComboElement
     ) = newState?.let {
-        state = newState
+        stateCombo = newState
         previousChanges.add(0,
             OnStateChanged(event, stateBefore, newState).apply {
                 stateBefore.state?.run { activeStateChanged(false) }

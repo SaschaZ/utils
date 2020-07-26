@@ -3,7 +3,7 @@ package dev.zieger.utils.coroutines.builder
 import dev.zieger.utils.UtilsSettings.LOG_EXCEPTIONS
 import dev.zieger.utils.UtilsSettings.PRINT_EXCEPTIONS
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
-import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.base.IDurationEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex

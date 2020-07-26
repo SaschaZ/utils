@@ -1,31 +1,37 @@
-@file:Suppress("unused")
+@file:Suppress("unused", "MemberVisibilityCanBePrivate")
 
 package dev.zieger.utils.android
 
-import dev.zieger.utils.log.*
-import dev.zieger.utils.log.LogElementMessageBuilder.Companion.DEFAULT_RELEASE_LOG_ELEMENTS
-import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.misc.cast
+import dev.zieger.utils.log.Log
+import dev.zieger.utils.log.LogElement
+import dev.zieger.utils.log.LogLevel
+import dev.zieger.utils.log.PrintLn
 
-object AndroidLog : ILogOutput {
+object AndroidLog : LogElement {
 
-    private var tag = ""
+    var tag = ""
 
-    override fun ILogMessageContext.write(msg: String) {
+    override fun log(level: LogLevel?, msg: String): String {
         when (level) {
-            LogLevel.VERBOSE -> android.util.Log.v(tags.firstOrNull() ?: tag, msg)
-            LogLevel.DEBUG -> android.util.Log.d(tags.firstOrNull() ?: tag, msg)
-            LogLevel.INFO -> android.util.Log.i(tags.firstOrNull() ?: tag, msg)
-            LogLevel.WARNING -> android.util.Log.w(tags.firstOrNull() ?: tag, msg)
-            LogLevel.EXCEPTION -> android.util.Log.e(tags.firstOrNull() ?: tag, msg)
-        }.asUnit()
+            LogLevel.VERBOSE -> android.util.Log.v(tag, msg)
+            LogLevel.DEBUG -> android.util.Log.d(tag, msg)
+            LogLevel.INFO -> android.util.Log.i(tag, msg)
+            LogLevel.WARNING -> android.util.Log.w(tag, msg)
+            LogLevel.EXCEPTION -> android.util.Log.e(tag, msg)
+            else -> android.util.Log.i(tag, msg)
+        }
+        return msg
     }
 
     fun initialize(
-        settings: ILogSettings = Log.cast<ILogSettings>().run { copy() },
-        tags: ILogTags = Log,
-        builder: ILogMessageBuilder = LogElementMessageBuilder(DEFAULT_RELEASE_LOG_ELEMENTS),
-        elements: ILogElements = Log.cast<ILogElements>().run { copy() },
-        output: ILogOutput = this
-    ) = LogScope.configure(settings, tags, builder, elements, output)
+        tag: String? = null,
+        addTime: Boolean = false,
+        addCallOrigin: Boolean = false,
+        useSystemOut: Boolean = false,
+        logLevel: LogLevel = if (BuildConfig.DEBUG) LogLevel.VERBOSE else LogLevel.WARNING
+    ) {
+        this.tag = tag ?: this.tag
+        Log.clearElements(addTime = addTime, printCallOrigin = addCallOrigin, addLevelFilter = true)
+        Log.plusAssign(if (useSystemOut) PrintLn else this)
+    }
 }
