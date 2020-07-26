@@ -6,8 +6,9 @@ import dev.zieger.utils.log.LogOutputElement.*
 import dev.zieger.utils.misc.anyOf
 import dev.zieger.utils.misc.nullWhen
 import dev.zieger.utils.misc.startsWithAny
-import dev.zieger.utils.time.DateFormat
-import dev.zieger.utils.time.DateFormat.FILENAME_TIME
+import dev.zieger.utils.time.string.DateFormat
+import dev.zieger.utils.time.string.DateFormat.FILENAME_TIME
+import dev.zieger.utils.time.string.DateFormat.TIME_ONLY
 import kotlinx.coroutines.CoroutineName
 
 /**
@@ -25,7 +26,7 @@ interface ILogOutputElement {
 
 sealed class LogOutputElement(override val out: ILogMessageContext.(msg: String) -> String?) : ILogOutputElement {
 
-    class DATE(format: DateFormat = DateFormat.TIME_ONLY) : LogOutputElement({
+    class DATE(format: DateFormat = TIME_ONLY) : LogOutputElement({
         createdAt.formatTime(format)
     })
 

@@ -3,10 +3,9 @@ package dev.zieger.utils.log
 import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.lastOrNull
-import dev.zieger.utils.time.ITimeEx
-import dev.zieger.utils.time.base.minus
-import dev.zieger.utils.time.duration.IDurationEx
-import dev.zieger.utils.time.duration.milliseconds
+import dev.zieger.utils.time.base.IDurationEx
+import dev.zieger.utils.time.base.ITimeEx
+import dev.zieger.utils.time.milliseconds
 
 /**
  * Log-Filter

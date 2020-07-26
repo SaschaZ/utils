@@ -4,8 +4,8 @@ package dev.zieger.utils.log
 
 import dev.zieger.utils.log.LogLevel.*
 import dev.zieger.utils.misc.cast
-import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.TimeEx
+import dev.zieger.utils.time.base.ITimeEx
 import kotlinx.coroutines.CoroutineScope
 
 
