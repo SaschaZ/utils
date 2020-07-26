@@ -104,6 +104,7 @@ class ObservableParams2<P : Any?, T : Any?>(
     override val mutex: Mutex? = null,
     override val subscriberStateChanged: ((Boolean) -> Unit)? = {},
     override val veto: (T) -> Boolean = { false },
+    override val map: (T) -> T = { it },
     override val onChangedS: suspend IOnChangedScope2<P, T>.(T) -> Unit = {},
     override val onChanged: IOnChangedScope2<P, T>.(T) -> Unit = {}
 ) : DataClass(), IObservableParams2<P, T>

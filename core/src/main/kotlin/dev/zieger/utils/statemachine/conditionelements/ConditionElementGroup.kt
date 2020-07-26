@@ -6,9 +6,9 @@ import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.anyOf
 import dev.zieger.utils.misc.name
+import dev.zieger.utils.statemachine.IMatchScope
 import dev.zieger.utils.statemachine.MachineEx
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
-import dev.zieger.utils.statemachine.Matcher.IMatchScope
 import dev.zieger.utils.statemachine.conditionelements.IConditionElementGroup.MatchType
 import dev.zieger.utils.statemachine.conditionelements.IConditionElementGroup.MatchType.*
 

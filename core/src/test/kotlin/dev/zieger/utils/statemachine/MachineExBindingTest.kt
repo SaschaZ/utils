@@ -1,6 +1,5 @@
 package dev.zieger.utils.statemachine
 
-import dev.zieger.utils.statemachine.MachineExTest.TestState.A
 import dev.zieger.utils.statemachine.conditionelements.*
 import io.kotlintest.specs.AnnotationSpec
 
@@ -43,9 +42,9 @@ class MachineExBindingTest : AnnotationSpec() {
         companion object : Type<TestData>(TestData::class)
     }
 
-    val machine = MachineEx(A) {
-
-    }
+//    val machine = MachineEx(A) {
+//        +Events.FIRST bind childMachine
+//    }
 
     lateinit var childMachine: MachineEx
 }

@@ -1,4 +1,4 @@
-package dev.zieger.utils.time
+package dev.zieger.utils.time.zone
 
 import java.time.ZonedDateTime
 import java.util.*

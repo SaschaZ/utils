@@ -11,7 +11,6 @@ import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.statemachine.MachineEx.Companion.DEFAULT_PREVIOUS_CHANGES_SIZE
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel
 import dev.zieger.utils.statemachine.MachineEx.Companion.debugLevel
-import dev.zieger.utils.statemachine.Matcher.IMatchScope
 import dev.zieger.utils.statemachine.conditionelements.*
 import dev.zieger.utils.statemachine.conditionelements.UsedAs.RUNTIME
 import kotlinx.coroutines.cancel
@@ -171,10 +170,9 @@ open class MachineEx(
     private val initialState: IState,
     override val scope: CoroutineScopeEx = DefaultCoroutineScope(),
     private val previousChangesCacheSize: Int = DEFAULT_PREVIOUS_CHANGES_SIZE,
-    private val mapper: IMachineExMapper = MachineExMapper(),
     debugLevel: DebugLevel = DebugLevel.ERROR,
     builder: suspend MachineDsl.() -> Unit
-) : MachineDsl(mapper) {
+) : MachineDsl() {
 
     companion object {
 
@@ -232,7 +230,7 @@ open class MachineEx(
         eventCombo.usedAs = RUNTIME
         val stateBefore = stateCombo
 
-        applyNewState(mapper.findStateForEvent(first, stateBefore, previousChanges), stateBefore, first)
+        applyNewState(mapper.processEvent(first, stateBefore, previousChanges), stateBefore, first)
         processedEventCount.incrementAndGet()
 
         if (!isProcessingActive)

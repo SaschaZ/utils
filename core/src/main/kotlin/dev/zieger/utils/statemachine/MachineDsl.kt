@@ -2,13 +2,14 @@
 
 package dev.zieger.utils.statemachine
 
-import dev.zieger.utils.statemachine.Matcher.IMatchScope
 import dev.zieger.utils.statemachine.conditionelements.*
 import dev.zieger.utils.statemachine.conditionelements.IConditionElementGroup.MatchType.*
 import kotlin.math.max
 
 
-abstract class MachineDsl(private val mapper: IMachineExMapper) : IMachineEx {
+abstract class MachineDsl : IMachineEx {
+
+    protected val mapper: IMachineExMapper = MachineExMapper()
 
     // start entry with unary +
     operator fun IMaster.unaryPlus() = Condition(this)
@@ -107,7 +108,7 @@ abstract class MachineDsl(private val mapper: IMachineExMapper) : IMachineEx {
      * Binds the [Condition] to the specified [IMachineEx].
      * A bound [IMachineEx] will process all events as long as the condition matches.
      */
-    infix fun Condition.bind(machine: IMachineEx) = mapper.bind(this, machine)
+    infix fun Condition.bind(machine: IMachineEx) = mapper.addBinding(this, machine)
 
 
     /**

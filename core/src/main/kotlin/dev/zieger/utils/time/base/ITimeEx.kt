@@ -1,6 +1,6 @@
-package dev.zieger.utils.time
+package dev.zieger.utils.time.base
 
-import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.string.StringConverter
 import dev.zieger.utils.time.zone.ITimeZoneHolder
 import java.util.*
 
@@ -15,17 +15,17 @@ interface ITimeEx : IDurationEx, ITimeZoneHolder, StringConverter {
     /**
      * @see [Calendar.get]
      */
-    fun get(field: Int) = calendar.get(field)
+    fun getCalendarField(field: Int) = calendar.get(field)
 
     val year: Int
-        get() = get(Calendar.YEAR)
+        get() = getCalendarField(Calendar.YEAR)
     val month: Int
-        get() = get(Calendar.MONTH)
+        get() = getCalendarField(Calendar.MONTH)
     val dayOfMonth: Int
-        get() = get(Calendar.DAY_OF_MONTH)
+        get() = getCalendarField(Calendar.DAY_OF_MONTH)
     val dayOfWeek: Int
-        get() = get(Calendar.DAY_OF_WEEK)
+        get() = getCalendarField(Calendar.DAY_OF_WEEK)
     val hourOfDay: Int
-        get() = get(Calendar.HOUR_OF_DAY)
+        get() = getCalendarField(Calendar.HOUR_OF_DAY)
 }
 

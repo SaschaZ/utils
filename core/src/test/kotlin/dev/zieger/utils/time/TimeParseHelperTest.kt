@@ -2,6 +2,7 @@
 
 package dev.zieger.utils.time
 
+import dev.zieger.utils.time.string.parse
 import io.kotlintest.specs.AnnotationSpec
 
 internal class TimeParseHelperTest : AnnotationSpec() {

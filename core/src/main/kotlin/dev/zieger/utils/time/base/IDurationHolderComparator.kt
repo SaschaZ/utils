@@ -1,4 +1,4 @@
-package dev.zieger.utils.time.duration
+package dev.zieger.utils.time.base
 
 interface IDurationHolderComparator : Comparable<IDurationHolder>, Comparator<IDurationHolder>,
     IDurationHolder {

@@ -3,7 +3,7 @@ package dev.zieger.utils.coroutines
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.base.IDurationEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel

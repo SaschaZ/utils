@@ -3,11 +3,11 @@ package dev.zieger.utils.misc
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.builder.withContextEx
 import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
-import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.TimeEx
-import dev.zieger.utils.time.base.minus
-import dev.zieger.utils.time.base.plus
-import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.base.IDurationEx
+import dev.zieger.utils.time.base.ITimeEx
+import dev.zieger.utils.time.minus
+import dev.zieger.utils.time.plus
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.sync.Mutex
 

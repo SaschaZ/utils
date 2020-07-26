@@ -2,7 +2,7 @@
 
 package dev.zieger.utils.misc
 
-import dev.zieger.utils.time.duration.milliseconds
+import dev.zieger.utils.time.milliseconds
 import kotlin.math.pow
 
 interface INumber {
@@ -42,7 +42,7 @@ interface INumber {
     fun toByte(): Byte
 }
 
-open class NumberEx(internal val internal: Number) : Number(), Comparable<NumberEx> {
+open class NumberEx(internal val internal: Number) : Number(), INumber, Comparable<NumberEx> {
 
     constructor(value: Double) : this(value as Number)
     constructor(value: Float) : this(value as Number)

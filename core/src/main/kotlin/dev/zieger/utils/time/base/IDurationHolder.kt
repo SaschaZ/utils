@@ -1,9 +1,8 @@
-package dev.zieger.utils.time.duration
+package dev.zieger.utils.time.base
 
-import dev.zieger.utils.time.base.TimeUnit
-import dev.zieger.utils.time.base.convert
+import dev.zieger.utils.misc.INumber
 
-interface IDurationHolder : Comparable<IDurationHolder> {
+interface IDurationHolder : Comparable<IDurationHolder>, INumber {
 
     override fun compareTo(other: IDurationHolder) = millis.compareTo(other.millis)
 

@@ -2,7 +2,7 @@ package dev.zieger.utils.statemachine.conditionelements
 
 
 import dev.zieger.utils.misc.name
-import dev.zieger.utils.statemachine.Matcher.IMatchScope
+import dev.zieger.utils.statemachine.IMatchScope
 
 
 interface IConditionElement {

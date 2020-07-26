@@ -9,11 +9,11 @@ import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.delegates.OnChangedParams
 import dev.zieger.utils.misc.*
-import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.TimeEx
-import dev.zieger.utils.time.base.minus
-import dev.zieger.utils.time.duration.IDurationEx
-import dev.zieger.utils.time.duration.seconds
+import dev.zieger.utils.time.base.IDurationEx
+import dev.zieger.utils.time.base.ITimeEx
+import dev.zieger.utils.time.minus
+import dev.zieger.utils.time.seconds
 import dev.zieger.utils.time.toTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

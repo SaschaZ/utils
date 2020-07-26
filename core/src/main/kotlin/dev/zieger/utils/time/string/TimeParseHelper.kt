@@ -1,6 +1,7 @@
-package dev.zieger.utils.time
+package dev.zieger.utils.time.string
 
 import dev.zieger.utils.misc.catch
+import dev.zieger.utils.time.TimeEx
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -22,7 +23,10 @@ open class TimeParseHelper {
             "dd-MM-yyyy HH:mm:ss",
             "dd-MM-yyyy HH:mm",
             "yyyy-MM-dd HH:mm:ss",
-            "yyyy-MM-dd HH:mm"
+            "yyyy-MM-dd HH:mm",
+            "yyyy-MM-dd",
+            "dd.MM.yyyy",
+            "dd.MM.yy"
         )
     }
 

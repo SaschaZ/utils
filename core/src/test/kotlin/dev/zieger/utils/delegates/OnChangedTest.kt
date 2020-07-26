@@ -7,7 +7,7 @@ import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.delegates.OnChangedTest.OnChangedResults.OnChangedTestResultInput
 import dev.zieger.utils.delegates.OnChangedTest.OnChangedResults.OnChangedTestResultOutput
 import dev.zieger.utils.misc.DataClass
-import dev.zieger.utils.time.duration.minutes
+import dev.zieger.utils.time.minutes
 import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel

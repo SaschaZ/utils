@@ -7,7 +7,7 @@ import dev.zieger.utils.core_testing.assertion.rem
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.time.delay
-import dev.zieger.utils.time.duration.seconds
+import dev.zieger.utils.time.seconds
 import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.runBlocking
 

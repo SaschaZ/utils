@@ -1,7 +1,5 @@
 package dev.zieger.utils.time
 
-import dev.zieger.utils.time.duration.toDuration
-import dev.zieger.utils.time.duration.years
 import io.kotlintest.specs.AnnotationSpec
 import kotlin.math.absoluteValue
 import kotlin.random.Random

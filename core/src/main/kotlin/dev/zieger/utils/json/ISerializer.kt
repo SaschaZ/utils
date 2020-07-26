@@ -21,7 +21,7 @@ inline fun <reified T : Any> DefaultSerializer(): IConverter<T> = DefaultJsonCon
 
 open class DefaultJsonConverter<T : Any>(private val clazz: KClass<T>) : JsonConverter(), IConverter<T> {
     override fun T.serialize(): String? = toJson(clazz)
-    override fun List<T>.serialize(): String? = toJson(clazz)
+    override fun List<T>.serialize(): String? = toJsonReified(List::class, clazz.java)
     override fun String.deserialize(): T? = fromJson(clazz)
-    override fun String.deserializeList(): List<T>? = fromJsonList(clazz)
+    override fun String.deserializeList(): List<T>? = fromJsonListNonDef(clazz.java)
 }

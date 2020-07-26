@@ -1,6 +1,7 @@
-package dev.zieger.utils.time
+package dev.zieger.utils.time.zone
 
-import dev.zieger.utils.time.duration.IDurationHolder
+import dev.zieger.utils.time.base.IDurationHolder
+import dev.zieger.utils.time.toTime
 import java.time.Instant
 import java.time.LocalDateTime
 import java.util.*

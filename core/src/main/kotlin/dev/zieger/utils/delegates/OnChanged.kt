@@ -1,13 +1,14 @@
-@file:Suppress("LeakingThis")
+@file:Suppress("LeakingThis", "unused")
 
 package dev.zieger.utils.delegates
 
 import dev.zieger.utils.coroutines.Continuation
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.withTimeout
+import dev.zieger.utils.delegates.OnChangedParams2.Companion.DEFAULT_RECENT_VALUE_BUFFER_SIZE
 import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.base.IDurationEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.atomic.AtomicReference
@@ -43,6 +44,12 @@ interface IOnChanged2<P : Any?, T : Any?> : IOnChangedParams2<P, T>, ReadWritePr
      * to the property.
      */
     fun vetoInternal(value: T): Boolean
+
+    /**
+     * Is invoked directly after `veto` if it returned `false`.
+     * Maps the new input value to the new internal value.
+     */
+    fun mapInternal(value: T): T = value
 
     /**
      * Suspends until the next change occurs. Will throw a runtime exception if the [timeout] is reached.
@@ -83,25 +90,58 @@ interface IOnChanged2<P : Any?, T : Any?> : IOnChangedParams2<P, T>, ReadWritePr
 typealias OnChanged<T> = OnChanged2<Any?, T>
 
 /**
- * Simple implementation of [IOnChanged2].
+ * Implementation of [IOnChanged2] using [IOnChangedParams2] for initialization.
  */
 open class OnChanged2<P : Any?, T : Any?>(
     params: IOnChangedParams2<P, T>
 ) : IOnChanged2<P, T>, IOnChangedParams2<P, T> by params {
 
+    /**
+     * @param initial The observed property will be initialized with this value.
+     * @param storeRecentValues If set to `true` all values of the property will be stored and provided within the
+     * [IOnChangedScope2]. Should be set to `false` when the values of the property consume too much memory.
+     * Defaulting is `false`.
+     * @param recentValueSize Size of the fifo used to store the recent values. Will be set to
+     * [DEFAULT_RECENT_VALUE_BUFFER_SIZE] if [storeRecentValues] is `true`.
+     * @param notifyForInitial When `true` a new listener will immediately notified for the initial value of the
+     * property without the need of a change. Default is `false`.
+     * @param notifyOnChangedValueOnly When `false` listener are only notified when the value of the property changed.
+     * When `true` every "set" to the property will notify the listener. Default is `true`.
+     * @param scope [CoroutineScope] that is used to notify listener that requested to be notified within a coroutine.
+     * Default is `null`.
+     * @param mutex If not `null` the [Mutex] will wrap the whole execution of [scope]. Default is `null`.
+     * @param veto Is invoked before every change of the property. When returning `true` the new value is not assigned
+     * to the property. (Optional)
+     * @param map Maps the new input value to the internal property. Is called after `veto` and before `onChanged`.
+     * @param onChangedS Suspend on change callback. Only is invoked when [scope] is set. (Optional)
+     * @param onChanged Unsuspended on change callback. Will be called immediately when a new value is set. (Optional)
+     */
     constructor(
         initial: T,
+        storeRecentValues: Boolean = false,
+        recentValueSize: Int = if (storeRecentValues) DEFAULT_RECENT_VALUE_BUFFER_SIZE else 0,
+        notifyForInitial: Boolean = false,
+        notifyOnChangedValueOnly: Boolean = true,
+        scope: CoroutineScope? = null,
+        mutex: Mutex? = null,
+        veto: (T) -> Boolean = { false },
+        map: (T) -> T = { it },
+        onChangedS: suspend IOnChangedScope2<P, T>.(T) -> Unit = {},
         onChanged: IOnChangedScope2<P, T>.(T) -> Unit = {}
-    ) : this(OnChangedParams2(initial, onChanged = onChanged))
+    ) : this(OnChangedParams2(initial, storeRecentValues, recentValueSize, notifyForInitial, notifyOnChangedValueOnly,
+        scope, mutex, veto, map, onChangedS, onChanged))
 
     protected var previousThisRef = AtomicReference<P?>(null)
     override val recentValues = FiFo<T?>(recentValueSize)
 
     override var value: T = initial
         set(newValue) {
-            if (!vetoInternal(newValue) && (field != newValue || !notifyOnChangedValueOnly)) {
+            val vetoActive = vetoInternal(newValue)
+            if (vetoActive) return
+            val mappedInput = mapInternal(newValue)
+            if (field != mappedInput || !notifyOnChangedValueOnly) {
                 val old = field
-                field = newValue
+                field = mappedInput
                 onPropertyChanged(value, old)
             }
         }
@@ -168,6 +208,8 @@ open class OnChanged2<P : Any?, T : Any?>(
     override fun getValue(thisRef: P, property: KProperty<*>): T = value
 
     override fun vetoInternal(value: T): Boolean = veto(value)
+
+    override fun mapInternal(value: T): T = map(value)
 
     override suspend fun IOnChangedScope2<P, T>.onChangedSInternal(value: T) = onChangedS(value)
 

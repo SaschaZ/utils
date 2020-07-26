@@ -1,8 +1,5 @@
+import dev.zieger.utils.*
 import dev.zieger.utils.ModuleType.JVM_LIB
-import dev.zieger.utils.Versions
-import dev.zieger.utils.configModule
-import dev.zieger.utils.coreTesting
-import dev.zieger.utils.kotlinReflect
 
 plugins {
     kotlin("jvm")
@@ -23,6 +20,8 @@ tasks.register<JacocoReport>("applicationCodeCoverageReport") {
 configModule("core", JVM_LIB) {
     coreTesting
     kotlinReflect
+    ktorClientGson
+    ktorServerGson
 }
 
 tasks {

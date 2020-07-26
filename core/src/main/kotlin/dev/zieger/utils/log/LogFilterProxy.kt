@@ -7,11 +7,11 @@ import dev.zieger.utils.log.LogFilter.Companion.EXTERNAL.Companion.ExternalRetur
 import dev.zieger.utils.log.LogFilter.Companion.EXTERNAL.Companion.ExternalReturn.RECHECK
 import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 import dev.zieger.utils.log.LogFilter.Companion.NONE
-import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.TimeEx
-import dev.zieger.utils.time.base.minus
-import dev.zieger.utils.time.base.plus
-import dev.zieger.utils.time.duration.milliseconds
+import dev.zieger.utils.time.base.ITimeEx
+import dev.zieger.utils.time.milliseconds
+import dev.zieger.utils.time.minus
+import dev.zieger.utils.time.plus
 import kotlinx.coroutines.Job
 
 internal class LogFilterProxy(private val scope: DefaultCoroutineScope = DefaultCoroutineScope()) {

@@ -5,9 +5,9 @@ package dev.zieger.utils.statemachine.conditionelements
 import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.name
+import dev.zieger.utils.statemachine.IMatchScope
 import dev.zieger.utils.statemachine.MachineEx
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
-import dev.zieger.utils.statemachine.Matcher.IMatchScope
 import dev.zieger.utils.statemachine.conditionelements.ICondition.ConditionType.*
 import dev.zieger.utils.statemachine.conditionelements.IConditionElementGroup.MatchType.*
 
@@ -28,14 +28,17 @@ interface ICondition : IConditionElement {
     }
 
     val type: ConditionType
-        get() = when (start.master) {
-            is IEvent,
-            is IEventGroup<IEvent> -> EVENT
-            is State,
-            is IStateGroup<State> -> STATE
-            is IExternal -> EXTERNAL
-            else -> throw IllegalArgumentException("Unexpected first element $start")
-        }
+        get() = start.master.getType()
+
+    private fun IMaster.getType(): ConditionType = when (this) {
+        is IEvent,
+        is IEventGroup<IEvent> -> EVENT
+        is IState,
+        is IStateGroup<IState> -> STATE
+        is IExternal -> EXTERNAL
+        is IComboElement -> master.getType()
+        else -> throw IllegalArgumentException("Unexpected first element $start")
+    }
 
     override suspend fun IMatchScope.match(other: IConditionElement?): Boolean {
         return when (other) {

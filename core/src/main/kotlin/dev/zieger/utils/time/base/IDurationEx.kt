@@ -1,11 +1,8 @@
-package dev.zieger.utils.time.duration
+package dev.zieger.utils.time.base
 
 import dev.zieger.utils.misc.divMod
-import dev.zieger.utils.time.base.TimeUnit
 
 interface IDurationEx : IDurationHolderComparator {
-
-    val id: Long
 
     fun formatDuration(
         vararg entities: TimeUnit = TimeUnit.values(),

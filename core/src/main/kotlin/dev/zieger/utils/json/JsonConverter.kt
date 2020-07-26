@@ -6,9 +6,9 @@ import com.squareup.moshi.*
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dev.zieger.utils.misc.catch
-import dev.zieger.utils.time.ClosedTimeRangeJsonAdapter
-import dev.zieger.utils.time.DurationExJsonAdapter
-import dev.zieger.utils.time.TimeExJsonAdapter
+import dev.zieger.utils.time.string.ClosedTimeRangeJsonAdapter
+import dev.zieger.utils.time.string.DurationExJsonAdapter
+import dev.zieger.utils.time.string.TimeExJsonAdapter
 import java.lang.reflect.Type
 import kotlin.reflect.KClass
 
@@ -25,58 +25,106 @@ open class JsonConverter(vararg adapter: Any) {
 
     companion object {
 
-        private val <T> T.CATCH_MESSAGE: (T) -> String get() = { "catch $it" }
+        val <T> T.CATCH_MESSAGE: (T) -> String get() = { "catch $it" }
     }
 
-    protected val moshi =
-        Moshi.Builder()
-            .add(KotlinJsonAdapterFactory())
-            .add(TimeExJsonAdapter())
-            .add(DurationExJsonAdapter())
-            .add(ClosedTimeRangeJsonAdapter())
-            .also { m -> adapter.forEach { m.add(it) } }.build()!!
+    val moshi = Moshi.Builder()
+        .add(KotlinJsonAdapterFactory())
+        .add(TimeExJsonAdapter())
+        .add(DurationExJsonAdapter())
+        .add(ClosedTimeRangeJsonAdapter())
+        .also { m -> adapter.forEach { m.add(it) } }.build()!!
 
-    fun <T : Any> T.toJson(rawType: KClass<*>, vararg genericTypes: KClass<*>): String? =
-        catch(null, onCatch = { print(it.CATCH_MESSAGE) }) {
-            moshi.adapter<T>(rawType.with(*genericTypes)).toJson(this)
+    fun Any.toJson(
+        rawType: KClass<*> = this::class,
+        vararg genericTypes: Type,
+        printException: Boolean = true
+    ): String? = toJsonReified(rawType, *genericTypes, printException = printException)
+
+    inline fun <reified T: Any> T.toJsonReified(
+        rawType: KClass<*> = T::class,
+        vararg genericTypes: Type,
+        printException: Boolean = true
+    ): String? = catch(null, printStackTrace = printException, logStackTrace = false) {
+        moshi.adapter<T>(rawType.with(*genericTypes)).toJson(this)
+    }
+
+    inline fun <reified T : Any> List<T>.toJson(
+        type: Type = T::class.java,
+        printException: Boolean = true
+    ): String? = toJsonReified(List::class, type, printException = printException)
+
+    inline fun <reified K : Any, reified V : Any> Map<K, V>.toJson(
+        keyType: KClass<*> = K::class,
+        valueType: KClass<*> = V::class,
+        printException: Boolean = true
+    ): String? = toJsonReified(Map::class, keyType.java, valueType.java, printException = printException)
+
+    inline fun <reified T : Any> String.fromJson(
+        vararg genericTypes: Type,
+        printException: Boolean = true
+    ): T? = fromJson(T::class, *genericTypes, printException = printException)
+
+    fun <T : Any> String.fromJson(
+        rawType: KClass<T>,
+        vararg genericTypes: Type,
+        printException: Boolean = true
+    ): T? = catch(null, onCatch = { if (printException) print("${it.CATCH_MESSAGE} from '$this' ") }) {
+        moshi.adapter<T>(rawType.with(*genericTypes)).fromJson(this)
+    }
+
+    fun String.fromJsonNonTyped(
+        rawType: KClass<*>,
+        vararg genericTypes: Type,
+        printException: Boolean = true
+    ): Any? = catch(null, onCatch = { if (printException) print("${it.CATCH_MESSAGE} from '$this' ") }) {
+        val type = if (genericTypes.isEmpty()) rawType.java else Types.newParameterizedType(rawType.java, *genericTypes)
+        moshi.adapter<Any>(type).fromJson(this)
+    }
+
+    inline fun <reified T : Any> String.fromJsonList(
+        type: Type = T::class.java,
+        printException: Boolean = true
+    ): List<T>? = fromJsonListNonDef(type, printException)
+
+    fun <T : Any> String.fromJsonListNonDef(
+        type: Type,
+        printException: Boolean = true
+    ): List<T>? = catch(null, onCatch = { if (printException) print("${it.CATCH_MESSAGE} from '$this' ") }) {
+        adapter<List<T>>(type).fromJson(this)
+    }
+
+    inline fun <reified K : Any, reified V : Any> String.fromJsonMap(
+        keyType: KClass<*> = K::class,
+        valueType: KClass<*> = V::class,
+        printException: Boolean = true
+    ): Map<K, V>? = fromJsonMapNonDef(keyType, valueType, printException)
+
+    fun <K : Any, V : Any> String.fromJsonMapNonDef(
+        keyType: KClass<*>,
+        valueType: KClass<*>,
+        printException: Boolean = true
+    ): Map<K, V>? =
+        catch(null, onCatch = { if (printException) print("${it.CATCH_MESSAGE} from '$this' ") }) {
+            adapter<Map<K, V>>(keyType.java, valueType.java).fromJson(this)
         }
 
-    fun <T : Any> List<T>.toJson(type: KClass<*>): String? = toJson(List::class, type)
-
-    fun <K : Any, V : Any> Map<K, V>.toJson(keyType: KClass<*>, valueType: KClass<*>): String? =
-        toJson(Map::class, keyType, valueType)
-
-    fun <T : Any> String.fromJson(rawType: KClass<*>, vararg genericTypes: KClass<*>): T? =
-        catch(null, onCatch = { print(it.CATCH_MESSAGE) }) {
-            moshi.adapter<T>(rawType.with(*genericTypes)).fromJson(this)
-        }
-
-    fun <T : Any> String.fromJsonList(type: KClass<*>): List<T>? =
-        catch(null, onCatch = { print(it.CATCH_MESSAGE) }) {
-            adapter<List<T>>(type).fromJson(this)
-        }
-
-    fun <K : Any, V : Any> String.fromJsonMap(keyType: KClass<*>, valueType: KClass<*>): Map<K, V>? =
-        catch(null, onCatch = { print(it.CATCH_MESSAGE) }) {
-            adapter<Map<K, V>>(keyType, valueType).fromJson(this)
-        }
-
-    private fun KClass<*>.with(vararg types: KClass<*>): Type =
+    fun KClass<*>.with(vararg types: Type): Type =
         if (types.isEmpty()) java
-        else Types.newParameterizedType(java, *types.map { it.java }.toTypedArray())
+        else Types.newParameterizedType(java, *types.toList().toTypedArray())
 
-    private inline fun <reified T : Any> adapter(vararg types: KClass<*>): JsonAdapter<T> =
-        moshi.adapter<T>(T::class.with(*types))
+    inline fun <reified T : Any> adapter(vararg types: Type): JsonAdapter<T> =
+        moshi.adapter(T::class.with(*types))
 }
 
 object UtilsJsonConverter : JsonConverter() {
 
-    inline fun <reified T : Any> T.toJson(): String? = toJson(T::class)
-    inline fun <reified T : Any> List<T>.toJson(): String? = toJson(T::class)
+    inline fun <reified T : Any> T.toJson(): String? = toJsonReified(T::class)
+    inline fun <reified T : Any> List<T>.toJson(): String? = toJsonReified(T::class)
 
     inline fun <reified T : Any> String.fromJson(): T? = fromJson(T::class)
-    inline fun <reified T : Any> String.fromJsonList(): List<T>? = fromJsonList(T::class)
+    inline fun <reified T : Any> String.fromJsonList(): List<T>? = fromJsonList(T::class.java)
 }
 
-inline fun <T> json(block: () -> T): T = UtilsJsonConverter.run { block() }
+inline fun <T> json(crossinline block: UtilsJsonConverter.() -> T): T = UtilsJsonConverter.run { block() }
 

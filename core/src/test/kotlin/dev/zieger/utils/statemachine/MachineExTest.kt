@@ -17,7 +17,7 @@ import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DE
 import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.H
 import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.I
 import dev.zieger.utils.statemachine.conditionelements.*
-import dev.zieger.utils.time.duration.seconds
+import dev.zieger.utils.time.seconds
 import io.kotlintest.specs.AnnotationSpec
 
 class MachineExTest : AnnotationSpec() {
@@ -274,7 +274,7 @@ class MachineExTest : AnnotationSpec() {
         val event = FOURTH
         val eventGroup = TEST_EVENT_GROUP
 
-        Matcher.MatchScope(event.combo, A.combo).apply {
+        MatchScope(event.combo, A.combo).apply {
             eventGroup.run { match(event) } assert true
             event.run { match(eventGroup) } assert true
         }

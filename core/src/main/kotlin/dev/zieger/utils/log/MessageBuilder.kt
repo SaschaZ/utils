@@ -1,8 +1,8 @@
 package dev.zieger.utils.log
 
 import dev.zieger.utils.misc.nullWhen
-import dev.zieger.utils.time.DateFormat
 import dev.zieger.utils.time.TimeEx
+import dev.zieger.utils.time.string.DateFormat
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlin.coroutines.CoroutineContext

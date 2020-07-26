@@ -24,16 +24,7 @@ interface IMachineEx {
     val state: IState? get() = stateCombo.state
     val stateData: IData? get() = stateCombo.slave as? IData
 
-    @Deprecated("Use property state instead", replaceWith = ReplaceWith("state"))
-    fun state() = state
-
     suspend fun suspendUtilProcessingFinished()
-
-    @Deprecated(message = "Use setEvent instead", replaceWith = ReplaceWith("setEvent(combo)"))
-    suspend fun fire(combo: IComboElement): IComboElement {
-        setEvent(combo)
-        return stateCombo
-    }
 
     fun fireAndForget(combo: IComboElement) = scope.launchEx { setEvent(combo) }.asUnit()
 

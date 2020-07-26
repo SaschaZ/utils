@@ -92,6 +92,11 @@ val DependencyHandlerScope.mockk
 val DependencyHandlerScope.junitJupiter
     get() = "testImplementation"("org.junit.jupiter:junit-jupiter:${Versions.junitJupiterEngine}")
 
+val DependencyHandlerScope.ktorClientGson
+    get() = "implementation"("io.ktor:ktor-client-gson:1.3.2")
+val DependencyHandlerScope.ktorServerGson
+    get() = "implementation"("io.ktor:ktor-jackson:1.3.2")
+
 val DependencyHandlerScope.koTestRunner
     get() = "testImplementation"("io.kotlintest:kotlintest-runner-junit5:${Versions.koTest}")
 val DependencyHandlerScope.koTestAssertions

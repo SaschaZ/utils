@@ -1,11 +1,8 @@
 package dev.zieger.utils.time.progression
 
-import dev.zieger.utils.time.ITimeEx
-import dev.zieger.utils.time.base.plus
-import dev.zieger.utils.time.base.times
-import dev.zieger.utils.time.duration.IDurationEx
-import dev.zieger.utils.time.duration.milliseconds
-import dev.zieger.utils.time.toTime
+import dev.zieger.utils.time.*
+import dev.zieger.utils.time.base.IDurationEx
+import dev.zieger.utils.time.base.ITimeEx
 
 open class TimeExProgression(
     val start: ITimeEx,
@@ -22,11 +19,25 @@ open class TimeExProgression(
     }
 }
 
-infix fun ITimeEx.until(other: ITimeEx) =
+infix fun <A: ITimeEx, B: ITimeEx> A.until(other: B) =
     (this..(other.millis - 1).toTime())
 
-infix fun ClosedRange<ITimeEx>.step(step: Number) =
+infix fun <T: ITimeEx> ClosedRange<T>.step(step: Number) =
     TimeExProgression(start, endInclusive, step.milliseconds)
 
-infix fun ClosedRange<ITimeEx>.step(step: IDurationEx) =
+infix fun <T: ITimeEx> ClosedRange<T>.step(step: IDurationEx) =
     TimeExProgression(start, endInclusive, step)
+
+fun ClosedRange<ITimeEx>.ticks(
+    interval: IDurationEx,
+    count: Int = 1
+): TimeExProgression = start..endInclusive step interval * count
+
+fun ClosedRange<IDurationEx>.ticks(
+    interval: IDurationEx,
+    count: Int = 1
+): DurationExProgression = start..endInclusive step interval * count
+
+fun ITimeEx.rangeBase(base: IDurationEx): ITimeEx { return this - this % base }
+
+fun ITimeEx.toRange(rangeStep: IDurationEx): ClosedRange<ITimeEx> = rangeBase(rangeStep).let { it .. it + rangeStep }
