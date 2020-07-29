@@ -1,34 +1,13 @@
 package dev.zieger.utils.misc
 
-open class DelegateList<out T>(
-    private val delegate: () -> List<T>
-) : List<T> {
-    override val size: Int get() = delegate().size
-
-    override fun contains(element: @UnsafeVariance T): Boolean = delegate().contains(element)
-
-    override fun containsAll(elements: Collection<@UnsafeVariance T>): Boolean = delegate().containsAll(elements)
-
-    override fun get(index: Int): T = delegate()[index]
-
-    override fun indexOf(element: @UnsafeVariance T): Int = delegate().indexOf(element)
-
-    override fun isEmpty(): Boolean = delegate().isEmpty()
-
-    override fun iterator(): Iterator<T> = delegate().iterator()
-
-    override fun lastIndexOf(element: @UnsafeVariance T): Int = delegate().lastIndexOf(element)
-
-    override fun listIterator(): ListIterator<T> = delegate().listIterator()
-
-    override fun listIterator(index: Int): ListIterator<T> = delegate().listIterator(index)
-
-    override fun subList(fromIndex: Int, toIndex: Int): List<T> = delegate().subList(fromIndex, toIndex)
-}
+import dev.zieger.utils.time.base.IDurationEx
+import dev.zieger.utils.time.base.ITimeEx
+import dev.zieger.utils.time.minus
 
 abstract class AbsFiFo<T>(
     initial: List<T> = emptyList(),
-    protected val values: MutableList<T> = ArrayList(initial)
+    protected val values: MutableList<T> = ArrayList(initial),
+    toRemove: List<T>.(T) -> Boolean
 ) : List<T> by values {
 
     abstract val isFull: Boolean
@@ -53,7 +32,17 @@ abstract class AbsFiFo<T>(
 open class FiFo<T>(
     private val capacity: Int = 10,
     initial: List<T> = emptyList()
-) : AbsFiFo<T>(initial) {
+) : AbsFiFo<T>(initial, toRemove = { indexOf(it) >= capacity }) {
 
     override val isFull: Boolean get() = values.size == capacity
+}
+
+open class DurationFiFo<T : ITimeEx>(
+    private val maxDuration: IDurationEx,
+    initial: List<T> = emptyList()
+) : AbsFiFo<T>(initial, toRemove = { firstOrNull()?.let { f -> (it - f) > maxDuration } ?: false }) {
+    override val isFull: Boolean
+        get() = whenNotNull(values.firstOrNull(), values.lastOrNull()) { f, l ->
+            (l - f) > maxDuration
+        } ?: false
 }
