@@ -6,6 +6,7 @@ import dev.zieger.utils.misc.lastOrNull
 import dev.zieger.utils.time.base.IDurationEx
 import dev.zieger.utils.time.base.ITimeEx
 import dev.zieger.utils.time.milliseconds
+import dev.zieger.utils.time.minus
 
 /**
  * Log-Filter

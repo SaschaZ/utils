@@ -35,3 +35,11 @@ open class LogScopeImpl(override val Log: ILogContext = LogContext()) : ILogScop
         output: ILogOutput
     ): ILogScope = LogScopeImpl(LogContext(settings, tags, builder, elements, output)).also { LogScope = it }
 }
+
+interface ILogOutput {
+    fun write(msg: Any)
+}
+
+object SystemPrintOutput : ILogOutput {
+    override fun write(msg: Any) = println(msg)
+}
