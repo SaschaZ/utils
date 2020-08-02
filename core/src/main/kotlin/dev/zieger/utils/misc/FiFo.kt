@@ -7,22 +7,22 @@ import dev.zieger.utils.time.minus
 abstract class AbsFiFo<T>(
     initial: List<T> = emptyList(),
     protected val values: MutableList<T> = ArrayList(initial),
-    toRemove: List<T>.(T) -> Boolean
+    protected val toRemove: List<T>.(T) -> Boolean
 ) : List<T> by values {
 
     abstract val isFull: Boolean
     open val isNotFull: Boolean get() = !isFull
 
-    open fun put(value: T, update: Boolean = false): T? =
+    open fun put(value: T, update: Boolean = false): List<T>? =
         if (update) onUpdate(value) else onInsert(value)
 
-    protected open fun onUpdate(value: T): T = value.also {
+    protected open fun onUpdate(value: T): List<T> = listOf(value.also {
         if (isNotEmpty()) values[values.lastIndex] = it
         else values.add(it)
-    }
+    })
 
-    protected open fun onInsert(value: T): T? = (if (isFull) values.removeAt(0) else null).apply {
-        values.add(value)
+    protected open fun onInsert(value: T): List<T>? = values.filter { values.run { toRemove(it) } }.also {
+        values += value
     }
 
     open fun reset() = values.clear()
@@ -40,7 +40,7 @@ open class FiFo<T>(
 open class DurationFiFo<T : ITimeEx>(
     private val maxDuration: IDurationEx,
     initial: List<T> = emptyList()
-) : AbsFiFo<T>(initial, toRemove = { firstOrNull()?.let { f -> (it - f) > maxDuration } ?: false }) {
+) : AbsFiFo<T>(initial, toRemove = {  min()?.let { f -> (it - f) > maxDuration } ?: false }) {
     override val isFull: Boolean
         get() = whenNotNull(values.firstOrNull(), values.lastOrNull()) { f, l ->
             (l - f) > maxDuration

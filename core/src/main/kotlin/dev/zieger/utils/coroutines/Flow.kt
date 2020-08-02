@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.onEach
  *   wrong input: '130475289'
  *   correct input: '0123456789' -> ['0-[0,1]', '1-[2,3]', '2-[4,5]', '3-[6,7]', '4-[8,9]']
  */
-fun <T, K> Flow<T>.groupBy(key: (T) -> K): Flow<Pair<K, List<T>>> = flow {
+fun <T, K> Flow<T>.groupByList(key: (T) -> K): Flow<Pair<K, List<T>>> = flow {
     var currentKey: K? = null
     val currentValues = ArrayList<T>()
 
@@ -34,6 +34,29 @@ fun <T, K> Flow<T>.groupBy(key: (T) -> K): Flow<Pair<K, List<T>>> = flow {
         }
     }
     currentKey?.also { if (currentValues.isNotEmpty()) emit(it to currentValues) }
+}
+
+/**
+ * Only works if items in flow are already sorted.
+ *
+ * For example when groupBy with `it / 2`:
+ *   wrong input: '130475289'
+ *   correct input: '0123456789' -> ['0-[0,1]', '1-[2,3]', '2-[4,5]', '3-[6,7]', '4-[8,9]']
+ */
+fun <T, K> Flow<T>.groupByFlow(key: (T) -> K): Flow<Pair<K, Flow<T>>> {
+    var currentKey: K? = null
+
+    return flow {
+        onEach { value ->
+            val k = key(value)
+            var flow: (suspend (T) -> Unit)? = null
+            when (currentKey) {
+                null, k -> currentKey = k
+                else -> flow { flow = { emit(it) } }
+            }
+            flow?.invoke(value)
+        }
+    }
 }
 
 fun <T, O : Any> Flow<T>.mapPrev(block: (cur: T, prev: T) -> O): Flow<O> {
