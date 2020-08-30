@@ -22,7 +22,7 @@ open class LogMessageBuilderContext(pipelineContext: LogPipelineContext): ILogPi
         "[${(listOf(tag) + tags + messageTag).joinToString("|")}]" else null
 
     fun callOrigin(
-        ignorePackages: List<String> = listOf("dev.zieger.utils.log.", "dev.zieger.utils.coroutines.", "kotlin"),
+        ignorePackages: List<String> = listOf("dev.zieger.utils.log2.", "dev.zieger.utils.coroutines.", "kotlin"),
         ignoreFiles: List<String> = listOf("Controllable.kt", "Observable.kt", "ExecuteExInternal.kt")
     ): String = Exception().stackTrace.firstOrNull { trace ->
         !trace.className.startsWithAny(ignorePackages)
@@ -42,7 +42,10 @@ class LogMessageBuilder(
     companion object {
 
         val DEFAULT_LOG_MESSAGE: LogMessageBuilderContext.() -> String = {
-            "${level.short}-${time()}: $message${tagsFormatted?.let { " - $it"  } ?: ""}"
+            "${level.short}-${time()}: $message${tagsFormatted?.let { " - $it" } ?: ""}"
+        }
+        val LOG_MESSAGE_WITH_CALL_ORIGIN: LogMessageBuilderContext.() -> String = {
+            "${level.short}-${time()}-${callOrigin()}: $message${tagsFormatted?.let { " - $it" } ?: ""}"
         }
     }
 

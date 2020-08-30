@@ -1,8 +1,12 @@
 package dev.zieger.utils.core_testing
 
-import org.junit.jupiter.api.Test
+import dev.zieger.utils.core_testing.mix.ParamInstance
+import dev.zieger.utils.core_testing.mix.bind
+import dev.zieger.utils.core_testing.mix.param
+import dev.zieger.utils.core_testing.mix.parameterMix
+import io.kotlintest.specs.AnnotationSpec
 
-class TestParameterMix {
+class TestParameterMix : AnnotationSpec() {
 
     data class TestVars(val map: Map<String, ParamInstance<*>>) {
 

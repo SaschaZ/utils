@@ -12,6 +12,7 @@ configModule("jdk", JVM_LIB) {
     mordant
     progressbar
     coroutinesSwing
+    lanterna
 }
 
 tasks {

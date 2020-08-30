@@ -25,6 +25,8 @@ object Versions {
     const val androidXtestRules = "1.2.0"
     const val androidXtestExt = "1.1.1"
 
+    const val lanterna = "3.1.0-beta2"
+
     const val mockk = "1.9.3"
     const val junitJupiterEngine = "5.6.0"
 

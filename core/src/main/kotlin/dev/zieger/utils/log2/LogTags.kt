@@ -9,6 +9,8 @@ interface ILogTags {
 
     operator fun plusAssign(tag: Any)
     operator fun minusAssign(tag: Any)
+
+    fun copyTags(): ILogTags
 }
 
 open class LogTags(
@@ -18,4 +20,6 @@ open class LogTags(
 
     override fun plusAssign(tag: Any) = tags.add(tag).asUnit()
     override fun minusAssign(tag: Any) = tags.remove(tag).asUnit()
+
+    override fun copyTags(): ILogTags = LogTags(tag, mutableSetOf(*tags.toTypedArray()))
 }

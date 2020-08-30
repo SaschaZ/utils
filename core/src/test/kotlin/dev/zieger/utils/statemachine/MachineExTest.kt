@@ -6,6 +6,7 @@ import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
+import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.ERROR
 import dev.zieger.utils.statemachine.MachineExTest.TestData.*
 import dev.zieger.utils.statemachine.MachineExTest.TestEvent.*
 import dev.zieger.utils.statemachine.MachineExTest.TestEvent.TEST_EVENT_GROUP.*
@@ -161,23 +162,39 @@ class MachineExTest : AnnotationSpec() {
 
     @Test
     fun testPrev() = runTest {
-        MachineEx(INITIAL, debugLevel = DEBUG) {
+        var lastEvent: IEvent? = null
+        var lastState: IState? = null
+        MachineEx(INITIAL, debugLevel = ERROR) {
             +FIRST + INITIAL[0] set A
             +SECOND + A + INITIAL[1] set B
             +THIRD + B + A[1] + INITIAL[2] set C
             +FOURTH + C[0] + B[1] + A[2] + INITIAL[3] set D
             +FIFTH + D + C[1] + B[2] + A[3] + INITIAL[3] set E
+            +TestEvent exec {
+                lastEvent = event
+                println("event: $lastEvent")
+            }
+            +TestState exec {
+                lastState = state
+                println("state: $lastState")
+            }
         }.run {
             state assert INITIAL
 
             fire eventSync FIRST
             state assert A
+            lastEvent assert FIRST
+            lastState assert A
 
             fire eventSync SECOND
             state assert B
+            lastEvent assert SECOND
+            lastState assert B
 
             fire eventSync THIRD
             state assert C
+            lastEvent assert THIRD
+            lastState assert C
 
             fire eventSync FOURTH
             state assert D

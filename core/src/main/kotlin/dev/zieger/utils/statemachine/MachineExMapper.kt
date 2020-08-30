@@ -50,19 +50,24 @@ interface IMachineExMapper {
         event: IComboElement,
         state: IComboElement,
         previousChanges: List<OnStateChanged>
-    ): IComboElement? =
+    ): Pair<IComboElement, suspend () -> Unit>? =
         MatchScope(event, state, previousChanges, conditions, bindings).log.run {
-            (stateForEventBinding() ?: stateForEvent())?.also { newState ->
-                applyState(newState).run {
-                    matchingStateConditions().forEach { it.action?.invoke(this) }
+            (stateForEventBinding() ?: stateForEvent())?.let { newState ->
+                newState to suspend {
+                    applyState(newState).run innerRun@{
+                        matchingStateConditions().forEach { it.action?.invoke(this@innerRun) }
+                    }
                 }
             }
         }
 
-    private val IMatchScope.log: IMatchScope get() = this.apply {
-        Log.v("New incoming event $newEvent with state $currentState.",
-            logFilter = GENERIC(disableLog = newEvent.noLogging || MachineEx.debugLevel <= INFO))
-    }
+    private val IMatchScope.log: IMatchScope
+        get() = apply {
+            Log.v(
+                "New incoming event $newEvent with state $currentState.",
+                logFilter = GENERIC(disableLog = newEvent.noLogging || MachineEx.debugLevel <= INFO)
+            )
+        }
 
     private suspend fun IMatchScope.stateForEventBinding(): IComboElement? =
         bindings.filter { match(it.key, EVENT) }.values.let {

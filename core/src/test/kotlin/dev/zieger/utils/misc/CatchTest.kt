@@ -2,15 +2,14 @@
 
 package dev.zieger.utils.misc
 
-import dev.zieger.utils.core_testing.ParamInstance
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
-import dev.zieger.utils.core_testing.bind
-import dev.zieger.utils.core_testing.param
-import dev.zieger.utils.core_testing.parameterMix
+import dev.zieger.utils.core_testing.mix.ParamInstance
+import dev.zieger.utils.core_testing.mix.bind
+import dev.zieger.utils.core_testing.mix.param
+import dev.zieger.utils.core_testing.mix.parameterMix
 import dev.zieger.utils.delegates.nextInt
 import io.kotlintest.specs.AnnotationSpec
-import org.junit.jupiter.api.Disabled
 import kotlin.random.Random
 
 class CatchTest : AnnotationSpec() {
@@ -24,7 +23,6 @@ class CatchTest : AnnotationSpec() {
         val throwException: Boolean by bind(map)
     }
 
-    @Disabled // TODO implement with KoTest
     @Test
     fun testCatch() {
         parameterMix(

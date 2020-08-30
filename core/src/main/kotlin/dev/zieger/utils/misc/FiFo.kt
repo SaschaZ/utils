@@ -1,48 +1,50 @@
 package dev.zieger.utils.misc
 
-import dev.zieger.utils.time.base.IDurationEx
-import dev.zieger.utils.time.base.ITimeEx
-import dev.zieger.utils.time.minus
+import java.util.*
 
-abstract class AbsFiFo<T>(
-    initial: List<T> = emptyList(),
-    protected val values: MutableList<T> = ArrayList(initial),
-    protected val toRemove: List<T>.(T) -> Boolean
-) : List<T> by values {
+interface IFiFo<T> : List<T> {
 
-    abstract val isFull: Boolean
-    open val isNotFull: Boolean get() = !isFull
+    val isFull: Boolean
+    val isNotFull: Boolean get() = !isFull
 
-    open fun put(value: T, update: Boolean = false): List<T>? =
-        if (update) onUpdate(value) else onInsert(value)
+    fun put(value: T, update: Boolean = false): List<T>
+    fun take(): T?
 
-    protected open fun onUpdate(value: T): List<T> = listOf(value.also {
-        if (isNotEmpty()) values[values.lastIndex] = it
-        else values.add(it)
-    })
-
-    protected open fun onInsert(value: T): List<T>? = values.filter { values.run { toRemove(it) } }.also {
-        values += value
-    }
-
-    open fun reset() = values.clear()
-    fun takeLast(num: Int): List<T?> = values.takeLast(num)
+    fun clear()
 }
 
+abstract class BaseFiFo<T>(
+    protected val initial: List<T> = emptyList(),
+    protected val internal: MutableList<T> = LinkedList(initial),
+    protected val shouldRemove: List<T>.(T) -> Boolean
+) : IFiFo<T>, List<T> by internal {
+
+    override fun put(value: T, update: Boolean): List<T> {
+        if (update && internal.isNotEmpty()) onUpdate(value) else onInsert(value)
+        return internal
+    }
+
+    override fun take(): T? = internal.firstOrNull()?.also { internal.remove(it) }
+
+    protected open fun onUpdate(value: T) {
+        internal[internal.lastIndex] = value
+    }
+
+    protected open fun onInsert(value: T) {
+        internal.add(value)
+        internal.removeAll { internal.shouldRemove(it) }
+    }
+
+    override fun clear() = internal.clear()
+}
+
+/**
+ * Implementation of [BaseFiFo] using a fixed [capacity] as FiFo size.
+ */
 open class FiFo<T>(
     private val capacity: Int = 10,
     initial: List<T> = emptyList()
-) : AbsFiFo<T>(initial, toRemove = { indexOf(it) >= capacity }) {
+) : BaseFiFo<T>(initial, shouldRemove = { indexOf(it) >= capacity }) {
 
-    override val isFull: Boolean get() = values.size == capacity
-}
-
-open class DurationFiFo<T : ITimeEx>(
-    private val maxDuration: IDurationEx,
-    initial: List<T> = emptyList()
-) : AbsFiFo<T>(initial, toRemove = {  min()?.let { f -> (it - f) > maxDuration } ?: false }) {
-    override val isFull: Boolean
-        get() = whenNotNull(values.firstOrNull(), values.lastOrNull()) { f, l ->
-            (l - f) > maxDuration
-        } ?: false
+    override val isFull: Boolean get() = internal.size == capacity
 }

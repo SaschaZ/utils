@@ -2,8 +2,13 @@
 
 package dev.zieger.utils.delegates
 
-import dev.zieger.utils.core_testing.*
+import dev.zieger.utils.core_testing.TestCoroutineScope
 import dev.zieger.utils.core_testing.assertion.assert
+import dev.zieger.utils.core_testing.mix.ParamInstance
+import dev.zieger.utils.core_testing.mix.bind
+import dev.zieger.utils.core_testing.mix.param
+import dev.zieger.utils.core_testing.mix.parameterMixCollect
+import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.delegates.OnChangedTest.OnChangedResults.OnChangedTestResultInput
 import dev.zieger.utils.delegates.OnChangedTest.OnChangedResults.OnChangedTestResultOutput
 import dev.zieger.utils.misc.DataClass
@@ -42,8 +47,9 @@ class OnChangedTest : AnnotationSpec() {
         val notifyForInitial: Boolean by bind(map)
         val notifyOnChangedOnly: Boolean by bind(map)
 
-        val scope: CoroutineScope? by bind(map)
-        val mutex: Mutex? by bind(map)
+        val scope: CoroutineScope by bind(map)
+        val mutex: Mutex by bind(map)
+        val safeSet: Boolean by bind(map)
         val veto: (Int) -> Boolean by bind(map)
         val doClearPrevValues: (Int) -> Boolean by bind(map)
         val suspendedListener: Boolean by bind(map)
@@ -64,8 +70,9 @@ class OnChangedTest : AnnotationSpec() {
         param("storePreviousValues", true, false),
         param("notifyForInitial", true, false),
         param("notifyOnChangedOnly", true, false),
-        param("scope", TestCoroutineScope(), null),
-        param("mutex", Mutex(), null),
+        param("scope", TestCoroutineScope()),
+        param("mutex", Mutex()),
+        param("safeSet", true, false),
         param("veto", { value: Int -> Random.nextBoolean(0.1f) }),
         param("doClearPrevValues", { value: Int -> Random.nextBoolean(0.1f) }),
         param("suspendedListener", true, false)
@@ -121,8 +128,8 @@ class OnChangedTest : AnnotationSpec() {
             val results = Channel<OnChangedResults>(Channel.UNLIMITED)
 
             var propertyValue: () -> TestValueContainer = { TestValueContainer() }
-            var testProperty by OnChanged2(
-                OnChangedParams2(
+            var testProperty by OnChangedWithParent(
+                OnChangedParamsWithParent(
                     TestValueContainer(), storeRecentValues = storePreviousValues,
                     notifyForInitial = notifyForInitial,
                     notifyOnChangedValueOnly = notifyOnChangedOnly,
@@ -153,7 +160,7 @@ class OnChangedTest : AnnotationSpec() {
         }.verify()
     }
 
-    private fun <P : Any?, S : IOnChangedScope2<P, @UnsafeVariance TestValueContainer>> S.onChangedListenerBlock(
+    private fun <P : Any?, S : IOnChangedScopeWithParent<P, @UnsafeVariance TestValueContainer>> S.onChangedListenerBlock(
         newClearCache: Boolean,
         results: Channel<OnChangedResults>,
         newValue: Int,

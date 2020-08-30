@@ -11,7 +11,7 @@ package dev.zieger.utils.delegates
  * @property previousValues all previous values of the property
  * @property clearPreviousValues Lambda to clear the previous values
  */
-interface IOnChangedScope2<out P : Any?, T : Any?> {
+interface IOnChangedScopeWithParent<out P : Any?, T : Any?> {
     var value: T
     val thisRef: P?
     val previousValue: T?
@@ -21,12 +21,12 @@ interface IOnChangedScope2<out P : Any?, T : Any?> {
     val valueChangedListener: (T) -> Unit
 }
 
-typealias IOnChangedScope<T> = IOnChangedScope2<Any?, T>
+typealias IOnChangedScope<T> = IOnChangedScopeWithParent<Any?, T>
 
 /**
- * Simple implementation of [IOnChangedScope2].
+ * Simple implementation of [IOnChangedScopeWithParent].
  */
-class OnChangedScope2<P : Any?, T : Any?>(
+class OnChangedScopeWithParent<P : Any?, T : Any?>(
     initial: T,
     override val thisRef: P?,
     override val previousValue: T?,
@@ -34,9 +34,9 @@ class OnChangedScope2<P : Any?, T : Any?>(
     override val clearPreviousValues: () -> Unit,
     override val isInitialNotification: Boolean = false,
     override val valueChangedListener: (T) -> Unit = {}
-) : IOnChangedScope2<P, T> {
+) : IOnChangedScopeWithParent<P, T> {
 
     override var value: T by OnChanged(initial) { valueChangedListener(it) }
 }
 
-typealias OnChangedScope<T> = OnChangedScope2<Any?, T>
+typealias OnChangedScope<T> = OnChangedScopeWithParent<Any?, T>

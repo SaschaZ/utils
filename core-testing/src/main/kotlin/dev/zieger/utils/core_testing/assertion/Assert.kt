@@ -1,8 +1,12 @@
+@file:Suppress("FunctionName")
+
 package dev.zieger.utils.core_testing.assertion
 
+import dev.zieger.utils.core_testing.assertion2.rem
 
-infix fun String.assert(expected: Regex) =
-    AssertRegexScope(expected, ActualMessageScope(this)).apply { validate() }
+
+infix fun <A : Any?> A.assert(expected: Regex) =
+    AssertRegexScope(expected, ActualMessageScope(toString())).apply { validate() }
 
 operator fun <A : Any?, E : Any?> E.rem(other: String): Pair<E, IValidationScope<A, E>.() -> String> = rem { other }
 operator fun <A : Any?, E : Any?> E.rem(other: IValidationScope<A, E>.() -> String) = this to other

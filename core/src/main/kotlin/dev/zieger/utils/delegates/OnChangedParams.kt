@@ -1,29 +1,31 @@
 package dev.zieger.utils.delegates
 
-import dev.zieger.utils.delegates.OnChangedParams2.Companion.DEFAULT_RECENT_VALUE_BUFFER_SIZE
+import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
+import dev.zieger.utils.delegates.OnChangedParamsWithParent.Companion.DEFAULT_RECENT_VALUE_BUFFER_SIZE
 import dev.zieger.utils.misc.DataClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 
-interface IOnChangedParams2<P : Any?, T : Any?> {
+interface IOnChangedParamsWithParent<P : Any?, T : Any?> {
     val initial: T
-    val recentValueSize: Int
+    val previousValueSize: Int
     val notifyForInitial: Boolean
     val notifyOnChangedValueOnly: Boolean
-    val scope: CoroutineScope?
-    val mutex: Mutex?
+    val scope: CoroutineScope
+    val mutex: Mutex
+    val safeSet: Boolean
     val veto: (T) -> Boolean
     val map: (T) -> T
-    val onChangedS: suspend IOnChangedScope2<P, T>.(T) -> Unit
-    val onChanged: IOnChangedScope2<P, T>.(T) -> Unit
+    val onChangedS: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit
+    val onChanged: IOnChangedScopeWithParent<P, T>.(T) -> Unit
 }
 
 /**
  * @property initial The observed property will be initialized with this value.
  * @param storeRecentValues If set to `true` all values of the property will be stored and provided within the
- * [IOnChangedScope2]. Should be set to `false` when the values of the property consume too much memory.
+ * [IOnChangedScopeWithParent]. Should be set to `false` when the values of the property consume too much memory.
  * Defaulting is `false`.
- * @property recentValueSize Size of the fifo used to store the recent values. Will be set to
+ * @property previousValueSize Size of the fifo used to store the recent values. Will be set to
  * [DEFAULT_RECENT_VALUE_BUFFER_SIZE] if [storeRecentValues] is `true`.
  * @property notifyForInitial When `true` a new listener will immediately notified for the initial value of the
  * property without the need of a change. Default is `false`.
@@ -38,19 +40,20 @@ interface IOnChangedParams2<P : Any?, T : Any?> {
  * @property onChangedS Suspend on change callback. Only is invoked when [scope] is set. (Optional)
  * @property onChanged Unsuspended on change callback. Will be called immediately when a new value is set. (Optional)
  */
-open class OnChangedParams2<P : Any?, T : Any?>(
+open class OnChangedParamsWithParent<P : Any?, T : Any?>(
     override val initial: T,
     storeRecentValues: Boolean = false,
-    override val recentValueSize: Int = if (storeRecentValues) DEFAULT_RECENT_VALUE_BUFFER_SIZE else 0,
+    override val previousValueSize: Int = if (storeRecentValues) DEFAULT_RECENT_VALUE_BUFFER_SIZE else 0,
     override val notifyForInitial: Boolean = false,
     override val notifyOnChangedValueOnly: Boolean = true,
-    override val scope: CoroutineScope? = null,
-    override val mutex: Mutex? = null,
+    override val scope: CoroutineScope = DefaultCoroutineScope(),
+    override val mutex: Mutex = Mutex(),
+    override val safeSet: Boolean = false,
     override val veto: (T) -> Boolean = { false },
     override val map: (T) -> T = { it },
-    override val onChangedS: suspend IOnChangedScope2<P, T>.(T) -> Unit = {},
-    override val onChanged: IOnChangedScope2<P, T>.(T) -> Unit = {}
-) : DataClass(), IOnChangedParams2<P, T> {
+    override val onChangedS: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit = {},
+    override val onChanged: IOnChangedScopeWithParent<P, T>.(T) -> Unit = {}
+) : DataClass(), IOnChangedParamsWithParent<P, T> {
 
     companion object {
 
@@ -58,4 +61,4 @@ open class OnChangedParams2<P : Any?, T : Any?>(
     }
 }
 
-typealias OnChangedParams<T> = OnChangedParams2<Any?, T>
+typealias OnChangedParams<T> = OnChangedParamsWithParent<Any?, T>

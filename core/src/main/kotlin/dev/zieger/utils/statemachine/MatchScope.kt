@@ -41,6 +41,8 @@ data class MatchScope(
 ) : IMatchScope {
 
     override fun applyState(state: IComboElement): IMatchScope =
-        copy(currentState = state,
-            previousChanges = previousChanges + OnStateChanged(newEvent, currentState, state))
+        copy(
+            currentState = state,
+            previousChanges = previousChanges + OnStateChanged(newEvent, this.currentState, state)
+        )
 }

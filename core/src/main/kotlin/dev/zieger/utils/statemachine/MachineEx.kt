@@ -6,7 +6,7 @@ import dev.zieger.utils.coroutines.TypeContinuation
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
-import dev.zieger.utils.delegates.OnChanged
+import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.statemachine.MachineEx.Companion.DEFAULT_PREVIOUS_CHANGES_SIZE
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel
@@ -189,7 +189,7 @@ open class MachineEx(
             private set
     }
 
-    private val previousChanges: MutableList<OnStateChanged> = ArrayList()
+    private val previousChanges = FiFo<OnStateChanged>(previousChangesCacheSize)
 
     private val finishedProcessingEvent = Channel<Boolean>()
 
@@ -203,8 +203,7 @@ open class MachineEx(
         return cont.suspendUntilTrigger()!!
     }
 
-    private val stateComboObservable = OnChanged<IComboElement>(initialState.combo)
-    override var stateCombo: IComboElement by stateComboObservable
+    override var stateCombo: IComboElement = initialState.combo
 
     private val submittedEventCount = AtomicInteger(0)
     private val processedEventCount = AtomicInteger(0)
@@ -214,12 +213,12 @@ open class MachineEx(
     init {
         MachineEx.debugLevel = debugLevel
 
-        applyNewState(initialState.combo, initialState.combo, object : IEvent {
-            override val noLogging: Boolean
-                get() = false
-        }.combo)
-
         scope.launchEx {
+            applyNewState(initialState.combo to suspend {}, initialState.combo, object : IEvent {
+                override val noLogging: Boolean
+                    get() = false
+            }.combo)
+
             this@MachineEx.builder()
             for (event in eventChannel) event.processEvent()
         }
@@ -230,7 +229,7 @@ open class MachineEx(
         eventCombo.usedAs = RUNTIME
         val stateBefore = stateCombo
 
-        applyNewState(mapper.processEvent(first, stateBefore, previousChanges), stateBefore, first)
+        applyNewState(mapper.processEvent(first, stateBefore, previousChanges.reversed()), stateBefore, first)
         processedEventCount.incrementAndGet()
 
         if (!isProcessingActive)
@@ -239,21 +238,18 @@ open class MachineEx(
         second(stateCombo)
     }
 
-    private fun applyNewState(
-        newState: IComboElement?,
+    private suspend fun applyNewState(
+        newState: Pair<IComboElement, suspend () -> Unit>?,
         stateBefore: IComboElement,
         event: IComboElement
     ) = newState?.let {
-        stateCombo = newState
-        previousChanges.add(0,
-            OnStateChanged(event, stateBefore, newState).apply {
-                stateBefore.state?.run { activeStateChanged(false) }
-                event.event?.run { fired() }
-                newState.state?.run { activeStateChanged(true) }
-            }
-        )
-        if (previousChanges.size > previousChangesCacheSize)
-            previousChanges.remove(previousChanges.last())
+        stateCombo = newState.first
+        previousChanges.put(OnStateChanged(event, stateBefore, newState.first).apply {
+            stateBefore.state?.run { activeStateChanged(false) }
+            event.event?.run { fired() }
+            newState.first.state?.run { activeStateChanged(true) }
+        })
+        newState.second()
     }
 
     override suspend fun suspendUtilProcessingFinished() {

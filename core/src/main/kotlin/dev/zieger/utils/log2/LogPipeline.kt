@@ -7,9 +7,13 @@ import kotlin.collections.ArrayList
 
 interface ILogPipeline {
     val preHook: Array<IDelayHook<LogPipelineContext>?>
+    var messageBuilder: ILogMessageBuilder
     val postHook: Array<IDelayHook<LogPipelineContext>?>
+    var output: IHook<LogPipelineContext>
 
     fun ILogMessageContext.process()
+
+    fun copyPipeline(): ILogPipeline
 }
 
 /**
@@ -17,21 +21,23 @@ interface ILogPipeline {
  */
 open class LogPipeline(
     override val preHook: Array<IDelayHook<LogPipelineContext>?> = Array(100) { null },
-    var midAction: IHook<LogPipelineContext>,
+    override var messageBuilder: ILogMessageBuilder,
     override val postHook: Array<IDelayHook<LogPipelineContext>?> = Array(100) { null },
-    var endAction: IHook<LogPipelineContext>
+    override var output: IHook<LogPipelineContext>
 ) : ILogPipeline {
 
     override fun ILogMessageContext.process() {
         LogPipelineContext(this).apply {
             hook.run {
                 call(hook {
-                    preHook.pipeExecute(this, midAction)
-                    postHook.pipeExecute(this, endAction)
+                    preHook.pipeExecute(this, messageBuilder)
+                    postHook.pipeExecute(this, output)
                 })
             }
         }
     }
+
+    override fun copyPipeline(): ILogPipeline = LogPipeline(preHook.copyOf(), messageBuilder, postHook.copyOf(), output)
 }
 
 fun <C : ICancellable> Array<IDelayHook<C>?>.pipeExecute(

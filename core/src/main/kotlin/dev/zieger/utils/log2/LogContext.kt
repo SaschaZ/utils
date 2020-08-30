@@ -7,6 +7,7 @@ import dev.zieger.utils.log2.calls.ICoroutineLogCalls
 import dev.zieger.utils.log2.calls.IInlineLogBuilder
 import dev.zieger.utils.log2.calls.IInlineLogCalls
 import dev.zieger.utils.log2.calls.ILogCalls
+import dev.zieger.utils.misc.cast
 import dev.zieger.utils.time.TimeEx
 import kotlinx.coroutines.CoroutineScope
 
@@ -17,14 +18,16 @@ interface ILogContext : ILogPipeline, ILogTags, ILogLevelFilter,
     ILogCalls, ICoroutineLogCalls, IInlineLogCalls, IInlineLogBuilder {
 
     fun copy(
-        pipeline: ILogPipeline = this,
-        tags: ILogTags = this,
-        logLevelFilter: ILogLevelFilter = this
+        pipeline: ILogPipeline = cast<ILogPipeline>().copyPipeline(),
+        tags: ILogTags = cast<ILogTags>().copyTags(),
+        logLevelFilter: ILogLevelFilter = cast<ILogLevelFilter>().copyLogLevelFilter(pipeline)
     ): ILogContext = LogContext(pipeline, tags, logLevelFilter)
+
+    fun scope(block: ILogScope.() -> Unit) = LogScopeImpl(copy()).block()
 }
 
 open class LogContext(
-    logPipeline: ILogPipeline = LogPipeline(midAction = LogMessageBuilder(), endAction = SystemPrintOutput),
+    logPipeline: ILogPipeline = LogPipeline(messageBuilder = LogMessageBuilder(), output = SystemPrintOutput),
     logTags: ILogTags = LogTags(),
     logLevelFilter: ILogLevelFilter = LogLevelFilter(logPipeline)
 ) : ILogContext, ILogPipeline by logPipeline, ILogTags by logTags, ILogLevelFilter by logLevelFilter {
