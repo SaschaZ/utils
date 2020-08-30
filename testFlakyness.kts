@@ -1,14 +1,10 @@
 #!/usr/bin/env kscript
-@file:KotlinOpts("-J-Xmx5g")
-@file:KotlinOpts("-J-server")
 @file:CompilerOpts("-jvm-target 1.8")
-@file:DependsOnMaven("io.ktor:ktor-client-apache:1.3.0")
-@file:DependsOnMaven("io.ktor:ktor-client-gson:1.3.0")
 @file:DependsOnMaven("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.6")
-@file:DependsOnMaven("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.6")
-@file:DependsOnMaven("dev.zieger.utils:core:2.2.14")
-@file:DependsOnMaven("dev.zieger.utils:jdk:2.2.14")
+@file:DependsOnMaven("dev.zieger.utils:core:2.2.22")
+@file:DependsOnMaven("dev.zieger.utils:jdk:2.2.22")
 @file:DependsOnMaven("org.apache.commons:commons-lang3:3.10")
+@file:DependsOnMaven("com.github.ajalt:mordant:1.2.1")
 @file:Suppress("UNREACHABLE_CODE", "PropertyName", "LocalVariableName")
 
 
@@ -27,17 +23,21 @@ import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.runCommand
 import dev.zieger.utils.log.console.ConsoleControl
 import dev.zieger.utils.log.console.LogColored
-import dev.zieger.utils.log.console.LogColored.scope
+import dev.zieger.utils.log.console.termColored
 import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.time.ITimeEx
+import dev.zieger.utils.time.base.IDurationEx
+import dev.zieger.utils.time.base.ITimeEx
 import dev.zieger.utils.time.base.TimeUnit
-import dev.zieger.utils.time.duration.IDurationEx
-import dev.zieger.utils.time.duration.milliseconds
-import dev.zieger.utils.time.duration.toDuration
-import dev.zieger.utils.time.parse
+import dev.zieger.utils.time.milliseconds
+import dev.zieger.utils.time.string.parse
+import dev.zieger.utils.time.toDuration
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.runBlocking
 import org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4
 import java.io.File
 import kotlin.coroutines.coroutineContext
@@ -96,23 +96,24 @@ object ResultPrinter {
 
 
     private fun printProgress(channel: ReceiveChannel<TestRunResult>): () -> Unit {
-        scope {
+        termColored {
             var idx = 0
             var lastOutputLength = 0
-            val progressJob = launchEx(interval = 500.milliseconds) {
+            val progressJob = launchEx(interval = 100.milliseconds) {
                 if (lastOutputLength > 0) repeat(lastOutputLength) { print("\b \b") }
 
                 printResult(channel)
 
-                val progress = "  ${red("(")}${when (idx++) {
-                    0 -> green("|")
-                    1 -> green("/")
-                    2 -> green("-")
-                    else -> {
-                        idx = 0
-                        green("\\")
+                val progress = "  ${red("(")}${
+                    when (idx++) {
+                        0 -> green("|")
+                        1 -> green("/")
+                        2 -> green("-")
+                        else -> {
+                            idx = 0
+                            green("\\")
+                        }
                     }
-                }
                 }${red(")")}  "
 
                 print(progress)
@@ -132,7 +133,7 @@ object ResultPrinter {
     private var lastResultOutput = ""
 
     private fun printResult(channel: ReceiveChannel<TestRunResult>) {
-        scope {
+        termColored {
             channel.getAllAvailable().forEach { testRun ->
                 printed = true
                 executedRuns++
@@ -143,14 +144,14 @@ object ResultPrinter {
                 val failedRunsPercent = (100f * runsWithFailedTests) / executedRuns
                 val failedTestsPercent = (100f * failedTests) / executedTests
 
+                repeat(200) { print("\b \b") }
                 printFailed(testRun)
                 lastResultOutput = green(
                     "failed tests: ${"%.2f%%".format(failedTestsPercent)} ($failedTests/$executedTests) - " +
                             "failed runs: ${"%.2f%%".format(failedRunsPercent)} ($runsWithFailedTests/$executedRuns) "
                 )
             }
-            ConsoleControl.clearLine()
-            repeat(1000) { print("\b \b") }
+            repeat(200) { print("\b \b") }
             if (lastResultOutput.isBlank()) print(cyan("No runs have finished yet."))
             else print(lastResultOutput)
         }
@@ -159,7 +160,7 @@ object ResultPrinter {
     private fun printFailed(testRun: TestRunResult) {
         testRun.suites.flatMap { it.failure }.forEach {
             if (!printedFailures.contains(it)) {
-                println(it)
+                println("${it.exception}/${it.origin}\n${it.stackTrace}")
                 printedFailures.add(it)
             }
         }
@@ -196,7 +197,6 @@ object TestRunner {
     }
 
     private suspend fun runTests(folder: File): TestRunResult {
-        deleteTemporaryFiles(folder)
         "./gradlew test".runCommand(folder)
         return ResultParser.parseResults(folder)
     }
@@ -250,14 +250,15 @@ object ResultParser {
 
 
 runBlocking {
-    val NUM_PARALLEL = 6
+    val NUM_PARALLEL = 1
     LogColored.initialize()
 
     val jobs = if (args.getOrNull(0) == "-j")
         args.getOrNull(1)?.toInt() ?: throw IllegalArgumentException("invalid arguments: ${args.joinToString()}")
     else NUM_PARALLEL
 
-    scope {
+    ConsoleControl.clearScreen()
+    termColored {
         println(brightBlue("test flakyness with ${(bold + cyan)("$jobs")} parallel jobs\n"))
     }
 

@@ -219,6 +219,21 @@ Also works with attached `Data`.
 
 # Changelog
 
+##### 2.2.22
+
+* renamed `OnChanged2` to `OnChangedWithParent`
+* thread safety for `OnChangedWithParent`:
+  * added `changeValue` method: 
+    * allows thread safe change of the properties value
+  * added `safeSet` parameter: 
+    * if set to `true`, setting the properties value will be done inside a `Coroutine` with the same `Mutex` used in `changeValue`
+    * 
+    * defaulting to `false`
+
+##### 2.2.21
+
+* build tools fix
+
 ##### 2.2.20
 
 * removed `Controllable(2)` and made `value` of `OnChangedScope` writeable

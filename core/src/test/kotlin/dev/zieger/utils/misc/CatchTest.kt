@@ -4,6 +4,7 @@ package dev.zieger.utils.misc
 
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
+import dev.zieger.utils.core_testing.assertion2.AssertType
 import dev.zieger.utils.core_testing.mix.ParamInstance
 import dev.zieger.utils.core_testing.mix.bind
 import dev.zieger.utils.core_testing.mix.param
@@ -15,8 +16,8 @@ import kotlin.random.Random
 class CatchTest : AnnotationSpec() {
 
     data class CatchTestData(val map: Map<String, ParamInstance<*>>) {
-        val result: Boolean by bind(map)
-        val returnOnCatch: Boolean by bind(map)
+        val result: Int by bind(map)
+        val returnOnCatch: Int by bind(map)
         val maxExecutions: Int by bind(map)
         val printStackTrace: Boolean by bind(map)
         val logStackTrace: Boolean by bind(map)
@@ -27,12 +28,12 @@ class CatchTest : AnnotationSpec() {
     fun testCatch() {
         parameterMix(
             { CatchTestData(it) },
-            param("result", Random.nextBoolean()),
-            param("returnOnCatch", Random.nextBoolean()),
+            param("result", Random.nextInt()),
+            param("returnOnCatch", Random.nextInt()),
             param("maxExecutions", Random.nextInt(0..9)),
-            param("printStackTrace", Random.nextBoolean()),
-            param("logStackTrace", Random.nextBoolean()),
-            param("throwException", Random.nextBoolean())
+            param("printStackTrace", true, false),
+            param("logStackTrace", true, false),
+            param("throwException", true, false)
         ) {
             var caught = false
             var finally = false
@@ -42,7 +43,7 @@ class CatchTest : AnnotationSpec() {
                 result
             }
 
-            caught assert throwException % "caught"
+            caught to (throwException && maxExecutions > 0) assert AssertType.EQUALS % "caught"
             finally assert true % "finally"
             receivedResult assert (if (throwException) returnOnCatch else result) % "result"
         }

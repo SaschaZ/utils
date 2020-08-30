@@ -1,6 +1,7 @@
 package dev.zieger.utils.core_testing.mix
 
 import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.misc.catch
 import dev.zieger.utils.misc.runEach
 import kotlinx.coroutines.channels.Channel
 import kotlin.properties.ReadOnlyProperty
@@ -37,7 +38,15 @@ inline fun <I, R> parameterMixCollect(
     vararg params: Pair<String, Param<*>>,
     block: I.() -> Channel<R>
 ): Map<I, Channel<R>> =
-    params.toList().buildParams().runEach { inputFactory(this).run { block().let { this to it } } }.toMap()
+    params.toList().buildParams().runEach {
+        inputFactory(this).run {
+            catch(this to Channel<R>().apply { close() }, onCatch = {
+                throw Throwable("failed with parameter:\n$this\n", it)
+            }) {
+                block().let { this to it }
+            }
+        }
+    }.toMap()
 
 fun List<Pair<String, Param<*>>>.buildParams(): List<Map<String, ParamInstance<*>>> {
     val expectedNumberCombinations: Int? = accumulate { accu, value -> (accu ?: 1) * value.second.list.size }
