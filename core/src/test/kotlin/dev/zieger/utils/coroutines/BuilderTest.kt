@@ -20,16 +20,18 @@ class BuilderTest : AnnotationSpec() {
     }.asUnit()
 
     @Test
-    fun testLaunchExDelayed() = runTest {
+    fun testLaunchExDelayed() = runTest(10.seconds) {
         var executed = false
         val delayDuration = 5.seconds
         val checkDuration = 2.seconds
-        withContextEx(null) {
-            launchEx(delayed = delayDuration) { executed = true }
+        launchEx {
+            withContextEx(null) {
+                launchEx(delayed = delayDuration) { executed = true }
+            }
         }
         delay(checkDuration)
         assert(!executed) { "executed is true" }
-        delay(delayDuration - checkDuration + 100.milliseconds)
+        delay(delayDuration - checkDuration + 1.seconds)
         assert(executed) { "executed is false" }
     }.asUnit()
 

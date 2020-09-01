@@ -1,9 +1,11 @@
 package dev.zieger.utils.log2
 
+import dev.zieger.utils.log2.filter.LogLevel.EXCEPTION
+
 object SystemPrintOutput : IHook<LogPipelineContext> {
 
     override fun LogPipelineContext.call() = when (level) {
-        LogLevel.EXCEPTION -> System.err.println(message)
+        EXCEPTION -> System.err.println(message)
         else -> println(message)
     }
 }

@@ -4,10 +4,12 @@ import dev.zieger.utils.UtilsSettings.LOG_EXCEPTIONS
 import dev.zieger.utils.UtilsSettings.PRINT_EXCEPTIONS
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.time.base.IDurationEx
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlin.coroutines.CoroutineContext
+import kotlin.reflect.KClass
 
 fun launchEx(
     coroutineScope: CoroutineScope = DefaultCoroutineScope(),
@@ -21,12 +23,14 @@ fun launchEx(
     logStackTrace: Boolean = LOG_EXCEPTIONS,
     name: String? = null,
     isSuperVisionEnabled: Boolean = false,
+    include: List<KClass<out Throwable>> = listOf(Throwable::class),
+    exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
     onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
     onFinally: suspend CoroutineScope.() -> Unit = {},
     block: suspend CoroutineScope.(isRetry: Boolean) -> Unit
 ) = coroutineScope.launchEx(
     coroutineScope.coroutineContext, interval, delayed, maxExecutions, retryDelay, timeout, mutex,
-    printStackTrace, logStackTrace, name, isSuperVisionEnabled, onCatch, onFinally, block
+    printStackTrace, logStackTrace, name, isSuperVisionEnabled, include, exclude, onCatch, onFinally, block
 )
 
 fun CoroutineScope.launchEx(
@@ -41,12 +45,14 @@ fun CoroutineScope.launchEx(
     logStackTrace: Boolean = LOG_EXCEPTIONS,
     name: String? = null,
     isSuperVisionEnabled: Boolean = false,
+    include: List<KClass<out Throwable>> = listOf(Throwable::class),
+    exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
     onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
     onFinally: suspend CoroutineScope.() -> Unit = {},
     block: suspend CoroutineScope.(isRetry: Boolean) -> Unit
 ) = launch(buildContext(coroutineContext, name, isSuperVisionEnabled)) {
     executeExInternal(
         coroutineContext, Unit, interval, delayed, mutex, maxExecutions, retryDelay, timeout, printStackTrace,
-        logStackTrace, onCatch, onFinally, block
+        logStackTrace, include, exclude, onCatch, onFinally, block
     )
 }

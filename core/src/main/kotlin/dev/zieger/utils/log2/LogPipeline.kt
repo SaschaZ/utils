@@ -2,14 +2,21 @@
 
 package dev.zieger.utils.log2
 
+import dev.zieger.utils.log2.LogHook.LogPostHook
+import dev.zieger.utils.log2.LogHook.LogPreHook
+import dev.zieger.utils.misc.asUnit
 import java.util.*
 import kotlin.collections.ArrayList
 
 interface ILogPipeline {
-    val preHook: Array<IDelayHook<LogPipelineContext>?>
     var messageBuilder: ILogMessageBuilder
-    val postHook: Array<IDelayHook<LogPipelineContext>?>
     var output: IHook<LogPipelineContext>
+
+    fun addHook(hook: LogHook)
+    fun removeHook(hook: LogHook)
+
+    operator fun plusAssign(hook: LogHook) = addHook(hook)
+    operator fun minusAssign(hook: LogHook) = removeHook(hook)
 
     fun ILogMessageContext.process()
 
@@ -20,27 +27,42 @@ interface ILogPipeline {
  *
  */
 open class LogPipeline(
-    override val preHook: Array<IDelayHook<LogPipelineContext>?> = Array(100) { null },
     override var messageBuilder: ILogMessageBuilder,
-    override val postHook: Array<IDelayHook<LogPipelineContext>?> = Array(100) { null },
-    override var output: IHook<LogPipelineContext>
+    override var output: IHook<LogPipelineContext>,
+    private val preHook: MutableList<LogPreHook?> = ArrayList(),
+    private val postHook: MutableList<LogPostHook?> = ArrayList()
 ) : ILogPipeline {
+
+    override fun addHook(hook: LogHook) = when (hook) {
+        is LogPostHook -> postHook.add(hook)
+        is LogPreHook -> preHook.add(hook)
+    }.asUnit()
+
+    override fun removeHook(hook: LogHook) = when (hook) {
+        is LogPostHook -> postHook.remove(hook)
+        is LogPreHook -> preHook.remove(hook)
+    }.asUnit()
 
     override fun ILogMessageContext.process() {
         LogPipelineContext(this).apply {
             hook.run {
                 call(hook {
-                    preHook.pipeExecute(this, messageBuilder)
-                    postHook.pipeExecute(this, output)
+                    preHook.pipeExecute(this, hook {
+                        messageBuilder(this)
+                        postHook.pipeExecute(this, output)
+                    })
                 })
             }
         }
     }
 
-    override fun copyPipeline(): ILogPipeline = LogPipeline(preHook.copyOf(), messageBuilder, postHook.copyOf(), output)
+    override fun copyPipeline() = LogPipeline(messageBuilder, output,
+        preHook.map { it?.copy() }.toMutableList(), postHook.map { it?.copy() }.toMutableList()
+    )
 }
 
-fun <C : ICancellable> Array<IDelayHook<C>?>.pipeExecute(
+
+fun <C : ICancellable> Collection<IDelayHook<C>?>.pipeExecute(
     context: C,
     endAction: IHook<C>
 ) {
@@ -52,17 +74,15 @@ fun <C : ICancellable> Array<IDelayHook<C>?>.pipeExecute(
             else -> lambdas[idx - 2]
         }
         lambdas.add(hook {
-            if (context.isCancelled) return@hook
-            h.run {
-                call(hook innerHook@{
-                    if (context.isCancelled) return@innerHook
-                    lambda(this)
-                })
-            }
+            if (isCancelled) return@hook
+            h(this, hook innerHook@{
+                if (isCancelled) return@innerHook
+                lambda(this)
+            })
         })
     }
 
-    if (!context.isCancelled) (lambdas.lastOrNull() ?: endAction).run { context.call() }
+    if (!context.isCancelled) (lambdas.lastOrNull() ?: endAction)(context)
 }
 
 interface ICancellable {
@@ -84,33 +104,52 @@ open class LogPipelineContext(
     }
 }
 
-inline fun <C: ICancellable> delayHook(crossinline block: C.(next: C.() -> Unit) -> Unit): IDelayHook<C> =
+inline fun <C : ICancellable> delayHook(crossinline block: C.(next: C.() -> Unit) -> Unit): IDelayHook<C> =
     object : IDelayHook<C> {
         override fun C.call(next: IHook<C>) = block { next(this) }
     }
 
-inline fun <C: ICancellable> hook(crossinline block: C.() -> Unit): IHook<C> = object : IHook<C> {
+inline fun <C : ICancellable> hook(crossinline block: C.() -> Unit): IHook<C> = object : IHook<C> {
     override fun C.call() = block()
 }
 
-interface IDelayHook<C: ICancellable> {
-    fun C.call(next: IHook<C>)
+sealed class LogHook : IDelayHook<LogPipelineContext> {
+    abstract fun copy(): LogHook
+
+    abstract class LogPreHook : LogHook() {
+        abstract override fun copy(): LogPreHook
+    }
+
+    abstract class LogPostHook : LogHook() {
+        abstract override fun copy(): LogPostHook
+    }
 }
 
-interface IHook<C: ICancellable> {
+inline fun logPreHook(crossinline block: LogPipelineContext.(next: LogPipelineContext.() -> Unit) -> Unit): LogPreHook =
+    object : LogPreHook() {
+        override fun LogPipelineContext.call(next: IHook<LogPipelineContext>) = block { next(this) }
+        override fun copy(): LogPreHook = this
+    }
+
+inline fun logPostHook(crossinline block: LogPipelineContext.(next: LogPipelineContext.() -> Unit) -> Unit): LogPostHook =
+    object : LogPostHook() {
+        override fun LogPipelineContext.call(next: IHook<LogPipelineContext>) = block { next(this) }
+        override fun copy(): LogPostHook = this
+    }
+
+
+interface IDelayHook<C : ICancellable> {
+    fun C.call(next: IHook<C> = hook {})
+    operator fun invoke(context: C, next: IHook<C> = hook {}) = context.run { call(next) }
+}
+
+interface IHook<in C : ICancellable> {
     fun C.call()
     operator fun invoke(context: C) = context.run { call() }
 }
 
-open class EmptyHook<C: ICancellable> : IDelayHook<C> {
+open class EmptyHook<C : ICancellable> : IDelayHook<C> {
     override fun C.call(next: IHook<C>) = next(this)
 }
 
 object EmptyPipelineLogHook : EmptyHook<LogPipelineContext>()
-
-fun logLevelFilter(minLevel: LogLevel) = delayHook<LogPipelineContext> {
-    when {
-        level >= minLevel -> it(this)
-        else -> cancel()
-    }
-}

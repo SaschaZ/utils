@@ -3,11 +3,13 @@ package dev.zieger.utils.coroutines.builder
 import dev.zieger.utils.UtilsSettings.LOG_EXCEPTIONS
 import dev.zieger.utils.UtilsSettings.PRINT_EXCEPTIONS
 import dev.zieger.utils.time.base.IDurationEx
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
+import kotlin.reflect.KClass
 
 suspend fun <T : Any?> withContextEx(
     resultOnCatch: T,
@@ -21,6 +23,8 @@ suspend fun <T : Any?> withContextEx(
     logStackTrace: Boolean = LOG_EXCEPTIONS,
     name: String? = null,
     isSuperVisionEnabled: Boolean = false,
+    include: List<KClass<out Throwable>> = listOf(Throwable::class),
+    exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
     onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
     onFinally: suspend CoroutineScope.() -> Unit = {},
     block: suspend CoroutineScope.(isRetry: Boolean) -> T
@@ -33,6 +37,6 @@ suspend fun <T : Any?> withContextEx(
 ) {
     executeExInternal(
         coroutineContext, resultOnCatch, null, delayed, mutex, maxExecutions, retryDelay, timeout,
-        printStackTrace, logStackTrace, onCatch, onFinally, block
+        printStackTrace, logStackTrace, include, exclude, onCatch, onFinally, block
     )
 }

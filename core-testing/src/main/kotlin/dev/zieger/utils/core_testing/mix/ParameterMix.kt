@@ -1,5 +1,6 @@
 package dev.zieger.utils.core_testing.mix
 
+import dev.zieger.utils.core_testing.assertion2.UtilsAssertException
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.catch
 import dev.zieger.utils.misc.runEach
@@ -39,9 +40,16 @@ inline fun <I, R> parameterMixCollect(
     block: I.() -> Channel<R>
 ): Map<I, Channel<R>> =
     params.toList().buildParams().runEach {
-        inputFactory(this).run {
+        inputFactory(this).run input@{
             catch(this to Channel<R>().apply { close() }, onCatch = {
-                throw Throwable("failed with parameter:\n$this\n", it)
+                if (it is UtilsAssertException) it.run {
+                    throw UtilsAssertException(
+                        type,
+                        "U: failed with parameter:\n${this@input}\n$extraMessage\n",
+                        actual,
+                        expected
+                    )
+                } else throw Throwable("T: failed with parameter:\n$this\n${it.message}", it.cause)
             }) {
                 block().let { this to it }
             }
@@ -49,7 +57,7 @@ inline fun <I, R> parameterMixCollect(
     }.toMap()
 
 fun List<Pair<String, Param<*>>>.buildParams(): List<Map<String, ParamInstance<*>>> {
-    val expectedNumberCombinations: Int? = accumulate { accu, value -> (accu ?: 1) * value.second.list.size }
+    val expectedNumberCombinations: Int? = accumulate { accu, value -> (accu ?: 1) * value.second.amount }
     println("number of combinations: $expectedNumberCombinations")
 
     val result: List<List<ParamInstance<*>>> =
@@ -62,7 +70,7 @@ fun List<Pair<String, Param<*>>>.buildParams(): List<Map<String, ParamInstance<*
 private fun List<List<ParamInstance<*>>>.mixWithParam(param: Pair<String, Param<*>>): List<List<ParamInstance<*>>> {
     var idx = 0
     return if (isEmpty())
-        param.second.list.map {
+        (0 until param.second.amount).map {
             listOf(
                 ParamInstance(
                     param.first,
@@ -71,7 +79,7 @@ private fun List<List<ParamInstance<*>>>.mixWithParam(param: Pair<String, Param<
                 )
             )
         }
-    else (this * param.second.list.size).map {
+    else (this * param.second.amount).map {
         it + ParamInstance(
             param.first,
             param.second,

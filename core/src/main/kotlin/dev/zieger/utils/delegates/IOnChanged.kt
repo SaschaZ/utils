@@ -44,7 +44,7 @@ interface IOnChangedWithParent<P : Any?, T : Any?> : IOnChangedParamsWithParent<
     suspend fun nextChange(
         timeout: IDurationEx? = null,
         onChanged: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit = {}
-    ): T
+    ): T?
 
     /**
      * Suspends until the observed property changes to [wanted].

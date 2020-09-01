@@ -2,9 +2,9 @@
 
 package dev.zieger.utils.misc
 
-import dev.zieger.utils.core_testing.assertion.assert
-import dev.zieger.utils.core_testing.assertion.rem
-import dev.zieger.utils.core_testing.assertion2.AssertType
+import dev.zieger.utils.core_testing.assertion2.AssertType.EQUALS
+import dev.zieger.utils.core_testing.assertion2.assert
+import dev.zieger.utils.core_testing.assertion2.rem
 import dev.zieger.utils.core_testing.mix.ParamInstance
 import dev.zieger.utils.core_testing.mix.bind
 import dev.zieger.utils.core_testing.mix.param
@@ -21,31 +21,39 @@ class CatchTest : AnnotationSpec() {
         val maxExecutions: Int by bind(map)
         val printStackTrace: Boolean by bind(map)
         val logStackTrace: Boolean by bind(map)
-        val throwException: Boolean by bind(map)
     }
 
     @Test
     fun testCatch() {
         parameterMix(
             { CatchTestData(it) },
-            param("result", Random.nextInt()),
-            param("returnOnCatch", Random.nextInt()),
+            param("result", 10) { Random.nextInt() },
+            param("returnOnCatch", 10) { Random.nextInt() },
             param("maxExecutions", Random.nextInt(0..9)),
-            param("printStackTrace", true, false),
-            param("logStackTrace", true, false),
-            param("throwException", true, false)
+            param("printStackTrace", false, false),
+            param("logStackTrace", true, false)
         ) {
-            var caught = false
-            var finally = false
-            val receivedResult = catch(returnOnCatch, maxExecutions, printStackTrace, logStackTrace,
-                onCatch = { caught = true }, onFinally = { finally = true }) {
-                if (throwException) throw RuntimeException("testException")
+            var caught = 0
+            var finally = 0
+            var throwException = false
+            var numThrown = 0
+
+            val receivedResult = catch(returnOnCatch, maxExecutions,
+                printStackTrace = printStackTrace, logStackTrace = logStackTrace,
+                onCatch = { caught++ }, onFinally = { finally++ }) {
+
+                throwException = Random.nextBoolean()
+                if (throwException) {
+                    numThrown++
+                    throw RuntimeException("testException")
+                }
                 result
             }
 
-            caught to (throwException && maxExecutions > 0) assert AssertType.EQUALS % "caught"
-            finally assert true % "finally"
-            receivedResult assert (if (throwException) returnOnCatch else result) % "result"
+            caught to numThrown assert EQUALS % "caught"
+            finally to 1 assert EQUALS % "finally"
+            receivedResult to (if (throwException || maxExecutions == 0) returnOnCatch else result) assert
+                    EQUALS % "result; throwException=$throwException; maxExecutions=$maxExecutions"
         }
     }
 }

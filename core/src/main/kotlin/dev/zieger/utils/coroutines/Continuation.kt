@@ -55,7 +55,8 @@ open class TypeContinuation<T>(
         result
     }
 
-    override suspend fun triggerS(value: T, timeout: IDurationEx?) = withTimeout(timeout) { channel.send(value) }
+    override suspend fun triggerS(value: T, timeout: IDurationEx?) =
+        withTimeout(timeout) { channel.send(value) }.asUnit()
 
     override fun trigger(value: T, timeout: IDurationEx?) =
         if (!channel.offer(value)) scope.launchEx { triggerS(value, timeout) }.asUnit() else Unit
@@ -92,14 +93,17 @@ interface IContinuation {
 }
 
 class Continuation(
-    private val channel: Channel<Boolean> = Channel(),
+    private var channel: Channel<Boolean> = Channel(),
     private val scope: CoroutineScope = DefaultCoroutineScope()
 ) : IContinuation {
 
-    override suspend fun suspendUntilTrigger(timeout: IDurationEx?) =
-        withTimeout(timeout) { channel.receive() }.asUnit()
+    override suspend fun suspendUntilTrigger(timeout: IDurationEx?) {
+        channel = Channel()
+        withTimeout(timeout) { channel.receive() }
+    }
 
-    override suspend fun triggerS(timeout: IDurationEx?) = withTimeout(timeout) { channel.send(true) }
+    override suspend fun triggerS(timeout: IDurationEx?) =
+        withTimeout(timeout) { channel.send(true) }.asUnit()
 
     override fun trigger(timeout: IDurationEx?) =
         if (!channel.offer(true)) scope.launchEx { triggerS(timeout) }.asUnit() else Unit

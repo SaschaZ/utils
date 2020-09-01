@@ -9,6 +9,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.CoroutineContext
+import kotlin.reflect.KClass
 import kotlin.system.measureTimeMillis
 
 internal suspend inline fun <T : Any?> executeExInternal(
@@ -22,6 +23,8 @@ internal suspend inline fun <T : Any?> executeExInternal(
     timeout: IDurationEx? = null,
     printStackTrace: Boolean = true,
     logStackTrace: Boolean = false,
+    include: List<KClass<out Throwable>> = listOf(Throwable::class),
+    exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
     crossinline onCatch: suspend CoroutineScope.(t: Throwable) -> Unit,
     crossinline onFinally: suspend CoroutineScope.() -> Unit,
     crossinline block: suspend CoroutineScope.(isRetry: Boolean) -> T
@@ -36,7 +39,8 @@ internal suspend inline fun <T : Any?> executeExInternal(
                 (mutex ?: Mutex()).withLock {
                     val scope = CoroutineScope(coroutineContext)
                     catch(
-                        Unit, maxExecutions, printStackTrace, logStackTrace,
+                        Unit, maxExecutions, printStackTrace = printStackTrace, logStackTrace = logStackTrace,
+                        include = include, exclude = exclude,
                         onCatch = { throwable -> scope.launch { onCatch(throwable) } },
                         onFinally = { scope.launch { scope.onFinally() } }) { isRetry ->
                         if (isRetry) retryDelay?.also { delay(it) }
