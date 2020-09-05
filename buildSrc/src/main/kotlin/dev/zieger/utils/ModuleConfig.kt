@@ -16,11 +16,11 @@ fun Project.configModule(
 private fun Project.configureDependencies(type: ModuleType, block: DependencyHandlerScope.() -> Unit) {
     dependencies {
         when (type) {
-            JVM_LIB -> {
+            ModuleType.JVM_LIB -> {
                 coroutinesJdk
                 testCoroutinesJdk
             }
-            ANDROID_LIB -> {
+            ModuleType.ANDROID_LIB -> {
                 coroutinesAndroid
                 testCoroutinesAndroid
 
