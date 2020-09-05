@@ -1,9 +1,8 @@
 package dev.zieger.utils.statemachine
 
 import dev.zieger.utils.statemachine.conditionelements.*
-import io.kotlintest.specs.AnnotationSpec
 
-class MachineExBindingTest : AnnotationSpec() {
+class MachineExBindingTest {
 
     sealed class States : State() {
         object A : States()

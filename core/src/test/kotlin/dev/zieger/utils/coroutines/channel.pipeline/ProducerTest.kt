@@ -2,12 +2,12 @@ package dev.zieger.utils.coroutines.channel.pipeline
 
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.misc.asUnit
-import io.kotlintest.specs.AnnotationSpec
 import io.mockk.mockk
 import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Test
 
-class ProducerTest : AnnotationSpec() {
+class ProducerTest {
 
     @Test
     fun testProducer() = runBlocking {

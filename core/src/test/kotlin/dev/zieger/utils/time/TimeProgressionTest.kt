@@ -4,9 +4,9 @@ import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.time.base.IDurationEx
 import dev.zieger.utils.time.base.ITimeEx
 import dev.zieger.utils.time.progression.step
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
-class TimeProgressionTest : AnnotationSpec() {
+class TimeProgressionTest {
 
     @Test
     fun testInit() {

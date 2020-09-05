@@ -1,17 +1,17 @@
 package dev.zieger.utils
 
 object Versions {
-    const val kotlin = "1.3.72"
-    const val koTest = "3.4.2"
+    const val kotlin = "1.4.0"
+    const val koTest = "4.2.2"
+    const val coroutines = "1.3.9"
 
-    const val coroutines = "1.3.6"
     const val multidex = "2.0.1"
     const val androidXappCompat = "1.1.0"
     const val androidXcoreKtx = "1.1.0"
     const val androidXconstraintLayout = "1.1.3"
     const val androidXrecyclerView = "1.1.0"
 
-    const val koin = "2.0.1"
+    const val koin = "2.1.6"
     const val slf4jSimple = "1.7.29"
     const val mordant = "1.2.1"
     const val progressbar = "0.8.0"
@@ -27,8 +27,8 @@ object Versions {
 
     const val lanterna = "3.1.0-beta2"
 
-    const val mockk = "1.9.3"
-    const val junitJupiterEngine = "5.6.0"
+    const val mockk = "1.10.0"
+    const val junitJupiterEngine = "5.6.2"
 
     const val mockWebServer = "4.3.1"
     const val bouncyCastle = "1.46"

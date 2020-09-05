@@ -1,20 +1,21 @@
 package dev.zieger.utils.core_testing.assertion2
 
 import dev.zieger.utils.misc.nullWhenBlank
+import junit.framework.AssertionFailedError
 
 class UtilsAssertException(
     val type: AssertType,
     val extraMessage: String,
     val actual: Any?,
     val expected: Any? = null
-) : Throwable() {
+) : AssertionFailedError() {
 
-    private fun buildMessage(): String = when (expected) {
-        null -> "${extraMessage.nullWhenBlank()?.let { "Message: $it\n" } ?: ""}Type: $type\nactual: $actual\n"
-        else -> "${
-            extraMessage.nullWhenBlank()?.let { "Message: $it\n" } ?: ""
-        }Type: $type\nexpected: $expected\nactual: $actual\n"
-    }
+    private fun buildMessage(): String =
+        (extraMessage.nullWhenBlank()?.let { "message: $it\n" } ?: "") +
+                "type: $type\n" + when (expected) {
+            null -> "actual: $actual\n"
+            else -> "expected:\t$expected\nactual:\t\t$actual\n"
+        }
 
     override fun toString(): String = buildMessage()
 }

@@ -1,14 +1,24 @@
 package dev.zieger.utils.core_testing.assertion2
 
-infix fun Any?.assert(type: AssertType) = assert(type to "")
+import dev.zieger.utils.misc.nullWhenBlank
+import junit.framework.TestCase
 
-infix fun Any?.assert(type: Pair<AssertType, String>) {
+infix fun Any?.assert2(type: AssertType) = assert2(type to "")
+
+infix fun Any?.assert2(type: Pair<AssertType, String>) {
+    fun buildMessage(actual: Any?, expected: Any? = null): String =
+        (type.second.nullWhenBlank()?.let { "message: $it\n" } ?: "") +
+                "type: ${type.first}\n" + when (expected) {
+            null -> "actual:<$actual>"
+            else -> "expected:<$expected> but was:<$actual>"
+        }
+
     when (this) {
         is Pair<*, *> -> if (!type.first.assert(first, second))
-            throw UtilsAssertException(type.first, type.second, first, second) else Unit
+            TestCase.fail(buildMessage(first, second)) else Unit
 
         else -> if (!type.first.assert(this, null))
-            throw UtilsAssertException(type.first, type.second, this) else Unit
+            TestCase.fail(buildMessage(this)) else Unit
     }
 }
 

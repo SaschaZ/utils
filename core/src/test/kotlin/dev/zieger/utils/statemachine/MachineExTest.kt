@@ -2,11 +2,12 @@
 
 package dev.zieger.utils.statemachine
 
-import dev.zieger.utils.core_testing.assertion.assert
-import dev.zieger.utils.core_testing.assertion.rem
+import dev.zieger.utils.core_testing.assertion2.isEqual
+import dev.zieger.utils.core_testing.assertion2.isNull
+import dev.zieger.utils.core_testing.assertion2.isTrue
+import dev.zieger.utils.core_testing.assertion2.rem
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
-import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.ERROR
 import dev.zieger.utils.statemachine.MachineExTest.TestData.*
 import dev.zieger.utils.statemachine.MachineExTest.TestEvent.*
 import dev.zieger.utils.statemachine.MachineExTest.TestEvent.TEST_EVENT_GROUP.*
@@ -18,10 +19,11 @@ import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DE
 import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.H
 import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.I
 import dev.zieger.utils.statemachine.conditionelements.*
+import dev.zieger.utils.time.minutes
 import dev.zieger.utils.time.seconds
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
-class MachineExTest : AnnotationSpec() {
+class MachineExTest {
 
     sealed class TestState : State() {
 
@@ -101,43 +103,46 @@ class MachineExTest : AnnotationSpec() {
                 throw IllegalStateException("This state should never be active")
             }
             +THIRD * TestEventData("foo") + C execAndSet {
-                executed++; eventData<TestEventData>().foo assert "foo" % "data test"; D
+                executed++
+                eventData<TestEventData>().foo isEqual "foo" % "data test"
+                D
             }
             +FOURTH + D set B
             +C exec { executed++ }
             +C - FIRST exec { executed2++ }
         }.run {
-            state assert INITIAL
+            state isEqual INITIAL
 
-            fire eventSync FIRST assert A * TestStateData(true)
-            state assert A
-            executed assert 0 % "event FIRST with state INITIAL"
-            executed2 assert 0 % "event FIRST with state INITIAL2"
+            fire eventSync FIRST isEqual A * TestStateData(true)
+            state isEqual A
+            stateData isEqual TestStateData(true)
+            executed isEqual 0 % "event FIRST with state INITIAL"
+            executed2 isEqual 0 % "event FIRST with state INITIAL2"
 
-            fire eventSync FIFTH
-            state assert E
-            executed assert 0 % "event FIFTH with state A"
-            executed2 assert 0 % "event FIFTH with state A2"
+            fire eventSync FIFTH isEqual E.combo
+            state isEqual E
+            executed isEqual 0 % "event FIFTH with state A"
+            executed2 isEqual 0 % "event FIFTH with state A2"
 
-            fire eventSync SECOND * TestEventData("moo")
-            state assert C
-            executed assert 1 % "event SECOND with state A"
-            executed2 assert 1 % "event SECOND with state A#2"
+            fire eventSync SECOND * TestEventData("moo") isEqual C.combo
+            state isEqual C
+            executed isEqual 1 % "event SECOND with state A"
+            executed2 isEqual 1 % "event SECOND with state A#2"
 
-            fire eventSync THIRD * TestEventData("foo")
-            state assert D
-            executed assert 2 % "event THIRD with state C"
-            executed2 assert 1 % "event THIRD with state C#2"
+            fire eventSync THIRD * TestEventData("foo") isEqual D.combo
+            state isEqual D
+            executed isEqual 2 % "event THIRD with state C"
+            executed2 isEqual 1 % "event THIRD with state C#2"
 
-            fire eventSync FOURTH
-            state assert B
-            executed assert 2 % "event FOURTH with state D"
-            executed2 assert 1 % "event FOURTH with state D#2"
+            fire eventSync FOURTH isEqual B.combo
+            state isEqual B
+            executed isEqual 2 % "event FOURTH with state D"
+            executed2 isEqual 1 % "event FOURTH with state D#2"
 
-            fire eventSync FIRST
-            state assert C % "FIRST with B"
-            executed assert 3 % "event FIRST with state B"
-            executed2 assert 1 % "event FIRST with state B#2"
+            fire eventSync FIRST isEqual C.combo
+            state isEqual C % "FIRST with B"
+            executed isEqual 3 % "event FIRST with state B"
+            executed2 isEqual 1 % "event FIRST with state B#2"
         }
     }
 
@@ -146,7 +151,7 @@ class MachineExTest : AnnotationSpec() {
         MachineEx(INITIAL, debugLevel = DEBUG) {
             +FIRST + INITIAL set A
         }.run {
-            state assert INITIAL
+            state isEqual INITIAL
 
             fire event FOURTH
             fire event THIRD
@@ -156,51 +161,51 @@ class MachineExTest : AnnotationSpec() {
             fire event THIRD
             fire event FOURTH
             fire eventSync FIRST
-            state assert A
+            state isEqual A
         }
     }
 
     @Test
-    fun testPrev() = runTest {
-        var lastEvent: IEvent? = null
-        var lastState: IState? = null
-        MachineEx(INITIAL, debugLevel = ERROR) {
+    fun testPrev() = runTest(10.minutes) {
+        var lastEvent: Event? = null
+        var lastState: State? = null
+        MachineEx(INITIAL, debugLevel = DEBUG) {
             +FIRST + INITIAL[0] set A
-            +SECOND + A + INITIAL[1] set B
-            +THIRD + B + A[1] + INITIAL[2] set C
-            +FOURTH + C[0] + B[1] + A[2] + INITIAL[3] set D
-            +FIFTH + D + C[1] + B[2] + A[3] + INITIAL[3] set E
-            +TestEvent exec {
+            +SECOND + A + FIRST[1] + INITIAL[1] - C set !B * TestEventData("bäm")
+            +THIRD + FIRST[X] + B + A[1] + INITIAL[2] set C * TestEventData
+            +FOURTH + FIRST[3] + !C[0]  + B[1] + A[2] + INITIAL[X] set D
+            +FIFTH + D + C[1] + !B[2] + A[3] + INITIAL[3] set E
+            +!TestEvent exec {
                 lastEvent = event
                 println("event: $lastEvent")
             }
-            +TestState exec {
+            +!TestState exec {
                 lastState = state
                 println("state: $lastState")
             }
         }.run {
-            state assert INITIAL
+            state isEqual INITIAL
 
             fire eventSync FIRST
-            state assert A
-            lastEvent assert FIRST
-            lastState assert A
+            state isEqual A
+            lastEvent isEqual FIRST
+            lastState isEqual A
 
             fire eventSync SECOND
-            state assert B
-            lastEvent assert SECOND
-            lastState assert B
+            state isEqual B
+            lastEvent isEqual SECOND
+            lastState isEqual B
 
             fire eventSync THIRD
-            state assert C
-            lastEvent assert THIRD
-            lastState assert C
+            state isEqual C
+            lastEvent isEqual THIRD
+            lastState isEqual C
 
             fire eventSync FOURTH
-            state assert D
+            state isEqual D
 
             fire eventSync FIFTH
-            state assert D // because INITIAL[3] is false
+            state isEqual D // because INITIAL[3] is false
         }
     }
 
@@ -214,37 +219,41 @@ class MachineExTest : AnnotationSpec() {
             +FIFTH * TestEventData("foo") + C set D
             +FOURTH * TestEventData("moo") + D set E
         }.run {
-            state assert INITIAL
+            state isEqual INITIAL
+            stateData.isNull
 
-            fire eventSync FIRST
-            state assert INITIAL
+            fire eventSync FIRST isEqual INITIAL.combo
+            state isEqual INITIAL
+            stateData.isNull
 
-            fire eventSync SECOND
-            state assert A
+            fire eventSync SECOND isEqual A * TestStateData(false)
+            state isEqual A
+            stateData isEqual TestStateData(false)
 
-            fire eventSync THIRD
-            state assert A
+            fire eventSync THIRD isEqual A * TestStateData(false)
+            state isEqual A
+            stateData isEqual TestStateData(false)
 
             fire eventSync FOURTH
-            state assert B
+            state isEqual B
 
             fire eventSync THIRD
-            state assert C % { "THIRD" }
+            state isEqual C % "THIRD"
 
             fire eventSync FIFTH
-            state assert C
+            state isEqual C
 
             fire eventSync FIFTH * TestEventData2("foo")
-            state assert C % { "FIFTH with TestEventData2" }
+            state isEqual C % "FIFTH with TestEventData2"
 
             fire eventSync FIFTH * TestEventData("foo")
-            state assert D % { "FIFTH with TestEventData" }
+            state isEqual D % "FIFTH with TestEventData"
 
             fire eventSync FOURTH * TestEventData("foo")
-            state assert D % "FOURTH with TestEventData"
+            state isEqual D % "FOURTH with TestEventData"
 
             fire eventSync FOURTH * TestEventData("moo")
-            state assert E
+            state isEqual E
         }
     }
 
@@ -258,31 +267,31 @@ class MachineExTest : AnnotationSpec() {
             +FIFTH + TEST_STATE_GROUP_HI set I
             +SIXTH set H
         }.run {
-            state assert INITIAL % "INITIAL"
+            state isEqual INITIAL % "INITIAL"
 
             fire eventSync FIRST
-            state assert D % "FIRST"
+            state isEqual D % "FIRST"
 
             fire eventSync SECOND
-            state assert E % "SECOND"
+            state isEqual E % "SECOND"
 
             fire eventSync THIRD * TestEventData2("bam")
-            state assert E % "THIRD"
+            state isEqual E % "THIRD"
 
             fire eventSync FOURTH
-            state assert F % "FOURTH"
+            state isEqual F % "FOURTH"
 
             fire eventSync THIRD * TestEventData2("bom")
-            state assert G % "THIRD#2"
+            state isEqual G % "THIRD#2"
 
             fire eventSync FIFTH
-            state assert G % "FIFTH"
+            state isEqual G % "FIFTH"
 
             fire eventSync SIXTH
-            state assert H % "SIXTH"
+            state isEqual H % "SIXTH"
 
             fire eventSync FIFTH
-            state assert I % "FIFTH#2"
+            state isEqual I % "FIFTH#2"
         }
     }
 
@@ -291,9 +300,9 @@ class MachineExTest : AnnotationSpec() {
         val event = FOURTH
         val eventGroup = TEST_EVENT_GROUP
 
-        MatchScope(event.combo, A.combo).apply {
-            eventGroup.run { match(event) } assert true
-            event.run { match(eventGroup) } assert true
+        MatchScope(event.comboEvent, A.comboState).apply {
+            eventGroup.run { match(event) }.isTrue
+            event.run { match(eventGroup) }.isTrue
         }
     }
 
@@ -307,34 +316,34 @@ class MachineExTest : AnnotationSpec() {
             +FOURTH + A[0..10] * TestStateData + B set D
             +SIXTH - { !isActive } set E
         }.run {
-            state assert INITIAL % "Initial"
+            state isEqual INITIAL % "Initial"
 
             fire eventSync FIRST
-            state assert INITIAL % "FIRST and still INITIAL"
+            state isEqual INITIAL % "FIRST and still INITIAL"
 
             isActive = true
             fire eventSync FIRST
-            state assert A % "FIRST with isActive == true"
+            state isEqual A % "FIRST with isActive == true"
 
             fire eventSync THIRD
-            state assert C % "THIRD with isActive == true"
+            state isEqual C % "THIRD with isActive == true"
 
             fire eventSync SECOND
-            state assert C % "SECOND with isActive == true"
+            state isEqual C % "SECOND with isActive == true"
 
             isActive = false
             fire eventSync SECOND
-            state assert B % "SECOND with isActive == false"
+            state isEqual B % "SECOND with isActive == false"
 
             fire eventSync FOURTH
-            state assert D % "FOURTH with isActive == false"
+            state isEqual D % "FOURTH with isActive == false"
 
             fire eventSync SIXTH
-            state assert D % "SIXTH with isActive == false"
+            state isEqual D % "SIXTH with isActive == false"
 
             isActive = true
             fire eventSync SIXTH
-            state assert E % "SIXTH with isActive == true"
+            state isEqual E % "SIXTH with isActive == true"
         }
     }
 }

@@ -5,78 +5,84 @@ package dev.zieger.utils.statemachine.conditionelements
 import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.name
-import dev.zieger.utils.statemachine.IMatchScope
 import dev.zieger.utils.statemachine.MachineEx
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
-import dev.zieger.utils.statemachine.conditionelements.ICondition.ConditionType.*
-import dev.zieger.utils.statemachine.conditionelements.IConditionElementGroup.MatchType.*
+import dev.zieger.utils.statemachine.MatchScope
+import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.*
+import dev.zieger.utils.statemachine.conditionelements.DefinitionElementGroup.MatchType.*
 
-interface ICondition : IConditionElement {
+data class Condition(
+    val items: List<DefinitionElementGroup> = INITIAL_ITEMS,
+    val action: (suspend MatchScope.() -> ComboStateElement?)? = null
+) : ConditionElement() {
 
-    val items: List<IConditionElementGroup>
-    val any: IConditionElementGroup get() = items.first { it.matchType == ANY }
-    val all: IConditionElementGroup get() = items.first { it.matchType == ALL }
-    val none: IConditionElementGroup get() = items.first { it.matchType == NONE }
-    val action: (suspend IMatchScope.() -> IComboElement?)?
+    constructor(event: Event) :
+            this(INITIAL_ITEMS.apply { first { it.matchType == ALL }.elements.add(event.comboEvent) })
 
-    val start: IComboElement get() = items.first { it.matchType == ALL }.elements.first()
+    constructor(state: State) :
+            this(INITIAL_ITEMS.apply { first { it.matchType == ALL }.elements.add(state.comboState) })
 
-    enum class ConditionType {
+    constructor(eventGroup: EventGroup<*>) :
+            this(INITIAL_ITEMS.apply { first { it.matchType == ALL }.elements.add(eventGroup.comboEventGroup) })
+
+    constructor(stateGroup: StateGroup<*>) :
+            this(INITIAL_ITEMS.apply { first { it.matchType == ALL }.elements.add(stateGroup.comboStateGroup) })
+
+    constructor(combo: ComboBaseElement<Master, Slave>) :
+            this(INITIAL_ITEMS.apply { first { it.matchType == ALL }.elements.add(combo) })
+
+    companion object {
+        private val INITIAL_ITEMS
+            get() = listOf(
+                DefinitionElementGroup(ANY, ArrayList()),
+                DefinitionElementGroup(ALL, ArrayList()),
+                DefinitionElementGroup(NONE, ArrayList())
+            )
+    }
+
+    val any: DefinitionElementGroup get() = items.first { it.matchType == ANY }
+    val all: DefinitionElementGroup get() = items.first { it.matchType == ALL }
+    val none: DefinitionElementGroup get() = items.first { it.matchType == NONE }
+
+    val start: DefinitionElement get() = items.first { it.matchType == ALL }.elements.first()
+
+    enum class DefinitionType {
         STATE,
         EVENT,
         EXTERNAL
     }
 
-    val type: ConditionType
-        get() = start.master.getType()
+    val type: DefinitionType
+        get() = start.type
 
-    private fun IMaster.getType(): ConditionType = when (this) {
-        is IEvent,
-        is IEventGroup<IEvent> -> EVENT
-        is IState,
-        is IStateGroup<IState> -> STATE
-        is IExternal -> EXTERNAL
-        is IComboElement -> master.getType()
-        else -> throw IllegalArgumentException("Unexpected first element $start")
+    private fun Master.getType(): DefinitionType = when (this) {
+        is Event,
+        is EventGroup<*> -> EVENT
+        is State,
+        is StateGroup<*> -> STATE
+        is External -> EXTERNAL
+        is ComboBaseElement<*, *> -> master.getType()
     }
 
-    override suspend fun IMatchScope.match(other: IConditionElement?): Boolean {
+    override suspend fun MatchScope.match(other: ConditionElement?): Boolean {
         return when (other) {
-            is IInputElement -> {
+            is InputElement -> {
                 any.run { match(other) }
                         && all.run { match(other) }
                         && none.run { match(other) }
             }
             null -> false
-            else -> throw IllegalArgumentException("Can not match ${this@ICondition::class.name} " +
+            else -> throw IllegalArgumentException("Can not match ${this@Condition::class.name} " +
                     "with ${other.let { it::class.name }}"
             )
         } logV {
             f = GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
-            m = "#C $it => ${this@ICondition} <||> $other"
+            m = "#C $it => ${this@Condition} <||> $other"
         }
-    }
-}
-
-data class Condition(
-    override val items: List<IConditionElementGroup> = INITIAL_ITEMS,
-    override val action: (suspend IMatchScope.() -> IComboElement?)? = null
-) : ICondition {
-
-    constructor(master: IMaster) :
-            this(INITIAL_ITEMS.apply { first { it.matchType == ALL }.elements.add(master.combo) })
-
-    companion object {
-        private val INITIAL_ITEMS
-            get() = listOf(
-                ConditionElementGroup(ANY, ArrayList()),
-                ConditionElementGroup(ALL, ArrayList()),
-                ConditionElementGroup(NONE, ArrayList())
-            )
     }
 
     override fun toString(): String = "C($items)"
 }
 
-val ICondition.isStateCondition get() = type == STATE
-val ICondition.isEventCondition get() = type == EVENT
+val Condition.isStateCondition get() = type == STATE
+val Condition.isEventCondition get() = type == EVENT

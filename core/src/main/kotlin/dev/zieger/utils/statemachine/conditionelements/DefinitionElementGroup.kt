@@ -6,13 +6,15 @@ import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.anyOf
 import dev.zieger.utils.misc.name
-import dev.zieger.utils.statemachine.IMatchScope
 import dev.zieger.utils.statemachine.MachineEx
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
-import dev.zieger.utils.statemachine.conditionelements.IConditionElementGroup.MatchType
-import dev.zieger.utils.statemachine.conditionelements.IConditionElementGroup.MatchType.*
+import dev.zieger.utils.statemachine.MatchScope
+import dev.zieger.utils.statemachine.conditionelements.DefinitionElementGroup.MatchType.*
 
-interface IConditionElementGroup : IConditionElement {
+data class DefinitionElementGroup(
+    val matchType: MatchType,
+    val elements: MutableList<DefinitionElement>
+) : ConditionElement(), MutableList<DefinitionElement> by elements {
 
     enum class MatchType {
         ALL,
@@ -20,12 +22,9 @@ interface IConditionElementGroup : IConditionElement {
         NONE
     }
 
-    val matchType: MatchType
-    val elements: MutableList<IComboElement>
-
-    override suspend fun IMatchScope.match(other: IConditionElement?): Boolean {
+    override suspend fun MatchScope.match(other: ConditionElement?): Boolean {
         return when (other) {
-            is IInputElement -> {
+            is InputElement -> {
                 val filtered = elements.filter {
                     (it.hasEvent || it.hasEventGroup) && (other.event.hasEvent || other.event.hasEventGroup)
                             || (it.hasState || it.hasStateGroup) && (other.state.hasState || other.state.hasStateGroup)
@@ -38,19 +37,14 @@ interface IConditionElementGroup : IConditionElement {
                 }
             }
             null -> false
-            else -> throw IllegalArgumentException("Can not match ${this@IConditionElementGroup::class.name} " +
+            else -> throw IllegalArgumentException("Can not match ${this@DefinitionElementGroup::class.name} " +
                     "with ${other.let { it::class.name }}"
             )
         } logV {
             f = GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
-            m = "#CG $it => ${this@IConditionElementGroup} <||> $other"
+            m = "#CG $it => ${this@DefinitionElementGroup} <||> $other"
         }
     }
-}
 
-data class ConditionElementGroup(
-    override val matchType: MatchType,
-    override val elements: MutableList<IComboElement>
-) : IConditionElementGroup {
     override fun toString(): String = "CG($matchType; $elements)"
 }

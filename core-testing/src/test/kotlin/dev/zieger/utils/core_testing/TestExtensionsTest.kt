@@ -2,9 +2,9 @@ package dev.zieger.utils.core_testing
 
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
-class TestExtensionsTest : AnnotationSpec() {
+class TestExtensionsTest {
 
     @Test
     fun testRunTest() = runTest {

@@ -6,10 +6,10 @@ import dev.zieger.utils.time.string.DateFormat
 import dev.zieger.utils.time.string.ECT
 import dev.zieger.utils.time.string.GMT
 import dev.zieger.utils.time.string.parse
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 import java.util.*
 
-class TimeZoneTest : AnnotationSpec() {
+class TimeZoneTest {
 
     @Test
     fun testTimeZone() = runTest {

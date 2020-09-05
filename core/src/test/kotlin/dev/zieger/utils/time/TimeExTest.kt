@@ -1,9 +1,9 @@
 package dev.zieger.utils.time
 
 import dev.zieger.utils.time.base.ITimeEx
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
-class TimeExTest : AnnotationSpec() {
+class TimeExTest {
 
     @Test
     fun testPrint() {

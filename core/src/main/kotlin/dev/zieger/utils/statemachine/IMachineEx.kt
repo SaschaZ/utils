@@ -12,21 +12,21 @@ interface IMachineEx {
 
     val scope: ICoroutineScopeEx
 
-    val eventCombo: IComboElement
-    val event: IEvent? get() = eventCombo.event
-    val eventData: IData? get() = eventCombo.slave as? IData
+    val eventCombo: ComboEventElement
+    val event: Event? get() = eventCombo.master
+    val eventData: Data? get() = eventCombo.slave as? Data
 
-    suspend fun setEvent(event: IComboElement): IComboElement
-    suspend fun setEvent(event: IEvent, data: IData? = null): IComboElement =
-        setEvent(event.combo.also { it.slave = data })
+    suspend fun setEvent(event: ComboEventElement): ComboStateElement
+    suspend fun setEvent(event: Event, data: Data? = null): ComboStateElement=
+        setEvent(event.comboEvent(data))
 
-    val stateCombo: IComboElement
-    val state: IState? get() = stateCombo.state
-    val stateData: IData? get() = stateCombo.slave as? IData
+    val stateCombo: ComboStateElement
+    val state: State? get() = stateCombo.master
+    val stateData: Data? get() = stateCombo.slave as? Data
 
     suspend fun suspendUtilProcessingFinished()
 
-    fun fireAndForget(combo: IComboElement) = scope.launchEx { setEvent(combo) }.asUnit()
+    fun fireAndForget(combo: ComboEventElement) = scope.launchEx { setEvent(combo) }.asUnit()
 
     fun clearPreviousChanges()
 

@@ -4,8 +4,10 @@ package dev.zieger.utils.coroutines.channel.pipeline
 
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.runTest
-import io.kotlintest.specs.AbstractAnnotationSpec.Test
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
+@Disabled
 class ParallelUniqueTest : ProcessorBaseTest(ParallelProcessingType.UNIQUE) {
 
     @Test

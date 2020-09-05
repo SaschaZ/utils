@@ -12,16 +12,16 @@ import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.withLock
 import dev.zieger.utils.misc.runEachIndexed
 import dev.zieger.utils.time.minutes
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
-class OnChangedTest : AnnotationSpec() {
+class OnChangedTest {
 
     data class OnChangedResult(
         val params: OnChangedParams,

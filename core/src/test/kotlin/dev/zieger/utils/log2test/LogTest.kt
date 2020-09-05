@@ -14,14 +14,16 @@ import dev.zieger.utils.observable.Observable
 import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.milliseconds
 import dev.zieger.utils.time.seconds
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-internal class LogTest : AnnotationSpec() {
+internal class LogTest {
 
     private val messageObs = Observable<String?>(null)
     private var message by messageObs
 
-    @Before
+    @BeforeEach
     fun before() {
         Log.logLevel = LogLevel.VERBOSE
         Log.output = LogOutput {

@@ -11,12 +11,12 @@
 //import dev.zieger.utils.observable.Observable
 //import dev.zieger.utils.observable.ObservableParams
 //import dev.zieger.utils.observable.ObservableParamsWithParent
-//import io.kotlintest.specs.AnnotationSpec
+//import org.junit.jupiter.api.AfterEach
 //import kotlinx.coroutines.CoroutineScope
 //import kotlinx.coroutines.delay
 //import kotlinx.coroutines.sync.Mutex
 //
-//class ObservableTest : AnnotationSpec() {
+//class ObservableTest {
 //
 //    private inline fun <T> params(
 //        inputFactory: (Map<String, ParamInstance<*>>) -> T,

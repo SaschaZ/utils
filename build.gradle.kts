@@ -10,15 +10,15 @@ buildscript {
         maven { url = uri("https://kotlin.bintray.com/kotlinx") }
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:3.4.2")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.72")
-        classpath("org.jetbrains.dokka:dokka-gradle-plugin:0.9.17")
+        classpath("com.android.tools.build:gradle:3.4.3")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.0")
+        classpath("org.jetbrains.dokka:dokka-gradle-plugin:0.10.1")
     }
 }
 
 plugins {
-    kotlin("jvm") version "1.3.72"
-    id("org.jetbrains.dokka") version "0.9.17"
+    kotlin("jvm") version "1.4.0"
+    id("org.jetbrains.dokka") version "0.10.1"
 }
 
 allprojects {

@@ -8,10 +8,11 @@ import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.seconds
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-class ContinuationTest : AnnotationSpec() {
+class ContinuationTest {
 
     private lateinit var continuation: Continuation
     private var continued = false

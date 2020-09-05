@@ -8,12 +8,12 @@ import dev.zieger.utils.log.logV
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.ERROR
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
 import dev.zieger.utils.statemachine.conditionelements.*
-import dev.zieger.utils.statemachine.conditionelements.ICondition.ConditionType.EVENT
-import dev.zieger.utils.statemachine.conditionelements.ICondition.ConditionType.STATE
+import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.EVENT
+import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.STATE
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Responsible to map the incoming [IEvent]s to their [IState]s defined by provided mappings.
+ * Responsible to map the incoming [Event]s to their [State]s defined by provided mappings.
  */
 interface IMachineExMapper {
 
@@ -22,21 +22,21 @@ interface IMachineExMapper {
         private val newId: Long get() = lastId.getAndIncrement()
     }
 
-    val conditions: MutableMap<Long, ICondition>
-    val bindings: MutableMap<ICondition, IMachineEx>
+    val conditions: MutableMap<Long, Condition>
+    val bindings: MutableMap<Condition, IMachineEx>
 
     /**
      *
      */
     fun addCondition(
         condition: Condition,
-        action: suspend IMatchScope.() -> IComboElement?
+        action: suspend MatchScope.() -> ComboStateElement?
     ): Long = newId.also { id ->
         Log.v("add condition: $id => $condition", logFilter = GENERIC(disableLog = MachineEx.debugLevel <= INFO))
         conditions[id] = condition.copy(action = action)
     }
 
-    fun addBinding(condition: ICondition, machine: IMachineEx) {
+    fun addBinding(condition: Condition, machine: IMachineEx) {
         bindings[condition] = machine
     }
 
@@ -47,10 +47,10 @@ interface IMachineExMapper {
      * @return new state
      */
     suspend fun processEvent(
-        event: IComboElement,
-        state: IComboElement,
+        event: ComboEventElement,
+        state: ComboStateElement,
         previousChanges: List<OnStateChanged>
-    ): Pair<IComboElement, suspend () -> Unit>? =
+    ): Pair<ComboStateElement, suspend () -> Unit>? =
         MatchScope(event, state, previousChanges, conditions, bindings).log.run {
             (stateForEventBinding() ?: stateForEvent())?.let { newState ->
                 newState to suspend {
@@ -61,7 +61,7 @@ interface IMachineExMapper {
             }
         }
 
-    private val IMatchScope.log: IMatchScope
+    private val MatchScope.log: MatchScope
         get() = apply {
             Log.v(
                 "New incoming event $newEvent with state $currentState.",
@@ -69,7 +69,7 @@ interface IMachineExMapper {
             )
         }
 
-    private suspend fun IMatchScope.stateForEventBinding(): IComboElement? =
+    private suspend fun MatchScope.stateForEventBinding(): ComboStateElement? =
         bindings.filter { match(it.key, EVENT) }.values.let {
             when (it.size) {
                 in 0..1 -> it.firstOrNull()
@@ -77,7 +77,7 @@ interface IMachineExMapper {
             }
         }?.setEvent(newEvent)
 
-    private suspend fun IMatchScope.bindingForState(): IMachineEx? =
+    private suspend fun MatchScope.bindingForState(): IMachineEx? =
         bindings.filter { match(it.key, STATE) }.values.let {
             when (it.size) {
                 in 0..1 -> it.firstOrNull()
@@ -85,7 +85,7 @@ interface IMachineExMapper {
             }
         }
 
-    private suspend fun IMatchScope.stateForEvent(): IComboElement? =
+    private suspend fun MatchScope.stateForEvent(): ComboStateElement? =
         matchingEventConditions().mapNotNull { it.action?.invoke(this) }.let {
             when (it.size) {
                 in 0..1 -> it.firstOrNull()
@@ -93,22 +93,22 @@ interface IMachineExMapper {
             }
         }?.log(newEvent)
 
-    private fun IComboElement.log(event: IComboElement): IComboElement = this.apply {
+    private fun ComboStateElement.log(event: ComboElement): ComboStateElement = this.apply {
         Log.i(
             "Found new state $this for event $event.",
             logFilter = GENERIC(disableLog = noLogging || MachineEx.debugLevel <= ERROR)
         )
     }
 
-    private suspend fun IMatchScope.matchingEventConditions(): Collection<ICondition> =
+    private suspend fun MatchScope.matchingEventConditions(): Collection<Condition> =
         conditions.filter { match(it.value, EVENT) }.values
 
-    private suspend fun IMatchScope.matchingStateConditions(): Collection<ICondition> =
+    private suspend fun MatchScope.matchingStateConditions(): Collection<Condition> =
         conditions.filter { match(it.value, STATE) }.values
 
-    private suspend fun IMatchScope.match(
-        condition: ICondition,
-        type: ICondition.ConditionType
+    private suspend fun MatchScope.match(
+        condition: Condition,
+        type: Condition.DefinitionType
     ) = (condition.type == type && condition.run { match(InputElement(newEvent, currentState)) }) logV
             {
                 f = GENERIC(disableLog = newEvent.noLogging || MachineEx.debugLevel <= INFO)
@@ -118,6 +118,6 @@ interface IMachineExMapper {
 
 class MachineExMapper : IMachineExMapper {
 
-    override val conditions: MutableMap<Long, ICondition> = HashMap()
-    override val bindings: MutableMap<ICondition, IMachineEx> = HashMap()
+    override val conditions: MutableMap<Long, Condition> = HashMap()
+    override val bindings: MutableMap<Condition, IMachineEx> = HashMap()
 }

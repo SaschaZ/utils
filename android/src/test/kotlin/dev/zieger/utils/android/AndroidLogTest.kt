@@ -4,10 +4,10 @@ package dev.zieger.utils.android
 
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.misc.cast
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 import java.io.PrintStream
 
-class AndroidLogTest : AnnotationSpec() {
+class AndroidLogTest {
 
     @Test
     fun testLog() {

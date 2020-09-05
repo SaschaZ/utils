@@ -6,9 +6,9 @@ import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
 import dev.zieger.utils.time.base.TimeUnit
 import dev.zieger.utils.time.base.convert
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
-class TimeUnitTest : AnnotationSpec() {
+class TimeUnitTest {
 
     @Test
     fun testMillisToSeconds() {

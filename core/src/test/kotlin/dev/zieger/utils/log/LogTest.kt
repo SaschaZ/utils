@@ -4,10 +4,10 @@ package dev.zieger.utils.log
 
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.time.seconds
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
 
-internal class LogTest : AnnotationSpec() {
+internal class LogTest {
 
     @Test
     fun testSpamFilter() = runTest(15.seconds) {

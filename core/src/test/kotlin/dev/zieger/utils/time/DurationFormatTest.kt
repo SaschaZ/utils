@@ -1,10 +1,10 @@
 package dev.zieger.utils.time
 
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 
-internal class DurationFormatTest : AnnotationSpec() {
+internal class DurationFormatTest {
 
     @Test
     fun testFormat() {

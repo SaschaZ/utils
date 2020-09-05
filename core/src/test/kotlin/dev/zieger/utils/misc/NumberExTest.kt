@@ -1,8 +1,8 @@
 import dev.zieger.utils.misc.ex
 import dev.zieger.utils.misc.times
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
-class NumberExTest : AnnotationSpec() {
+class NumberExTest {
 
     @Test
     fun testIt() {

@@ -1,9 +1,9 @@
 package dev.zieger.utils.statemachine
 
-import dev.zieger.utils.statemachine.conditionelements.IComboElement
-import dev.zieger.utils.statemachine.conditionelements.ICondition
-import dev.zieger.utils.statemachine.conditionelements.IData
-import dev.zieger.utils.statemachine.conditionelements.ISlave
+import dev.zieger.utils.statemachine.conditionelements.ComboEventElement
+import dev.zieger.utils.statemachine.conditionelements.ComboStateElement
+import dev.zieger.utils.statemachine.conditionelements.Condition
+import dev.zieger.utils.statemachine.conditionelements.Data
 
 /**
  *
@@ -14,33 +14,33 @@ import dev.zieger.utils.statemachine.conditionelements.ISlave
  * @property bindings
  */
 interface IMatchScope {
-    val newEvent: IComboElement
-    val currentState: IComboElement
+    val newEvent: ComboEventElement
+    val currentState: ComboStateElement
     val previousChanges: List<OnStateChanged>
-    val conditions: Map<Long, ICondition>
-    val bindings: Map<ICondition, IMachineEx>
+    val conditions: Map<Long, Condition>
+    val bindings: Map<Condition, IMachineEx>
 
-    val eventData: ISlave? get() = newEvent.slave
-    val stateData: ISlave? get() = currentState.slave
-
-    @Suppress("UNCHECKED_CAST")
-    fun <D : IData> eventData() = eventData as D
+    val eventData: Data? get() = newEvent.slave as? Data
+    val stateData: Data? get() = currentState.slave as? Data
 
     @Suppress("UNCHECKED_CAST")
-    fun <D : IData> stateData(idx: Int = 0) = stateData as D
+    fun <D : Data> eventData() = eventData as D
 
-    fun applyState(state: IComboElement): IMatchScope
+    @Suppress("UNCHECKED_CAST")
+    fun <D : Data> stateData(idx: Int = 0) = stateData as D
+
+    fun applyState(state: ComboStateElement): MatchScope
 }
 
 data class MatchScope(
-    override val newEvent: IComboElement,
-    override val currentState: IComboElement,
+    override val newEvent: ComboEventElement,
+    override val currentState: ComboStateElement,
     override val previousChanges: List<OnStateChanged> = emptyList(),
-    override val conditions: Map<Long, ICondition> = emptyMap(),
-    override val bindings: Map<ICondition, IMachineEx> = emptyMap()
+    override val conditions: Map<Long, Condition> = emptyMap(),
+    override val bindings: Map<Condition, IMachineEx> = emptyMap()
 ) : IMatchScope {
 
-    override fun applyState(state: IComboElement): IMatchScope =
+    override fun applyState(state: ComboStateElement): MatchScope =
         copy(
             currentState = state,
             previousChanges = previousChanges + OnStateChanged(newEvent, this.currentState, state)

@@ -3,17 +3,17 @@
 package dev.zieger.utils.misc
 
 import dev.zieger.utils.core_testing.assertion2.AssertType.EQUALS
-import dev.zieger.utils.core_testing.assertion2.assert
+import dev.zieger.utils.core_testing.assertion2.assert2
 import dev.zieger.utils.core_testing.assertion2.rem
 import dev.zieger.utils.core_testing.mix.ParamInstance
 import dev.zieger.utils.core_testing.mix.bind
 import dev.zieger.utils.core_testing.mix.param
 import dev.zieger.utils.core_testing.mix.parameterMix
 import dev.zieger.utils.delegates.nextInt
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
-class CatchTest : AnnotationSpec() {
+class CatchTest {
 
     data class CatchTestData(val map: Map<String, ParamInstance<*>>) {
         val result: Int by bind(map)
@@ -50,9 +50,9 @@ class CatchTest : AnnotationSpec() {
                 result
             }
 
-            caught to numThrown assert EQUALS % "caught"
-            finally to 1 assert EQUALS % "finally"
-            receivedResult to (if (throwException || maxExecutions == 0) returnOnCatch else result) assert
+            caught to numThrown assert2 EQUALS % "caught"
+            finally to 1 assert2 EQUALS % "finally"
+            receivedResult to (if (throwException || maxExecutions == 0) returnOnCatch else result) assert2
                     EQUALS % "result; throwException=$throwException; maxExecutions=$maxExecutions"
         }
     }

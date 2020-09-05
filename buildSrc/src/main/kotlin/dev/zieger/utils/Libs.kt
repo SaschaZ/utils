@@ -101,8 +101,8 @@ val DependencyHandlerScope.ktorServerGson
     get() = "implementation"("io.ktor:ktor-jackson:1.3.2")
 
 val DependencyHandlerScope.koTestRunner
-    get() = "testImplementation"("io.kotlintest:kotlintest-runner-junit5:${Versions.koTest}")
+    get() = "testImplementation"("io.kotest:kotest-runner-junit5:${Versions.koTest}")
 val DependencyHandlerScope.koTestAssertions
-    get() = "testImplementation"("io.kotlintest:kotlintest-assertions:${Versions.koTest}")
+    get() = "testImplementation"("io.kotest:kotest-assertions-core:${Versions.koTest}")
 val DependencyHandlerScope.koTestProperty
-    get() = "testImplementation"("io.kotlintest:kotlintest-core:${Versions.koTest}")
+    get() = "testImplementation"("io.kotest:kotest-property:${Versions.koTest}")

@@ -6,10 +6,10 @@ import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.builder.withContextEx
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.time.*
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Test
 
-class BuilderTest : AnnotationSpec() {
+class BuilderTest {
 
     @Test
     fun testLaunchEx() = runBlocking {
