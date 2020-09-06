@@ -5,7 +5,7 @@ ENV ANDROID_SDK_TOOLS_VERSION="6609375"
 ENV ANDROID_PLATFORM_VERSION="30"
 ENV ANDROID_BUILD_TOOLS_VERSION="30.0.2"
 
-ENV ANDROID_HOME /home/user/android-sdk
+ENV ANDROID_HOME /opt/android-sdk
 
 # Add android commands to PATH
 ENV ANDROID_SDK_HOME ${ANDROID_HOME}
@@ -20,6 +20,7 @@ RUN apt-get update && \
         wget \
         unzip \
         zip \
+        jq \
         python-pip && \
     rm -rf /var/lib/apt/lists/ && \
     apt-get clean
@@ -46,17 +47,12 @@ ENV TERM dumb
 ENV JAVA_OPTS "-Xms512m -Xmx1536m"
 ENV GRADLE_OPTS "-XX:+UseG1GC -XX:MaxGCPauseMillis=1000"
 
-# add user
-RUN useradd user && \
-    echo user:test | chpasswd
-USER user
-
 # Add Project
-COPY . /home/user/project
-WORKDIR /home/user/project
+COPY . /project
+WORKDIR /project
 
 # Remove possible temporary build files
-# RUN rm ./local.properties && \
-#     find . -name build | xargs rm -rf
+RUN rm ./local.properties && \
+    find . -name build | xargs rm -rf
 
 CMD ["./gradlew", "publishToMavenLocal"]
