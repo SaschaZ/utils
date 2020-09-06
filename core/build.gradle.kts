@@ -53,7 +53,7 @@ tasks {
         sourceDirectories.setFrom(files(mainSrc.asIterable()))
         classDirectories.setFrom(files(debugTree.asIterable()))
         executionData?.setFrom(fileTree(project.buildDir) {
-            includes.addAll(setOf("jacoco/testDebugUnitTest.exec"))
+            includes.addAll(setOf("jacoco/test.exec"))
         })
     }
 }
