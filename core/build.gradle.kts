@@ -43,12 +43,12 @@ tasks {
             html.destination = file("${buildDir}/jacoco/html")
         }
 
-        val fileFilter = mutableSetOf("**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*")
+        val fileFilter = setOf("**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*")
         fileFilter += setOf("**/*Test*.*", "android/**/*.*", "dev.zieger.utils.misc.catch") // add non testable classes
-        val debugTree = fileTree("$project.buildDir/tmp/kotlin-classes/debug") {
+        val debugTree = fileTree("${project.buildDir}/classes/kotlin") {
             excludes.addAll(fileFilter)
         }
-        val mainSrc = setOf("$project.projectDir/src/main/kotlin", "$project.projectDir/src/mainInternal/kotlin")
+        val mainSrc = setOf("${project.projectDir}/src/main/kotlin")
 
         sourceDirectories.setFrom(files(mainSrc.asIterable()))
         classDirectories.setFrom(files(debugTree.asIterable()))
