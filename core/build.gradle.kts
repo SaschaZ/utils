@@ -43,7 +43,7 @@ tasks {
             html.destination = file("${buildDir}/jacoco/html")
         }
 
-        val fileFilter = setOf("**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*")
+        val fileFilter = mutableSetOf("**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*")
         fileFilter += setOf("**/*Test*.*", "android/**/*.*", "dev.zieger.utils.misc.catch") // add non testable classes
         val debugTree = fileTree("${project.buildDir}/classes/kotlin") {
             excludes.addAll(fileFilter)
