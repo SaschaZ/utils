@@ -49,12 +49,12 @@ internal class LogTest {
         message = null
         Log.logLevel = LogLevel.DEBUG
         Log.v("test")
-        message.isNull
+        message.isNull()
 
         Log.messageBuilder = LogMessageBuilder(LOG_MESSAGE_WITH_CALL_ORIGIN)
         Log -= "woomoo"
         Log.d("test delay", hook = delayHook { next -> launchEx(delayed = 1.seconds) { next(this@delayHook) } })
-        message.isNull
+        message.isNull()
         messageObs.nextChange(5.seconds) { it isMatching """D-[0-9\-:]+-.+: test delay - \[moofoo\|bamdam\]""" }
 
         Log.scope {
@@ -67,7 +67,7 @@ internal class LogTest {
                 Log.i("inside scope #$it")
                 if (it % 4 == 0)
                     message isMatching """I-[0-9\-:]+: inside scope #$it - \[foomoo\|bamdam]"""
-                else message.isNull
+                else message.isNull()
                 delay(250.milliseconds)
             }
         }

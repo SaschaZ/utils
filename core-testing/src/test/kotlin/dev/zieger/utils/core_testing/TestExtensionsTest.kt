@@ -1,13 +1,15 @@
 package dev.zieger.utils.core_testing
 
-import dev.zieger.utils.core_testing.assertion.assert
-import dev.zieger.utils.core_testing.assertion.rem
+import dev.zieger.utils.core_testing.assertion2.isEqual
+import dev.zieger.utils.core_testing.assertion2.isThrowing
+import dev.zieger.utils.core_testing.assertion2.rem
 import org.junit.jupiter.api.Test
 
 class TestExtensionsTest {
 
     @Test
     fun testRunTest() = runTest {
-        9 assert 9 % "boooo"
+        9 isEqual 9 % "boooo"
+        { throw IllegalArgumentException("test") } isThrowing Exception::class % { "test $actual - $expected - $assertType" }
     }
 }

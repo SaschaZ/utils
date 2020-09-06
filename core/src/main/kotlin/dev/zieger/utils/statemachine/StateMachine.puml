@@ -1,38 +1,22 @@
 @startuml
 
-(*) -D-> "//on//" as On
+(*) -D-> "**+**" as Enter
 
-On -D-> "//event//" as onEvent
-On -D-> "//stateEnter//" as onStateEnter
-On -D-> "//stateExit//" as onStateExit
+"**+**" as Enter -D-> "Event" as Event0
+"**+**" as Enter -D-> "State" as State0
+"**+**" as Enter -D-> "EventGroup" as EventGroup0
+"**+**" as Enter -D-> "StateGroup" as StateGroup0
 
-onEvent -D-> "**__EVENT__**" as  EVENT1
-EVENT1 -D-> "//withState//" as withState
-withState -D-> "**__STATE__**" as STATE1
+Event0 -D-> "*****" as TIMES0
+EventGroup0 -D-> "*****" as TIMES0
+State0 -D-> "*****" as TIMES0
+StateGroup0 -D-> "*****" as TIMES0
 
-EVENT1 -D-> "//execute//" as Execute 
-STATE1-D-> "//execute//" as Execute 
-EVENT1 -D-> "//set//" as Set1
-STATE1-D-> "//set//" as Set1 
-STATE1-D-> "//executeAndSet//" as ExecuteAndSet 
-EVENT1 -D-> "//executeAndSet//" as ExecuteAndSet
+TIMES0 -D-> "Data" as Data0
 
-onStateEnter -D-> "**__STATE__**" as STATE2
-onStateExit -D-> "**__STATE__**" as STATE2
-
-Execute -D-> (*)
-Set1 -D-> "**__STATE__**" as STATE2
-ExecuteAndSet -D-> "**__STATE__**" as STATE2
-STATE2 -D-> (*)
-
-
-(*) -D-> "//set//" as Set2
-
-Set2 -D-> "**__EVENT__**" as EVENT2
-EVENT2 -D-> "//withData//" as WithData
-WithData -D-> "**__DATA__**" as Data
-
-EVENT2 -D-> (*)
-Data -D-> (*)
-
+Data0 -D-> "**+**" as PLUS0
+"**+**" as PLUS0 -D-> "Event" as Event1
+"**+**" as PLUS0 -D-> "State" as State1
+"**+**" as PLUS0 -D-> "EventGroup" as EventGroup1
+"**+**" as PLUS0 -D-> "StateGroup" as StateGroup1
 @enduml

@@ -220,11 +220,11 @@ class MachineExTest {
             +FOURTH * TestEventData("moo") + D set E
         }.run {
             state isEqual INITIAL
-            stateData.isNull
+            stateData.isNull()
 
             fire eventSync FIRST isEqual INITIAL.combo
             state isEqual INITIAL
-            stateData.isNull
+            stateData.isNull()
 
             fire eventSync SECOND isEqual A * TestStateData(false)
             state isEqual A
@@ -301,8 +301,8 @@ class MachineExTest {
         val eventGroup = TEST_EVENT_GROUP
 
         MatchScope(event.comboEvent, A.comboState).apply {
-            eventGroup.run { match(event) }.isTrue
-            event.run { match(eventGroup) }.isTrue
+            eventGroup.run { match(event) }.isTrue()
+            event.run { match(eventGroup) }.isTrue()
         }
     }
 

@@ -1,5 +1,8 @@
 package dev.zieger.utils.core_testing
 
+import dev.zieger.utils.core_testing.assertion2.isAnyOf
+import dev.zieger.utils.core_testing.assertion2.isEqualOrNull
+import dev.zieger.utils.core_testing.assertion2.isInRange
 import dev.zieger.utils.core_testing.mix.ParamInstance
 import dev.zieger.utils.core_testing.mix.bind
 import dev.zieger.utils.core_testing.mix.param
@@ -25,7 +28,10 @@ class TestParameterMix {
             param("testVars2", 10.5, 12.4),
             param("testVars3", "bäm", null)
         ) {
-            println(this)
+            testVars0 isInRange 8..10
+            testVars1 isAnyOf listOf("foo", "boo")
+            testVars2 isAnyOf listOf(10.5, 12.4)
+            testVars3 isEqualOrNull "bäm"
         }
     }
 }

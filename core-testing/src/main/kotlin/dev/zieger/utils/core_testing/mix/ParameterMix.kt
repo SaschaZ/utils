@@ -1,6 +1,5 @@
 package dev.zieger.utils.core_testing.mix
 
-import dev.zieger.utils.core_testing.assertion2.UtilsAssertException
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.catch
 import dev.zieger.utils.misc.runEach
@@ -42,17 +41,12 @@ inline fun <I, R> parameterMixCollect(
     params.toList().buildParams().runEach {
         inputFactory(this).run input@{
             catch(this to Channel<R>().apply { close() }, onCatch = {
-                if (it is UtilsAssertException) it.run {
-                    throw UtilsAssertException(
-                        type,
-                        "U: failed with parameter:\n${this@input}\n$extraMessage\n",
-                        actual,
-                        expected
-                    )
-                } else throw Throwable("T: failed with parameter:\n$this\n${it.message}", it.cause)
-            }) {
-                block().let { this to it }
-            }
+                throw AssertionError(
+                    "failed with parameter:\n\t" +
+                            "${toList().joinToString("\n\t") { p -> "${p.first}: ${p.second.value}" }}\n" +
+                            "${it.message}", it
+                )
+            }) { block().let { this to it } }
         }
     }.toMap()
 

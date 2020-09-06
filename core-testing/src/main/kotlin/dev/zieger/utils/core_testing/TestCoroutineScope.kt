@@ -4,10 +4,16 @@ package dev.zieger.utils.core_testing
 
 import dev.zieger.utils.coroutines.scope.ICoroutineScopeEx
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Runnable
 import kotlin.coroutines.CoroutineContext
 
+/**
+ * [CoroutineScope] with a dispatcher that will execute the [Runnable] directly on the same thread without any delay.
+ *
+ * Should only be used in tests.
+ */
 class TestCoroutineScope : ICoroutineScopeEx {
 
     override suspend fun cancelAndJoin() = Unit
