@@ -1,7 +1,5 @@
 package dev.zieger.utils
 
-import dev.zieger.utils.ModuleType.ANDROID_LIB
-import dev.zieger.utils.ModuleType.JVM_LIB
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.DependencyHandlerScope
 import org.gradle.kotlin.dsl.dependencies
@@ -46,6 +44,7 @@ private fun Project.configureDependencies(type: ModuleType, block: DependencyHan
 
         mockk
         koinTest
+        coroutinesTest
 
         block()
     }
