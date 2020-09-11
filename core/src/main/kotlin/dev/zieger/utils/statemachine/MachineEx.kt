@@ -202,7 +202,7 @@ open class MachineEx(
     override suspend fun setEvent(event: IComboElement): IComboElement {
         val cont = TypeContinuation<IComboElement>()
         eventChannel.send(event to { state -> cont.trigger(state) })
-        return cont.suspendUntilTrigger()!!
+        return cont.suspendUntilTrigger()
     }
 
     private val stateComboObservable = OnChanged<IComboElement>(initialState.combo)

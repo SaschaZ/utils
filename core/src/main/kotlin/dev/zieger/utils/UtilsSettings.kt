@@ -1,7 +1,9 @@
 package dev.zieger.utils
 
+import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.log.LogLevel
+import kotlinx.coroutines.CoroutineScope
 import java.io.File
 
 object UtilsSettings {
@@ -14,5 +16,6 @@ object UtilsSettings {
 
     var PRINT_EXCEPTIONS = true
     var LOG_EXCEPTIONS = true
+    var LOG_SCOPE: CoroutineScope = DefaultCoroutineScope()
     var ERROR_LOG_FILE: () -> File? = { File("error.log") }
 }

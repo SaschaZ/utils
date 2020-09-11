@@ -38,15 +38,16 @@ class CatchTest : AnnotationSpec() {
         ) {
             var caught = false
             var finally = false
-            val receivedResult = catch(returnOnCatch, maxExecutions, printStackTrace, logStackTrace,
+            val receivedResult = catch(returnOnCatch, maxExecutions,
+                printStackTrace = printStackTrace, logStackTrace = logStackTrace,
                 onCatch = { caught = true }, onFinally = { finally = true }) {
                 if (throwException) throw RuntimeException("testException")
                 result
             }
 
-            caught assert throwException % "caught"
+            caught assert (throwException && maxExecutions > 0) % "caught"
             finally assert true % "finally"
-            receivedResult assert (if (throwException) returnOnCatch else result) % "result"
+            receivedResult assert (if (throwException || maxExecutions == 0) returnOnCatch else result) % "result"
         }
     }
 }

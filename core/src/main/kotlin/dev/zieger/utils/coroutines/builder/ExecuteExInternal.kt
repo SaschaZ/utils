@@ -9,6 +9,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.CoroutineContext
+import kotlin.reflect.KClass
 import kotlin.system.measureTimeMillis
 
 internal suspend inline fun <T : Any?> executeExInternal(
@@ -16,6 +17,8 @@ internal suspend inline fun <T : Any?> executeExInternal(
     returnOnCatch: T,
     interval: IDurationEx? = null,
     delayed: IDurationEx? = null,
+    include: List<KClass<out Throwable>> = listOf(Throwable::class),
+    exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
     mutex: Mutex? = null,
     maxExecutions: Int = Int.MAX_VALUE,
     retryDelay: IDurationEx? = null,
@@ -24,7 +27,7 @@ internal suspend inline fun <T : Any?> executeExInternal(
     logStackTrace: Boolean = false,
     crossinline onCatch: suspend CoroutineScope.(t: Throwable) -> Unit,
     crossinline onFinally: suspend CoroutineScope.() -> Unit,
-    crossinline block: suspend CoroutineScope.(isRetry: Boolean) -> T
+    crossinline block: suspend CoroutineScope.(numExecution: Int) -> T
 ): T {
     delayed?.also { delay(it) }
     if (!coroutineContext.isActive) return returnOnCatch
@@ -36,11 +39,11 @@ internal suspend inline fun <T : Any?> executeExInternal(
                 (mutex ?: Mutex()).withLock {
                     val scope = CoroutineScope(coroutineContext)
                     catch(
-                        Unit, maxExecutions, printStackTrace, logStackTrace,
+                        Unit, maxExecutions, include, exclude, printStackTrace, logStackTrace,
                         onCatch = { throwable -> scope.launch { onCatch(throwable) } },
-                        onFinally = { scope.launch { scope.onFinally() } }) { isRetry ->
-                        if (isRetry) retryDelay?.also { delay(it) }
-                        result = scope.block(isRetry)
+                        onFinally = { scope.launch { scope.onFinally() } }) { numExecution ->
+                        if (numExecution > 0) retryDelay?.also { delay(it) }
+                        result = scope.block(numExecution)
                     }
                 }
             }

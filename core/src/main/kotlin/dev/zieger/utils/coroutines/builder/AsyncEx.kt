@@ -3,17 +3,21 @@ package dev.zieger.utils.coroutines.builder
 import dev.zieger.utils.UtilsSettings.LOG_EXCEPTIONS
 import dev.zieger.utils.UtilsSettings.PRINT_EXCEPTIONS
 import dev.zieger.utils.time.duration.IDurationEx
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
 import kotlin.coroutines.CoroutineContext
+import kotlin.reflect.KClass
 
 @Suppress("DeferredIsResult")
 fun <T : Any?> CoroutineScope.asyncEx(
     returnOnCatch: T,
     coroutineContext: CoroutineContext = this.coroutineContext,
     delayed: IDurationEx? = null,
+    include: List<KClass<out Throwable>> = listOf(Throwable::class),
+    exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
     maxExecutions: Int = 1,
     retryDelay: IDurationEx? = null,
     timeout: IDurationEx? = null,
@@ -24,10 +28,10 @@ fun <T : Any?> CoroutineScope.asyncEx(
     isSuperVisionEnabled: Boolean = false,
     onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
     onFinally: suspend CoroutineScope.() -> Unit = {},
-    block: suspend CoroutineScope.(isRetry: Boolean) -> T
+    block: suspend CoroutineScope.(numExecution: Int) -> T
 ): Deferred<T> = async(buildContext(coroutineContext, name, isSuperVisionEnabled)) {
     executeExInternal(
-        coroutineContext, returnOnCatch, null, delayed, mutex, maxExecutions, retryDelay, timeout,
-        printStackTrace, logStackTrace, onCatch, onFinally, block
+        coroutineContext, returnOnCatch, null, delayed, include, exclude, mutex, maxExecutions, retryDelay,
+        timeout, printStackTrace, logStackTrace, onCatch, onFinally, block
     )
 }
