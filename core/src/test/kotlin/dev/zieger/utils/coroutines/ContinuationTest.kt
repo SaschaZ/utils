@@ -7,33 +7,49 @@ import dev.zieger.utils.core_testing.assertion.rem
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.time.delay
-import dev.zieger.utils.time.seconds
-import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import dev.zieger.utils.time.duration.seconds
+import io.kotlintest.specs.AnnotationSpec
 
-class ContinuationTest {
+class ContinuationTest : AnnotationSpec() {
 
     private lateinit var continuation: Continuation
-    private var continued = false
+    private var continued = 0
 
     @BeforeEach
-    fun before() = runBlocking {
+    fun before() {
         continuation = Continuation()
-        continued = false
+        continued = 0
     }
 
     @Test
     fun testDirect() = runTest {
         launchEx {
             continuation.suspendUntilTrigger()
-            continued = true
+            continued++
         }
 
         delay(2.seconds)
-        continued assert false % "0"
+        continued assert 0 % "0"
         continuation.trigger()
         delay(1.seconds)
-        continued assert true % "1"
+        continued assert 1 % "1"
+    }
+
+    @Test
+    fun testMultiple() = runTest {
+        launchEx {
+            continuation.suspendUntilTrigger()
+            continued++
+        }
+        launchEx {
+            continuation.suspendUntilTrigger()
+            continued++
+        }
+
+        delay(2.seconds)
+        continued assert 0 % "0"
+        continuation.trigger()
+        delay(1.seconds)
+        continued assert 2 % "1"
     }
 }

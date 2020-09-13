@@ -44,6 +44,7 @@ private fun Project.configureDependencies(type: ModuleType, block: DependencyHan
 
         mockk
         koinTest
+        coroutinesTest
 
         block()
     }

@@ -2,11 +2,15 @@ package dev.zieger.utils.coroutines
 
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
+import dev.zieger.utils.log.Log
 import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.time.base.IDurationEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+import java.util.*
 
 /**
  * Allows to suspend until a method is called.
@@ -93,19 +97,26 @@ interface IContinuation {
 }
 
 class Continuation(
-    private var channel: Channel<Boolean> = Channel(),
-    private val scope: CoroutineScope = DefaultCoroutineScope()
+    private val scope: CoroutineScope? = null
 ) : IContinuation {
 
-    override suspend fun suspendUntilTrigger(timeout: IDurationEx?) {
-        channel = Channel()
-        withTimeout(timeout) { channel.receive() }
-    }
+    private val channel = LinkedList<Channel<Boolean>>()
+
+    override suspend fun suspendUntilTrigger(timeout: IDurationEx?) = withTimeout(timeout) {
+        val c = Channel<Boolean>()
+        channel += c
+        c.receive()
+        channel -= c
+        c.close()
+    }.asUnit()
 
     override suspend fun triggerS(timeout: IDurationEx?) =
-        withTimeout(timeout) { channel.send(true) }.asUnit()
+        withTimeout(timeout) { LinkedList(channel).runEach { send(true) } }.asUnit()
 
     override fun trigger(timeout: IDurationEx?) =
-        if (!channel.offer(true)) scope.launchEx { triggerS(timeout) }.asUnit() else Unit
+        LinkedList(channel).runEach {
+            if (!offer(true)) scope?.launch { send(true) }
+                ?: Log.w("Could not trigger continuation because coroutine scope is not defined.")
+        }.asUnit()
 }
 

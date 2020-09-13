@@ -32,14 +32,14 @@ repositories {
 
 dependencies {
     // utils
-    implementation "dev.zieger.utils:core:2.2.21"// platform independent
-    implementation "dev.zieger.utils:android:2.2.21" // android
-    implementation "dev.zieger.utils:jdk:2.2.21" // jdk
+    implementation "dev.zieger.utils:core:2.2.22"// platform independent
+    implementation "dev.zieger.utils:android:2.2.22" // android
+    implementation "dev.zieger.utils:jdk:2.2.22" // jdk
 
     // testing utils
-    implementation "dev.zieger.utils:core-testing:2.2.21" // platform independent
-    implementation "dev.zieger.utils:android-testing:2.2.21" // android
-    implementation "dev.zieger.utils:jdk-testing:2.2.21" // jdk
+    implementation "dev.zieger.utils:core-testing:2.2.22" // platform independent
+    implementation "dev.zieger.utils:android-testing:2.2.22" // android
+    implementation "dev.zieger.utils:jdk-testing:2.2.22" // jdk
 }
 ```
 
@@ -219,16 +219,16 @@ Also works with attached `Data`.
 
 # Changelog
 
+##### 2.2.23
+
+* build fix
+
 ##### 2.2.22
 
-* renamed `OnChanged2` to `OnChangedWithParent`
-* thread safety for `OnChangedWithParent`:
-  * added `changeValue` method: 
-    * allows thread safe change of the properties value
-  * added `safeSet` parameter: 
-    * if set to `true`, setting the properties value will be done inside a `Coroutine` with the same `Mutex` used in `changeValue`
-    * 
-    * defaulting to `false`
+* Continuation:
+    * allow multiple `suspendUntilTrigger` calls for the same trigger event
+    * made coroutine property nullable
+    * never launch a coroutine for unsuspended trigger call when no coroutine was defined
 
 ##### 2.2.21
 
