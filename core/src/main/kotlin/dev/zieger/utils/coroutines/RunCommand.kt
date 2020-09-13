@@ -44,21 +44,20 @@ data class ShellScope(
     }
 }
 
-suspend inline fun shell(print: Boolean = true, block: ShellScope.() -> Unit) = ShellScope(print).block()
+inline fun shell(print: Boolean = true, block: ShellScope.() -> Unit) = ShellScope(print).block()
 
 suspend fun String.runCommand(
     workingDir: File = File("."),
     block: suspend (inStr: InputStream, errStr: InputStream) -> Unit = { _, _ -> }
 ): CommandOutput? {
-    var inStr: InputStream? = null
-    var errStr: InputStream? = null
+    lateinit var inStr: InputStream
+    lateinit var errStr: InputStream
     val input = this
     val context = coroutineContext
     val scope = object : CoroutineScope {
         override val coroutineContext: CoroutineContext = context
     }
-    return executeNativeBlocking {
-        try {
+    return try {
             val parts = input.split("\\s".toRegex())
             val process = ProcessBuilder(*parts.toTypedArray())
                 .directory(workingDir)
@@ -68,23 +67,19 @@ suspend fun String.runCommand(
             inStr = process.inputStream
             errStr = process.errorStream
 
-            val job = scope.launch {
-                block(inStr!!, errStr!!)
-            }
+            block(inStr, errStr)
             process.waitFor()
-            job.cancel()
 
             CommandOutput(
                 process.exitValue(),
-                inStr?.bufferedReader()?.readText(),
-                errStr?.bufferedReader()?.readText()
+                inStr.bufferedReader().readText(),
+                errStr.bufferedReader().readText()
             )
         } catch (e: IOException) {
             e.printStackTrace()
             null
         } finally {
-            inStr?.close()
-            errStr?.close()
+            inStr.close()
+            errStr.close()
         }
-    }
 }
