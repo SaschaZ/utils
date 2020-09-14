@@ -1,15 +1,11 @@
 package dev.zieger.utils.coroutines
 
-import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.time.base.IDurationEx
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
 import java.util.*
 
 /**
@@ -18,7 +14,7 @@ import java.util.*
 interface ITypeContinuation<T> {
 
     /**
-     * Will suspend the current coroutine until [trigger] or [triggerS] gets called.
+     * Will suspend the current coroutine until [trigger] gets called.
      *
      * @param timeout When suspending longer than defined in [timeout] a [TimeoutCancellationException] is thrown.
      * If `null` no timeout is used. Defaulting to `null`.
@@ -29,41 +25,36 @@ interface ITypeContinuation<T> {
     ): T?
 
     /**
-     * Triggers the continuation. Suspends if necessary.
-     *
-     * @param timeout When suspending longer than defined in [timeout] a [TimeoutCancellationException] is thrown.
-     * If `null` no timeout is used. Defaulting to `null`.
-     */
-    suspend fun triggerS(value: T, timeout: IDurationEx? = null)
-
-    /**
      * Triggers the continuation. Will launch a new coroutine if the underlying channel can not receive new values.
      *
-     * @param timeout When the new launched coroutine is suspending longer than defined in [timeout] a
-     * [TimeoutCancellationException] is thrown. If `null` no timeout is used. Defaulting to `null`.
+     * @param value T
      */
-    fun trigger(value: T, timeout: IDurationEx? = null)
+    fun trigger(value: T)
 }
 
-open class TypeContinuation<T>(
-    private val channel: Channel<T> = Channel(),
-    private val scope: CoroutineScope = DefaultCoroutineScope()
-) : ITypeContinuation<T> {
+open class TypeContinuation<T> : ITypeContinuation<T> {
+
+    private val channel = LinkedList<Channel<T>>()
 
     override suspend fun suspendUntilTrigger(
         wanted: T?,
         timeout: IDurationEx?
-    ): T? = withTimeout(timeout) {
-        var result: T = channel.receive()
-        while (wanted?.let { result != it } == true) result = channel.receive()
+    ): T = withTimeout(timeout) {
+        var result: T
+        val c = Channel<T>(Channel.UNLIMITED)
+        channel += c
+        do {
+            result = c.receive()
+        } while (wanted?.let { result != it } == true)
+        channel -= c
+        c.close()
         result
     }
 
-    override suspend fun triggerS(value: T, timeout: IDurationEx?) =
-        withTimeout(timeout) { channel.send(value) }.asUnit()
-
-    override fun trigger(value: T, timeout: IDurationEx?) =
-        if (!channel.offer(value)) scope.launchEx { triggerS(value, timeout) }.asUnit() else Unit
+    override fun trigger(value: T) = channel.runEach {
+        if (!offer(value))
+            Log.w("Could not trigger continuation because it was already triggered.")
+    }.asUnit()
 }
 
 /**
@@ -72,7 +63,7 @@ open class TypeContinuation<T>(
 interface IContinuation {
 
     /**
-     * Will suspend the current coroutine until [trigger] or [triggerS] gets called.
+     * Will suspend the current coroutine until [trigger] gets called.
      *
      * @param timeout When suspending longer than defined in [timeout] a [TimeoutCancellationException] is thrown.
      * If `null` no timeout is used. Defaulting to `null`.
@@ -80,25 +71,12 @@ interface IContinuation {
     suspend fun suspendUntilTrigger(timeout: IDurationEx? = null)
 
     /**
-     * Triggers the continuation. Suspends if necessary.
-     *
-     * @param timeout When suspending longer than defined in [timeout] a [TimeoutCancellationException] is thrown.
-     * If `null` no timeout is used. Defaulting to `null`.
+     * Triggers the continuation.
      */
-    suspend fun triggerS(timeout: IDurationEx? = null)
-
-    /**
-     * Triggers the continuation. Will launch a new coroutine if the underlying channel can not receive new values.
-     *
-     * @param timeout When the new launched coroutine is suspending longer than defined in [timeout] a
-     * [TimeoutCancellationException] is thrown. If `null` no timeout is used. Defaulting to `null`.
-     */
-    fun trigger(timeout: IDurationEx? = null)
+    fun trigger()
 }
 
-class Continuation(
-    private val scope: CoroutineScope? = null
-) : IContinuation {
+class Continuation : IContinuation {
 
     private val channel = LinkedList<Channel<Boolean>>()
 
@@ -110,13 +88,9 @@ class Continuation(
         c.close()
     }.asUnit()
 
-    override suspend fun triggerS(timeout: IDurationEx?) =
-        withTimeout(timeout) { LinkedList(channel).runEach { send(true) } }.asUnit()
-
-    override fun trigger(timeout: IDurationEx?) =
-        LinkedList(channel).runEach {
-            if (!offer(true)) scope?.launch { send(true) }
-                ?: Log.w("Could not trigger continuation because coroutine scope is not defined.")
-        }.asUnit()
+    override fun trigger() = LinkedList(channel).runEach {
+        if (!offer(true))
+            Log.w("Could not trigger continuation because it was already triggered.")
+    }.asUnit()
 }
 

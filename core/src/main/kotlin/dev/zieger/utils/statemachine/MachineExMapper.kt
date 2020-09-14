@@ -30,7 +30,7 @@ interface IMachineExMapper {
      */
     fun addCondition(
         condition: Condition,
-        action: suspend MatchScope.() -> ComboStateElement?
+        action: suspend IMatchScope.() -> State?
     ): Long = newId.also { id ->
         Log.v("add condition: $id => $condition", logFilter = GENERIC(disableLog = MachineEx.debugLevel <= INFO))
         conditions[id] = condition.copy(action = action)
@@ -47,10 +47,10 @@ interface IMachineExMapper {
      * @return new state
      */
     suspend fun processEvent(
-        event: ComboEventElement,
-        state: ComboStateElement,
+        event: EventCombo,
+        state: StateCombo,
         previousChanges: List<OnStateChanged>
-    ): Pair<ComboStateElement, suspend () -> Unit>? =
+    ): Pair<StateCombo, suspend () -> Unit>? =
         MatchScope(event, state, previousChanges, conditions, bindings).log.run {
             (stateForEventBinding() ?: stateForEvent())?.let { newState ->
                 newState to suspend {
@@ -64,18 +64,18 @@ interface IMachineExMapper {
     private val MatchScope.log: MatchScope
         get() = apply {
             Log.v(
-                "New incoming event $newEvent with state $currentState.",
-                logFilter = GENERIC(disableLog = newEvent.noLogging || MachineEx.debugLevel <= INFO)
+                "New incoming event $eventCombo with state $stateCombo.",
+                logFilter = GENERIC(disableLog = eventCombo.noLogging || MachineEx.debugLevel <= INFO)
             )
         }
 
-    private suspend fun MatchScope.stateForEventBinding(): ComboStateElement? =
+    private suspend fun MatchScope.stateForEventBinding(): StateCombo? =
         bindings.filter { match(it.key, EVENT) }.values.let {
             when (it.size) {
                 in 0..1 -> it.firstOrNull()
                 else -> throw IllegalStateException("More than one matching event binding for $this.")
             }
-        }?.setEvent(newEvent)
+        }?.setEventSync(eventCombo)?.combo
 
     private suspend fun MatchScope.bindingForState(): IMachineEx? =
         bindings.filter { match(it.key, STATE) }.values.let {
@@ -85,35 +85,37 @@ interface IMachineExMapper {
             }
         }
 
-    private suspend fun MatchScope.stateForEvent(): ComboStateElement? =
+    private suspend fun MatchScope.stateForEvent(): StateCombo? =
         matchingEventConditions().mapNotNull { it.action?.invoke(this) }.let {
             when (it.size) {
-                in 0..1 -> it.firstOrNull()
+                in 0..1 -> it.firstOrNull()?.combo
                 else -> throw IllegalStateException("More than one matching event condition for $this.")
             }
-        }?.log(newEvent)
+        }?.log(eventCombo)
 
-    private fun ComboStateElement.log(event: ComboElement): ComboStateElement = this.apply {
+    private fun StateCombo.log(event: Event): StateCombo = apply {
         Log.i(
             "Found new state $this for event $event.",
             logFilter = GENERIC(disableLog = noLogging || MachineEx.debugLevel <= ERROR)
         )
     }
 
-    private suspend fun MatchScope.matchingEventConditions(): Collection<Condition> =
+    private suspend fun IMatchScope.matchingEventConditions(): Collection<Condition> =
         conditions.filter { match(it.value, EVENT) }.values
 
-    private suspend fun MatchScope.matchingStateConditions(): Collection<Condition> =
+    private suspend fun IMatchScope.matchingStateConditions(): Collection<Condition> =
         conditions.filter { match(it.value, STATE) }.values
 
-    private suspend fun MatchScope.match(
+    private suspend fun IMatchScope.match(
         condition: Condition,
         type: Condition.DefinitionType
-    ) = (condition.type == type && condition.run { match(InputElement(newEvent, currentState)) }) logV
-            {
-                f = GENERIC(disableLog = newEvent.noLogging || MachineEx.debugLevel <= INFO)
-                m = "#R $it => ${type.name[0]} $condition <||> $newEvent, $currentState"
-            }
+    ) = Matcher(this).run {
+        (condition.type == type && condition.match()) logV
+                {
+                    f = GENERIC(disableLog = event.noLogging || MachineEx.debugLevel <= INFO)
+                    m = "#R $it => ${type.name[0]} $condition <||> $event, $state"
+                }
+    }
 }
 
 class MachineExMapper : IMachineExMapper {

@@ -1,10 +1,16 @@
 #!/usr/bin/env kscript
+@file:KotlinOpts("-J-Xmx5g")
+@file:KotlinOpts("-J-server")
 @file:CompilerOpts("-jvm-target 1.8")
-@file:DependsOnMaven("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.6")
+@file:DependsOnMaven("io.ktor:ktor-client-apache:1.3.0")
+@file:DependsOnMaven("io.ktor:ktor-client-gson:1.3.0")
+@file:DependsOnMaven("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
+@file:DependsOnMaven("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.9")
 @file:DependsOnMaven("dev.zieger.utils:core:2.2.22")
 @file:DependsOnMaven("dev.zieger.utils:jdk:2.2.22")
 @file:DependsOnMaven("org.apache.commons:commons-lang3:3.10")
 @file:DependsOnMaven("com.github.ajalt:mordant:1.2.1")
+
 @file:Suppress("UNREACHABLE_CODE", "PropertyName", "LocalVariableName")
 
 
@@ -14,21 +20,27 @@
  *
  * This script will execute the unit tests of an existing gradle project repetitive to verify that tests are always
  * returning the same result.
- * To speed up the execution of the script [NUM_PARALLEL] gradle jobs are executed in parallel. Because gradle does not
- * allow multiple executions at the same time in the same directory the script will create [NUM_PARALLEL] copies of the
- * project to test.
+ * To speed up the execution of the script multiple gradle jobs can be executed in parallel. Use the `-j` parameter to
+ * define the number of parallel gradle jobs. For example: `./testFlakyness.kts -j 4` for using 4 parallel jobs. By
+ * default only one job is used.
  */
 
+import com.github.ajalt.mordant.TermColors
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.runCommand
+import dev.zieger.utils.log.Log
 import dev.zieger.utils.log.console.ConsoleControl
 import dev.zieger.utils.log.console.LogColored
 import dev.zieger.utils.log.console.termColored
 import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.misc.onShutdown
+import dev.zieger.utils.time.TimeEx
 import dev.zieger.utils.time.base.IDurationEx
 import dev.zieger.utils.time.base.ITimeEx
-import dev.zieger.utils.time.base.TimeUnit
+import dev.zieger.utils.time.base.TimeUnit.*
 import dev.zieger.utils.time.milliseconds
+import dev.zieger.utils.time.minus
+import dev.zieger.utils.time.string.DateFormat
 import dev.zieger.utils.time.string.parse
 import dev.zieger.utils.time.toDuration
 import kotlinx.coroutines.Job
@@ -45,8 +57,18 @@ import kotlin.system.exitProcess
 
 data class TestCase(
     val name: String,
-    val className: String,
+    val clazz: String,
     val duration: IDurationEx
+)
+
+data class Failure(
+    val name: String,
+    val clazz: String,
+    val duration: IDurationEx,
+    val message: String,
+    val exception: String,
+    val stackTrace: String,
+    val origin: String = ""
 )
 
 data class TestSuiteResult(
@@ -64,10 +86,6 @@ data class TestSuiteResult(
     val failure: List<Failure> = emptyList()
 )
 
-data class Failure(val exception: String,
-                   val origin: String,
-                   val stackTrace: String)
-
 data class TestRunResult(val suites: List<TestSuiteResult>,
                          val executedTests: Int = suites.size,
                          val failedTests: Int = suites.sumBy { it.numFailures })
@@ -75,7 +93,12 @@ data class TestRunResult(val suites: List<TestSuiteResult>,
 
 object ResultPrinter {
 
+    const val FAIL_LOG_ROOT = "./failed/"
+
+    private lateinit var activeSince: ITimeEx
+
     suspend fun progress(block: suspend (SendChannel<TestRunResult>) -> Unit) {
+        activeSince = TimeEx()
         val channel = Channel<TestRunResult>()
         printProgress(channel as ReceiveChannel<TestRunResult>).let {
             block(channel as SendChannel<TestRunResult>)
@@ -98,44 +121,52 @@ object ResultPrinter {
     private fun printProgress(channel: ReceiveChannel<TestRunResult>): () -> Unit {
         termColored {
             var idx = 0
-            var lastOutputLength = 0
             val progressJob = launchEx(interval = 100.milliseconds) {
-                if (lastOutputLength > 0) repeat(lastOutputLength) { print("\b \b") }
-
+                ConsoleControl.clearLine()
                 printResult(channel)
 
-                val progress = "  ${red("(")}${
-                    when (idx++) {
-                        0 -> green("|")
-                        1 -> green("/")
-                        2 -> green("-")
-                        else -> {
-                            idx = 0
-                            green("\\")
+                print(
+                    "  ${red("(")}${
+                        when (idx++) {
+                            0 -> green("|")
+                            1 -> green("/")
+                            2 -> green("-")
+                            else -> {
+                                idx = 0
+                                green("\\")
+                            }
                         }
-                    }
-                }${red(")")}  "
-
-                print(progress)
-                lastOutputLength = progress.length
+                    }${red(")")}  "
+                )
             }
             return { progressJob.cancel() }
         }
         return {}
     }
 
+    private var progressIdx = 0
+    private val TermColors.progress
+        get() = "  ${red("(")}${
+            when (progressIdx++) {
+                0 -> green("|")
+                1 -> green("/")
+                2 -> green("-")
+                else -> {
+                    progressIdx = 0
+                    green("\\")
+                }
+            }
+        }${red(")")}  "
+
     private var executedRuns = 0
     private var runsWithFailedTests = 0
     private var executedTests = 0
     private var failedTests = 0
-    private val printedFailures = HashSet<Failure>()
-    private var printed = false
     private var lastResultOutput = ""
 
     private fun printResult(channel: ReceiveChannel<TestRunResult>) {
         termColored {
             channel.getAllAvailable().forEach { testRun ->
-                printed = true
                 executedRuns++
                 if (testRun.failedTests > 0) runsWithFailedTests++
                 executedTests += testRun.executedTests
@@ -144,24 +175,40 @@ object ResultPrinter {
                 val failedRunsPercent = (100f * runsWithFailedTests) / executedRuns
                 val failedTestsPercent = (100f * failedTests) / executedTests
 
-                repeat(200) { print("\b \b") }
                 printFailed(testRun)
-                lastResultOutput = green(
-                    "failed tests: ${"%.2f%%".format(failedTestsPercent)} ($failedTests/$executedTests) - " +
-                            "failed runs: ${"%.2f%%".format(failedRunsPercent)} ($runsWithFailedTests/$executedRuns) "
+                lastResultOutput = cyan(
+                    "failed tests: ${
+                        if (failedTests > 0) red("${"%.2f%%".format(failedTestsPercent)} ($failedTests/$executedTests)")
+                        else green("${"%.2f%%".format(failedTestsPercent)} ($failedTests/$executedTests)")
+                    } - failed runs: ${
+                        if (runsWithFailedTests > 0) red("${"%.2f%%".format(failedRunsPercent)} ($runsWithFailedTests/$executedRuns)")
+                        else green("${"%.2f%%".format(failedRunsPercent)} ($runsWithFailedTests/$executedRuns)")
+                    }"
                 )
             }
-            repeat(200) { print("\b \b") }
-            if (lastResultOutput.isBlank()) print(cyan("No runs have finished yet."))
-            else print(lastResultOutput)
+            val duration = (TimeEx() - activeSince).formatDuration(YEAR, DAY, HOUR, MINUTE, SECOND)
+            if (lastResultOutput.isBlank()) print(cyan("No runs have finished yet. [$duration]"))
+            else print("$lastResultOutput ${cyan("[$duration]")}")
         }
     }
 
     private fun printFailed(testRun: TestRunResult) {
-        testRun.suites.flatMap { it.failure }.forEach {
-            if (!printedFailures.contains(it)) {
-                println("${it.exception}/${it.origin}\n${it.stackTrace}")
-                printedFailures.add(it)
+        val loggedSuites = ArrayList<TestSuiteResult>()
+        termColored {
+            testRun.suites.map { suite -> suite to suite.failure }.forEach { (suite, failures) ->
+                if (suite !in loggedSuites && failures.isNotEmpty()) {
+                    File(FAIL_LOG_ROOT).mkdirs()
+                    File(
+                        FAIL_LOG_ROOT
+                                + TimeEx().formatTime(DateFormat.CUSTOM("yyyy-MM-dd-HH-mm-ss-SSS"))
+                                + ".log"
+                    ).writeText("$suite\n\n")
+                    loggedSuites += suite
+                }
+
+                failures.forEach {
+                    Log.e("${it.clazz.split(".").last()}.${it.name}(${it.origin})\n\t${it.message}")
+                }
             }
         }
     }
@@ -177,17 +224,16 @@ object TestRunner {
 
     private suspend fun copyProject(id: Int): File {
         val folder = File("/tmp/flakynessTest$id")
+        if (folder.exists()) folder.deleteRecursively()
         folder.mkdirs()
         File(".").copyRecursively(folder, overwrite = true)
         "chmod +x gradlew".runCommand(folder)
         deleteTemporaryFiles(folder)
         val ctx = coroutineContext
-        Runtime.getRuntime().addShutdownHook(object : Thread() {
-            override fun run() {
-                ctx.cancel()
-                folder.deleteRecursively()
-            }
-        })
+        onShutdown {
+            ctx.cancel()
+            folder.deleteRecursively()
+        }
         return folder
     }
 
@@ -206,27 +252,40 @@ object TestRunner {
 object ResultParser {
 
     suspend fun parseResults(projectRoot: File): TestRunResult =
-        TestRunResult(("""find /tmp -iregex ^.*/test[ReleaseUnitTest]*/TEST\-[a-zA-Z0-9\.\-\_]+\.xml$"""
+        TestRunResult(("""find . -iregex ^.*/test[DebugUnitTest]*/TEST\-[a-zA-Z0-9\.\-\_]+\.xml$"""
             .runCommand(projectRoot)?.run { (stdOutput?.reader()?.readText() ?: "") } ?: "")
-            .split("/tmp").mapNotNull { if (it.isBlank()) null else parseResult(File("/tmp${it.trim()}")) })
+            .split("\n").mapNotNull {
+                if (it.isBlank()) null
+                else parseResult(File(projectRoot.absolutePath + "/" + it.trim().removePrefix(".")))
+            })
 
     private fun parseResult(file: File): TestSuiteResult? {
         val content = file.readText()
 
         val testSuiteRegex =
-            """<testsuite name="([a-zA-Z0-9.\-_]+)" tests="(\d+)" skipped="(\d+)" failures="(\d+)" errors="(\d+)" timestamp="([0-9\-:T]+)" hostname="(\D+)" time="([0-9.]+)">\n\W+<properties/>""".toRegex()
+            """<testsuite name="([a-zA-Z0-9.\-_]+)" tests="(\d+)" skipped="(\d+)" failures="(\d+)" errors="(\d+)" timestamp="([0-9\-:T]+)" hostname="([a-zA-Z0-9]+)" time="([0-9.]+)">\n\W+<properties/>""".toRegex()
         var testSuiteResult = testSuiteRegex.find(content)?.groupValues?.run {
             TestSuiteResult(
-                get(1), get(2).toInt(), get(3).toInt(), get(4).toInt(), get(5).toInt(), get(6).parse(), get(7),
-                get(8).toDouble().toDuration(TimeUnit.SECOND)
+                packageName = get(1),
+                numTests = get(2).toInt(),
+                numSkipped = get(3).toInt(),
+                numFailures = get(4).toInt(),
+                numErrors = get(5).toInt(),
+                time = get(6).parse(),
+                issuer = get(7),
+                duration = get(8).toDouble().toDuration(SECOND)
             )
         }
 
         val testCaseRegex =
-            """<testcase name="([a-zA-Z0-9()\-_]+)" classname="([a-zA-Z0-9.]+)" time="([0-9.]+)"/>""".toRegex()
+            """<testcase name="([a-zA-Z0-9()\-_]+)" classname="([a-zA-Z0-9.]+)" time="([0-9.]+)"/?>""".toRegex()
         testSuiteResult = testSuiteResult?.copy(testCases = testCaseRegex.findAll(content).mapNotNull {
             it.groupValues.run {
-                TestCase(get(1), get(2), get(3).toDouble().toDuration(TimeUnit.SECOND))
+                TestCase(
+                    name = get(1),
+                    clazz = get(2),
+                    duration = get(3).toDouble().toDuration(SECOND)
+                )
             }
         }.toList())
 
@@ -237,14 +296,28 @@ object ResultParser {
         testSuiteResult = testSuiteResult?.copy(errOut = errOutRegex.find(content)?.groupValues?.get(1) ?: "")
 
         val failureRegex =
-            """<testcase name="([a-zA-Z0-9]+)" classname="([a-zA-Z0-9.]+)" time="([0-9.]+)">\n\W+<failure message="(.*)" type="(.+)">([^<>]*)</failure>""".toRegex()
+            """<testcase name="([a-zA-Z0-9()]+)" classname="([a-zA-Z0-9.]+)" time="([0-9.]+)">\n\W+<failure message="(.*)" type="(.+)">([^<>]*)</failure>""".toRegex()
         testSuiteResult = testSuiteResult?.copy(failure = failureRegex.findAll(content).mapNotNull {
             it.groupValues.run {
-                Failure(unescapeHtml4(get(1)), unescapeHtml4(get(2)), unescapeHtml4(get(6)))
+                Failure(
+                    name = unescapeHtml4(get(1)),
+                    clazz = unescapeHtml4(get(2)),
+                    duration = unescapeHtml4(get(3)).toDouble().toDuration(SECOND),
+                    message = unescapeHtml4(get(4)),
+                    exception = unescapeHtml4(get(5)),
+                    stackTrace = unescapeHtml4(get(6))
+                )
             }
         }.toList())
 
-        return testSuiteResult
+        val failedOrigins = testSuiteResult?.failure?.map { fail ->
+            "${fail.clazz}${'\\'}${'$'}${fail.name.removeSuffix("()")}${'\\'}${'$'}[0-9a-zA-Z.]+\\(([a-zA-Z0-9.:]+)\\)".toRegex()
+                .findAll(content).firstOrNull()?.groupValues?.getOrNull(1)
+        }
+
+        return testSuiteResult?.copy(failure = testSuiteResult.failure.mapIndexed { idx, value ->
+            value.copy(origin = failedOrigins?.getOrNull(idx) ?: "")
+        })
     }
 }
 
@@ -253,13 +326,13 @@ runBlocking {
     val NUM_PARALLEL = 1
     LogColored.initialize()
 
-    val jobs = if (args.getOrNull(0) == "-j")
-        args.getOrNull(1)?.toInt() ?: throw IllegalArgumentException("invalid arguments: ${args.joinToString()}")
+    val jobs = if (args.getOrNull(0) == "-j") args.getOrNull(1)?.toInt()
+        ?: { throw IllegalArgumentException("invalid arguments: ${args.joinToString()}") }.invoke()
     else NUM_PARALLEL
 
     ConsoleControl.clearScreen()
     termColored {
-        println(brightBlue("test flakyness with ${(bold + cyan)("$jobs")} parallel jobs\n"))
+        Log.v(brightBlue("test flakyness with ${(bold + cyan)("$jobs")} ${if (jobs > 1) "parallel jobs" else "job"}\n"))
     }
 
     ResultPrinter.progress { channel -> (0 until jobs).map { channel.launchJob(it) }.joinAll() }

@@ -2,13 +2,13 @@ package dev.zieger.utils.coroutines
 
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.misc.runEach
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.isActive
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.coroutineContext
 
 data class CommandOutput(
     val code: Int,
@@ -53,33 +53,29 @@ suspend fun String.runCommand(
     lateinit var inStr: InputStream
     lateinit var errStr: InputStream
     val input = this
-    val context = coroutineContext
-    val scope = object : CoroutineScope {
-        override val coroutineContext: CoroutineContext = context
-    }
     return try {
-            val parts = input.split("\\s".toRegex())
-            val process = ProcessBuilder(*parts.toTypedArray())
-                .directory(workingDir)
-                .redirectOutput(ProcessBuilder.Redirect.PIPE)
-                .redirectError(ProcessBuilder.Redirect.PIPE)
-                .start()
-            inStr = process.inputStream
-            errStr = process.errorStream
+        val parts = input.split("\\s".toRegex())
+        val process = ProcessBuilder(*parts.toTypedArray())
+            .directory(workingDir)
+            .redirectOutput(ProcessBuilder.Redirect.PIPE)
+            .redirectError(ProcessBuilder.Redirect.PIPE)
+            .start()
+        inStr = process.inputStream
+        errStr = process.errorStream
 
-            block(inStr, errStr)
-            process.waitFor()
+        block(inStr, errStr)
+        process.waitFor()
 
-            CommandOutput(
-                process.exitValue(),
-                inStr.bufferedReader().readText(),
-                errStr.bufferedReader().readText()
-            )
-        } catch (e: IOException) {
-            e.printStackTrace()
-            null
-        } finally {
-            inStr.close()
-            errStr.close()
-        }
+        CommandOutput(
+            process.exitValue(),
+            inStr.bufferedReader().readText(),
+            errStr.bufferedReader().readText()
+        )
+    } catch (e: IOException) {
+        e.printStackTrace()
+        null
+    } finally {
+        inStr.close()
+        errStr.close()
+    }
 }

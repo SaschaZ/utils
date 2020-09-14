@@ -12,46 +12,52 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicInteger
 
-class ContinuationTest {
+class TypeContinuationTest {
 
-    private lateinit var continuation: Continuation
+    private lateinit var continuation: TypeContinuation<Int>
     private val continued = AtomicInteger(0)
 
     @BeforeEach
     fun before() {
-        continuation = Continuation()
+        continuation = TypeContinuation()
         continued.set(0)
     }
 
     @Test
     fun testDirect() = runTest {
+        var result: Int? = null
         launchEx {
-            continuation.suspendUntilTrigger()
+            result = continuation.suspendUntilTrigger()
             continued.incrementAndGet()
         }
 
         delay(1.seconds)
         continued.get() isEqual 0 % "0"
-        continuation.trigger()
+        continuation.trigger(100)
         delay(2.seconds)
         continued.get() isEqual 1 % "1"
+        result isEqual 100
     }
 
     @Test
     fun testMultiple() = runTest {
+        var result0: Int? = null
         launchEx {
-            continuation.suspendUntilTrigger()
+            result0 = continuation.suspendUntilTrigger()
             continued.incrementAndGet()
         }
+        var result1: Int? = null
         launchEx {
-            continuation.suspendUntilTrigger()
+            result1 = continuation.suspendUntilTrigger()
             continued.incrementAndGet()
         }
 
         delay(1.seconds)
         continued.get() isEqual 0 % "0"
-        continuation.trigger()
+        continuation.trigger(100)
         delay(2.seconds)
         continued.get() isEqual 2 % "1"
+        result0 isEqual 100
+        result1 isEqual 100
     }
 }

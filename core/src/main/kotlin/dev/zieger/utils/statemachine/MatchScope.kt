@@ -1,48 +1,60 @@
 package dev.zieger.utils.statemachine
 
-import dev.zieger.utils.statemachine.conditionelements.ComboEventElement
-import dev.zieger.utils.statemachine.conditionelements.ComboStateElement
-import dev.zieger.utils.statemachine.conditionelements.Condition
-import dev.zieger.utils.statemachine.conditionelements.Data
+import dev.zieger.utils.statemachine.conditionelements.*
 
 /**
  *
- * @property newEvent new event
- * @property currentState current state
+ * @property eventCombo new event
+ * @property stateCombo current state
  * @property previousChanges previous state changes of the state machine
  * @property conditions
  * @property bindings
  */
 interface IMatchScope {
-    val newEvent: ComboEventElement
-    val currentState: ComboStateElement
+    val eventCombo: EventCombo
+    val stateCombo: StateCombo
     val previousChanges: List<OnStateChanged>
     val conditions: Map<Long, Condition>
     val bindings: Map<Condition, IMachineEx>
 
-    val eventData: Data? get() = newEvent.slave as? Data
-    val stateData: Data? get() = currentState.slave as? Data
+    val event: Event get() = eventCombo.master
+    val state: State get() = stateCombo.master
+    val eventData: Data? get() = eventCombo.slave as? Data
+    val stateData: Data? get() = stateCombo.slave as? Data
 
-    @Suppress("UNCHECKED_CAST")
-    fun <D : Data> eventData() = eventData as D
+    fun applyState(state: StateCombo): IMatchScope
 
-    @Suppress("UNCHECKED_CAST")
-    fun <D : Data> stateData(idx: Int = 0) = stateData as D
-
-    fun applyState(state: ComboStateElement): MatchScope
+    fun copy(
+        event: EventCombo = this.eventCombo,
+        state: StateCombo = this.stateCombo,
+        previousChanges: List<OnStateChanged> = this.previousChanges,
+        conditions: Map<Long, Condition> = this.conditions,
+        bindings: Map<Condition, IMachineEx> = this.bindings
+    ): IMatchScope
 }
 
-data class MatchScope(
-    override val newEvent: ComboEventElement,
-    override val currentState: ComboStateElement,
+inline fun <reified T : Data> IMatchScope.eventData(): T = eventCombo.slave as T
+inline fun <reified T : Data> IMatchScope.stateData(): T = stateCombo.slave as T
+
+class MatchScope(
+    override val eventCombo: EventCombo,
+    override val stateCombo: StateCombo,
     override val previousChanges: List<OnStateChanged> = emptyList(),
     override val conditions: Map<Long, Condition> = emptyMap(),
     override val bindings: Map<Condition, IMachineEx> = emptyMap()
 ) : IMatchScope {
 
-    override fun applyState(state: ComboStateElement): MatchScope =
+    override fun applyState(state: StateCombo): IMatchScope =
         copy(
-            currentState = state,
-            previousChanges = previousChanges + OnStateChanged(newEvent, this.currentState, state)
+            state = state,
+            previousChanges = previousChanges + OnStateChanged(eventCombo, this.stateCombo, state)
         )
+
+    override fun copy(
+        event: EventCombo,
+        state: StateCombo,
+        previousChanges: List<OnStateChanged>,
+        conditions: Map<Long, Condition>,
+        bindings: Map<Condition, IMachineEx>
+    ): IMatchScope = MatchScope(event, state, previousChanges, conditions, bindings)
 }

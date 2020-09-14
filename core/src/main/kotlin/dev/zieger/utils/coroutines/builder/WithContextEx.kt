@@ -27,7 +27,7 @@ suspend fun <T : Any?> withContextEx(
     exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
     onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
     onFinally: suspend CoroutineScope.() -> Unit = {},
-    block: suspend CoroutineScope.(isRetry: Boolean) -> T
+    block: suspend CoroutineScope.(numExecution: Int) -> T
 ): T = withContext(
     buildContext(
         context ?: coroutineContext,

@@ -12,7 +12,6 @@ import dev.zieger.utils.statemachine.MachineEx.Companion.DEFAULT_PREVIOUS_CHANGE
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel
 import dev.zieger.utils.statemachine.MachineEx.Companion.debugLevel
 import dev.zieger.utils.statemachine.conditionelements.*
-import dev.zieger.utils.statemachine.conditionelements.UsedAs.RUNTIME
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -168,7 +167,7 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 open class MachineEx(
     private val initialState: State,
-    override val scope: CoroutineScopeEx = DefaultCoroutineScope(),
+    val scope: CoroutineScopeEx = DefaultCoroutineScope(),
     private val previousChangesCacheSize: Int = DEFAULT_PREVIOUS_CHANGES_SIZE,
     debugLevel: DebugLevel = DebugLevel.ERROR,
     builder: suspend MachineDsl.() -> Unit
@@ -193,17 +192,23 @@ open class MachineEx(
 
     private val finishedProcessingEvent = Channel<Boolean>()
 
-    private val eventChannel = Channel<Pair<ComboEventElement, (ComboStateElement) -> Unit>>(Channel.RENDEZVOUS)
+    private val eventChannel = Channel<Pair<EventCombo, (StateCombo) -> Unit>>(Channel.RENDEZVOUS)
 
-    override lateinit var eventCombo: ComboEventElement
+    private lateinit var eventCombo: EventCombo
+    override val event: Event get() = eventCombo.master
+    override val eventData: Data? get() = eventCombo.slave as? Data
 
-    override suspend fun setEvent(event: ComboEventElement): ComboStateElement {
-        val cont = TypeContinuation<ComboStateElement>()
+    override suspend fun setEventSync(event: EventCombo): StateCombo {
+        val cont = TypeContinuation<StateCombo>()
         eventChannel.send(event to { state -> cont.trigger(state) })
         return cont.suspendUntilTrigger()!!
     }
 
-    override var stateCombo: ComboStateElement = initialState.comboState
+    override fun fireAndForget(event: EventCombo) = scope.launchEx { setEventSync(event) }.asUnit()
+
+    private var stateCombo: StateCombo = initialState.combo
+    override val state: State get() = stateCombo.master
+    override val stateData: Data? get() = stateCombo.slave as? Data
 
     private val submittedEventCount = AtomicInteger(0)
     private val processedEventCount = AtomicInteger(0)
@@ -214,22 +219,21 @@ open class MachineEx(
         MachineEx.debugLevel = debugLevel
 
         scope.launchEx {
-            applyNewState(initialState.comboState to suspend {}, initialState.comboState, object : Event() {
+            applyNewState(initialState.combo to suspend {}, initialState.combo, object : EventImpl() {
                 override val noLogging: Boolean
                     get() = false
-            }.comboEvent)
+            }.combo)
 
             this@MachineEx.builder()
             for (event in eventChannel) event.processEvent()
         }
     }
 
-    private suspend fun Pair<ComboEventElement, (ComboStateElement) -> Unit>.processEvent() {
+    private suspend fun Pair<EventCombo, (StateCombo) -> Unit>.processEvent() {
         eventCombo = first
-        eventCombo.usedAs = RUNTIME
         val stateBefore = stateCombo
 
-        applyNewState(mapper.processEvent(first, stateBefore, previousChanges.reversed()), stateBefore, first)
+        applyNewState(mapper.processEvent(eventCombo, stateBefore, previousChanges.reversed()), stateBefore, eventCombo)
         processedEventCount.incrementAndGet()
 
         if (!isProcessingActive)
@@ -239,15 +243,15 @@ open class MachineEx(
     }
 
     private suspend fun applyNewState(
-        newState: Pair<ComboStateElement, suspend () -> Unit>?,
-        stateBefore: ComboStateElement,
-        event: ComboEventElement
+        newState: Pair<StateCombo, suspend () -> Unit>?,
+        stateBefore: StateCombo,
+        event: EventCombo
     ) = newState?.let {
         stateCombo = newState.first
         previousChanges.put(OnStateChanged(event, stateBefore, newState.first).apply {
-            stateBefore.master.run { activeStateChanged(false) }
-            event.master.run { fired() }
-            newState.first.master.run { activeStateChanged(true) }
+            stateBefore.run { activeStateChanged(false) }
+            event.run { fired() }
+            newState.first.run { activeStateChanged(true) }
         })
         newState.second()
     }

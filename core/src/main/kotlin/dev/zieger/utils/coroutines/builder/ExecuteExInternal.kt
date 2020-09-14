@@ -27,7 +27,7 @@ internal suspend inline fun <T : Any?> executeExInternal(
     exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
     crossinline onCatch: suspend CoroutineScope.(t: Throwable) -> Unit,
     crossinline onFinally: suspend CoroutineScope.() -> Unit,
-    crossinline block: suspend CoroutineScope.(isRetry: Boolean) -> T
+    crossinline block: suspend CoroutineScope.(numExecution: Int) -> T
 ): T {
     delayed?.also { delay(it) }
     if (!coroutineContext.isActive) return returnOnCatch
@@ -42,9 +42,9 @@ internal suspend inline fun <T : Any?> executeExInternal(
                         Unit, maxExecutions, printStackTrace = printStackTrace, logStackTrace = logStackTrace,
                         include = include, exclude = exclude,
                         onCatch = { throwable -> scope.launch { onCatch(throwable) } },
-                        onFinally = { scope.launch { scope.onFinally() } }) { isRetry ->
-                        if (isRetry) retryDelay?.also { delay(it) }
-                        result = scope.block(isRetry)
+                        onFinally = { scope.launch { scope.onFinally() } }) { numExecution ->
+                        if (numExecution > 0) retryDelay?.also { delay(it) }
+                        result = scope.block(numExecution)
                     }
                 }
             }

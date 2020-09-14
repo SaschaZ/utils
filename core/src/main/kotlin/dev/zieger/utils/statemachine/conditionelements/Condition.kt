@@ -2,34 +2,27 @@
 
 package dev.zieger.utils.statemachine.conditionelements
 
-import dev.zieger.utils.log.LogFilter.Companion.GENERIC
-import dev.zieger.utils.log.logV
 import dev.zieger.utils.misc.name
-import dev.zieger.utils.statemachine.MachineEx
-import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.INFO
-import dev.zieger.utils.statemachine.MatchScope
+import dev.zieger.utils.statemachine.IMatchScope
 import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.*
 import dev.zieger.utils.statemachine.conditionelements.DefinitionElementGroup.MatchType.*
 
 data class Condition(
-    val items: List<DefinitionElementGroup> = INITIAL_ITEMS,
-    val action: (suspend MatchScope.() -> ComboStateElement?)? = null
-) : ConditionElement() {
+    val start: Combo<*>,
+    val items: List<DefinitionElementGroup> = INITIAL_ITEMS.apply { first { it.matchType == ALL }.add(start) },
+    val action: (suspend IMatchScope.() -> State?)? = null
+) : ConditionElement {
 
-    constructor(event: Event) :
-            this(INITIAL_ITEMS.apply { first { it.matchType == ALL }.elements.add(event.comboEvent) })
-
-    constructor(state: State) :
-            this(INITIAL_ITEMS.apply { first { it.matchType == ALL }.elements.add(state.comboState) })
-
-    constructor(eventGroup: EventGroup<*>) :
-            this(INITIAL_ITEMS.apply { first { it.matchType == ALL }.elements.add(eventGroup.comboEventGroup) })
-
-    constructor(stateGroup: StateGroup<*>) :
-            this(INITIAL_ITEMS.apply { first { it.matchType == ALL }.elements.add(stateGroup.comboStateGroup) })
-
-    constructor(combo: ComboBaseElement<Master, Slave>) :
-            this(INITIAL_ITEMS.apply { first { it.matchType == ALL }.elements.add(combo) })
+    constructor(start: Master) : this(
+        when (start) {
+            is Combo<*> -> start
+            is Event -> start.combo
+            is State -> start.combo
+            is EventGroup<*> -> start.combo
+            is StateGroup<*> -> start.combo
+            else -> throw IllegalArgumentException("Unknown Master type ${start::class.name}")
+        }, action = null
+    )
 
     companion object {
         private val INITIAL_ITEMS
@@ -44,8 +37,6 @@ data class Condition(
     val all: DefinitionElementGroup get() = items.first { it.matchType == ALL }
     val none: DefinitionElementGroup get() = items.first { it.matchType == NONE }
 
-    val start: DefinitionElement get() = items.first { it.matchType == ALL }.elements.first()
-
     enum class DefinitionType {
         STATE,
         EVENT,
@@ -53,7 +44,7 @@ data class Condition(
     }
 
     val type: DefinitionType
-        get() = start.type
+        get() = start.master.type
 
     private fun Master.getType(): DefinitionType = when (this) {
         is Event,
@@ -61,24 +52,15 @@ data class Condition(
         is State,
         is StateGroup<*> -> STATE
         is External -> EXTERNAL
-        is ComboBaseElement<*, *> -> master.getType()
-    }
-
-    override suspend fun MatchScope.match(other: ConditionElement?): Boolean {
-        return when (other) {
-            is InputElement -> {
-                any.run { match(other) }
-                        && all.run { match(other) }
-                        && none.run { match(other) }
-            }
-            null -> false
-            else -> throw IllegalArgumentException("Can not match ${this@Condition::class.name} " +
-                    "with ${other.let { it::class.name }}"
-            )
-        } logV {
-            f = GENERIC(disableLog = noLogging || other.noLogging || MachineEx.debugLevel <= INFO)
-            m = "#C $it => ${this@Condition} <||> $other"
+        is Combo<*> -> when (master) {
+            is Event,
+            is EventGroup<*> -> EVENT
+            is State,
+            is StateGroup<*> -> STATE
+            is External -> EXTERNAL
+            else -> throw IllegalArgumentException("Unknown Master of type $this")
         }
+        else -> throw IllegalArgumentException("Unknown Master of type $this")
     }
 
     override fun toString(): String = "C($items)"

@@ -19,13 +19,11 @@ import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DE
 import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.H
 import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.I
 import dev.zieger.utils.statemachine.conditionelements.*
-import dev.zieger.utils.time.minutes
-import dev.zieger.utils.time.seconds
 import org.junit.jupiter.api.Test
 
 class MachineExTest {
 
-    sealed class TestState : State() {
+    sealed class TestState : StateImpl() {
 
         object INITIAL : TestState()
         object A : TestState()
@@ -40,23 +38,23 @@ class MachineExTest {
                 object F : TEST_STATE_GROUP_FG()
                 object G : TEST_STATE_GROUP_FG()
 
-                companion object : StateGroup<TEST_STATE_GROUP_FG>(TEST_STATE_GROUP_FG::class)
+                companion object : StateGroupImpl<TEST_STATE_GROUP_FG>(TEST_STATE_GROUP_FG::class)
             }
 
-            companion object : StateGroup<TEST_STATE_GROUP_DEFG>(TEST_STATE_GROUP_DEFG::class)
+            companion object : StateGroupImpl<TEST_STATE_GROUP_DEFG>(TEST_STATE_GROUP_DEFG::class)
         }
 
         sealed class TEST_STATE_GROUP_HI : TestState() {
             object H : TEST_STATE_GROUP_HI()
             object I : TEST_STATE_GROUP_HI()
 
-            companion object : StateGroup<TEST_STATE_GROUP_HI>(TEST_STATE_GROUP_HI::class)
+            companion object : StateGroupImpl<TEST_STATE_GROUP_HI>(TEST_STATE_GROUP_HI::class)
         }
 
-        companion object : StateGroup<TestState>(TestState::class)
+        companion object : StateGroupImpl<TestState>(TestState::class)
     }
 
-    sealed class TestData : Data() {
+    sealed class TestData : Data {
 
         data class TestEventData(val foo: String) : TestData() {
             companion object : Type<TestEventData>(TestEventData::class)
@@ -73,7 +71,7 @@ class MachineExTest {
         companion object : Type<TestData>(TestData::class)
     }
 
-    sealed class TestEvent : Event() {
+    sealed class TestEvent : EventImpl() {
 
         object FIRST : TestEvent()
         object SECOND : TestEvent()
@@ -84,14 +82,33 @@ class MachineExTest {
             object FIFTH : TEST_EVENT_GROUP()
             object SIXTH : TEST_EVENT_GROUP()
 
-            companion object : EventGroup<TEST_EVENT_GROUP>(TEST_EVENT_GROUP::class)
+            companion object : EventGroupImpl<TEST_EVENT_GROUP>(TEST_EVENT_GROUP::class)
         }
 
-        companion object : EventGroup<TestEvent>(TestEvent::class)
+        companion object : EventGroupImpl<TestEvent>(TestEvent::class)
     }
 
     @Test
-    fun testComplex() = runTest(10.seconds) {
+    fun testSlaveBug() = runTest {
+
+        MachineEx(INITIAL, debugLevel = DEBUG) {
+            +THIRD + INITIAL execAndSet {
+                C
+            }
+            +THIRD * TestEventData("foo") + INITIAL execAndSet {
+                eventData<TestEventData>().foo isEqual "foo" % "data test"
+                D
+            }
+        }.run {
+            state isEqual INITIAL
+
+            fire eventSync THIRD * TestEventData("foo")
+            state isEqual D
+        }
+    }
+
+    @Test
+    fun testComplex() = runTest {
         var executed = 0
         var executed2 = 0
         MachineEx(INITIAL, debugLevel = DEBUG) {
@@ -119,27 +136,27 @@ class MachineExTest {
             executed isEqual 0 % "event FIRST with state INITIAL"
             executed2 isEqual 0 % "event FIRST with state INITIAL2"
 
-            fire eventSync FIFTH isEqual E.combo
+            fire eventSync FIFTH
             state isEqual E
             executed isEqual 0 % "event FIFTH with state A"
             executed2 isEqual 0 % "event FIFTH with state A2"
 
-            fire eventSync SECOND * TestEventData("moo") isEqual C.combo
+            fire eventSync SECOND * TestEventData("moo")
             state isEqual C
             executed isEqual 1 % "event SECOND with state A"
             executed2 isEqual 1 % "event SECOND with state A#2"
 
-            fire eventSync THIRD * TestEventData("foo") isEqual D.combo
+            fire eventSync THIRD * TestEventData("foo")
             state isEqual D
             executed isEqual 2 % "event THIRD with state C"
             executed2 isEqual 1 % "event THIRD with state C#2"
 
-            fire eventSync FOURTH isEqual B.combo
+            fire eventSync FOURTH
             state isEqual B
             executed isEqual 2 % "event FOURTH with state D"
             executed2 isEqual 1 % "event FOURTH with state D#2"
 
-            fire eventSync FIRST isEqual C.combo
+            fire eventSync FIRST
             state isEqual C % "FIRST with B"
             executed isEqual 3 % "event FIRST with state B"
             executed2 isEqual 1 % "event FIRST with state B#2"
@@ -166,21 +183,21 @@ class MachineExTest {
     }
 
     @Test
-    fun testPrev() = runTest(10.minutes) {
+    fun testPrev() = runTest {
         var lastEvent: Event? = null
         var lastState: State? = null
         MachineEx(INITIAL, debugLevel = DEBUG) {
             +FIRST + INITIAL[0] set A
             +SECOND + A + FIRST[1] + INITIAL[1] - C set !B * TestEventData("bäm")
             +THIRD + FIRST[X] + B + A[1] + INITIAL[2] set C * TestEventData
-            +FOURTH + FIRST[3] + !C[0]  + B[1] + A[2] + INITIAL[X] set D
+            +FOURTH + FIRST[3] + !C[0] + B[1] + A[2] + INITIAL[X] set D
             +FIFTH + D + C[1] + !B[2] + A[3] + INITIAL[3] set E
             +!TestEvent exec {
-                lastEvent = event
+                lastEvent = this.eventCombo.master
                 println("event: $lastEvent")
             }
             +!TestState exec {
-                lastState = state
+                lastState = this.stateCombo.master
                 println("state: $lastState")
             }
         }.run {
@@ -300,9 +317,8 @@ class MachineExTest {
         val event = FOURTH
         val eventGroup = TEST_EVENT_GROUP
 
-        MatchScope(event.comboEvent, A.comboState).apply {
-            eventGroup.run { match(event) }.isTrue()
-            event.run { match(eventGroup) }.isTrue()
+        Matcher(MatchScope(event.combo, A.combo)).apply {
+            eventGroup.match().isTrue()
         }
     }
 

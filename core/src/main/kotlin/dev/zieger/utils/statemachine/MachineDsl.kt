@@ -1,7 +1,8 @@
-@file:Suppress("unused")
+@file:Suppress("unused", "MemberVisibilityCanBePrivate")
 
 package dev.zieger.utils.statemachine
 
+import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.statemachine.conditionelements.*
 
 
@@ -10,36 +11,27 @@ abstract class MachineDsl : IMachineEx {
     protected val mapper: IMachineExMapper = MachineExMapper()
 
     // start entry with unary +
-    operator fun Master.unaryPlus() = condition()
-    operator fun ComboElement.unaryPlus() = Condition(this)
+    operator fun Master.unaryPlus() = Condition(this)
 
     // link wanted items with + operator
-    operator fun Condition.plus(other: Master): Condition = plus(other.combo)
-    operator fun Condition.plus(other: suspend MatchScope.() -> Boolean): Condition = apply { all += External(other) }
-
-    operator fun Condition.plus(other: ComboElement): Condition = apply { any += other }
+    operator fun Condition.plus(other: Master): Condition = apply { any += other }
+    operator fun Condition.plus(other: suspend IMatchScope.() -> Boolean): Condition = apply { all += External(other) }
 
     // link unwanted items with - operator
-    operator fun Condition.minus(other: Master): Condition = minus(other.combo)
-    operator fun Condition.minus(other: suspend MatchScope.() -> Boolean): Condition = apply { none += External(other) }
-
-    operator fun Condition.minus(other: ComboElement): Condition = apply { none += other }
-
+    operator fun Condition.minus(other: Master): Condition = apply { none += other }
+    operator fun Condition.minus(other: suspend IMatchScope.() -> Boolean): Condition =
+        apply { none += External(other) }
 
     // apply Data with * operator
-    operator fun Event.times(slave: Slave): ComboEventElement = comboEvent.also { it.slave = slave }
-    operator fun State.times(slave: Slave): ComboStateElement = comboState.also { it.slave = slave }
-    operator fun EventGroup<*>.times(slave: Slave): ComboEventGroupElement = comboEventGroup.also { it.slave = slave }
-    operator fun StateGroup<*>.times(slave: Slave): ComboStateGroupElement = comboStateGroup.also { it.slave = slave }
-    operator fun ComboEventElement.times(slave: Slave): ComboEventElement = also { it.slave = slave }
-    operator fun ComboStateElement.times(slave: Slave): ComboStateElement = also { it.slave = slave }
-//    operator fun ComboBaseElement<*, Slave>.times(slave: Slave) = also { it.slave = slave }
+    operator fun Event.times(slave: Slave) = combo.also { it.slave = slave }
+    operator fun State.times(slave: Slave) = combo.also { it.slave = slave }
+    operator fun EventGroup<*>.times(slave: Slave) = combo.also { it.slave = slave }
+    operator fun StateGroup<*>.times(slave: Slave) = combo.also { it.slave = slave }
     operator fun PrevElement.times(slave: Slave): PrevElement = apply { combo.slave = slave }
 
     // Only the case when slave is added to first item. unary operators are processed before.
     operator fun Condition.times(slave: Slave) = apply {
-        @Suppress("UNCHECKED_CAST")
-        (start as? ComboBaseElement<Master, Slave>)?.slave = slave
+        start.slave = slave
     }
 
     operator fun Condition.plus(other: PrevElement): Condition = apply { all += other }
@@ -55,12 +47,10 @@ abstract class MachineDsl : IMachineEx {
     /**
      * Use the [not] operator to ignore any slaves for this element.
      */
-//    operator fun Master.not(): ComboElement = !combo
-    operator fun Event.not(): ComboEventElement = !comboEvent
-    operator fun EventGroup<out Event>.not(): ComboEventGroupElement = !comboEventGroup
-    operator fun State.not(): ComboStateElement = !comboState
-    operator fun StateGroup<out State>.not(): ComboStateGroupElement = !comboStateGroup
-    operator fun <T: ComboBaseElement<*, *>> T.not(): T = apply { ignoreSlave = true }
+    operator fun Event.not(): EventCombo = combo.apply { ignoreSlave = true }
+    operator fun EventGroup<*>.not(): EventGroupCombo<*> = combo.apply { ignoreSlave = true }
+    operator fun State.not(): StateCombo = combo.apply { ignoreSlave = true }
+    operator fun StateGroup<*>.not(): StateGroupCombo<*> = combo.apply { ignoreSlave = true }
     operator fun PrevElement.not(): PrevElement = apply { combo.ignoreSlave = true }
 
     /**
@@ -72,35 +62,25 @@ abstract class MachineDsl : IMachineEx {
     /**
      *
      */
-    suspend infix fun Condition.set(state: IResultState) = execAndSet { state }
+    infix fun Condition.set(state: State): Unit = execAndSet { state }
+    infix fun Condition.set(state: StateCombo): Unit = execAndSet { state }
+
+    infix fun Condition.fire(event: Event): Unit = execAndFire { event }
 
     /**
      *
      */
-    suspend infix fun Condition.exec(block: suspend MatchScope.() -> Unit) = execAndSet { block(); null }
+    infix fun Condition.exec(block: suspend IMatchScope.() -> Unit) =
+        mapper.addCondition(this) { block(); null }.asUnit()
 
-    /**
-     *
-     */
-    suspend infix fun <T : IResultState> Condition.execAndSet(block: suspend MatchScope.() -> T?) {
-        mapper.addCondition(this) {
-            when (val result = block()) {
-                is State -> result.comboState
-                is ComboStateElement -> result
-                null -> null
-                else -> throw IllegalArgumentException("Only State abd ComboElement is allowed as return in an action.")
-            }
-        }
-    }
+    infix fun Condition.execAndSet(block: suspend IMatchScope.() -> State) =
+        mapper.addCondition(this, block).asUnit()
 
-    suspend infix fun <T : IResultEvent> Condition.execAndFire(block: suspend MatchScope.() -> T?) {
-        exec {
-            block()?.also {
-                when (it) {
-                    is Event -> fire eventSync it
-                    is ComboEventElement -> fire eventSync it
-                }
-            }
-        }
-    }
+    infix fun Condition.execAndFire(block: suspend IMatchScope.() -> Event) =
+        mapper.addCondition(this) { fire eventSync block(); null }.asUnit()
 }
+
+operator fun Event.times(slave: Slave) = combo.also { it.slave = slave }
+operator fun State.times(slave: Slave) = combo.also { it.slave = slave }
+operator fun EventGroup<*>.times(slave: Slave) = combo.also { it.slave = slave }
+operator fun StateGroup<*>.times(slave: Slave) = combo.also { it.slave = slave }

@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
 
 class MachineExBindingTest {
 
-    sealed class States : State() {
+    sealed class States : StateImpl() {
         object A : States()
         object B : States()
         sealed class C : States() {
@@ -22,13 +22,13 @@ class MachineExBindingTest {
             object CB : C()
             object CC : C()
 
-            companion object : StateGroup<States>(States::class)
+            companion object : StateGroupImpl<States>(States::class)
         }
 
-        companion object : StateGroup<States>(States::class)
+        companion object : StateGroupImpl<States>(States::class)
     }
 
-    sealed class Events : Event() {
+    sealed class Events : EventImpl() {
         object FIRST : Events()
         object SECOND : Events()
         sealed class THIRD : Events() {
@@ -36,13 +36,13 @@ class MachineExBindingTest {
             object THIRD1 : THIRD()
             object THIRD2 : THIRD()
 
-            companion object : EventGroup<THIRD>(THIRD::class)
+            companion object : EventGroupImpl<THIRD>(THIRD::class)
         }
 
-        companion object : EventGroup<Events>(Events::class)
+        companion object : EventGroupImpl<Events>(Events::class)
     }
 
-    sealed class TestData : Data() {
+    sealed class TestData : Data {
 
         data class Data0(val test: Boolean = false) : TestData() {
             companion object : Type<Data0>(Data0::class)
@@ -68,7 +68,7 @@ class MachineExBindingTest {
             +THIRD1 + CB set CC * Data0()
             +THIRD2 + CC * Data0 set CA
             +!C exec {
-                lastChildState = state as C
+                lastChildState = this.state as C
             }
         }
         machine = MachineEx(A) {
@@ -76,13 +76,13 @@ class MachineExBindingTest {
             +SECOND + CB set A
             +THIRD bind childMachine
             +!States exec {
-                lastState = state as States
+                lastState = this.state as States
             }
         }
     }
 
-    private suspend fun verify(event: Event, state: ComboElement, childState: ComboElement? = state) {
-        machine.fire eventSync event isEqual state
+    private suspend fun verify(event: Event, state: State, childState: State? = state) {
+        machine.fire eventSync event isEqual state.combo
 
         childMachine.stateData isEqual childState?.slave
         lastChildState isEqual childState?.master
@@ -91,17 +91,19 @@ class MachineExBindingTest {
         lastState isEqual state.master
     }
 
+    val Master.slave get() = (this as? Combo<*>)?.slave
+
     @Test
     fun testBinding() = runTest {
         lastChildState.isNull()
         lastState.isNull()
 
-        verify(FIRST, B.combo, null)
-        verify(THIRD0, CB.combo)
-        verify(SECOND, A.combo, CB.combo)
-        verify(THIRD0, CB.combo)
-        verify(THIRD1, CC.combo.also { it.slave = Data0() })
-        verify(THIRD2, CA.combo)
-        verify(FIRST, B.combo, CA.combo)
+        verify(FIRST, B, null)
+        verify(THIRD0, CB)
+        verify(SECOND, A, CB)
+        verify(THIRD0, CB)
+        verify(THIRD1, CC * Data0())
+        verify(THIRD2, CA)
+        verify(FIRST, B, CA)
     }
 }

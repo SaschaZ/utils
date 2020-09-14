@@ -5,6 +5,7 @@ import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.time.base.IDurationEx
 import dev.zieger.utils.time.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -23,7 +24,7 @@ import kotlinx.coroutines.runBlocking
  */
 fun runTest(
     timeout: IDurationEx = 10.seconds,
-    block: suspend () -> Unit
+    block: suspend CoroutineScope.() -> Unit
 ) = runBlocking {
     UtilsSettings.LOG_EXCEPTIONS = false
     UtilsSettings.PRINT_EXCEPTIONS = false

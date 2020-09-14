@@ -1,10 +1,10 @@
 package dev.zieger.utils.statemachine
 
-import dev.zieger.utils.statemachine.conditionelements.ComboEventElement
-import dev.zieger.utils.statemachine.conditionelements.ComboStateElement
+import dev.zieger.utils.statemachine.conditionelements.EventCombo
+import dev.zieger.utils.statemachine.conditionelements.StateCombo
 
 data class OnStateChanged(
-    val event: ComboEventElement,
-    val stateBefore: ComboStateElement,
-    val stateAfter: ComboStateElement
+    val event: EventCombo,
+    val stateBefore: StateCombo,
+    val stateAfter: StateCombo
 )

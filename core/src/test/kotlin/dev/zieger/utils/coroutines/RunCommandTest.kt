@@ -2,15 +2,12 @@ package dev.zieger.utils.coroutines
 
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.time.delay
-import dev.zieger.utils.time.duration.seconds
-import io.kotlintest.internal.isActive
-import io.kotlintest.specs.AnnotationSpec
+import dev.zieger.utils.time.seconds
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.time.delay
+import org.junit.jupiter.api.Test
 
-class RunCommandTest : AnnotationSpec() {
+class RunCommandTest {
 
     @Test
     fun testIt() = runTest(30.seconds) {

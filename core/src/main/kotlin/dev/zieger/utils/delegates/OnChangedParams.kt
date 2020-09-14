@@ -1,6 +1,5 @@
 package dev.zieger.utils.delegates
 
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.delegates.OnChangedParamsWithParent.Companion.DEFAULT_RECENT_VALUE_BUFFER_SIZE
 import dev.zieger.utils.misc.DataClass
 import kotlinx.coroutines.CoroutineScope
@@ -11,8 +10,8 @@ interface IOnChangedParamsWithParent<P : Any?, T : Any?> {
     val previousValueSize: Int
     val notifyForInitial: Boolean
     val notifyOnChangedValueOnly: Boolean
-    val scope: CoroutineScope
-    val mutex: Mutex
+    val scope: CoroutineScope?
+    val mutex: Mutex?
     val safeSet: Boolean
     val veto: (T) -> Boolean
     val map: (T) -> T
@@ -46,8 +45,8 @@ open class OnChangedParamsWithParent<P : Any?, T : Any?>(
     override val previousValueSize: Int = if (storeRecentValues) DEFAULT_RECENT_VALUE_BUFFER_SIZE else 0,
     override val notifyForInitial: Boolean = false,
     override val notifyOnChangedValueOnly: Boolean = true,
-    override val scope: CoroutineScope = DefaultCoroutineScope(),
-    override val mutex: Mutex = Mutex(),
+    override val scope: CoroutineScope? = null,
+    override val mutex: Mutex? = null,
     override val safeSet: Boolean = false,
     override val veto: (T) -> Boolean = { false },
     override val map: (T) -> T = { it },

@@ -15,7 +15,7 @@ object UtilsSettings {
         }
 
     var PRINT_EXCEPTIONS = true
-    var LOG_EXCEPTIONS = true
+    var LOG_EXCEPTIONS = false
     var LOG_SCOPE: CoroutineScope = DefaultCoroutineScope()
     var ERROR_LOG_FILE: () -> File? = { File("error.log") }
 }

@@ -55,4 +55,4 @@ WORKDIR /project
 RUN rm ./local.properties && \
     find . -name build | xargs rm -rf
 
-CMD ["./gradlew", "publishToMavenLocal"]
+CMD ["./build.sh"]

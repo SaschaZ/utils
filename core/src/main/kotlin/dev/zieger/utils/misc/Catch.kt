@@ -2,16 +2,14 @@ package dev.zieger.utils.misc
 
 import dev.zieger.utils.UtilsSettings.ERROR_LOG_FILE
 import dev.zieger.utils.UtilsSettings.LOG_EXCEPTIONS
+import dev.zieger.utils.UtilsSettings.LOG_SCOPE
 import dev.zieger.utils.UtilsSettings.PRINT_EXCEPTIONS
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
 
 /**
@@ -45,17 +43,17 @@ inline fun <T : Any?> catch(
     logStackTrace: Boolean = LOG_EXCEPTIONS,
     crossinline onCatch: (Throwable) -> Unit = {},
     crossinline onFinally: () -> Unit = {},
-    block: (isRetry: Boolean) -> T
+    block: (numExecution: Int) -> T
 ): T {
     var result: T
     var succeed = false
 
     (0 until maxExecutions).forEach { retryIndex ->
         result = try {
-            block(retryIndex > 0).also { succeed = true }
+            block(retryIndex).also { succeed = true }
         } catch (throwable: Throwable) {
             if (include.any { it.isInstance(throwable) }
-                && exclude.all { !it.isInstance(throwable) }) {
+                && exclude.none { it.isInstance(throwable) }) {
                 succeed = false
                 onCatch(throwable)
                 if (printStackTrace) {
@@ -77,15 +75,10 @@ inline fun <T : Any?> catch(
     return returnOnCatch
 }
 
-private val errorLogScope = object : CoroutineScope {
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Default
-}
-
 private val errorLogMutex = Mutex()
 
 fun Throwable.log() =
-    errorLogScope.launch {
+    LOG_SCOPE.launch {
         errorLogMutex.withLock {
             ERROR_LOG_FILE()?.also { file ->
                 var log = "$currentTime: ${javaClass.simpleName}: $message\n"

@@ -2,20 +2,18 @@
 
 package dev.zieger.utils.statemachine
 
-import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.statemachine.conditionelements.ComboEventElement
-import dev.zieger.utils.statemachine.conditionelements.ComboStateElement
 import dev.zieger.utils.statemachine.conditionelements.Event
-import dev.zieger.utils.statemachine.conditionelements.comboEvent
+import dev.zieger.utils.statemachine.conditionelements.EventCombo
+import dev.zieger.utils.statemachine.conditionelements.State
+import dev.zieger.utils.statemachine.conditionelements.combo
 
 val IMachineEx.fire get() = FireScope(this)
 
-class FireScope(machine: IMachineEx) : IMachineEx by machine {
+class FireScope(private val machine: IMachineEx) {
 
-    infix fun event(event: Event) = event(event.comboEvent)
-    infix fun event(event: ComboEventElement) = scope.launchEx { setEvent(event) }.asUnit()
+    infix fun event(event: Event) = event(event.combo)
+    infix fun event(event: EventCombo) = machine.fireAndForget(event)
 
-    suspend infix fun eventSync(event: Event): ComboStateElement= eventSync(event.comboEvent)
-    suspend infix fun eventSync(event: ComboEventElement): ComboStateElement= setEvent(event)
+    suspend infix fun eventSync(event: Event): State? = eventSync(event.combo)
+    suspend infix fun eventSync(event: EventCombo): State? = machine.setEventSync(event)
 }

@@ -4,7 +4,6 @@ package dev.zieger.utils.delegates
 
 import dev.zieger.utils.coroutines.Continuation
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.delegates.OnChangedParamsWithParent.Companion.DEFAULT_RECENT_VALUE_BUFFER_SIZE
 import dev.zieger.utils.misc.FiFo
@@ -52,8 +51,8 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         recentValueSize: Int = if (storeRecentValues) DEFAULT_RECENT_VALUE_BUFFER_SIZE else 0,
         notifyForInitial: Boolean = false,
         notifyOnChangedValueOnly: Boolean = true,
-        scope: CoroutineScope = DefaultCoroutineScope(),
-        mutex: Mutex = Mutex(),
+        scope: CoroutineScope? = null,
+        mutex: Mutex? = null,
         safeSet: Boolean = false,
         veto: (T) -> Boolean = { false },
         map: (T) -> T = { it },
@@ -81,7 +80,7 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
                     onPropertyChanged(value, old)
                 }
             }
-            if (safeSet) scope.launchEx(mutex = mutex) { internalSet() } else internalSet()
+            if (safeSet) scope?.launchEx(mutex = mutex) { internalSet() } else internalSet()
         }
 
     init {
@@ -90,13 +89,13 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
             { clearPreviousValues() }, true
         ).apply {
             onChanged(initial)
-            scope.launchEx(mutex = mutex) { onChangedS(initial) }
+            scope?.launchEx(mutex = mutex) { onChangedS(initial) }
         }
     }
 
-    override suspend fun changeValue(block: (T) -> T): Unit = mutex.withLock {
+    override suspend fun changeValue(block: (T) -> T): Unit = mutex?.withLock {
         value = block(value)
-    }
+    }.asUnit()
 
     private val nextChangeContinuation = Continuation()
 
@@ -141,12 +140,11 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         previousValues,
         { clearPreviousValues() },
         isInitialNotification
-    )
-        .apply {
-            nextChangeContinuation.trigger()
-            onChangedInternal(new)
-            scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
-        }
+    ).apply {
+        nextChangeContinuation.trigger()
+        onChangedInternal(new)
+        scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
+    }
 
     @Suppress("LeakingThis")
     override fun setValue(thisRef: P, property: KProperty<*>, value: T) {
