@@ -1,10 +1,11 @@
 # utilsEx
 #### Kotlin Jvm Utilities
 
-[![jitPack](https://jitpack.io/v/SaschaZ/utils.svg)](https://jitpack.io/#SaschaZ/utils/core) 
+[![jitPack](https://jitpack.io/v/dev.zieger/utils.svg)](https://jitpack.io/#dev.zieger/utils/core) 
 [![jitCI](https://jitci.com/gh/SaschaZ/utils/svg)](https://jitci.com/gh/SaschaZ/utils) 
 [![GitHub Actions](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fatrox%2Fsync-dotenv%2Fbadge&label=build&logo=#2088FF)](https://actions-badge.atrox.dev/atrox/sync-dotenv/goto)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue?logo=Apache)](https://raw.githubusercontent.com/SaschaZ/utils/master/LICENSE)<br>
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?logo=Apache)](https://raw.githubusercontent.com/SaschaZ/utils/master/LICENSE)
+<br>
 [![codecov](https://codecov.io/gh/SaschaZ/utils/branch/master/graph/badge.svg)](https://codecov.io/gh/SaschaZ/utils)
 [![codebeat badge](https://codebeat.co/badges/84495349-71cb-461f-9840-860e9678f593)](https://codebeat.co/projects/github-com-saschaz-utils-master)
 [![Maintainability](https://api.codeclimate.com/v1/badges/cbd0727a672b2178f75e/maintainability)](https://codeclimate.com/github/SaschaZ/utils/maintainability)

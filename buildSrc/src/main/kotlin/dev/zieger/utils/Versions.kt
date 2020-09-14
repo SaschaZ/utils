@@ -1,22 +1,22 @@
 package dev.zieger.utils
 
 object Versions {
-    const val kotlin = "1.3.72"
+    const val kotlin = "1.4.10"
     const val koTest = "3.4.2"
+    const val coroutines = "1.3.9"
 
-    const val coroutines = "1.3.6"
     const val multidex = "2.0.1"
     const val androidXappCompat = "1.1.0"
     const val androidXcoreKtx = "1.1.0"
     const val androidXconstraintLayout = "1.1.3"
     const val androidXrecyclerView = "1.1.0"
 
-    const val koin = "2.0.1"
+    const val koin = "2.2.0-beta-1"
     const val slf4jSimple = "1.7.29"
     const val mordant = "1.2.1"
     const val progressbar = "0.8.0"
 
-    const val moshi = "1.9.2"
+    const val moshi = "1.10.0"
 
 
     const val androidXtestEspressoCore = "3.2.0"

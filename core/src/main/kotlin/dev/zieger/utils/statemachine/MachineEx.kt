@@ -16,7 +16,6 @@ import dev.zieger.utils.statemachine.conditionelements.*
 import dev.zieger.utils.statemachine.conditionelements.UsedAs.RUNTIME
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -195,12 +194,12 @@ open class MachineEx(
 
     private val finishedProcessingEvent = Channel<Boolean>()
 
-    private val eventChannel = Channel<Pair<IComboElement, (IComboElement) -> Unit>>(Channel.RENDEZVOUS)
+    private val eventChannel = Channel<Pair<IComboElement, suspend (IComboElement) -> Unit>>(Channel.RENDEZVOUS)
 
     override lateinit var eventCombo: IComboElement
 
     override suspend fun setEvent(event: IComboElement): IComboElement {
-        val cont = TypeContinuation<IComboElement>()
+        val cont = TypeContinuation<IComboElement>(scope)
         eventChannel.send(event to { state -> cont.trigger(state) })
         return cont.suspendUntilTrigger()
     }
@@ -227,7 +226,7 @@ open class MachineEx(
         }
     }
 
-    private suspend fun Pair<IComboElement, (IComboElement) -> Unit>.processEvent() {
+    private suspend fun Pair<IComboElement, suspend (IComboElement) -> Unit>.processEvent() {
         eventCombo = first
         eventCombo.usedAs = RUNTIME
         val stateBefore = stateCombo
@@ -235,8 +234,7 @@ open class MachineEx(
         applyNewState(mapper.findStateForEvent(first, stateBefore, previousChanges), stateBefore, first)
         processedEventCount.incrementAndGet()
 
-        if (!isProcessingActive)
-            scope.launch { finishedProcessingEvent.send(true) }
+        if (!isProcessingActive) finishedProcessingEvent.send(true)
 
         second(stateCombo)
     }

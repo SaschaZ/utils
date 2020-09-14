@@ -4,6 +4,7 @@ package dev.zieger.utils.delegates
 
 import dev.zieger.utils.coroutines.Continuation
 import dev.zieger.utils.coroutines.builder.launchEx
+import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.asUnit
@@ -95,7 +96,7 @@ open class OnChanged2<P : Any?, T : Any?>(
     ) : this(OnChangedParams2(initial, onChanged = onChanged))
 
     protected var previousThisRef = AtomicReference<P?>(null)
-    override val recentValues = FiFo<T?>(recentValueSize)
+    override val recentValues = FiFo<T?>(params.recentValueSize)
 
     override var value: T = initial
         set(newValue) {
@@ -107,16 +108,16 @@ open class OnChanged2<P : Any?, T : Any?>(
         }
 
     init {
-        if (notifyForInitial) OnChangedScope2(
-            initial, previousThisRef.get(), null, recentValues,
+        if (params.notifyForInitial) OnChangedScope2(
+            params.initial, previousThisRef.get(), null, recentValues,
             { clearRecentValues() }, true
         ).apply {
-            onChanged(initial)
-            scope?.launchEx(mutex = mutex) { onChangedS(initial) }
+            params.onChanged(this@apply, params.initial)
+            params.scope?.launchEx(mutex = mutex) { params.onChangedS(this@apply, params.initial) }
         }
     }
 
-    private val nextChangeContinuation = Continuation()
+    private val nextChangeContinuation = Continuation(params.scope ?: DefaultCoroutineScope())
 
     override suspend fun nextChange(
         timeout: IDurationEx?,
@@ -154,7 +155,7 @@ open class OnChanged2<P : Any?, T : Any?>(
         isInitialNotification: Boolean = false
     ) = OnChangedScope2(new, previousThisRef.get(), old, recentValues, { clearRecentValues() }, isInitialNotification)
         .apply {
-            nextChangeContinuation.trigger()
+            nextChangeContinuation.triggerAndForget()
             onChangedInternal(new)
             scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
         }

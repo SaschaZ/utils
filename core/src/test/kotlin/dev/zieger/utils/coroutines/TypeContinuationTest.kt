@@ -2,12 +2,12 @@
 
 package dev.zieger.utils.coroutines
 
-import dev.zieger.utils.core_testing.assertion2.isEqual
-import dev.zieger.utils.core_testing.assertion2.rem
+import dev.zieger.utils.core_testing.assertion.assert
+import dev.zieger.utils.core_testing.assertion.rem
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.time.delay
-import dev.zieger.utils.time.seconds
+import dev.zieger.utils.time.duration.seconds
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicInteger
@@ -32,11 +32,11 @@ class TypeContinuationTest {
         }
 
         delay(1.seconds)
-        continued.get() isEqual 0 % "0"
+        continued.get() assert 0 % "0"
         continuation.trigger(100)
         delay(2.seconds)
-        continued.get() isEqual 1 % "1"
-        result isEqual 100
+        continued.get() assert 1 % "1"
+        result assert 100
     }
 
     @Test
@@ -53,11 +53,11 @@ class TypeContinuationTest {
         }
 
         delay(1.seconds)
-        continued.get() isEqual 0 % "0"
+        continued.get() assert 0 % "0"
         continuation.trigger(100)
         delay(2.seconds)
-        continued.get() isEqual 2 % "1"
-        result0 isEqual 100
-        result1 isEqual 100
+        continued.get() assert 2 % "1"
+        result0 assert 100
+        result1 assert 100
     }
 }

@@ -25,7 +25,7 @@ object GKoin {
     fun getDi(key: String): GKoinComponent = getDi(key, false)!!
 
     private fun GKoinComponent.startKoin(appDeclaration: KoinAppDeclaration): KoinApplication =
-        org.koin.core.context.startKoin(appDeclaration).also { kApp = it }
+        org.koin.core.context.startKoin(appDeclaration = appDeclaration).also { kApp = it }
 
     fun getDi(
         key: String,
@@ -46,7 +46,7 @@ object GKoin {
         key: String,
         appDeclaration: KoinAppDeclaration
     ) = getDi(key).run {
-        org.koin.core.context.startKoin(appDeclaration).also { kApp = it }
+        org.koin.core.context.startKoin(appDeclaration = appDeclaration).also { kApp = it }
     }
 
     fun stopKoin(key: String) = getKoin(key, true)?.close()
