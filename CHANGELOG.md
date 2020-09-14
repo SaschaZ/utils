@@ -1,5 +1,12 @@
 # Changelog
 
+##### 2.2.24
+
+* upgraded to kotlin 1.4.10
+    * Coroutines: 1.3.9
+    * Koin: 2.2.0-beta-1
+    * Moshi: 1.10.0
+
 ##### 2.2.23
 
 * build fix

@@ -41,8 +41,12 @@ class Continuation : IContinuation {
     }.asUnit()
 
     override fun trigger() = LinkedList(channel).runEach {
-        if (!offer(true))
-            Log.w("Could not trigger continuation because channel is full.")
+        when {
+            isClosedForSend || isClosedForReceive ->
+                Log.w("Can not trigger continuation because it was already triggered.")
+            !offer(true) ->
+                Log.w("Could not trigger continuation because channel is full.")
+        }
     }.asUnit()
 }
 
