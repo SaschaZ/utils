@@ -3,7 +3,7 @@ package dev.zieger.utils.coroutines
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.runEach
-import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.base.IDurationEx
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
 import java.util.*
