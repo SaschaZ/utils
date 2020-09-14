@@ -8,11 +8,10 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
 import java.util.*
 
-
 /**
  * Allows to suspend until a method is called.
  */
-interface IContinuation {
+interface ITypeContinuation<T> {
 
     /**
      * Will suspend the current coroutine until [trigger] gets called.
@@ -20,33 +19,44 @@ interface IContinuation {
      * @param timeout When suspending longer than defined in [timeout] a [TimeoutCancellationException] is thrown.
      * If `null` no timeout is used. Defaulting to `null`.
      */
-    suspend fun suspendUntilTrigger(timeout: IDurationEx? = null)
+    suspend fun suspendUntilTrigger(
+        wanted: T? = null,
+        timeout: IDurationEx? = null
+    ): T?
 
     /**
-     * Triggers the continuation.
+     * Triggers the continuation. Will launch a new coroutine if the underlying channel can not receive new values.
+     *
+     * @param value T
      */
-    fun trigger()
+    fun trigger(value: T)
 }
 
-class Continuation : IContinuation {
+open class TypeContinuation<T> : ITypeContinuation<T> {
 
-    private val channel = LinkedList<Channel<Boolean>>()
+    private val channel = LinkedList<Channel<T>>()
 
-    override suspend fun suspendUntilTrigger(timeout: IDurationEx?) = withTimeout(timeout) {
-        val c = Channel<Boolean>(Channel.UNLIMITED)
+    override suspend fun suspendUntilTrigger(
+        wanted: T?,
+        timeout: IDurationEx?
+    ): T = withTimeout(timeout) {
+        var result: T
+        val c = Channel<T>(Channel.UNLIMITED)
         channel += c
-        c.receive()
+        do {
+            result = c.receive()
+        } while (wanted?.let { result != it } == true)
         channel -= c
         c.close()
-    }.asUnit()
+        result
+    }
 
-    override fun trigger() = LinkedList(channel).runEach {
+    override fun trigger(value: T) = LinkedList(channel).runEach {
         when {
             isClosedForSend || isClosedForReceive ->
                 Log.w("Can not trigger continuation because it was already triggered.")
-            !offer(true) ->
+            !offer(value) ->
                 Log.w("Could not trigger continuation because channel is full.")
         }
     }.asUnit()
 }
-
