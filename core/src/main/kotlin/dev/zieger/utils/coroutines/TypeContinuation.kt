@@ -53,6 +53,6 @@ open class TypeContinuation<T> : ITypeContinuation<T> {
 
     override fun trigger(value: T) = channel.runEach {
         if (!offer(value))
-            Log.w("Could not trigger continuation because it was already triggered.")
+            Log.w("Could not trigger continuation because channel is full.")
     }.asUnit()
 }

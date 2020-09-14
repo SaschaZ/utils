@@ -33,7 +33,7 @@ class Continuation : IContinuation {
     private val channel = LinkedList<Channel<Boolean>>()
 
     override suspend fun suspendUntilTrigger(timeout: IDurationEx?) = withTimeout(timeout) {
-        val c = Channel<Boolean>()
+        val c = Channel<Boolean>(Channel.UNLIMITED)
         channel += c
         c.receive()
         channel -= c
@@ -42,7 +42,7 @@ class Continuation : IContinuation {
 
     override fun trigger() = LinkedList(channel).runEach {
         if (!offer(true))
-            Log.w("Could not trigger continuation because it was already triggered.")
+            Log.w("Could not trigger continuation because channel is full.")
     }.asUnit()
 }
 
