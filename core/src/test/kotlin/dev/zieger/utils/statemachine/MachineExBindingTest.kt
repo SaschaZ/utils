@@ -1,18 +1,17 @@
 package dev.zieger.utils.statemachine
 
+import dev.zieger.utils.core_testing.FlakyTest
 import dev.zieger.utils.core_testing.assertion2.isEqual
 import dev.zieger.utils.core_testing.assertion2.isNull
-import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.statemachine.MachineExBindingTest.Events.*
 import dev.zieger.utils.statemachine.MachineExBindingTest.Events.THIRD.*
 import dev.zieger.utils.statemachine.MachineExBindingTest.States.*
 import dev.zieger.utils.statemachine.MachineExBindingTest.States.C.*
 import dev.zieger.utils.statemachine.MachineExBindingTest.TestData.*
 import dev.zieger.utils.statemachine.conditionelements.*
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class MachineExBindingTest {
+class MachineExBindingTest : FlakyTest() {
 
     sealed class States : StateImpl() {
         object A : States()
@@ -61,8 +60,8 @@ class MachineExBindingTest {
     private var lastChildState: C? = null
     private var lastState: States? = null
 
-    @BeforeEach
-    fun beforeEach() {
+    override suspend fun beforeEach() {
+        lastChildState = null
         childMachine = MachineEx(CA) {
             +THIRD0 set CB
             +THIRD1 + CB set CC * Data0()
@@ -71,6 +70,7 @@ class MachineExBindingTest {
                 lastChildState = this.state as C
             }
         }
+        lastState = null
         machine = MachineEx(A) {
             +FIRST set B
             +SECOND + CB set A

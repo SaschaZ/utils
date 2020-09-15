@@ -201,7 +201,7 @@ open class MachineEx(
     override suspend fun setEventSync(event: EventCombo): StateCombo {
         val cont = TypeContinuation<StateCombo>()
         eventChannel.send(event to { state -> cont.trigger(state) })
-        return cont.suspendUntilTrigger()!!
+        return cont.suspendUntilTrigger()
     }
 
     override fun fireAndForget(event: EventCombo) = scope.launchEx { setEventSync(event) }.asUnit()

@@ -41,7 +41,7 @@ inline fun <T : Any?> catch(
     exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
     printStackTrace: Boolean = PRINT_EXCEPTIONS,
     logStackTrace: Boolean = LOG_EXCEPTIONS,
-    crossinline onCatch: (Throwable) -> Unit = {},
+    crossinline onCatch: CatchScope.(Throwable) -> Unit = {},
     crossinline onFinally: () -> Unit = {},
     block: (numExecution: Int) -> T
 ): T {
@@ -55,7 +55,7 @@ inline fun <T : Any?> catch(
             if (include.any { it.isInstance(throwable) }
                 && exclude.none { it.isInstance(throwable) }) {
                 succeed = false
-                onCatch(throwable)
+                CatchScope(retryIndex).onCatch(throwable)
                 if (printStackTrace) {
                     System.err.println("${throwable.javaClass.simpleName}: ${throwable.message}")
                     throwable.printStackTrace()
@@ -74,6 +74,8 @@ inline fun <T : Any?> catch(
     onFinally()
     return returnOnCatch
 }
+
+data class CatchScope(val executionIdx: Int)
 
 private val errorLogMutex = Mutex()
 

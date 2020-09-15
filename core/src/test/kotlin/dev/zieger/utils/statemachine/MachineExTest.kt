@@ -2,11 +2,11 @@
 
 package dev.zieger.utils.statemachine
 
+import dev.zieger.utils.core_testing.FlakyTest
 import dev.zieger.utils.core_testing.assertion2.isEqual
 import dev.zieger.utils.core_testing.assertion2.isNull
 import dev.zieger.utils.core_testing.assertion2.isTrue
 import dev.zieger.utils.core_testing.assertion2.rem
-import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
 import dev.zieger.utils.statemachine.MachineExTest.TestData.*
 import dev.zieger.utils.statemachine.MachineExTest.TestEvent.*
@@ -21,7 +21,7 @@ import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI
 import dev.zieger.utils.statemachine.conditionelements.*
 import org.junit.jupiter.api.Test
 
-class MachineExTest {
+class MachineExTest : FlakyTest() {
 
     sealed class TestState : StateImpl() {
 
