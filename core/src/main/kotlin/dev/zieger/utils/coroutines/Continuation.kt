@@ -1,14 +1,10 @@
 package dev.zieger.utils.coroutines
 
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.time.duration.IDurationEx
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
 import java.util.*
 
 
@@ -16,8 +12,6 @@ import java.util.*
  * Allows to suspend until a method is called.
  */
 interface IContinuationBase<T> {
-
-    val scope: CoroutineScope
 
     /**
      * Will suspend the current coroutine until [trigger] gets called.
@@ -32,39 +26,28 @@ interface IContinuationBase<T> {
     /**
      * Triggers the continuation.
      */
-    suspend fun trigger(value: T)
-
-    fun CoroutineScope.triggerAndForget(value: T) = launch { trigger(value) }
-
-    fun triggerAndForget(value: T) = scope?.launch { trigger(value) }
-        ?: throw IllegalStateException("Using triggerAndForget call without any CoroutineScope defined.")
+    fun trigger(value: T)
 }
 
-class Continuation(override val scope: CoroutineScope = DefaultCoroutineScope()) : IContinuationBase<Unit> {
+class Continuation : IContinuationBase<Unit> {
 
-    private val channel = LinkedList<Channel<Boolean>>()
-    private val mutex = Mutex()
+    private var channel = LinkedList<Channel<Boolean>>()
 
     override suspend fun suspendUntilTrigger(wanted: Unit?, timeout: IDurationEx?) = withTimeout(timeout) {
         val c = Channel<Boolean>()
-        mutex.withLock {
-            channel += c
-        }
+        channel.add(c)
         c.receive()
     }.asUnit()
 
-    override suspend fun trigger(value: Unit) = mutex.withLock {
-        channel.runEach {
-            send(true)
+    override fun trigger(value: Unit) {
+        val tmp = channel
+        channel = LinkedList()
+
+        tmp.runEach {
+            offer(true)
             close()
         }
-        channel.clear()
-    }.asUnit()
+    }
 
-    suspend fun trigger() = trigger(Unit)
-
-    fun triggerAndForget(scope: CoroutineScope) = scope.launch { trigger() }
-
-    fun triggerAndForget() = scope.launch { trigger() }
+    fun trigger() = trigger(Unit)
 }
-

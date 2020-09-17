@@ -4,7 +4,6 @@ package dev.zieger.utils.delegates
 
 import dev.zieger.utils.coroutines.Continuation
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.asUnit
@@ -117,7 +116,7 @@ open class OnChanged2<P : Any?, T : Any?>(
         }
     }
 
-    private val nextChangeContinuation = Continuation(params.scope ?: DefaultCoroutineScope())
+    private val nextChangeContinuation = Continuation()
 
     override suspend fun nextChange(
         timeout: IDurationEx?,
@@ -155,7 +154,7 @@ open class OnChanged2<P : Any?, T : Any?>(
         isInitialNotification: Boolean = false
     ) = OnChangedScope2(new, previousThisRef.get(), old, recentValues, { clearRecentValues() }, isInitialNotification)
         .apply {
-            nextChangeContinuation.triggerAndForget()
+            nextChangeContinuation.trigger()
             onChangedInternal(new)
             scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
         }

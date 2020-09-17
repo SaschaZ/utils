@@ -1,4 +1,4 @@
-@file:Suppress("unused")
+@file:Suppress("unused", "LocalVariableName")
 
 package dev.zieger.utils.coroutines
 
@@ -8,11 +8,10 @@ import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.duration.seconds
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import io.kotlintest.specs.AnnotationSpec
 import java.util.concurrent.atomic.AtomicInteger
 
-class ContinuationTest {
+class ContinuationTest : AnnotationSpec() {
 
     private lateinit var continuation: Continuation
     private val continued = AtomicInteger(0)

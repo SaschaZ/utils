@@ -1,18 +1,13 @@
 package dev.zieger.utils.coroutines
 
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
-import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.time.duration.IDurationEx
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.sync.Mutex
 import java.util.*
 
-open class TypeContinuation<T>(override val scope: CoroutineScope = DefaultCoroutineScope()) : IContinuationBase<T> {
+open class TypeContinuation<T> : IContinuationBase<T> {
 
-    private val channel = LinkedList<Channel<T>>()
-    private val mutex = Mutex()
+    private var channel = LinkedList<Channel<T>>()
 
     override suspend fun suspendUntilTrigger(
         wanted: T?,
@@ -20,20 +15,20 @@ open class TypeContinuation<T>(override val scope: CoroutineScope = DefaultCorou
     ): T = withTimeout(timeout) {
         var result: T
         val c = Channel<T>()
-        mutex.withLock {
-            channel += c
-        }
+        channel.add(c)
         do {
             result = c.receive()
         } while (wanted?.let { result != it } == true)
         result
     }
 
-    override suspend fun trigger(value: T) = mutex.withLock {
-        channel.runEach {
-            send(value)
+    override fun trigger(value: T) {
+        val tmp = channel
+        channel = LinkedList()
+
+        tmp.runEach {
+            offer(value)
             close()
         }
-        channel.clear()
-    }.asUnit()
+    }
 }

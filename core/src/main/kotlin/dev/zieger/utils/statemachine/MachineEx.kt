@@ -199,7 +199,7 @@ open class MachineEx(
     override lateinit var eventCombo: IComboElement
 
     override suspend fun setEvent(event: IComboElement): IComboElement {
-        val cont = TypeContinuation<IComboElement>(scope)
+        val cont = TypeContinuation<IComboElement>()
         eventChannel.send(event to { state -> cont.trigger(state) })
         return cont.suspendUntilTrigger()
     }

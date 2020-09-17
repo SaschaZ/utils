@@ -33,14 +33,14 @@ repositories {
 
 dependencies {
     // utils
-    implementation "dev.zieger.utils:core:2.2.22"// platform independent
-    implementation "dev.zieger.utils:android:2.2.22" // android
-    implementation "dev.zieger.utils:jdk:2.2.22" // jdk
+    implementation "dev.zieger.utils:core:2.2.23"// platform independent
+    implementation "dev.zieger.utils:android:2.2.23" // android
+    implementation "dev.zieger.utils:jdk:2.2.23" // jdk
 
     // testing utils
-    implementation "dev.zieger.utils:core-testing:2.2.22" // platform independent
-    implementation "dev.zieger.utils:android-testing:2.2.22" // android
-    implementation "dev.zieger.utils:jdk-testing:2.2.22" // jdk
+    implementation "dev.zieger.utils:core-testing:2.2.23" // platform independent
+    implementation "dev.zieger.utils:android-testing:2.2.23" // android
+    implementation "dev.zieger.utils:jdk-testing:2.2.23" // jdk
 }
 ```
 
@@ -219,6 +219,13 @@ Also works with attached `Data`.
 #
 
 # Changelog
+
+##### 2.2.24
+
+* upgraded to kotlin 1.4.10
+    * Coroutines: 1.3.9
+    * Koin: 2.2.0-beta-1
+    * Moshi: 1.10.0
 
 ##### 2.2.23
 
