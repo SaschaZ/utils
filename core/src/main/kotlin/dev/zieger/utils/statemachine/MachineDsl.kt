@@ -77,7 +77,7 @@ abstract class MachineDsl : IMachineEx {
         mapper.addCondition(this, block).asUnit()
 
     infix fun Condition.execAndFire(block: suspend IMatchScope.() -> Event) =
-        mapper.addCondition(this) { fire eventSync block(); null }.asUnit()
+        mapper.addCondition(this) { fire event block(); null }.asUnit()
 }
 
 operator fun Event.times(slave: Slave) = combo.also { it.slave = slave }

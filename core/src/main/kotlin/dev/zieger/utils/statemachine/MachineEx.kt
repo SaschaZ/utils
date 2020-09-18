@@ -14,8 +14,6 @@ import dev.zieger.utils.statemachine.MachineEx.Companion.debugLevel
 import dev.zieger.utils.statemachine.conditionelements.*
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
-import java.util.concurrent.atomic.AtomicInteger
 
 
 /**
@@ -158,24 +156,24 @@ import java.util.concurrent.atomic.AtomicInteger
  * # **Coroutine support**
  *
  *
- * @property initialState [State] that is activated initially in the state machine.
+ * @param initialState [State] that is activated initially in the state machine.
  * @property scope [CoroutineScopeEx] that is used for all Coroutine operations.
- * @property previousChangesCacheSize Size of the cache that store the state changes. Defaulting to
+ * @param previousChangesCacheSize Size of the cache that store the state changes. Defaulting to
  * [DEFAULT_PREVIOUS_CHANGES_SIZE].
  * @property debugLevel [DebugLevel] for log messages used in the whole state machine.
  * @param builder Lambda that defines all state machine conditions. See [MachineDsl] for more details.
  */
 open class MachineEx(
-    private val initialState: State,
+    initialState: State,
     val scope: CoroutineScopeEx = DefaultCoroutineScope(),
-    private val previousChangesCacheSize: Int = DEFAULT_PREVIOUS_CHANGES_SIZE,
+    previousChangesCacheSize: Int = DEFAULT_PREVIOUS_CHANGES_SIZE,
     debugLevel: DebugLevel = DebugLevel.ERROR,
     builder: suspend MachineDsl.() -> Unit
 ) : MachineDsl() {
 
     companion object {
 
-        const val DEFAULT_PREVIOUS_CHANGES_SIZE = 128
+        private const val DEFAULT_PREVIOUS_CHANGES_SIZE = 128
 
         @Suppress("unused")
         enum class DebugLevel {
@@ -190,30 +188,15 @@ open class MachineEx(
 
     private val previousChanges = FiFo<OnStateChanged>(previousChangesCacheSize)
 
-    private val finishedProcessingEvent = Channel<Boolean>()
-
     private val eventChannel = Channel<Pair<EventCombo, (StateCombo) -> Unit>>(Channel.RENDEZVOUS)
 
     private lateinit var eventCombo: EventCombo
     override val event: Event get() = eventCombo.master
     override val eventData: Data? get() = eventCombo.slave as? Data
 
-    override suspend fun setEventSync(event: EventCombo): StateCombo {
-        val cont = TypeContinuation<StateCombo>()
-        eventChannel.send(event to { state -> cont.trigger(state) })
-        return cont.suspendUntilTrigger()
-    }
-
-    override fun fireAndForget(event: EventCombo) = scope.launchEx { setEventSync(event) }.asUnit()
-
     private var stateCombo: StateCombo = initialState.combo
     override val state: State get() = stateCombo.master
     override val stateData: Data? get() = stateCombo.slave as? Data
-
-    private val submittedEventCount = AtomicInteger(0)
-    private val processedEventCount = AtomicInteger(0)
-    private val isProcessingActive: Boolean
-        get() = submittedEventCount.get() != processedEventCount.get()
 
     init {
         MachineEx.debugLevel = debugLevel
@@ -229,15 +212,19 @@ open class MachineEx(
         }
     }
 
+    override suspend fun setEventSync(event: EventCombo): StateCombo {
+        val cont = TypeContinuation<StateCombo>()
+        eventChannel.send(event to { state -> cont.trigger(state) })
+        return cont.suspendUntilTrigger()
+    }
+
+    override fun setEvent(event: EventCombo) = scope.launchEx { setEventSync(event) }.asUnit()
+
     private suspend fun Pair<EventCombo, (StateCombo) -> Unit>.processEvent() {
         eventCombo = first
         val stateBefore = stateCombo
 
         applyNewState(mapper.processEvent(eventCombo, stateBefore, previousChanges.reversed()), stateBefore, eventCombo)
-        processedEventCount.incrementAndGet()
-
-        if (!isProcessingActive)
-            scope.launch { finishedProcessingEvent.send(true) }
 
         second(stateCombo)
     }
@@ -254,10 +241,6 @@ open class MachineEx(
             newState.first.run { activeStateChanged(true) }
         })
         newState.second()
-    }
-
-    override suspend fun suspendUtilProcessingFinished() {
-        while (isProcessingActive) finishedProcessingEvent.receive()
     }
 
     override fun clearPreviousChanges() = previousChanges.clear()

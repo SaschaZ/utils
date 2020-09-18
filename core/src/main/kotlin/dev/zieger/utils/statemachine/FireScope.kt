@@ -12,7 +12,7 @@ val IMachineEx.fire get() = FireScope(this)
 class FireScope(private val machine: IMachineEx) {
 
     infix fun event(event: Event) = event(event.combo)
-    infix fun event(event: EventCombo) = machine.fireAndForget(event)
+    infix fun event(event: EventCombo) = machine.setEvent(event)
 
     suspend infix fun eventSync(event: Event): State? = eventSync(event.combo)
     suspend infix fun eventSync(event: EventCombo): State? = machine.setEventSync(event)

@@ -27,7 +27,7 @@ open class Matcher(
         is EventGroup<*> -> groupType.isInstance(event) || groupType.isInstance(event.master)
         is StateGroup<*> -> groupType.isInstance(state) || groupType.isInstance(state.master)
         is PrevElement -> condition(matchScope) { combo.match() }
-        is External -> condition(matchScope)
+        is External -> matchExternal(matchScope)
         is Pair<*, *> -> when (val s = second) {
             is Data -> when (val f = first) {
                 is Data -> f == s

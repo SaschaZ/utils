@@ -15,11 +15,13 @@ import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.reflect.KProperty
 
-
+/**
+ *
+ */
 typealias OnChanged<T> = OnChangedWithParent<Any?, T>
 
 /**
- * Implementation of [IOnChangedWithParent] using [IOnChangedParamsWithParent] for initialization.
+ * Implementation of [IOnChangedWithParent].
  */
 open class OnChangedWithParent<P : Any?, T : Any?>(
     params: IOnChangedParamsWithParent<P, T>

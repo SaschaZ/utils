@@ -1,6 +1,5 @@
 package dev.zieger.utils.coroutines
 
-import dev.zieger.utils.log.Log
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.time.base.IDurationEx
@@ -12,7 +11,7 @@ import java.util.*
 /**
  * Allows to suspend until a method is called.
  */
-interface IContinuation {
+interface IContinuationBase<T> {
 
     /**
      * Will suspend the current coroutine until [trigger] gets called.
@@ -20,33 +19,35 @@ interface IContinuation {
      * @param timeout When suspending longer than defined in [timeout] a [TimeoutCancellationException] is thrown.
      * If `null` no timeout is used. Defaulting to `null`.
      */
-    suspend fun suspendUntilTrigger(timeout: IDurationEx? = null)
+    suspend fun suspendUntilTrigger(wanted: T? = null, timeout: IDurationEx? = null): T
+
+    suspend fun suspendUntilTrigger(timeout: IDurationEx? = null): T = suspendUntilTrigger(null, timeout)
 
     /**
      * Triggers the continuation.
      */
-    fun trigger()
+    fun trigger(value: T)
 }
 
-class Continuation : IContinuation {
+class Continuation : IContinuationBase<Unit> {
 
-    private val channel = LinkedList<Channel<Boolean>>()
+    private var channel = LinkedList<Channel<Boolean>>()
 
-    override suspend fun suspendUntilTrigger(timeout: IDurationEx?) = withTimeout(timeout) {
-        val c = Channel<Boolean>(Channel.UNLIMITED)
-        channel += c
+    override suspend fun suspendUntilTrigger(wanted: Unit?, timeout: IDurationEx?) = withTimeout(timeout) {
+        val c = Channel<Boolean>()
+        channel.add(c)
         c.receive()
-        channel -= c
-        c.close()
     }.asUnit()
 
-    override fun trigger() = LinkedList(channel).runEach {
-        when {
-            isClosedForSend || isClosedForReceive ->
-                Log.w("Can not trigger continuation because it was already triggered.")
-            !offer(true) ->
-                Log.w("Could not trigger continuation because channel is full.")
+    override fun trigger(value: Unit) {
+        val tmp = channel
+        channel = LinkedList()
+
+        tmp.runEach {
+            offer(true)
+            close()
         }
-    }.asUnit()
-}
+    }
 
+    fun trigger() = trigger(Unit)
+}

@@ -4,22 +4,22 @@ import dev.zieger.utils.log.LogFilter
 import dev.zieger.utils.log.logV
 import dev.zieger.utils.statemachine.IMatchScope
 import dev.zieger.utils.statemachine.MachineEx
-import dev.zieger.utils.statemachine.MatchScope
 
 /**
  * External condition.
  * Is checked at runtime. All External's need to match within a condition.
  */
-open class External(val condition: suspend IMatchScope.() -> Boolean) : DefinitionElement {
+open class External(private val condition: suspend IMatchScope.() -> Boolean) : DefinitionElement {
 
-    suspend fun MatchScope.match2(other: ConditionElement?): Boolean =
+    suspend fun matchExternal(scope: IMatchScope): Boolean = scope.run {
         condition() logV {
             f = LogFilter.Companion.GENERIC(
-                disableLog = noLogging || other.noLogging
+                disableLog = noLogging
                         || MachineEx.debugLevel <= MachineEx.Companion.DebugLevel.INFO
             )
-            m = "#EX $it => ${this@External} <||> $other"
+            m = "#EX $it => ${this@External}"
         }
+    }
 
     override val hasExternal = true
 
