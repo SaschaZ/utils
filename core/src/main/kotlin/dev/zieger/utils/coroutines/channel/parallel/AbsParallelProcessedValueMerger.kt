@@ -48,11 +48,11 @@ abstract class AbsParallelProcessedValueMerger<out T : Any>(protected open val p
         valueSenderMap.addSync(ComparablePair(this, suspend {
             send()
 //            Log.v("send $this")
-            continuation.trigger()
+            continuation.resume()
             processNextValidValues()
         }))
         processNextValidValues()
-        continuation.suspendUntilTrigger()
+        continuation.suspend()
     }
 }
 

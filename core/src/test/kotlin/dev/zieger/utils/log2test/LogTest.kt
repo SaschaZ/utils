@@ -53,14 +53,14 @@ internal class LogTest {
 
         Log.messageBuilder = LogMessageBuilder(LOG_MESSAGE_WITH_CALL_ORIGIN)
         Log -= "woomoo"
-        Log.d("test delay", hook = delayHook { next -> launchEx(delayed = 1.seconds) { next(this@delayHook) } })
+        Log.d("test delay", filter = delayFilter { next -> launchEx(delayed = 1.seconds) { next(this@delayFilter) } })
         message.isNull()
         messageObs.nextChange(5.seconds) { it isMatching """D-[0-9\-:]+-.+: test delay - \[moofoo\|bamdam\]""" }
 
         Log.scope {
             Log.tag = "foomoo"
             Log.messageBuilder = LogMessageBuilder()
-            Log += LogSpamFilter(1.seconds)
+            Log += LogSpamFilter(1.seconds, this@runTest)
 
             repeat(20) {
                 message = null

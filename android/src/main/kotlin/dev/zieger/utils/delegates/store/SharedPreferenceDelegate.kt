@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package dev.zieger.utils.android
+package dev.zieger.utils.delegates.store
 
 import android.content.Context
 import android.content.SharedPreferences

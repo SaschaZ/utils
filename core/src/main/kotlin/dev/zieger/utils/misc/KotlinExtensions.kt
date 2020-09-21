@@ -23,10 +23,6 @@ import kotlin.reflect.KProperty1
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.memberProperties
 
-@Deprecated("use other divMod", ReplaceWith("Long.divMod(double): Pair<Double, Double>"), DeprecationLevel.WARNING)
-fun Long.divMod(div: Double, modulo: ((Long, Long) -> Unit)? = null) =
-    (this / div).also { modulo?.invoke(it.toLong(), (this % div).toLong()) }
-
 @Suppress("UNCHECKED_CAST")
 fun <T : Number> T.divMod(div: T): Pair<T, T> = (this / div) as T to (this % div) as T
 

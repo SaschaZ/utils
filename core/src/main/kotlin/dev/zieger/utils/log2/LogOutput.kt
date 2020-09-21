@@ -2,7 +2,9 @@ package dev.zieger.utils.log2
 
 import dev.zieger.utils.log2.filter.LogLevel.EXCEPTION
 
-object SystemPrintOutput : IHook<LogPipelineContext> {
+typealias ILogOutput = IFilter<LogPipelineContext>
+
+object SystemPrintOutput : ILogOutput {
 
     override fun LogPipelineContext.call() = when (level) {
         EXCEPTION -> System.err.println(message)
@@ -11,6 +13,6 @@ object SystemPrintOutput : IHook<LogPipelineContext> {
 }
 
 @Suppress("FunctionName")
-fun LogOutput(block: LogPipelineContext.() -> Unit) = object : IHook<LogPipelineContext> {
+fun LogOutput(block: LogPipelineContext.() -> Unit) = object : ILogOutput {
     override fun LogPipelineContext.call() = block()
 }

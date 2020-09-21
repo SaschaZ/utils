@@ -27,13 +27,13 @@ class TypeContinuationTest {
     fun testDirect() = runTest {
         var result: Int? = null
         launchEx {
-            result = continuation.suspendUntilTrigger()
+            result = continuation.suspend()
             continued.incrementAndGet()
         }
 
         delay(1.seconds)
         continued.get() isEqual 0 % "0"
-        continuation.trigger(100)
+        continuation.resume(100)
         delay(2.seconds)
         continued.get() isEqual 1 % "1"
         result isEqual 100
@@ -43,18 +43,18 @@ class TypeContinuationTest {
     fun testMultiple() = runTest {
         var result0: Int? = null
         launchEx {
-            result0 = continuation.suspendUntilTrigger()
+            result0 = continuation.suspend()
             continued.incrementAndGet()
         }
         var result1: Int? = null
         launchEx {
-            result1 = continuation.suspendUntilTrigger()
+            result1 = continuation.suspend()
             continued.incrementAndGet()
         }
 
         delay(1.seconds)
         continued.get() isEqual 0 % "0"
-        continuation.trigger(100)
+        continuation.resume(100)
         delay(2.seconds)
         continued.get() isEqual 2 % "1"
         result0 isEqual 100

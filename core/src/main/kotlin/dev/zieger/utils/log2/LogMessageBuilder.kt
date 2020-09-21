@@ -11,7 +11,7 @@ import dev.zieger.utils.time.string.DateFormat.TIME_ONLY
 /**
  * Log-Message-Builder
  */
-interface ILogMessageBuilder : IHook<LogPipelineContext> {
+interface ILogMessageBuilder : IFilter<LogPipelineContext> {
 
     val build: LogMessageBuilderContext.() -> String
 }

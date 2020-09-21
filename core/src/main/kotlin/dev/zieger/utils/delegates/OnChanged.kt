@@ -105,7 +105,7 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         timeout: IDurationEx?,
         onChanged: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit
     ): T = withTimeout(timeout) {
-        nextChangeContinuation.suspendUntilTrigger(timeout)
+        nextChangeContinuation.suspend(timeout)
         OnChangedScopeWithParent(
             value, previousThisRef.get(), previousValues.lastOrNull(), previousValues, { previousValues.clear() }, false
         ) { value = it }.onChanged(value)
@@ -143,7 +143,7 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         { clearPreviousValues() },
         isInitialNotification
     ).apply {
-        nextChangeContinuation.trigger()
+        nextChangeContinuation.resume()
         onChangedInternal(new)
         scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
     }

@@ -2,7 +2,8 @@ package dev.zieger.utils.log2.filter
 
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.log2.ILogPipeline
-import dev.zieger.utils.log2.logPreHook
+import dev.zieger.utils.log2.LogFilter
+import dev.zieger.utils.log2.logPreFilter
 
 interface ILogLevelFilter {
 
@@ -13,14 +14,16 @@ interface ILogLevelFilter {
 
 class LogLevelFilter(private val pipeline: ILogPipeline) : ILogLevelFilter {
 
-    override var logLevel: LogLevel by OnChanged(LogLevel.VERBOSE) {
-        pipeline += logLevelFilter(it)
+    private var activeFilter: LogFilter.LogPreFilter? = null
+    override var logLevel: LogLevel by OnChanged(LogLevel.VERBOSE, notifyForInitial = true) { level ->
+        activeFilter?.also { pipeline -= it }
+        activeFilter = logLevelFilter(level).also { pipeline += it }
     }
 
     override fun copyLogLevelFilter(pipeline: ILogPipeline): ILogLevelFilter = LogLevelFilter(pipeline)
 }
 
-fun logLevelFilter(minLevel: LogLevel) = logPreHook {
+fun logLevelFilter(minLevel: LogLevel) = logPreFilter {
     when {
         level >= minLevel -> it(this)
         else -> cancel()

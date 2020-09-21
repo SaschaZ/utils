@@ -12,7 +12,7 @@ interface ILogScope : ILogContext {
     ): ILogScope
 }
 
-open class LogScopeImpl private constructor(override val Log: ILogContext = LogContext()) : ILogScope,
+open class LogScopeImpl protected constructor(override val Log: ILogContext = LogContext()) : ILogScope,
     ILogContext by Log {
 
     companion object : () -> ILogScope, (ILogContext) -> ILogScope {

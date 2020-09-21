@@ -1,19 +1,14 @@
 package dev.zieger.utils.coroutines
 
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.misc.runEach
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.joinAll
 import java.io.File
-import java.io.IOException
-import java.io.InputStream
 
 data class CommandOutput(
     val code: Int,
-    val stdOutput: String?,
-    val errOutput: String?
+    val stdOutput: String,
+    val errOutput: String
 )
 
 data class ShellScope(
@@ -21,61 +16,46 @@ data class ShellScope(
     val workingDir: File = File(".")
 ) {
 
-    suspend operator fun String.unaryPlus(): CommandOutput? {
-        print("$this: ")
-        val channel = Channel<Pair<String, Boolean>>(Channel.UNLIMITED)
-        val readJob = launchEx {
-            for ((message, isError) in channel) {
-                if (isError) System.err.println(message)
-                else println(message)
+    suspend operator fun String.unaryPlus(): CommandOutput {
+        if (print) println("$this: ")
+        return runCommand(workingDir) { output, isError ->
+            if (print) {
+                if (isError) System.err.println(output)
+                else println(output)
             }
         }
-        lateinit var runJobs: List<Job>
-        val output = runCommand(workingDir) { inStr, errStr ->
-            runJobs = listOf(launchEx {
-                while (isActive) channel.send(inStr.readBytes().toString() to false)
-            }, launchEx {
-                while (isActive) channel.send(errStr.readBytes().toString() to true)
-            })
-        }
-        runJobs.runEach { cancelAndJoin() }
-        readJob.cancel()
-        return output
     }
 }
 
-inline fun shell(print: Boolean = true, block: ShellScope.() -> Unit) = ShellScope(print).block()
+suspend fun shell(print: Boolean = true, block: suspend ShellScope.() -> Unit) = ShellScope(print).block()
 
 suspend fun String.runCommand(
     workingDir: File = File("."),
-    block: suspend (inStr: InputStream, errStr: InputStream) -> Unit = { _, _ -> }
-): CommandOutput? {
-    lateinit var inStr: InputStream
-    lateinit var errStr: InputStream
-    val input = this
-    return try {
-        val parts = input.split("\\s".toRegex())
-        val process = ProcessBuilder(*parts.toTypedArray())
-            .directory(workingDir)
-            .redirectOutput(ProcessBuilder.Redirect.PIPE)
-            .redirectError(ProcessBuilder.Redirect.PIPE)
-            .start()
-        inStr = process.inputStream
-        errStr = process.errorStream
+    block: suspend (output: String, isError: Boolean) -> Unit = { _, _ -> }
+): CommandOutput {
+    val (process, outStr, outErrStr) = ProcessBuilder(*split("\\s".toRegex()).toTypedArray())
+        .directory(workingDir)
+        .redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .redirectError(ProcessBuilder.Redirect.PIPE)
+        .start().run { Triple(this, inputStream, errorStream) }
 
-        block(inStr, errStr)
-        process.waitFor()
+    var output = ""
+    var errorOutput = ""
+    val readJobs = listOf(launchEx {
+        val reader = outStr.reader()
+        while (isActive && reader.ready()) block(reader.readText().also { output += it }, false)
+        outStr.close()
+    }, launchEx {
+        val reader = outErrStr.reader()
+        while (isActive && reader.ready()) block(reader.readText().also { errorOutput += it }, true)
+        outErrStr.close()
+    })
+    process.waitFor()
+    readJobs.joinAll()
 
-        CommandOutput(
-            process.exitValue(),
-            inStr.bufferedReader().readText(),
-            errStr.bufferedReader().readText()
-        )
-    } catch (e: IOException) {
-        e.printStackTrace()
-        null
-    } finally {
-        inStr.close()
-        errStr.close()
-    }
+    return CommandOutput(
+        process.exitValue(),
+        output,
+        errorOutput
+    )
 }

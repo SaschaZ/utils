@@ -36,3 +36,4 @@ object LogColored : LogElement {
 }
 
 inline fun <T> termColored(block: TermColors.() -> T): T = with(TermColors(), block)
+

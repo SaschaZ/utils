@@ -8,6 +8,11 @@ import kotlin.coroutines.resumeWithException
 
 val threadPool: ExecutorService = Executors.newFixedThreadPool(4)
 
+/**
+ * Suspends the current coroutine and executes [block] inside [threadPool]. When [block] has finished execution the
+ * coroutine is resumed.
+ * This is useful for blocking calls inside a coroutine.
+ */
 suspend inline fun <T> executeNativeBlocking(crossinline block: () -> T): T = suspendCancellableCoroutine { cont ->
     threadPool.execute {
         try {

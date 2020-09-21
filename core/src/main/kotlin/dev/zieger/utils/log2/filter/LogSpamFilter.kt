@@ -1,9 +1,8 @@
 package dev.zieger.utils.log2.filter
 
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
-import dev.zieger.utils.log2.IHook
-import dev.zieger.utils.log2.LogHook
+import dev.zieger.utils.log2.IFilter
+import dev.zieger.utils.log2.LogFilter
 import dev.zieger.utils.log2.LogPipelineContext
 import dev.zieger.utils.time.TimeEx
 import dev.zieger.utils.time.base.IDurationEx
@@ -17,16 +16,17 @@ import kotlinx.coroutines.Job
 
 data class LogSpamFilter(
     val duration: IDurationEx,
-    val tolerance: Float = 0.01f,
-    private val scope: CoroutineScope = DefaultCoroutineScope()
-) : LogHook.LogPreHook() {
+    private val scope: CoroutineScope,
+    val tolerance: Float = 0.01f
+) : LogFilter.LogPreFilter() {
 
     private var previousMessageAt: ITimeEx = TimeEx(0)
     private var lastMessageJob: Job? = null
 
-    override fun LogPipelineContext.call(next: IHook<LogPipelineContext>) {
+    override fun LogPipelineContext.call(next: IFilter<LogPipelineContext>) {
         when {
             (TimeEx() - previousMessageAt) * (1 + tolerance) >= duration -> {
+                lastMessageJob?.cancel()
                 next(this)
                 previousMessageAt = TimeEx()
             }
@@ -45,5 +45,5 @@ data class LogSpamFilter(
         }
     }
 
-    override fun copy() = LogSpamFilter(duration, tolerance, scope)
+    override fun copy() = LogSpamFilter(duration, scope, tolerance)
 }

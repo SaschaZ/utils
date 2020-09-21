@@ -9,6 +9,8 @@ import dev.zieger.utils.misc.catch
 import dev.zieger.utils.time.string.ClosedTimeRangeJsonAdapter
 import dev.zieger.utils.time.string.DurationExJsonAdapter
 import dev.zieger.utils.time.string.TimeExJsonAdapter
+import okio.BufferedSink
+import okio.BufferedSource
 import java.lang.reflect.Type
 import kotlin.reflect.KClass
 
@@ -41,12 +43,28 @@ open class JsonConverter(vararg adapter: Any) {
         printException: Boolean = true
     ): String? = toJsonReified(rawType, *genericTypes, printException = printException)
 
-    inline fun <reified T: Any> T.toJsonReified(
+    fun Any.toJson(
+        sink: BufferedSink,
+        rawType: KClass<*> = this::class,
+        vararg genericTypes: Type,
+        printException: Boolean = true
+    ) = toJsonReified(sink, rawType, *genericTypes, printException = printException)
+
+    inline fun <reified T : Any> T.toJsonReified(
         rawType: KClass<*> = T::class,
         vararg genericTypes: Type,
         printException: Boolean = true
     ): String? = catch(null, printStackTrace = printException, logStackTrace = false) {
         moshi.adapter<T>(rawType.with(*genericTypes)).toJson(this)
+    }
+
+    inline fun <reified T : Any> T.toJsonReified(
+        sink: BufferedSink,
+        rawType: KClass<*> = T::class,
+        vararg genericTypes: Type,
+        printException: Boolean = true
+    ) = catch(Unit, printStackTrace = printException, logStackTrace = false) {
+        moshi.adapter<T>(rawType.with(*genericTypes)).toJson(sink, this)
     }
 
     inline fun <reified T : Any> List<T>.toJson(
@@ -73,6 +91,19 @@ open class JsonConverter(vararg adapter: Any) {
         moshi.adapter<T>(rawType.with(*genericTypes)).fromJson(this)
     }
 
+    inline fun <reified T : Any> BufferedSource.fromJson(
+        vararg genericTypes: Type,
+        printException: Boolean = true
+    ): T? = fromJson(T::class, *genericTypes, printException = printException)
+
+    fun <T : Any> BufferedSource.fromJson(
+        rawType: KClass<T>,
+        vararg genericTypes: Type,
+        printException: Boolean = true
+    ): T? = catch(null, onCatch = { if (printException) print("${it.CATCH_MESSAGE} from '$this' ") }) {
+        moshi.adapter<T>(rawType.with(*genericTypes)).fromJson(this)
+    }
+
     fun String.fromJsonNonTyped(
         rawType: KClass<*>,
         vararg genericTypes: Type,
@@ -87,7 +118,19 @@ open class JsonConverter(vararg adapter: Any) {
         printException: Boolean = true
     ): List<T>? = fromJsonListNonDef(type, printException)
 
+    inline fun <reified T : Any> BufferedSource.fromJsonList(
+        type: Type = T::class.java,
+        printException: Boolean = true
+    ): List<T>? = fromJsonListNonDef(type, printException)
+
     fun <T : Any> String.fromJsonListNonDef(
+        type: Type,
+        printException: Boolean = true
+    ): List<T>? = catch(null, onCatch = { if (printException) print("${it.CATCH_MESSAGE} from '$this' ") }) {
+        adapter<List<T>>(type).fromJson(this)
+    }
+
+    fun <T : Any> BufferedSource.fromJsonListNonDef(
         type: Type,
         printException: Boolean = true
     ): List<T>? = catch(null, onCatch = { if (printException) print("${it.CATCH_MESSAGE} from '$this' ") }) {
@@ -120,10 +163,16 @@ open class JsonConverter(vararg adapter: Any) {
 object UtilsJsonConverter : JsonConverter() {
 
     inline fun <reified T : Any> T.toJson(): String? = toJsonReified(T::class)
-    inline fun <reified T : Any> List<T>.toJson(): String? = toJsonReified(T::class)
+    inline fun <reified T : Any> List<T>.toJson(): String? = toJsonReified(List::class, T::class.java)
+
+    inline fun <reified T : Any> T.toJson(sink: BufferedSink) = toJsonReified(sink, T::class)
+    inline fun <reified T : Any> List<T>.toJson(sink: BufferedSink) = toJsonReified(sink, List::class, T::class.java)
 
     inline fun <reified T : Any> String.fromJson(): T? = fromJson(T::class)
     inline fun <reified T : Any> String.fromJsonList(): List<T>? = fromJsonList(T::class.java)
+
+    inline fun <reified T : Any> BufferedSource.fromJson(): T? = fromJson(T::class)
+    inline fun <reified T : Any> BufferedSource.fromJsonList(): List<T>? = fromJsonList(T::class.java)
 }
 
 inline fun <T> json(crossinline block: UtilsJsonConverter.() -> T): T = UtilsJsonConverter.run { block() }
