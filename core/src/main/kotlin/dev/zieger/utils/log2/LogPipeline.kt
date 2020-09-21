@@ -147,8 +147,9 @@ inline fun logPostFilter(crossinline block: LogPipelineContext.(next: LogPipelin
     }
 
 
-open class EmptyFilter<C : ICancellable> : IDelayFilter<C> {
-    override fun C.call(next: IFilter<C>) = next(this)
+open class EmptyFilter : LogPreFilter(), IDelayFilter<LogPipelineContext> {
+    override fun LogPipelineContext.call(next: IFilter<LogPipelineContext>) = next(this)
+    override fun copy(): LogPreFilter = EmptyFilter()
 }
 
-object EmptyPipelineLogFilter : EmptyFilter<LogPipelineContext>()
+object EmptyLogFilter : EmptyFilter()

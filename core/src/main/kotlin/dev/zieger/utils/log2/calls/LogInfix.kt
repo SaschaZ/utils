@@ -2,7 +2,10 @@
 
 package dev.zieger.utils.log2.calls
 
-import dev.zieger.utils.log2.*
+import dev.zieger.utils.log2.EmptyLogFilter
+import dev.zieger.utils.log2.ILogMessageContext
+import dev.zieger.utils.log2.Log
+import dev.zieger.utils.log2.LogFilter
 
 
 inline infix fun <T : Any?> T.logV(crossinline block: ILogMessageContext.(T) -> String) = apply {
@@ -31,21 +34,21 @@ infix fun <T : Any?> T.logI(msg: String) = apply { Log.i(msg) }
 infix fun <T : Any?> T.logW(msg: String) = apply { Log.w(msg) }
 infix fun <T : Any?> T.logE(msg: String) = apply { Log.e(msg) }
 
-fun <T : Any?> T.logV(msg: String, filter: IDelayFilter<LogPipelineContext> = EmptyPipelineLogFilter) = apply {
+fun <T : Any?> T.logV(msg: String, filter: LogFilter = EmptyLogFilter) = apply {
     Log.v(
         msg,
         filter = filter
     )
 }
 
-fun <T : Any?> T.logD(msg: String, filter: IDelayFilter<LogPipelineContext> = EmptyPipelineLogFilter) =
+fun <T : Any?> T.logD(msg: String, filter: LogFilter = EmptyLogFilter) =
     apply { Log.d(msg, filter = filter) }
 
-fun <T : Any?> T.logI(msg: String, filter: IDelayFilter<LogPipelineContext> = EmptyPipelineLogFilter) =
+fun <T : Any?> T.logI(msg: String, filter: LogFilter = EmptyLogFilter) =
     apply { Log.i(msg, filter = filter) }
 
-fun <T : Any?> T.logW(msg: String, filter: IDelayFilter<LogPipelineContext> = EmptyPipelineLogFilter) =
+fun <T : Any?> T.logW(msg: String, filter: LogFilter = EmptyLogFilter) =
     apply { Log.w(msg, filter = filter) }
 
-fun <T : Any?> T.logE(msg: String, filter: IDelayFilter<LogPipelineContext> = EmptyPipelineLogFilter) =
+fun <T : Any?> T.logE(msg: String, filter: LogFilter = EmptyLogFilter) =
     apply { Log.e(msg, filter = filter) }

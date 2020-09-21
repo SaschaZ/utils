@@ -5,7 +5,6 @@ package dev.zieger.utils.statemachine
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.statemachine.conditionelements.*
 
-
 abstract class MachineDsl : IMachineEx {
 
     protected val mapper: IMachineExMapper = MachineExMapper()

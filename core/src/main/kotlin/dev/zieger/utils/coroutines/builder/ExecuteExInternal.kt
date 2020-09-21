@@ -1,5 +1,7 @@
 package dev.zieger.utils.coroutines.builder
 
+import dev.zieger.utils.UtilsSettings.LOG_EXCEPTIONS
+import dev.zieger.utils.UtilsSettings.PRINT_EXCEPTIONS
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.misc.catch
 import dev.zieger.utils.time.base.IDurationEx
@@ -21,8 +23,8 @@ internal suspend inline fun <T : Any?> executeExInternal(
     maxExecutions: Int = Int.MAX_VALUE,
     retryDelay: IDurationEx? = null,
     timeout: IDurationEx? = null,
-    printStackTrace: Boolean = true,
-    logStackTrace: Boolean = false,
+    printStackTrace: Boolean = PRINT_EXCEPTIONS,
+    logStackTrace: Boolean = LOG_EXCEPTIONS,
     include: List<KClass<out Throwable>> = listOf(Throwable::class),
     exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
     crossinline onCatch: suspend CoroutineScope.(t: Throwable) -> Unit,

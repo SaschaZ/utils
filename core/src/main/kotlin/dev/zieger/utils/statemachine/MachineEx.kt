@@ -5,7 +5,6 @@ package dev.zieger.utils.statemachine
 import dev.zieger.utils.coroutines.TypeContinuation
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.statemachine.MachineEx.Companion.DEFAULT_PREVIOUS_CHANGES_SIZE
@@ -165,7 +164,7 @@ import kotlinx.coroutines.channels.Channel
  */
 open class MachineEx(
     initialState: State,
-    val scope: CoroutineScopeEx = DefaultCoroutineScope(),
+    val scope: CoroutineScopeEx,
     previousChangesCacheSize: Int = DEFAULT_PREVIOUS_CHANGES_SIZE,
     debugLevel: DebugLevel = DebugLevel.ERROR,
     builder: suspend MachineDsl.() -> Unit

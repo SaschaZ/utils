@@ -25,7 +25,7 @@ class LogMessageContext(
     override var message: Any = "",
     override var coroutineScope: CoroutineScope? = null,
     override var createdAt: ITimeEx = TimeEx(),
-    override var filter: IDelayFilter<LogPipelineContext> = EmptyPipelineLogFilter,
+    override var filter: IDelayFilter<LogPipelineContext> = EmptyLogFilter,
     vararg messageTag: Any
 ) : ILogContext by logContext, ILogMessageContext {
 

@@ -1,8 +1,5 @@
 package dev.zieger.utils.coroutines
 
-import dev.zieger.utils.coroutines.builder.launchEx
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.joinAll
 import java.io.File
 
 data class CommandOutput(
@@ -29,33 +26,9 @@ data class ShellScope(
 
 suspend fun shell(print: Boolean = true, block: suspend ShellScope.() -> Unit) = ShellScope(print).block()
 
-suspend fun String.runCommand(
-    workingDir: File = File("."),
-    block: suspend (output: String, isError: Boolean) -> Unit = { _, _ -> }
-): CommandOutput {
-    val (process, outStr, outErrStr) = ProcessBuilder(*split("\\s".toRegex()).toTypedArray())
-        .directory(workingDir)
-        .redirectOutput(ProcessBuilder.Redirect.PIPE)
-        .redirectError(ProcessBuilder.Redirect.PIPE)
-        .start().run { Triple(this, inputStream, errorStream) }
-
-    var output = ""
-    var errorOutput = ""
-    val readJobs = listOf(launchEx {
-        val reader = outStr.reader()
-        while (isActive && reader.ready()) block(reader.readText().also { output += it }, false)
-        outStr.close()
-    }, launchEx {
-        val reader = outErrStr.reader()
-        while (isActive && reader.ready()) block(reader.readText().also { errorOutput += it }, true)
-        outErrStr.close()
-    })
-    process.waitFor()
-    readJobs.joinAll()
-
-    return CommandOutput(
-        process.exitValue(),
-        output,
-        errorOutput
-    )
+fun String.runCommand(
+    workingDir: File = File(".")
+): CommandOutput = Runtime.getRuntime().exec(arrayOf("/bin/sh", "-c", this), null, workingDir).run {
+    waitFor()
+    CommandOutput(exitValue(), inputStream.reader().readText(), errorStream.reader().readText())
 }

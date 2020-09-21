@@ -39,7 +39,7 @@ open class LogContext(
     protected open fun out(
         lvl: LogLevel,
         msg: Any,
-        filter: IDelayFilter<LogPipelineContext>,
+        filter: LogFilter,
         throwable: Throwable? = null,
         scope: CoroutineScope? = null,
         vararg tag: Any
@@ -48,22 +48,22 @@ open class LogContext(
     /**
      * Log-Calls
      */
-    override fun v(msg: Any, vararg tag: Any, filter: IDelayFilter<LogPipelineContext>) =
+    override fun v(msg: Any, vararg tag: Any, filter: LogFilter) =
         out(VERBOSE, msg, filter, null, null, *tag)
 
-    override fun d(msg: Any, vararg tag: Any, filter: IDelayFilter<LogPipelineContext>) =
+    override fun d(msg: Any, vararg tag: Any, filter: LogFilter) =
         out(DEBUG, msg, filter, null, null, *tag)
 
-    override fun i(msg: Any, vararg tag: Any, filter: IDelayFilter<LogPipelineContext>) =
+    override fun i(msg: Any, vararg tag: Any, filter: LogFilter) =
         out(INFO, msg, filter, null, null, *tag)
 
-    override fun w(msg: Any, vararg tag: Any, filter: IDelayFilter<LogPipelineContext>) =
+    override fun w(msg: Any, vararg tag: Any, filter: LogFilter) =
         out(WARNING, msg, filter, null, null, *tag)
 
-    override fun e(msg: Any, vararg tag: Any, filter: IDelayFilter<LogPipelineContext>) =
+    override fun e(msg: Any, vararg tag: Any, filter: LogFilter) =
         out(EXCEPTION, msg, filter, null, null, *tag)
 
-    override fun e(throwable: Throwable, msg: Any, vararg tag: Any, filter: IDelayFilter<LogPipelineContext>) =
+    override fun e(throwable: Throwable, msg: Any, vararg tag: Any, filter: LogFilter) =
         out(EXCEPTION, msg, filter, throwable, null, *tag)
 
 
@@ -73,38 +73,38 @@ open class LogContext(
     override fun CoroutineScope.v(
         msg: Any,
         vararg tag: Any,
-        filter: IDelayFilter<LogPipelineContext>
+        filter: LogFilter
     ) = out(VERBOSE, msg, filter, null, this, *tag)
 
     override fun CoroutineScope.d(
         msg: Any,
         vararg tag: Any,
-        filter: IDelayFilter<LogPipelineContext>
+        filter: LogFilter
     ) = out(DEBUG, msg, filter, null, this, *tag)
 
     override fun CoroutineScope.i(
         msg: Any,
         vararg tag: Any,
-        filter: IDelayFilter<LogPipelineContext>
+        filter: LogFilter
     ) = out(INFO, msg, filter, null, this, *tag)
 
     override fun CoroutineScope.w(
         msg: Any,
         vararg tag: Any,
-        filter: IDelayFilter<LogPipelineContext>
+        filter: LogFilter
     ) = out(WARNING, msg, filter, null, this, *tag)
 
     override fun CoroutineScope.e(
         msg: Any,
         vararg tag: Any,
-        filter: IDelayFilter<LogPipelineContext>
+        filter: LogFilter
     ) = out(EXCEPTION, msg, filter, null, this, *tag)
 
     override fun CoroutineScope.e(
         throwable: Throwable,
         msg: Any,
         vararg tag: Any,
-        filter: IDelayFilter<LogPipelineContext>
+        filter: LogFilter
     ) = out(EXCEPTION, msg, filter, throwable, this, *tag)
 
     /**
@@ -113,74 +113,74 @@ open class LogContext(
     override fun <T> T.logV(
         msg: Any,
         vararg tag: Any,
-        filter: IDelayFilter<LogPipelineContext>
+        filter: LogFilter
     ): T = apply { out(VERBOSE, msg, filter, null, null, *tag) }
 
     override fun <T> T.logD(
         msg: Any,
         vararg tag: Any,
-        filter: IDelayFilter<LogPipelineContext>
+        filter: LogFilter
     ): T = apply { out(DEBUG, msg, filter, null, null, *tag) }
 
     override fun <T> T.logI(
         msg: Any,
         vararg tag: Any,
-        filter: IDelayFilter<LogPipelineContext>
+        filter: LogFilter
     ): T = apply { out(INFO, msg, filter, null, null, *tag) }
 
     override fun <T> T.logW(
         msg: Any,
         vararg tag: Any,
-        filter: IDelayFilter<LogPipelineContext>
+        filter: LogFilter
     ): T = apply { out(WARNING, msg, filter, null, null, *tag) }
 
     override fun <T> T.logE(
         msg: Any,
         vararg tag: Any,
-        filter: IDelayFilter<LogPipelineContext>
+        filter: LogFilter
     ): T = apply { out(EXCEPTION, msg, filter, null, null, *tag) }
 
     override fun <T> T.logE(
         throwable: Throwable,
         msg: Any,
         vararg tag: Any,
-        filter: IDelayFilter<LogPipelineContext>
+        filter: LogFilter
     ): T = apply { out(EXCEPTION, msg, filter, null, null, *tag) }
 
     /**
      * Log-Inline-Builder-Calls
      */
-    override infix fun <T> T.logV(msg: LogPipelineContext.(T) -> Any): T =
+    override infix fun <T> T.logV(msg: ILogMessageContext.(T) -> Any): T =
         apply {
-            LogPipelineContext(LogMessageContext(this@LogContext, VERBOSE)).run {
+            LogMessageContext(this@LogContext, VERBOSE).run {
                 message = msg(this@apply); process()
             }
         }
 
-    override infix fun <T> T.logD(msg: LogPipelineContext.(T) -> Any): T =
+    override infix fun <T> T.logD(msg: ILogMessageContext.(T) -> Any): T =
         apply {
-            LogPipelineContext(LogMessageContext(this@LogContext, DEBUG)).run {
+            LogMessageContext(this@LogContext, DEBUG).run {
                 message = msg(this@apply); process()
             }
         }
 
-    override infix fun <T> T.logI(msg: LogPipelineContext.(T) -> Any): T =
+    override infix fun <T> T.logI(msg: ILogMessageContext.(T) -> Any): T =
         apply {
-            LogPipelineContext(LogMessageContext(this@LogContext, INFO)).run {
+            LogMessageContext(this@LogContext, INFO).run {
                 message = msg(this@apply); process()
             }
         }
 
-    override infix fun <T> T.logW(msg: LogPipelineContext.(T) -> Any): T =
+    override infix fun <T> T.logW(msg: ILogMessageContext.(T) -> Any): T =
         apply {
-            LogPipelineContext(LogMessageContext(this@LogContext, WARNING)).run {
+            LogMessageContext(this@LogContext, WARNING).run {
                 message = msg(this@apply); process()
             }
         }
 
-    override infix fun <T> T.logE(msg: LogPipelineContext.(T) -> Any): T =
+    override infix fun <T> T.logE(msg: ILogMessageContext.(T) -> Any): T =
         apply {
-            LogPipelineContext(LogMessageContext(this@LogContext, EXCEPTION)).run {
+            LogMessageContext(this@LogContext, EXCEPTION).run {
                 message = msg(this@apply); process()
             }
         }
