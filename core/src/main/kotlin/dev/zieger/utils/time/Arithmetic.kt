@@ -84,8 +84,8 @@ operator fun ITimeEx.div(other: Number): ITimeEx =
 operator fun IDurationEx.div(other: Number): IDurationEx =
     DurationEx(millis / other.toDouble())
 
-operator fun ITimeEx.div(other: ITimeEx): IDurationEx =
-    DurationEx(millis / other.millis)
+operator fun ITimeEx.div(other: ITimeEx): Double =
+    millis / other.millis.toDouble()
 
 operator fun ITimeEx.div(other: IDurationEx): Double =
     millis / other.millis.toDouble()

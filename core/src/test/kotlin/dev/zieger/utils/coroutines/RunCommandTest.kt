@@ -7,9 +7,9 @@ class RunCommandTest {
 
     @Test
     fun testIt() = runTest {
-        "top -b -n 1 | grep java".runCommand { output, isError ->
-            if (isError) System.err.println(output)
-            else println(output)
+        "top -b -n 1 | grep java".runCommand().apply {
+            if (stdOutput.isNotBlank()) println(stdOutput)
+            if (errOutput.isNotBlank()) System.err.println(errOutput)
         }.also { println(it) }
     }
 }

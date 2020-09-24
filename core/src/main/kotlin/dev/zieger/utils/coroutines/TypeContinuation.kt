@@ -1,5 +1,7 @@
 package dev.zieger.utils.coroutines
 
+import dev.zieger.utils.coroutines.TypeContinuation.Companion.ContinuationHolder.Exception
+import dev.zieger.utils.coroutines.TypeContinuation.Companion.ContinuationHolder.Value
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.time.base.IDurationEx
@@ -22,7 +24,7 @@ open class TypeContinuation<T> {
         }
     }
 
-    protected open var channel = HashMap<T?, LinkedList<Channel<ContinuationHolder<T>>>>()
+    protected open var channelMap = HashMap<T?, LinkedList<Channel<ContinuationHolder<T>>>>()
     protected open val addMutex = Mutex()
 
     /**
@@ -48,12 +50,12 @@ open class TypeContinuation<T> {
         timeout: IDurationEx? = null
     ): T = withTimeout(timeout) {
         val c = Channel<ContinuationHolder<T>>()
-        addMutex.withLock { channel.getOrPut(wanted) { LinkedList() }.add(c) }
+        addMutex.withLock { channelMap.getOrPut(wanted) { LinkedList() }.add(c) }
         c.receive().let { result ->
             @Suppress("UNCHECKED_CAST")
             when (result) {
-                is ContinuationHolder.Value<*> -> result.value as T
-                is ContinuationHolder.Exception -> throw result.throwable
+                is Value<*> -> result.value as T
+                is Exception -> throw result.throwable
             }
         }
     }
@@ -71,8 +73,9 @@ open class TypeContinuation<T> {
      */
     open fun resume(value: T) {
         resumedInternal.incrementAndGet()
-        ((channel.remove(null) ?: emptyList()) + (channel.remove(value) ?: emptyList())).runEach {
-            offer(ContinuationHolder.Value(value))
+        ((channelMap.remove(null) ?: emptyList<Channel<ContinuationHolder<T>>>()) +
+                (channelMap.remove(value) ?: emptyList())).runEach {
+            offer(Value(value))
             close()
         }
     }
@@ -83,15 +86,15 @@ open class TypeContinuation<T> {
      * @param exception [Throwable] to throw when the caller of [suspend] is resumed.
      */
     open fun resumeWithException(exception: Throwable) {
-        val tmp = channel
-        channel = HashMap()
+        val tmp = channelMap
+        channelMap = HashMap()
 
         lastException = exception
         resumedInternal.incrementAndGet()
 
         tmp.forEach { (_, value) ->
             value.forEach {
-                it.offer(ContinuationHolder.Exception(exception))
+                it.offer(Exception(exception))
                 it.close()
             }
         }
@@ -101,8 +104,8 @@ open class TypeContinuation<T> {
 /**
  *
  */
-suspend inline fun <T> suspend(
+suspend inline fun <T> suspendCoroutine(
     wanted: T? = null,
     timeout: IDurationEx? = null,
-    crossinline block: suspend (continuation: TypeContinuation<T>) -> T
+    crossinline block: suspend (continuation: TypeContinuation<T>) -> Unit
 ): T = TypeContinuation<T>().let { cont -> launchEx { block(cont) }; cont.suspend(wanted, timeout) }

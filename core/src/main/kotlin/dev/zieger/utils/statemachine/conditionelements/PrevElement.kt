@@ -15,10 +15,10 @@ data class PrevElement(
     val range: IntRange
 ) : DefinitionElement {
 
-    override val hasEvent = combo.master is Event
-    override val hasState = combo.master is State
-    override val hasStateGroup = combo.master is StateGroup<*>
-    override val hasEventGroup = combo.master is EventGroup<*>
+    override val hasEvent = combo.master is AbsEvent
+    override val hasState = combo.master is AbsState
+    override val hasStateGroup = combo.master is AbsStateGroup<*>
+    override val hasEventGroup = combo.master is AbsEventGroup<*>
     override val hasPrevElement = true
 
     suspend fun condition(matchScope: IMatchScope, block: suspend Matcher.() -> Boolean): Boolean =

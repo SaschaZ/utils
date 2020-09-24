@@ -15,10 +15,10 @@ data class ShellScope(
 
     suspend operator fun String.unaryPlus(): CommandOutput {
         if (print) println("$this: ")
-        return runCommand(workingDir) { output, isError ->
+        return runCommand(workingDir).apply {
             if (print) {
-                if (isError) System.err.println(output)
-                else println(output)
+                if (stdOutput.isNotBlank()) println(stdOutput)
+                if (errOutput.isNotBlank()) System.err.println(errOutput)
             }
         }
     }

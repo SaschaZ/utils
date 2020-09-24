@@ -1,20 +1,20 @@
 package dev.zieger.utils.core_testing.assertion2
 
 import dev.zieger.utils.misc.nullWhenBlank
-import junit.framework.TestCase
+import junit.framework.AssertionFailedError
 
 infix fun Any?.assert2(type: AssertType) {
     val lambda: AssertionScope.() -> String = { "" }
     assert2(type to lambda)
 }
 
-infix fun Any?.assert2(type: Pair<AssertType, AssertionScope.() -> String>) {
+infix fun Any?.assert2(type: Pair<AssertType, AssertionScope.() -> String>) = type.let { (t, s) ->
     when (this) {
-        is Pair<*, *> -> if (!type.first.assert(first, second))
-            TestCase.fail(buildMessage(type.first, type.second, first, second)) else Unit
+        is Pair<*, *> -> if (!t.assert(first, second))
+            throw AssertionFailedError(buildMessage(t, s, first, second)) else Unit
 
-        else -> if (!type.first.assert(this, null))
-            TestCase.fail(buildMessage(type.first, type.second, this)) else Unit
+        else -> if (!t.assert(this, null))
+            throw AssertionFailedError(buildMessage(t, s, this)) else Unit
     }
 }
 
@@ -38,9 +38,16 @@ data class AssertionScope(
     val assertType: AssertType
 )
 
-operator fun <A : Any> A.rem(message: AssertionScope.() -> String) = this to message
+operator fun <A> A.rem(message: AssertionScope.() -> String) = this to message
 
-operator fun <A : Any> A.rem(message: String): Pair<A, AssertionScope.() -> String> {
+operator fun <A> A.rem(message: String): Pair<A, AssertionScope.() -> String> {
+    val lambda: AssertionScope.() -> String = { message }
+    return this to lambda
+}
+
+fun <A> A.msg(message: AssertionScope.() -> String) = this to message
+
+fun <A> A.msg(message: String): Pair<A, AssertionScope.() -> String> {
     val lambda: AssertionScope.() -> String = { message }
     return this to lambda
 }

@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package dev.zieger.utils.observable
 
 import dev.zieger.utils.delegates.IOnChangedScopeWithParent

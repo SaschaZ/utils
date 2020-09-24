@@ -5,6 +5,7 @@ package dev.zieger.utils.log2test
 import dev.zieger.utils.core_testing.assertion2.isMatching
 import dev.zieger.utils.core_testing.assertion2.isNull
 import dev.zieger.utils.core_testing.runTest
+import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.log2.*
 import dev.zieger.utils.log2.LogMessageBuilder.Companion.LOG_MESSAGE_WITH_CALL_ORIGIN
 import dev.zieger.utils.log2.filter.LogLevel
@@ -52,7 +53,7 @@ internal class LogTest {
 
         Log.messageBuilder = LogMessageBuilder(LOG_MESSAGE_WITH_CALL_ORIGIN)
         Log -= "woomoo"
-        Log.d("test delay", filter = delayFilter { next -> launchEx(delayed = 1.seconds) { next(this@delayFilter) } })
+        Log.d("test delay", filter = logPreFilter { next -> launchEx(delayed = 1.seconds) { next(this@logPreFilter) } })
         message.isNull()
         messageObs.nextChange(5.seconds) { it isMatching """D-[0-9\-:]+-.+: test delay - \[moofoo\|bamdam\]""" }
 

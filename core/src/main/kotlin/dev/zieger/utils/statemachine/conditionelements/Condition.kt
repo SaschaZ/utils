@@ -10,16 +10,16 @@ import dev.zieger.utils.statemachine.conditionelements.DefinitionElementGroup.Ma
 data class Condition(
     val start: Combo<*>,
     val items: List<DefinitionElementGroup> = INITIAL_ITEMS.apply { first { it.matchType == ALL }.add(start) },
-    val action: (suspend IMatchScope.() -> State?)? = null
+    val action: (suspend IMatchScope.() -> Master?)? = null
 ) : ConditionElement {
 
     constructor(start: Master) : this(
         when (start) {
             is Combo<*> -> start
-            is Event -> start.combo
-            is State -> start.combo
-            is EventGroup<*> -> start.combo
-            is StateGroup<*> -> start.combo
+            is AbsEvent -> start.combo
+            is AbsState -> start.combo
+            is AbsEventGroup<*> -> start.combo
+            is AbsStateGroup<*> -> start.combo
             else -> throw IllegalArgumentException("Unknown Master type ${start::class.name}")
         }, action = null
     )
@@ -47,16 +47,16 @@ data class Condition(
         get() = start.master.type
 
     private fun Master.getType(): DefinitionType = when (this) {
-        is Event,
-        is EventGroup<*> -> EVENT
-        is State,
-        is StateGroup<*> -> STATE
+        is AbsEvent,
+        is AbsEventGroup<*> -> EVENT
+        is AbsState,
+        is AbsStateGroup<*> -> STATE
         is External -> EXTERNAL
         is Combo<*> -> when (master) {
-            is Event,
-            is EventGroup<*> -> EVENT
-            is State,
-            is StateGroup<*> -> STATE
+            is AbsEvent,
+            is AbsEventGroup<*> -> EVENT
+            is AbsState,
+            is AbsStateGroup<*> -> STATE
             is External -> EXTERNAL
             else -> throw IllegalArgumentException("Unknown Master of type $this")
         }

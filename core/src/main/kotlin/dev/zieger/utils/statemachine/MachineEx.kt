@@ -2,15 +2,17 @@
 
 package dev.zieger.utils.statemachine
 
-import dev.zieger.utils.coroutines.TypeContinuation
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
+import dev.zieger.utils.coroutines.suspendCoroutine
 import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.statemachine.MachineEx.Companion.DEFAULT_PREVIOUS_CHANGES_SIZE
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel
 import dev.zieger.utils.statemachine.MachineEx.Companion.debugLevel
 import dev.zieger.utils.statemachine.conditionelements.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 
@@ -29,9 +31,9 @@ import kotlinx.coroutines.channels.Channel
  * Because event and state instances are not allowed to change it makes sense to use objects for them. Any dynamic data
  * can be attached with a [IData] class.
  *
- * # **Define [Event]s, [State]s and [IData]**
+ * # **Define [AbsEvent]s, [AbsState]s and [IData]**
  *
- * States need to implement the [State] class. :
+ * States need to implement the [AbsState] class. :
  * ```
  * sealed class TestState : State() {
  *
@@ -42,7 +44,7 @@ import kotlinx.coroutines.channels.Channel
  *  object D : TestState()
  * }
  * ```
- * Events need to implement the [Event] class:
+ * Events need to implement the [AbsEvent] class:
  * ```
  * sealed class TestEvent(ignoreData: Boolean = false) : Event(ignoreData) {
  *
@@ -61,7 +63,7 @@ import kotlinx.coroutines.channels.Channel
  * }
  * ```
  *
- * # **[Event] conditions**
+ * # **[AbsEvent] conditions**
  *
  * After you have defined the needed events, states and possible data you can start defining the event and state
  * conditions:
@@ -91,14 +93,14 @@ import kotlinx.coroutines.channels.Channel
  * }
  * ```
  *
- * You can see that event conditions must contain at least one [Event] and optional [State](s).
- * Because there can only be one incoming [Event] and one existing [State] only one [Event] or [State] of the
+ * You can see that event conditions must contain at least one [AbsEvent] and optional [State](s).
+ * Because there can only be one incoming [AbsEvent] and one existing [AbsState] only one [AbsEvent] or [AbsState] of the
  * condition need to be equal. BUT keep in mind when providing no optional [State](s) the event condition will
- * react on all [State]s.
+ * react on all [AbsState]s.
  *
- * # **[State] conditions**
+ * # **[AbsState] conditions**
  *
- * To react on [State]s when they get activated by an event condition you can use state conditions:
+ * To react on [AbsState]s when they get activated by an event condition you can use state conditions:
  *
  * ```
  *   // When [C] gets activated execute the provided lambda.
@@ -113,19 +115,19 @@ import kotlinx.coroutines.channels.Channel
  * }
  * ```
  *
- * Summarize difference between [Event] and [State] conditions:
- * - First parameter of an [Event] condition must be an [Event] -> First parameter of a [State] condition must be
- *   a [State].
- * - [Event] conditions are triggered on incoming [Event]s -> [State] conditions are triggered by the any state
- *   that gets activated by an [Event] condition
- * - [State] conditions can not activate a new [State]. One [Event] condition per incoming [Event] can activate a
- *   new [State].
- * - [Event] conditions match against all [State]s when the condition does not contain [State] parameter ->
- *   [State] conditions match against all [Event]s when the condition does not contain an [Event] parameter
+ * Summarize difference between [AbsEvent] and [AbsState] conditions:
+ * - First parameter of an [AbsEvent] condition must be an [AbsEvent] -> First parameter of a [AbsState] condition must be
+ *   a [AbsState].
+ * - [AbsEvent] conditions are triggered on incoming [AbsEvent]s -> [AbsState] conditions are triggered by the any state
+ *   that gets activated by an [AbsEvent] condition
+ * - [AbsState] conditions can not activate a new [AbsState]. One [AbsEvent] condition per incoming [AbsEvent] can activate a
+ *   new [AbsState].
+ * - [AbsEvent] conditions match against all [AbsState]s when the condition does not contain [AbsState] parameter ->
+ *   [AbsState] conditions match against all [AbsEvent]s when the condition does not contain an [AbsEvent] parameter
  *
  * # **[IData]**
  *
- * [IData] instances can be attached to any [Event] or [State] with the * operator.
+ * [IData] instances can be attached to any [AbsEvent] or [AbsState] with the * operator.
  * Attached [IData] is than included when matching conditions.
  * ```
  * // When [State] is [C] and the incoming [Event] of [THIRD] has attached [TestEventData] with the content
@@ -135,12 +137,12 @@ import kotlinx.coroutines.channels.Channel
  *   D
  * }
  * ```
- * There are several methods and properties to access current and previous [Event]s, [State]s and [IData].
+ * There are several methods and properties to access current and previous [AbsEvent]s, [AbsState]s and [IData].
  * See [MatchScope] for more details.
  *
  * # **Exclude**
  *
- * You can also exclude specific [Event](s) or [State]s that must not be matching.
+ * You can also exclude specific [Event](s) or [AbsState]s that must not be matching.
  * Also works with attached [IData].
  * ```
  * // When [State] [C] gets activated not by [Event] [FIRST] execute provided lambda.
@@ -149,13 +151,13 @@ import kotlinx.coroutines.channels.Channel
  * }
  * ```
  *
- * # **Previous [Event]s and [State]s**
- * # **Applying [Event]s to the state machine**
+ * # **Previous [AbsEvent]s and [AbsState]s**
+ * # **Applying [AbsEvent]s to the state machine**
  * # **Benefits of using operators for defining conditions**
  * # **Coroutine support**
  *
  *
- * @param initialState [State] that is activated initially in the state machine.
+ * @param initialState [AbsState] that is activated initially in the state machine.
  * @property scope [CoroutineScopeEx] that is used for all Coroutine operations.
  * @param previousChangesCacheSize Size of the cache that store the state changes. Defaulting to
  * [DEFAULT_PREVIOUS_CHANGES_SIZE].
@@ -163,8 +165,8 @@ import kotlinx.coroutines.channels.Channel
  * @param builder Lambda that defines all state machine conditions. See [MachineDsl] for more details.
  */
 open class MachineEx(
-    initialState: State,
-    val scope: CoroutineScopeEx,
+    initialState: AbsState,
+    val scope: CoroutineScope,
     previousChangesCacheSize: Int = DEFAULT_PREVIOUS_CHANGES_SIZE,
     debugLevel: DebugLevel = DebugLevel.ERROR,
     builder: suspend MachineDsl.() -> Unit
@@ -176,9 +178,9 @@ open class MachineEx(
 
         @Suppress("unused")
         enum class DebugLevel {
-            ERROR,
+            DEBUG,
             INFO,
-            DEBUG
+            ERROR
         }
 
         internal var debugLevel: DebugLevel = DebugLevel.ERROR
@@ -189,57 +191,42 @@ open class MachineEx(
 
     private val eventChannel = Channel<Pair<EventCombo, (StateCombo) -> Unit>>(Channel.RENDEZVOUS)
 
-    private lateinit var eventCombo: EventCombo
-    override val event: Event get() = eventCombo.master
+    private var eventCombo: EventCombo = Event().combo
+    override val event: AbsEvent get() = eventCombo.master
     override val eventData: Data? get() = eventCombo.slave as? Data
 
     private var stateCombo: StateCombo = initialState.combo
-    override val state: State get() = stateCombo.master
+    override val state: AbsState get() = stateCombo.master
     override val stateData: Data? get() = stateCombo.slave as? Data
 
     init {
         MachineEx.debugLevel = debugLevel
 
         scope.launchEx {
-            applyNewState(initialState.combo to suspend {}, initialState.combo, object : EventImpl() {
-                override val noLogging: Boolean
-                    get() = false
-            }.combo)
-
             this@MachineEx.builder()
             for (event in eventChannel) event.processEvent()
         }
     }
 
-    override suspend fun setEventSync(event: EventCombo): StateCombo {
-        val cont = TypeContinuation<StateCombo>()
-        eventChannel.send(event to { state -> cont.resume(state) })
-        return cont.suspend()
-    }
+    override fun setEvent(event: EventCombo): Job = scope.launchEx { setEventSync(event) }
 
-    override fun setEvent(event: EventCombo) = scope.launchEx { setEventSync(event) }.asUnit()
+    override suspend fun setEventSync(event: EventCombo): StateCombo = suspendCoroutine { cont ->
+        eventChannel.send(event to { state -> cont.resume(state) })
+    }
 
     private suspend fun Pair<EventCombo, (StateCombo) -> Unit>.processEvent() {
         eventCombo = first
-        val stateBefore = stateCombo
 
-        applyNewState(mapper.processEvent(eventCombo, stateBefore, previousChanges.reversed()), stateBefore, eventCombo)
+        mapper.processEvent(eventCombo, stateCombo, previousChanges.reversed())?.let {
+            previousChanges.put(OnStateChanged(eventCombo, stateCombo, it))
+            stateCombo = it
+
+            mapper.processState(eventCombo, stateCombo, previousChanges.reversed())?.also { e ->
+                setEventSync(e)
+            }
+        }
 
         second(stateCombo)
-    }
-
-    private suspend fun applyNewState(
-        newState: Pair<StateCombo, suspend () -> Unit>?,
-        stateBefore: StateCombo,
-        event: EventCombo
-    ) = newState?.let {
-        stateCombo = newState.first
-        previousChanges.put(OnStateChanged(event, stateBefore, newState.first).apply {
-            stateBefore.run { activeStateChanged(false) }
-            event.run { fired() }
-            newState.first.run { activeStateChanged(true) }
-        })
-        newState.second()
     }
 
     override fun clearPreviousChanges() = previousChanges.clear()

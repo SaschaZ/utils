@@ -43,7 +43,7 @@ inline fun <I, R> parameterMixCollect(
             catch(this to Channel<R>().apply { close() }, onCatch = {
                 throw AssertionError(
                     "failed with parameter:\n\t" +
-                            "${toList().joinToString("\n\t") { p -> "${p.first}: ${p.second.value}" }}\n" +
+                            "${toList().joinToString("\n\t") { (name, valueHolder) -> "$name: ${valueHolder.value}" }}\n" +
                             "${it.message}", it
                 )
             }) { block().let { this to it } }
@@ -51,34 +51,26 @@ inline fun <I, R> parameterMixCollect(
     }.toMap()
 
 fun List<Pair<String, Param<*>>>.buildParams(): List<Map<String, ParamInstance<*>>> {
-    val expectedNumberCombinations: Int? = accumulate { accu, value -> (accu ?: 1) * value.second.amount }
+    val expectedNumberCombinations: Int? = accumulate { accu, (_, valueHolder) -> (accu ?: 1) * valueHolder.amount }
     println("number of combinations: $expectedNumberCombinations")
 
     val result: List<List<ParamInstance<*>>> =
-        accumulate { accu, value -> (accu ?: ArrayList()).mixWithParam(value) } ?: emptyList()
+        accumulate { accu, (name, valueHolder) -> (accu ?: ArrayList()).mixWithParam(name, valueHolder) } ?: emptyList()
     if (result.size != expectedNumberCombinations)
         throw IllegalStateException("Expected number of combinations does not match resulting number of combinations.")
     return result.map { it.map { i -> i.name to i }.toMap() }
 }
 
-private fun List<List<ParamInstance<*>>>.mixWithParam(param: Pair<String, Param<*>>): List<List<ParamInstance<*>>> {
+private fun List<List<ParamInstance<*>>>.mixWithParam(name: String, values: Param<*>): List<List<ParamInstance<*>>> {
     var idx = 0
     return if (isEmpty())
-        (0 until param.second.amount).map {
+        (0 until values.amount).map {
             listOf(
-                ParamInstance(
-                    param.first,
-                    param.second,
-                    idx++
-                )
+                ParamInstance(name, values, idx++)
             )
         }
-    else (this * param.second.amount).map {
-        it + ParamInstance(
-            param.first,
-            param.second,
-            idx++ / size
-        )
+    else (this * values.amount).map {
+        it + ParamInstance(name, values, idx++ / size)
     }
 }
 

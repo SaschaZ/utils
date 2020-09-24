@@ -1,6 +1,5 @@
 package dev.zieger.utils.core_testing
 
-import dev.zieger.utils.UtilsSettings
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.catch
@@ -12,6 +11,8 @@ import org.junit.After
 import org.junit.Before
 
 abstract class FlakyTest {
+
+    lateinit var scope: CoroutineScope
 
     @Before
     open suspend fun before() = Unit
@@ -26,8 +27,7 @@ abstract class FlakyTest {
         maxExecutions: Int = 5,
         block: suspend CoroutineScope.() -> Unit
     ) = runBlocking {
-        UtilsSettings.LOG_EXCEPTIONS = false
-        UtilsSettings.PRINT_EXCEPTIONS = true
+        scope = this
 
         catch(Unit, exclude = emptyList(), maxExecutions = maxExecutions,
             onCatch = {

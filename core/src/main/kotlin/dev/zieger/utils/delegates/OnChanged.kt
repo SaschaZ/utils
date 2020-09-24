@@ -2,7 +2,7 @@
 
 package dev.zieger.utils.delegates
 
-import dev.zieger.utils.coroutines.Continuation
+import dev.zieger.utils.coroutines.TypeContinuation
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.delegates.OnChangedParamsWithParent.Companion.DEFAULT_RECENT_VALUE_BUFFER_SIZE
@@ -12,7 +12,7 @@ import dev.zieger.utils.time.base.IDurationEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.util.concurrent.atomic.AtomicReference
+import java.lang.ref.WeakReference
 import kotlin.reflect.KProperty
 
 /**
@@ -49,32 +49,35 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
      */
     constructor(
         initial: T,
+        scope: CoroutineScope? = null,
         storeRecentValues: Boolean = false,
         recentValueSize: Int = if (storeRecentValues) DEFAULT_RECENT_VALUE_BUFFER_SIZE else 0,
         notifyForInitial: Boolean = false,
         notifyOnChangedValueOnly: Boolean = true,
-        scope: CoroutineScope? = null,
-        mutex: Mutex? = null,
+        mutex: Mutex = Mutex(),
         safeSet: Boolean = false,
         veto: (T) -> Boolean = { false },
         map: (T) -> T = { it },
-        onChangedS: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit = {},
-        onChanged: IOnChangedScopeWithParent<P, T>.(T) -> Unit = {}
+        onChangedS: (suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null,
+        onChanged: (IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null
     ) : this(
         OnChangedParamsWithParent(
-            initial, storeRecentValues, recentValueSize, notifyForInitial, notifyOnChangedValueOnly,
-            scope, mutex, safeSet, veto, map, onChangedS, onChanged
+            initial, scope, storeRecentValues, recentValueSize, notifyForInitial, notifyOnChangedValueOnly,
+            mutex, safeSet, veto, map, onChangedS, onChanged
         )
     )
 
-    protected var previousThisRef = AtomicReference<P?>(null)
+    protected open var parent: WeakReference<P>? = null
+    open var propertyName: String = ""
+        protected set
+    protected open val nextChangeContinuation = TypeContinuation<T>()
     override val previousValues = FiFo<T?>(previousValueSize)
+    protected open var previousValuesCleared: Boolean = false
 
     override var value: T = initial
         set(newValue) {
             fun internalSet() {
-                val vetoActive = vetoInternal(newValue)
-                if (vetoActive) return
+                if (vetoInternal(newValue)) return
                 val mappedInput = mapInternal(newValue)
                 if (field != mappedInput || !notifyOnChangedValueOnly) {
                     val old = field
@@ -82,35 +85,40 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
                     onPropertyChanged(value, old)
                 }
             }
-            if (safeSet) scope?.launchEx(mutex = mutex) { internalSet() } else internalSet()
+            if (safeSet) scope!!.launchEx(mutex = mutex) { internalSet() } else internalSet()
         }
 
     init {
-        if (notifyForInitial) OnChangedScopeWithParent(
-            initial, previousThisRef.get(), null, previousValues,
-            { clearPreviousValues() }, true
-        ).apply {
-            onChanged(initial)
-            scope?.launchEx(mutex = mutex) { onChangedS(initial) }
+        if (safeSet) require(scope != null) { "When `safeSet` is `true`, `scope` can not be `null`." }
+        if (onChangedS != null) require(scope != null) { "When using `onChangedS`, `scope` can not be `null`." }
+
+        if (notifyForInitial) buildOnChangedScope(null, true).apply {
+            onChangedInternal(initial)
+            scope?.launchEx(mutex = mutex) { onChangedSInternal(initial) }
         }
     }
 
-    override suspend fun changeValue(block: (T) -> T): Unit = mutex?.withLock {
+    override suspend fun changeValue(block: (T) -> T): Unit = mutex.withLock {
         value = block(value)
     }.asUnit()
-
-    private val nextChangeContinuation = Continuation()
 
     override suspend fun nextChange(
         timeout: IDurationEx?,
         onChanged: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit
     ): T = withTimeout(timeout) {
-        nextChangeContinuation.suspend(timeout)
-        OnChangedScopeWithParent(
-            value, previousThisRef.get(), previousValues.lastOrNull(), previousValues, { previousValues.clear() }, false
-        ) { value = it }.onChanged(value)
+        val old = nextChangeContinuation.suspend(timeout)
+        buildOnChangedScope(old).onChanged(value)
         value
     }
+
+    protected open fun buildOnChangedScope(
+        previousValue: T?,
+        isInitialNotification: Boolean = false
+    ): OnChangedScopeWithParent<P, T> =
+        OnChangedScopeWithParent(
+            if (isInitialNotification) initial else value, parent?.get(), propertyName, previousValue,
+            previousValues, { previousValues.clear() }, isInitialNotification
+        ) { value = it }
 
     override suspend fun suspendUntil(
         wanted: T,
@@ -122,45 +130,46 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         while (nextChange() != wanted);
     }
 
-    override fun clearPreviousValues() = previousValues.clear().asUnit()
+    override fun clearPreviousValues() {
+        previousValues.clear()
+        previousValuesCleared = true
+    }
 
     private fun onPropertyChanged(
         new: T,
-        old: T?
+        old: T
     ) {
-        if (previousValueSize > 0) previousValues.put(old)
-        notifyListener(new, old)
-    }
+        if (!previousValuesCleared)
+            previousValues.put(old)
+        previousValuesCleared = false
+        nextChangeContinuation.resume(old)
 
-    private fun notifyListener(
-        new: T, old: T?,
-        isInitialNotification: Boolean = false
-    ) = OnChangedScopeWithParent(
-        new,
-        previousThisRef.get(),
-        old,
-        previousValues,
-        { clearPreviousValues() },
-        isInitialNotification
-    ).apply {
-        nextChangeContinuation.resume()
-        onChangedInternal(new)
-        scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
+        buildOnChangedScope(old).apply {
+            onChangedInternal(new)
+            scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
+        }
     }
 
     @Suppress("LeakingThis")
     override fun setValue(thisRef: P, property: KProperty<*>, value: T) {
-        previousThisRef.set(thisRef)
+        parent = WeakReference(thisRef)
+        propertyName = property.name
         this.value = value
     }
 
-    override fun getValue(thisRef: P, property: KProperty<*>): T = value
+    override fun getValue(thisRef: P, property: KProperty<*>): T {
+        parent = WeakReference(thisRef)
+        propertyName = property.name
+        return value
+    }
 
     override fun vetoInternal(value: T): Boolean = veto(value)
 
     override fun mapInternal(value: T): T = map(value)
 
-    override suspend fun IOnChangedScopeWithParent<P, T>.onChangedSInternal(value: T) = onChangedS(value)
+    override suspend fun IOnChangedScopeWithParent<P, T>.onChangedSInternal(value: T) =
+        onChangedS?.invoke(this, value).asUnit()
 
-    override fun IOnChangedScopeWithParent<P, T>.onChangedInternal(value: T) = onChanged(value)
+    override fun IOnChangedScopeWithParent<P, T>.onChangedInternal(value: T) =
+        onChanged?.invoke(this, value).asUnit()
 }

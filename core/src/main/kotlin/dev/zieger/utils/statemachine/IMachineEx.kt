@@ -1,6 +1,7 @@
 package dev.zieger.utils.statemachine
 
 import dev.zieger.utils.statemachine.conditionelements.*
+import kotlinx.coroutines.Job
 
 /**
  * Base interface for a state machine. Has values for accessing current state, last event and their possible data.
@@ -8,17 +9,17 @@ import dev.zieger.utils.statemachine.conditionelements.*
  */
 interface IMachineEx {
 
-    val event: Event
+    val event: AbsEvent
     val eventData: Data?
 
-    val state: State
+    val state: AbsState
     val stateData: Data?
 
-    suspend fun setEventSync(event: Event): StateCombo? = setEventSync(event.combo)
+    suspend fun setEventSync(event: AbsEvent): StateCombo? = setEventSync(event.combo)
     suspend fun setEventSync(event: EventCombo): StateCombo?
 
-    fun setEvent(event: Event) = setEvent(event.combo)
-    fun setEvent(event: EventCombo)
+    fun setEvent(event: AbsEvent): Job = setEvent(event.combo)
+    fun setEvent(event: EventCombo): Job
 
     fun clearPreviousChanges()
 

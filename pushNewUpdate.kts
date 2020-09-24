@@ -102,9 +102,13 @@ suspend fun latestTag(): SemanticVersion {
         }
     }
 
+    print(" . ")
     val jitPack = JitPack.get(client).version.semanticVersion!!
+    print(" JP ")
     val gitHub = GitHubTags.get(client).first().name.semanticVersion!!
+    print(" GH ")
     val git = "git describe --tag --abbrev=0".runCommand()?.stdOutput.semanticVersion!!
+    print(" L ")
 
     return max(jitPack, gitHub, git)
 }

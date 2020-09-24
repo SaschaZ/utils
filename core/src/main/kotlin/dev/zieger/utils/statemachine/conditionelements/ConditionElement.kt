@@ -8,4 +8,4 @@ interface ConditionElement
 
 @Suppress("UNCHECKED_CAST")
 val Any?.noLogging
-    get() = (this as? Event)?.noLogging == true
+    get() = (this as? AbsEvent)?.noLogging == true

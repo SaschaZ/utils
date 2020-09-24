@@ -3,6 +3,7 @@ package dev.zieger.utils.statemachine
 import dev.zieger.utils.core_testing.FlakyTest
 import dev.zieger.utils.core_testing.assertion2.isEqual
 import dev.zieger.utils.core_testing.assertion2.isNull
+import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.statemachine.MachineExBindingTest.Events.*
 import dev.zieger.utils.statemachine.MachineExBindingTest.Events.THIRD.*
 import dev.zieger.utils.statemachine.MachineExBindingTest.States.*
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.Test
 
 class MachineExBindingTest : FlakyTest() {
 
-    sealed class States : StateImpl() {
+    sealed class States : State() {
         object A : States()
         object B : States()
         sealed class C : States() {
@@ -21,13 +22,13 @@ class MachineExBindingTest : FlakyTest() {
             object CB : C()
             object CC : C()
 
-            companion object : StateGroupImpl<States>(States::class)
+            companion object : StateGroup<States>(States::class)
         }
 
-        companion object : StateGroupImpl<States>(States::class)
+        companion object : StateGroup<States>(States::class)
     }
 
-    sealed class Events : EventImpl() {
+    sealed class Events : Event() {
         object FIRST : Events()
         object SECOND : Events()
         sealed class THIRD : Events() {
@@ -35,10 +36,10 @@ class MachineExBindingTest : FlakyTest() {
             object THIRD1 : THIRD()
             object THIRD2 : THIRD()
 
-            companion object : EventGroupImpl<THIRD>(THIRD::class)
+            companion object : EventGroup<THIRD>(THIRD::class)
         }
 
-        companion object : EventGroupImpl<Events>(Events::class)
+        companion object : EventGroup<Events>(Events::class)
     }
 
     sealed class TestData : Data {
@@ -62,7 +63,8 @@ class MachineExBindingTest : FlakyTest() {
 
     override suspend fun beforeEach() {
         lastChildState = null
-        childMachine = MachineEx(CA) {
+        scope = DefaultCoroutineScope()
+        childMachine = MachineEx(CA, scope) {
             +THIRD0 set CB
             +THIRD1 + CB set CC * Data0()
             +THIRD2 + CC * Data0 set CA
@@ -71,7 +73,7 @@ class MachineExBindingTest : FlakyTest() {
             }
         }
         lastState = null
-        machine = MachineEx(A) {
+        machine = MachineEx(A, scope) {
             +FIRST set B
             +SECOND + CB set A
             +THIRD bind childMachine
@@ -81,7 +83,7 @@ class MachineExBindingTest : FlakyTest() {
         }
     }
 
-    private suspend fun verify(event: Event, state: State, childState: State? = state) {
+    private suspend fun verify(event: AbsEvent, state: AbsState, childState: AbsState? = state) {
         machine.fire eventSync event isEqual state.combo
 
         childMachine.stateData isEqual childState?.slave

@@ -1,18 +1,17 @@
 package dev.zieger.utils.statemachine.conditionelements
 
 import dev.zieger.utils.misc.name
-import dev.zieger.utils.statemachine.OnStateChanged
 import kotlin.reflect.KClass
 
 /**
- * Base class for [Event]s and [State]s.
+ * Base class for [AbsEvent]s and [AbsState]s.
  */
 interface Master : DefinitionElement {
 
-    override val hasEvent get() = this is Event
-    override val hasState get() = this is State
-    override val hasStateGroup get() = this is StateGroup<*>
-    override val hasEventGroup get() = this is EventGroup<*>
+    override val hasEvent get() = this is AbsEvent
+    override val hasState get() = this is AbsState
+    override val hasStateGroup get() = this is AbsStateGroup<*>
+    override val hasEventGroup get() = this is AbsEventGroup<*>
 }
 
 interface Group<T : Single> : Master {
@@ -21,51 +20,46 @@ interface Group<T : Single> : Master {
 
 interface Single : Master
 
-interface Event : Single {
+interface AbsEvent : Single {
 
     val noLogging: Boolean get() = false
-
-    fun OnStateChanged.fired() = Unit
 }
 
 /**,
  * All events need to implement this class.
- * @property noLogging When `true` log messages for this [Event] are not printed. Default is `false`.
+ * @property noLogging When `true` log messages for this [AbsEvent] are not printed. Default is `false`.
  */
-open class EventImpl(
+open class Event(
     override val noLogging: Boolean = false
-) : Event {
+) : AbsEvent {
 
     override fun toString(): String = "E(${this::class.name})"
 }
 
-interface State : Single {
-
-    fun OnStateChanged.activeStateChanged(isActive: Boolean) = Unit
-}
+interface AbsState : Single
 
 /**
  * All states need to implement this class.
  */
-open class StateImpl : State {
+open class State : AbsState {
 
     override fun toString(): String = "S(${this::class.name})"
 }
 
-interface EventGroup<T : Event> : Group<T>
+interface AbsEventGroup<T : AbsEvent> : Group<T>
 
-open class EventGroupImpl<T : Event>(
+open class EventGroup<T : AbsEvent>(
     override val groupType: KClass<T>
-) : EventGroup<T> {
+) : AbsEventGroup<T> {
 
     override fun toString(): String = "Eg(${groupType.name})"
 }
 
-interface StateGroup<T : State> : Group<T>
+interface AbsStateGroup<T : AbsState> : Group<T>
 
-open class StateGroupImpl<T : State>(
+open class StateGroup<T : AbsState>(
     override val groupType: KClass<T>
-) : StateGroup<T> {
+) : AbsStateGroup<T> {
 
     override fun toString(): String = "Sg(${groupType.name})"
 }

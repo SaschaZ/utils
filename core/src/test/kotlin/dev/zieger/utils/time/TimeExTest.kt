@@ -1,6 +1,7 @@
 package dev.zieger.utils.time
 
 import dev.zieger.utils.time.base.ITimeEx
+import dev.zieger.utils.time.string.DateFormat
 import org.junit.jupiter.api.Test
 
 class TimeExTest {
@@ -13,7 +14,11 @@ class TimeExTest {
         println("$secondTime")
         println("${10.minutes * 6}")
         val difference = firstTime - secondTime
-        println("$difference")
+        println(difference)
+
+        println(1.days / 1.hours) // 24.0
+        println(TimeEx() / (TimeEx() - 5.years))
+        println(TimeEx().formatTime(DateFormat.DATE_ONLY))
 
         val millis = System.currentTimeMillis()
         val years = (millis / 1.years).millis

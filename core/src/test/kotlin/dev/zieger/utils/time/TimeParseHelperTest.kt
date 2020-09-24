@@ -2,6 +2,7 @@
 
 package dev.zieger.utils.time
 
+import dev.zieger.utils.time.string.DateFormat
 import dev.zieger.utils.time.string.parse
 import org.junit.jupiter.api.Test
 
@@ -12,7 +13,7 @@ internal class TimeParseHelperTest {
     @Test
     fun stringToMillis() {
         datesToTest.forEach { date ->
-            println("${date.parse()}")
+            println(date.parse().formatTime(DateFormat.TIME_ONLY))
         }
     }
 }

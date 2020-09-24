@@ -2,9 +2,6 @@
 
 package dev.zieger.utils.core_testing.assertion
 
-import dev.zieger.utils.core_testing.assertion2.rem
-
-
 infix fun <A : Any?> A.assert(expected: Regex) =
     AssertRegexScope(expected, ActualMessageScope(toString())).apply { validate() }
 

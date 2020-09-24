@@ -2,11 +2,12 @@
 
 package dev.zieger.utils.statemachine
 
-import dev.zieger.utils.core_testing.FlakyTest
 import dev.zieger.utils.core_testing.assertion2.isEqual
 import dev.zieger.utils.core_testing.assertion2.isNull
 import dev.zieger.utils.core_testing.assertion2.isTrue
 import dev.zieger.utils.core_testing.assertion2.rem
+import dev.zieger.utils.core_testing.runTest
+import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
 import dev.zieger.utils.statemachine.MachineExTest.TestData.*
 import dev.zieger.utils.statemachine.MachineExTest.TestEvent.*
@@ -19,11 +20,20 @@ import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DE
 import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.H
 import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.I
 import dev.zieger.utils.statemachine.conditionelements.*
+import kotlinx.coroutines.cancel
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class MachineExTest : FlakyTest() {
+class MachineExTest {
 
-    sealed class TestState : StateImpl() {
+    enum class TestState2 : AbsState by State() {
+        A, B, C;
+
+        companion object : StateGroup<TestState2>(TestState2::class)
+    }
+
+    sealed class TestState : State() {
 
         object INITIAL : TestState()
         object A : TestState()
@@ -38,20 +48,20 @@ class MachineExTest : FlakyTest() {
                 object F : TEST_STATE_GROUP_FG()
                 object G : TEST_STATE_GROUP_FG()
 
-                companion object : StateGroupImpl<TEST_STATE_GROUP_FG>(TEST_STATE_GROUP_FG::class)
+                companion object : StateGroup<TEST_STATE_GROUP_FG>(TEST_STATE_GROUP_FG::class)
             }
 
-            companion object : StateGroupImpl<TEST_STATE_GROUP_DEFG>(TEST_STATE_GROUP_DEFG::class)
+            companion object : StateGroup<TEST_STATE_GROUP_DEFG>(TEST_STATE_GROUP_DEFG::class)
         }
 
         sealed class TEST_STATE_GROUP_HI : TestState() {
             object H : TEST_STATE_GROUP_HI()
             object I : TEST_STATE_GROUP_HI()
 
-            companion object : StateGroupImpl<TEST_STATE_GROUP_HI>(TEST_STATE_GROUP_HI::class)
+            companion object : StateGroup<TEST_STATE_GROUP_HI>(TEST_STATE_GROUP_HI::class)
         }
 
-        companion object : StateGroupImpl<TestState>(TestState::class)
+        companion object : StateGroup<TestState>(TestState::class)
     }
 
     sealed class TestData : Data {
@@ -71,7 +81,7 @@ class MachineExTest : FlakyTest() {
         companion object : Type<TestData>(TestData::class)
     }
 
-    sealed class TestEvent : EventImpl() {
+    sealed class TestEvent : Event() {
 
         object FIRST : TestEvent()
         object SECOND : TestEvent()
@@ -82,16 +92,28 @@ class MachineExTest : FlakyTest() {
             object FIFTH : TEST_EVENT_GROUP()
             object SIXTH : TEST_EVENT_GROUP()
 
-            companion object : EventGroupImpl<TEST_EVENT_GROUP>(TEST_EVENT_GROUP::class)
+            companion object : EventGroup<TEST_EVENT_GROUP>(TEST_EVENT_GROUP::class)
         }
 
-        companion object : EventGroupImpl<TestEvent>(TestEvent::class)
+        companion object : EventGroup<TestEvent>(TestEvent::class)
+    }
+
+    private val scope = DefaultCoroutineScope()
+
+    @BeforeEach
+    fun beforeEach() {
+        scope.reset()
+    }
+
+    @AfterEach
+    fun afterEach() {
+        scope.cancel()
     }
 
     @Test
     fun testSlaveBug() = runTest {
 
-        MachineEx(INITIAL, debugLevel = DEBUG) {
+        MachineEx(INITIAL, scope, debugLevel = DEBUG) {
             +THIRD + INITIAL execAndSet {
                 C
             }
@@ -111,7 +133,7 @@ class MachineExTest : FlakyTest() {
     fun testComplex() = runTest {
         var executed = 0
         var executed2 = 0
-        MachineEx(INITIAL, debugLevel = DEBUG) {
+        MachineEx(INITIAL, scope, debugLevel = DEBUG) {
             +FIRST + INITIAL set A * TestStateData(true)
             +SECOND * TestEventData set C
             +FIFTH + A * TestStateData set E
@@ -165,7 +187,7 @@ class MachineExTest : FlakyTest() {
 
     @Test
     fun testBuilderSyncSet() = runTest {
-        MachineEx(INITIAL, debugLevel = DEBUG) {
+        MachineEx(INITIAL, scope, debugLevel = DEBUG) {
             +FIRST + INITIAL set A
         }.run {
             state isEqual INITIAL
@@ -184,9 +206,9 @@ class MachineExTest : FlakyTest() {
 
     @Test
     fun testPrev() = runTest {
-        var lastEvent: Event? = null
-        var lastState: State? = null
-        MachineEx(INITIAL, debugLevel = DEBUG) {
+        var lastEvent: AbsEvent? = null
+        var lastState: AbsState? = null
+        MachineEx(INITIAL, scope, debugLevel = DEBUG) {
             +FIRST + INITIAL[0] set A
             +SECOND + A + FIRST[1] + INITIAL[1] - C set !B * TestEventData("bäm")
             +THIRD + FIRST[X] + B + A[1] + INITIAL[2] set C * TestEventData
@@ -228,7 +250,7 @@ class MachineExTest : FlakyTest() {
 
     @Test
     fun testData() = runTest {
-        MachineEx(INITIAL, debugLevel = DEBUG) {
+        MachineEx(INITIAL, scope, debugLevel = DEBUG) {
             +FIRST + INITIAL * TestEventData set A
             +SECOND + INITIAL set A * TestStateData(false)
             +THIRD + A[1] * TestStateData(false) set C
@@ -276,7 +298,7 @@ class MachineExTest : FlakyTest() {
 
     @Test
     fun testGroup() = runTest {
-        MachineEx(INITIAL, debugLevel = DEBUG) {
+        MachineEx(INITIAL, scope, debugLevel = DEBUG) {
             +TestEvent + INITIAL set D
             +SECOND + TEST_STATE_GROUP_DEFG set E
             +THIRD * TestData + TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG set G
@@ -325,7 +347,7 @@ class MachineExTest : FlakyTest() {
     @Test
     fun testExternal() = runTest {
         var isActive = false
-        MachineEx(INITIAL, debugLevel = DEBUG) {
+        MachineEx(INITIAL, scope, debugLevel = DEBUG) {
             +FIRST + INITIAL + { isActive } set A * TestStateData(true)
             +SECOND + C + E - { isActive } set B
             +THIRD + A * TestStateData + B - D[X] + { isActive } set C

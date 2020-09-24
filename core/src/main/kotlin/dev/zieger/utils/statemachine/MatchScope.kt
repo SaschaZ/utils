@@ -17,8 +17,8 @@ interface IMatchScope {
     val conditions: Map<Long, Condition>
     val bindings: Map<Condition, IMachineEx>
 
-    val event: Event get() = eventCombo.master
-    val state: State get() = stateCombo.master
+    val event: AbsEvent get() = eventCombo.master
+    val state: AbsState get() = stateCombo.master
     val eventData: Data? get() = eventCombo.slave as? Data
     val stateData: Data? get() = stateCombo.slave as? Data
 

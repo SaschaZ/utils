@@ -7,34 +7,34 @@ interface Combo<out M : Master> : Master {
 }
 
 data class EventCombo(
-    override val master: Event,
+    override val master: AbsEvent,
     override var slave: Slave? = null,
     override var ignoreSlave: Boolean = false
-) : Combo<Event>, Event by master {
+) : Combo<AbsEvent>, AbsEvent by master {
     override fun toString(): String = "EC($master|$slave|${ignoreSlave.toString()[0]})"
 }
 
 data class StateCombo(
-    override val master: State,
+    override val master: AbsState,
     override var slave: Slave? = null,
     override var ignoreSlave: Boolean = false
-) : Combo<State>, State by master {
+) : Combo<AbsState>, AbsState by master {
     override fun toString(): String = "SC($master|$slave|${ignoreSlave.toString()[0]})"
 }
 
-data class EventGroupCombo<T : Event>(
-    override val master: EventGroup<T>,
+data class EventGroupCombo<T : AbsEvent>(
+    override val master: AbsEventGroup<T>,
     override var slave: Slave? = null,
     override var ignoreSlave: Boolean = false
-) : Combo<EventGroup<T>>, EventGroup<T> by master {
+) : Combo<AbsEventGroup<T>>, AbsEventGroup<T> by master {
     override fun toString(): String = "EgC($master|$slave|${ignoreSlave.toString()[0]})"
 }
 
-data class StateGroupCombo<T : State>(
-    override val master: StateGroup<T>,
+data class StateGroupCombo<T : AbsState>(
+    override val master: AbsStateGroup<T>,
     override var slave: Slave? = null,
     override var ignoreSlave: Boolean = false
-) : Combo<StateGroup<T>>, StateGroup<T> by master {
+) : Combo<AbsStateGroup<T>>, AbsStateGroup<T> by master {
 
     override fun toString(): String = "SgC($master|$slave|${ignoreSlave.toString()[0]})"
 }
@@ -42,32 +42,32 @@ data class StateGroupCombo<T : State>(
 val Master.combo: Combo<*>
     get() = when (this) {
         is Combo<*> -> this
-        is Event -> combo
-        is State -> combo
-        is EventGroup<*> -> combo
-        is StateGroup<*> -> combo
+        is AbsEvent -> combo
+        is AbsState -> combo
+        is AbsEventGroup<*> -> combo
+        is AbsStateGroup<*> -> combo
         else -> throw IllegalArgumentException("Unknown Master type $this")
     }
 
-val Event.combo: EventCombo
+val AbsEvent.combo: EventCombo
     get() = when (this) {
         is EventCombo -> this
         else -> EventCombo(this)
     }
 
-val EventGroup<*>.combo: EventGroupCombo<*>
+val AbsEventGroup<*>.combo: EventGroupCombo<*>
     get() = when (this) {
         is EventGroupCombo<*> -> this
         else -> EventGroupCombo(this)
     }
 
-val State.combo: StateCombo
+val AbsState.combo: StateCombo
     get() = when (this) {
         is StateCombo -> this
         else -> StateCombo(this)
     }
 
-val StateGroup<*>.combo: StateGroupCombo<*>
+val AbsStateGroup<*>.combo: StateGroupCombo<*>
     get() = when (this) {
         is StateGroupCombo<*> -> this
         else -> StateGroupCombo(this)
