@@ -1,5 +1,10 @@
 # Changelog
 
+##### 2.2.25
+
+* added FlakyTest
+    * runs a flaky test again when it fails
+
 ##### 2.2.24
 
 * upgraded to kotlin 1.4.10
