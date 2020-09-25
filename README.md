@@ -33,14 +33,14 @@ repositories {
 
 dependencies {
     // utils
-    implementation "dev.zieger.utils:core:2.2.25"// platform independent
-    implementation "dev.zieger.utils:android:2.2.25" // android
-    implementation "dev.zieger.utils:jdk:2.2.25" // jdk
+    implementation "dev.zieger.utils:core:2.2.26"// platform independent
+    implementation "dev.zieger.utils:android:2.2.26" // android
+    implementation "dev.zieger.utils:jdk:2.2.26" // jdk
 
     // testing utils
-    implementation "dev.zieger.utils:core-testing:2.2.25" // platform independent
-    implementation "dev.zieger.utils:android-testing:2.2.25" // android
-    implementation "dev.zieger.utils:jdk-testing:2.2.25" // jdk
+    implementation "dev.zieger.utils:core-testing:2.2.26" // platform independent
+    implementation "dev.zieger.utils:android-testing:2.2.26" // android
+    implementation "dev.zieger.utils:jdk-testing:2.2.26" // jdk
 }
 ```
 
@@ -219,6 +219,10 @@ Also works with attached `Data`.
 #
 
 # Changelog
+
+##### 2.2.26
+
+* fixed build
 
 ##### 2.2.25
 
