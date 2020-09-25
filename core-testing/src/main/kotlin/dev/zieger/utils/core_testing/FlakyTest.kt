@@ -30,14 +30,21 @@ abstract class FlakyTest {
         scope = this
 
         var executionIdx = 0
-        catch(Unit, exclude = emptyList(), maxExecutions = maxExecutions,
+        catch(Unit, exclude = emptyList(),
+            maxExecutions = maxExecutions,
+            printStackTrace = false,
+            logStackTrace = false,
             onCatch = {
-                if (executionIdx + 1 == maxExecutions) throw it
+                if (executionIdx + 1 == maxExecutions) {
+                    System.err.println("Test failed after ${executionIdx + 1} executions.")
+                    throw it
+                } else System.err.println("Test failed at execution #${executionIdx + 1} with\n$it\n\n\n\n\n")
             }) {
             beforeEach()
             withTimeout(timeout) { block() }
             afterEach()
             executionIdx++
         }
+        println("Test passed after $executionIdx executions.")
     }.asUnit()
 }

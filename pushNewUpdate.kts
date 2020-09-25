@@ -53,7 +53,7 @@ data class JitPack(
 ) {
     companion object {
         suspend fun get(client: HttpClient): JitPack =
-            client.get("https://jitpack.io/api/builds/com.github.SaschaZ/utils/latest")
+            client.get("https://jitpack.io/api/builds/dev.zieger/utils/latest")
     }
 }
 
@@ -197,11 +197,8 @@ Example      | Description
     )
 }
 
-suspend fun checkForUncommittedChanges() {
-    "git status".runCommand()?.stdOutput?.also { output ->
-        """"""
-    }
-}
+suspend fun checkForUncommittedChanges(): Boolean =
+    "git status".runCommand()?.stdOutput?.contains("nichts zu committen, Arbeitsverzeichnis unverändert") ?: false
 
 runBlocking {
     if (args.contains("--help")) {
@@ -209,7 +206,10 @@ runBlocking {
         exitProcess(0).asUnit()
     }
 
-    checkForUncommittedChanges()
+    if (!checkForUncommittedChanges()) {
+        System.err.println("There are uncommitted changes.")
+        exitProcess(1)
+    }
 
     val joinedArgs = args.filter { !it.startsWith("--") }.joinToString { it.removePrefix("-") }
     print("build new tag … ")
