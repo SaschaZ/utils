@@ -46,8 +46,8 @@ open class ObservableWithParent<P : Any?, T : Any?>(
         subscriberStateChanged: ((Boolean) -> Unit)? = {},
         veto: (T) -> Boolean = { false },
         map: (T) -> T = { it },
-        onChangedS: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit = {},
-        onChanged: IOnChangedScopeWithParent<P, T>.(T) -> Unit = {}
+        onChangedS: (suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null,
+        onChanged: (IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null
     ) : this(
         ObservableParamsWithParent(
             initial, scope, storeRecentValues, previousValueSize, notifyForInitial, notifyOnChangedValueOnly, mutex,

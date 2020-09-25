@@ -18,8 +18,8 @@ class ObservableParamsWithParent<P : Any?, T : Any?>(
     override val onSubscriberStateChanged: ((Boolean) -> Unit)? = {},
     override val veto: (T) -> Boolean = { false },
     override val map: (T) -> T = { it },
-    override val onChangedS: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit = {},
-    override val onChanged: IOnChangedScopeWithParent<P, T>.(T) -> Unit = {}
+    override val onChangedS: (suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null,
+    override val onChanged: (IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null
 ) : DataClass(), IObservableParamsWithParent<P, T>
 
 interface IObservableParamsWithParent<P : Any?, T : Any?> : IOnChangedParamsWithParent<P, T> {

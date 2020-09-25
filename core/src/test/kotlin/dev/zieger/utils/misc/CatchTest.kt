@@ -3,11 +3,13 @@
 package dev.zieger.utils.misc
 
 import dev.zieger.utils.core_testing.assertion2.isEqual
+import dev.zieger.utils.core_testing.assertion2.isNull
 import dev.zieger.utils.core_testing.assertion2.rem
 import dev.zieger.utils.core_testing.mix.ParamInstance
 import dev.zieger.utils.core_testing.mix.bind
 import dev.zieger.utils.core_testing.mix.param
 import dev.zieger.utils.core_testing.mix.parameterMix
+import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.delegates.nextInt
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
@@ -54,5 +56,11 @@ class CatchTest {
             receivedResult isEqual (if (throwException || maxExecutions == 0) returnOnCatch else result) %
                     "result; throwException=$throwException; maxExecutions=$maxExecutions"
         }
+    }
+
+    @Test
+    fun testNullReturn() = runTest {
+        val result: Int? = catch(null) { throw Exception("foo") }
+        result.isNull()
     }
 }
