@@ -40,7 +40,7 @@ abstract class FlakyTest {
                 throwables += it
                 if (throwables.size == maxExecutions) {
                     System.err.println("Test failed after ${throwables.size} executions.\n\n" +
-                            throwables.joinToStringIndexed("\n\n") { idx, value -> "#$idx: $value" })
+                            throwables.joinToStringIndexed("\n\n") { idx, value -> "#$idx: $value\n${value.printStackTrace()}" })
                     throw it
                 } else System.err.println("Test failed at execution #${throwables.size} with\n$it. Will retry…\n\n\n\n\n")
             }) {
@@ -48,7 +48,7 @@ abstract class FlakyTest {
             withTimeout(timeout) { block() }
             afterEach()
             println("Test passed after ${throwables.size + 1} executions.\n\n" +
-                    throwables.joinToStringIndexed("\n\n") { idx, value -> "#$idx: $value" })
+                    throwables.joinToStringIndexed("\n\n") { idx, value -> "#$idx: $value\n${value.printStackTrace()}" })
         }
     }.asUnit()
 }

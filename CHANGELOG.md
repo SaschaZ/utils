@@ -1,5 +1,10 @@
 # Changelog
 
+##### 2.2.30
+
+* FlakyTest:
+    * proper output of throwables
+
 ##### 2.2.29
 
 * FlakyTest:
