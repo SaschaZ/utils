@@ -3,8 +3,8 @@ package dev.zieger.utils.core_testing
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.catch
-import dev.zieger.utils.time.base.IDurationEx
-import dev.zieger.utils.time.seconds
+import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.duration.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -29,6 +29,7 @@ abstract class FlakyTest {
     ) = runBlocking {
         scope = this
 
+        var executionIdx = 0
         catch(Unit, exclude = emptyList(), maxExecutions = maxExecutions,
             onCatch = {
                 if (executionIdx + 1 == maxExecutions) throw it
@@ -36,6 +37,7 @@ abstract class FlakyTest {
             beforeEach()
             withTimeout(timeout) { block() }
             afterEach()
+            executionIdx++
         }
     }.asUnit()
 }

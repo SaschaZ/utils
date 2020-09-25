@@ -3,7 +3,7 @@
 @file:DependsOnMaven("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
 @file:DependsOnMaven("io.ktor:ktor-client-apache:1.3.0")
 @file:DependsOnMaven("io.ktor:ktor-client-gson:1.3.0")
-@file:DependsOnMaven("dev.zieger.utils:core:2.2.22")
+@file:DependsOnMaven("dev.zieger.utils:core:2.2.24")
 @file:MavenRepository("jitpack", "https://jitpack.io")
 
 @file:Suppress("UNREACHABLE_CODE", "PropertyName", "MemberVisibilityCanBePrivate")
