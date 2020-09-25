@@ -1,5 +1,9 @@
 # Changelog
 
+##### 2.2.26
+
+* fixed build
+
 ##### 2.2.25
 
 * added FlakyTest
