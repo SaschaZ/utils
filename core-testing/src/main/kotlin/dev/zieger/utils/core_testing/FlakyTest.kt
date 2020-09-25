@@ -3,12 +3,14 @@ package dev.zieger.utils.core_testing
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.catch
+import dev.zieger.utils.misc.joinToStringIndexed
 import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
+import java.util.*
 
 abstract class FlakyTest {
 
@@ -29,22 +31,24 @@ abstract class FlakyTest {
     ) = runBlocking {
         scope = this
 
-        var executionIdx = 0
+        val throwables = LinkedList<Throwable>()
         catch(Unit, exclude = emptyList(),
             maxExecutions = maxExecutions,
             printStackTrace = false,
             logStackTrace = false,
             onCatch = {
-                if (executionIdx == maxExecutions) {
-                    System.err.println("Test failed after $executionIdx executions.")
+                throwables += it
+                if (throwables.size == maxExecutions) {
+                    System.err.println("Test failed after ${throwables.size} executions.\n\n" +
+                            throwables.joinToStringIndexed("\n\n") { idx, value -> "#$idx: $value" })
                     throw it
-                } else System.err.println("Test failed at execution #${executionIdx} with\n$it. Will retry…\n\n\n\n\n")
+                } else System.err.println("Test failed at execution #${throwables.size} with\n$it. Will retry…\n\n\n\n\n")
             }) {
-            executionIdx++
             beforeEach()
             withTimeout(timeout) { block() }
             afterEach()
+            println("Test passed after ${throwables.size + 1} executions.\n\n" +
+                    throwables.joinToStringIndexed("\n\n") { idx, value -> "#$idx: $value" })
         }
-        println("Test passed after $executionIdx executions.")
     }.asUnit()
 }

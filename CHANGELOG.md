@@ -1,5 +1,10 @@
 # Changelog
 
+##### 2.2.29
+
+* FlakyTest:
+    * print all failed test causes at the end of each test
+
 ##### 2.2.28
 
 * FlakyTest fix
