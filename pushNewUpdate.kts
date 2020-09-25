@@ -197,11 +197,20 @@ Example      | Description
     )
 }
 
+suspend fun checkForUncommittedChanges() {
+    "git status".runCommand()?.stdOutput?.also { output ->
+        """"""
+    }
+}
+
 runBlocking {
     if (args.contains("--help")) {
         showHelp()
         exitProcess(0).asUnit()
     }
+
+    checkForUncommittedChanges()
+
     val joinedArgs = args.filter { !it.startsWith("--") }.joinToString { it.removePrefix("-") }
     print("build new tag … ")
     val tag = latestTag().apply {
