@@ -122,6 +122,7 @@ object Matcher {
         scope: IMatchScope
     ): IComboElement? = this?.apply {
         val newState = this
+        val prevState = scope.currentState
         scope.applyState(newState).run {
             bindings.filter { match(it.key, STATE) }.forEach { it.key.action?.invoke(this) }
 
@@ -142,7 +143,7 @@ object Matcher {
             matchingStateConditions.forEach { it.value.action?.invoke(scope) }
 
             Log.i(
-                "state changed from $currentState to $newState with event $newEvent",
+                "state changed from $prevState to $newState with event $newEvent",
                 logFilter = GENERIC(disableLog = newEvent.noLogging || MachineEx.debugLevel <= ERROR)
             )
         }

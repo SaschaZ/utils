@@ -1,5 +1,9 @@
 # Changelog
 
+##### 2.2.33
+
+* fixed MachineEx log output when state was changed
+
 ##### 2.2.32
 
 * fix JitPack foo
