@@ -33,14 +33,14 @@ repositories {
 
 dependencies {
     // utils
-    implementation "dev.zieger.utils:core:2.2.27"// platform independent
-    implementation "dev.zieger.utils:android:2.2.27" // android
-    implementation "dev.zieger.utils:jdk:2.2.27" // jdk
+    implementation "dev.zieger.utils:core:2.2.28"// platform independent
+    implementation "dev.zieger.utils:android:2.2.28" // android
+    implementation "dev.zieger.utils:jdk:2.2.28" // jdk
 
     // testing utils
-    implementation "dev.zieger.utils:core-testing:2.2.27" // platform independent
-    implementation "dev.zieger.utils:android-testing:2.2.27" // android
-    implementation "dev.zieger.utils:jdk-testing:2.2.27" // jdk
+    implementation "dev.zieger.utils:core-testing:2.2.28" // platform independent
+    implementation "dev.zieger.utils:android-testing:2.2.28" // android
+    implementation "dev.zieger.utils:jdk-testing:2.2.28" // jdk
 }
 ```
 
@@ -219,6 +219,10 @@ Also works with attached `Data`.
 #
 
 # Changelog
+
+##### 2.2.28
+
+* FlakyTest fix
 
 ##### 2.2.27
 
