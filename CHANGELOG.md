@@ -1,5 +1,9 @@
 # Changelog
 
+##### 2.2.32
+
+* fix JitPack foo
+
 ##### 2.2.31
 
 * OnChanged:
