@@ -1,5 +1,10 @@
 # Changelog
 
+##### 2.2.31
+
+* OnChanged:
+    * `suspendUntil` returns wanted value
+
 ##### 2.2.30
 
 * FlakyTest:

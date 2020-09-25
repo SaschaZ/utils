@@ -58,7 +58,7 @@ interface IOnChanged2<P : Any?, T : Any?> : IOnChangedParams2<P, T>, ReadWritePr
     suspend fun suspendUntil(
         wanted: T,
         timeout: IDurationEx? = null
-    )
+    ): T
 
     /**
      * Suspend on change callback. Only is invoked when [scope] is set.
@@ -132,11 +132,12 @@ open class OnChanged2<P : Any?, T : Any?>(
     override suspend fun suspendUntil(
         wanted: T,
         timeout: IDurationEx?
-    ) = withTimeout(timeout) {
-        if (value == wanted) return@withTimeout
-
-        @Suppress("ControlFlowWithEmptyBody")
-        while (nextChange() != wanted);
+    ): T = withTimeout(timeout) {
+        if (value != wanted) {
+            @Suppress("ControlFlowWithEmptyBody")
+            while (nextChange() != wanted);
+        }
+        wanted
     }
 
     override fun clearRecentValues() = recentValues.reset().asUnit()
