@@ -35,15 +35,15 @@ abstract class FlakyTest {
             printStackTrace = false,
             logStackTrace = false,
             onCatch = {
-                if (executionIdx + 1 == maxExecutions) {
-                    System.err.println("Test failed after ${executionIdx + 1} executions.")
+                if (executionIdx == maxExecutions) {
+                    System.err.println("Test failed after $executionIdx executions.")
                     throw it
-                } else System.err.println("Test failed at execution #${executionIdx + 1} with\n$it\n\n\n\n\n")
+                } else System.err.println("Test failed at execution #${executionIdx} with\n$it. Will retry…\n\n\n\n\n")
             }) {
+            executionIdx++
             beforeEach()
             withTimeout(timeout) { block() }
             afterEach()
-            executionIdx++
         }
         println("Test passed after $executionIdx executions.")
     }.asUnit()

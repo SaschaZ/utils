@@ -1,5 +1,9 @@
 # Changelog
 
+##### 2.2.28
+
+* FlakyTest fix
+
 ##### 2.2.27
 
 * added more log output to FlakyTest
