@@ -1,13 +1,13 @@
 @file:Suppress("unused", "MemberVisibilityCanBePrivate")
 
-package dev.zieger.utils.statemachine
+package dev.zieger.utils.statemachine.dsl
 
 import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.statemachine.IMachineEx
+import dev.zieger.utils.statemachine.IMatchScope
 import dev.zieger.utils.statemachine.conditionelements.*
 
-abstract class MachineDsl : IMachineEx {
-
-    protected val mapper: IMachineExMapper = MachineExMapper()
+interface MachineOperatorDsl : MachineDslRoot {
 
     // start entry with unary +
     operator fun Master.unaryPlus() = Condition(this)

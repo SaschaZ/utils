@@ -11,6 +11,7 @@ import dev.zieger.utils.statemachine.MachineEx.Companion.DEFAULT_PREVIOUS_CHANGE
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel
 import dev.zieger.utils.statemachine.MachineEx.Companion.debugLevel
 import dev.zieger.utils.statemachine.conditionelements.*
+import dev.zieger.utils.statemachine.dsl.MachineDsl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
@@ -162,7 +163,7 @@ import kotlinx.coroutines.channels.Channel
  * @param previousChangesCacheSize Size of the cache that store the state changes. Defaulting to
  * [DEFAULT_PREVIOUS_CHANGES_SIZE].
  * @property debugLevel [DebugLevel] for log messages used in the whole state machine.
- * @param builder Lambda that defines all state machine conditions. See [MachineDsl] for more details.
+ * @param builder Lambda that defines all state machine conditions. See [MachineOperatorDsl] for more details.
  */
 open class MachineEx(
     initialState: AbsState,
@@ -170,7 +171,7 @@ open class MachineEx(
     previousChangesCacheSize: Int = DEFAULT_PREVIOUS_CHANGES_SIZE,
     debugLevel: DebugLevel = DebugLevel.ERROR,
     builder: suspend MachineDsl.() -> Unit
-) : MachineDsl() {
+) : MachineDsl, IMachineEx {
 
     companion object {
 
@@ -186,6 +187,8 @@ open class MachineEx(
         internal var debugLevel: DebugLevel = DebugLevel.ERROR
             private set
     }
+
+    override val mapper: IMachineExMapper = MachineExMapper()
 
     private val previousChanges = FiFo<OnStateChanged>(previousChangesCacheSize)
 

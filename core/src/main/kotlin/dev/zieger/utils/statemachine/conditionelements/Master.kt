@@ -20,7 +20,9 @@ interface Group<T : Single> : Master {
 
 interface Single : Master
 
-interface AbsEvent : Single {
+interface AbsEventType : Master
+
+interface AbsEvent : Single, AbsEventType {
 
     val noLogging: Boolean get() = false
 }
@@ -36,7 +38,9 @@ open class Event(
     override fun toString(): String = "E(${this::class.name})"
 }
 
-interface AbsState : Single
+interface AbsStateType : Master
+
+interface AbsState : Single, AbsStateType
 
 /**
  * All states need to implement this class.
@@ -46,7 +50,7 @@ open class State : AbsState {
     override fun toString(): String = "S(${this::class.name})"
 }
 
-interface AbsEventGroup<T : AbsEvent> : Group<T>
+interface AbsEventGroup<T : AbsEvent> : Group<T>, AbsEventType
 
 open class EventGroup<T : AbsEvent>(
     override val groupType: KClass<T>
@@ -55,7 +59,7 @@ open class EventGroup<T : AbsEvent>(
     override fun toString(): String = "Eg(${groupType.name})"
 }
 
-interface AbsStateGroup<T : AbsState> : Group<T>
+interface AbsStateGroup<T : AbsState> : Group<T>, AbsStateType
 
 open class StateGroup<T : AbsState>(
     override val groupType: KClass<T>

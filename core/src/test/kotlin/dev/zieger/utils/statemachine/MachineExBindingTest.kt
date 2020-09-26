@@ -10,6 +10,7 @@ import dev.zieger.utils.statemachine.MachineExBindingTest.States.*
 import dev.zieger.utils.statemachine.MachineExBindingTest.States.C.*
 import dev.zieger.utils.statemachine.MachineExBindingTest.TestData.*
 import dev.zieger.utils.statemachine.conditionelements.*
+import dev.zieger.utils.statemachine.dsl.times
 import org.junit.jupiter.api.Test
 
 class MachineExBindingTest : FlakyTest() {
