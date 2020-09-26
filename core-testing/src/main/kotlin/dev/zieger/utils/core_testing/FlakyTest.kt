@@ -9,8 +9,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
+import java.util.*
 
-abstract class FlakyTest {
+abstract class FlakyTest(private val defaultMaxExecutions: Int = 5) {
 
     lateinit var scope: CoroutineScope
 
@@ -24,18 +25,38 @@ abstract class FlakyTest {
 
     protected open fun runTest(
         timeout: IDurationEx = 10.seconds,
-        maxExecutions: Int = 5,
+        maxExecutions: Int = defaultMaxExecutions,
         block: suspend CoroutineScope.() -> Unit
     ) = runBlocking {
         scope = this
 
-        catch(Unit, exclude = emptyList(), maxExecutions = maxExecutions,
+        val throwable = LinkedList<Throwable>()
+        catch(
+            Unit, exclude = emptyList(),
+            maxExecutions = maxExecutions,
+            printStackTrace = false,
+            logStackTrace = false,
             onCatch = {
-                if (executionIdx + 1 == maxExecutions) throw it
+                throwable += it
+                if (throwable.size == maxExecutions) {
+                    System.err.println("Test failed after ${throwable.size} executions.")
+                    throwable.forEachIndexed { idx, t ->
+                        System.err.println("\n\n#$idx: $t")
+                        t.printStackTrace()
+                    }
+
+                    throw it
+                } else System.err.println("Test failed at execution #${throwable.size} with\n$it. Will retry…\n\n\n\n\n")
             }) {
             beforeEach()
             withTimeout(timeout) { block() }
             afterEach()
+
+            println("Test passed after ${throwable.size + 1} executions.")
+            throwable.forEachIndexed { idx, t ->
+                System.err.println("\n\n#$idx: $t")
+                t.printStackTrace()
+            }
         }
     }.asUnit()
 }

@@ -3,21 +3,21 @@
 @file:DependsOnMaven("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
 @file:DependsOnMaven("io.ktor:ktor-client-apache:1.3.0")
 @file:DependsOnMaven("io.ktor:ktor-client-gson:1.3.0")
-@file:DependsOnMaven("dev.zieger.utils:core:2.2.22")
+@file:DependsOnMaven("dev.zieger.utils:core:2.2.24")
 @file:MavenRepository("jitpack", "https://jitpack.io")
 
-@file:Suppress("UNREACHABLE_CODE", "PropertyName")
+@file:Suppress("UNREACHABLE_CODE", "PropertyName", "MemberVisibilityCanBePrivate")
 
 import dev.zieger.utils.coroutines.CommandOutput
 import dev.zieger.utils.coroutines.runCommand
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.misc.anyOf
 import dev.zieger.utils.misc.asUnit
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.apache.Apache
-import io.ktor.client.features.json.GsonSerializer
-import io.ktor.client.features.json.JsonFeature
-import io.ktor.client.request.get
+import dev.zieger.utils.misc.nullWhenBlank
+import io.ktor.client.*
+import io.ktor.client.engine.apache.*
+import io.ktor.client.features.json.*
+import io.ktor.client.request.*
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import kotlin.math.pow
@@ -53,16 +53,17 @@ data class JitPack(
 ) {
     companion object {
         suspend fun get(client: HttpClient): JitPack =
-            client.get("https://jitpack.io/api/builds/com.github.SaschaZ/utils/latest")
+            client.get("https://jitpack.io/api/builds/dev.zieger/utils/latest")
     }
 }
 
 class SemanticVersion(
     major: Int,
     minor: Int,
-    var patch: Int
+    var patch: Int,
+    var label: String? = null
 ) : Comparable<SemanticVersion>, Comparator<SemanticVersion> {
-    constructor(version: String) : this(version.major, version.minor, version.patch)
+    constructor(version: String) : this(version.major, version.minor, version.patch, version.label)
 
     var major: Int by OnChanged(major) {
         this@SemanticVersion.minor = 0
@@ -71,20 +72,33 @@ class SemanticVersion(
         patch = 0
     }
 
+    fun update(version: SemanticVersion) {
+        major = version.major
+        minor = version.minor
+        patch = version.patch
+        label = version.label
+    }
+
     override fun compareTo(other: SemanticVersion): Int =
         major.compareTo(other.major) * 10.0.pow(6).toInt() +
                 minor.compareTo(other.minor) * 10.0.pow(3).toInt() +
                 patch.compareTo(other.patch)
 
-    override fun compare(o1: SemanticVersion?, o2: SemanticVersion?): Int = o1!!.compareTo(o2!!)
+    override fun compare(o1: SemanticVersion, o2: SemanticVersion): Int = o1.compareTo(o2)
 
-    override fun toString(): String = "$major.$minor.$patch"
+    override fun toString(): String = "$major.$minor.$patch${label?.nullWhenBlank()?.let { "-$it" } ?: ""}"
 
     companion object {
 
-        val String.major get() = filterNot { it.anyOf('\'', '"', '\n') }.split(".")[0].toInt()
-        val String.minor get() = filterNot { it.anyOf('\'', '"', '\n') }.split(".")[1].toInt()
-        val String.patch get() = filterNot { it.anyOf('\'', '"', '\n') }.split(".")[2].toInt()
+        private val regex = """([0-9]+)\.([0-9]+)\.([0-9]+-?([a-zA-Z0-9.\-_]?))""".toRegex()
+
+        val String.version
+            get() = regex.find(this)?.groupValues
+                ?.run { SemanticVersion(get(1).toInt(), get(2).toInt(), get(3).toInt(), getOrNull(4)) }
+        val String.major get() = version?.major ?: 0
+        val String.minor get() = version?.minor ?: 0
+        val String.patch get() = version?.patch ?: 0
+        val String.label get() = version?.label
     }
 }
 
@@ -102,13 +116,9 @@ suspend fun latestTag(): SemanticVersion {
         }
     }
 
-    print(" . ")
     val jitPack = JitPack.get(client).version.semanticVersion!!
-    print(" JP ")
     val gitHub = GitHubTags.get(client).first().name.semanticVersion!!
-    print(" GH ")
     val git = "git describe --tag --abbrev=0".runCommand()?.stdOutput.semanticVersion!!
-    print(" L ")
 
     return max(jitPack, gitHub, git)
 }
@@ -175,25 +185,37 @@ Parameter | Function
 -g        | Update git
 --major   | Increase major version by 1
 --minor   | Increase minor version by 1
+-f        | Force version
 
 Example      | Description
 -----------------------------------------------------------------
 -rpg         | Update all with patch version increased by 1
 -rpg --major | Update all with major version increased by 1
 -r           | Update README.md with patch version increased by 1
+-rpgf 2.3.0  | Update all with version set to 2.3.0 
     """
     )
 }
+
+suspend fun checkForUncommittedChanges(): Boolean =
+    "git status".runCommand()?.stdOutput?.contains("nichts zu committen, Arbeitsverzeichnis unverändert") ?: false
 
 runBlocking {
     if (args.contains("--help")) {
         showHelp()
         exitProcess(0).asUnit()
     }
+
+    if (!checkForUncommittedChanges()) {
+        System.err.println("There are uncommitted changes.")
+        exitProcess(1)
+    }
+
     val joinedArgs = args.filter { !it.startsWith("--") }.joinToString { it.removePrefix("-") }
     print("build new tag … ")
     val tag = latestTag().apply {
         when {
+            joinedArgs.contains("f") -> update(SemanticVersion(args[args.indexOfLast { it.contains("f") } + 1]))
             args.contains("--major") -> major++
             args.contains("--minor") -> minor++
             else -> patch++

@@ -36,6 +36,57 @@
   * supports multiple assertions (nullability, greater, smaller, ...)
   * available under `dev.zieger.utils.core-testing.assertion2` (former `assert` utils remain in the library)
 
+##### 2.2.34
+
+* fixed FlakyTest exception output
+
+##### 2.2.33
+
+* fixed MachineEx log output when state was changed
+
+##### 2.2.32
+
+* fix JitPack foo
+
+##### 2.2.31
+
+* OnChanged:
+    * `suspendUntil` returns wanted value
+
+##### 2.2.30
+
+* FlakyTest:
+    * proper output of throwables
+
+##### 2.2.29
+
+* FlakyTest:
+    * print all failed test causes at the end of each test
+
+##### 2.2.28
+
+* FlakyTest fix
+
+##### 2.2.27
+
+* added more log output to FlakyTest
+
+##### 2.2.26
+
+* fixed build
+
+##### 2.2.25
+
+* added FlakyTest
+    * runs a flaky test again when it fails
+
+##### 2.2.24
+
+* upgraded to kotlin 1.4.10
+    * Coroutines: 1.3.9
+    * Koin: 2.2.0-beta-1
+    * Moshi: 1.10.0
+    
 ##### 2.2.23
 
 * build fix
