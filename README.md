@@ -3,7 +3,7 @@
 
 [![jitPack](https://jitpack.io/v/dev.zieger/utils.svg)](https://jitpack.io/#dev.zieger/utils/core) 
 [![jitCI](https://jitci.com/gh/SaschaZ/utils/svg)](https://jitci.com/gh/SaschaZ/utils) 
-[![GitHub Actions](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fatrox%2Fsync-dotenv%2Fbadge&label=build&logo=#2088FF)](https://actions-badge.atrox.dev/atrox/sync-dotenv/goto)
+[![Android CI](https://github.com/SaschaZ/utils/workflows/Android%20CI/badge.svg)](https://github.com/SaschaZ/utils/actions?query=workflow%3A%22Android+CI%22)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?logo=Apache)](https://raw.githubusercontent.com/SaschaZ/utils/master/LICENSE)
 <br>
 [![codecov](https://codecov.io/gh/SaschaZ/utils/branch/master/graph/badge.svg)](https://codecov.io/gh/SaschaZ/utils)
