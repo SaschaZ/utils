@@ -19,11 +19,11 @@ jobs:
     - name: Build with Gradle
       run: ./build.sh ${{secrets.CODACY_TOKEN}}
     
-#     - name: Upload artifact
-#       uses: actions/upload-artifact@v1.0.0
-#       with:
-#          name:  "Releases"
-#          path:  "./build/publications"  
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+         name:  "Releases"
+         path:  "./build/publications"  
  
     - name: Codeclimate
       uses: paambaati/codeclimate-action@v2.6.0
