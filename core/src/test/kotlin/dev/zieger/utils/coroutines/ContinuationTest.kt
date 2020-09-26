@@ -8,10 +8,11 @@ import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.duration.seconds
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicInteger
 
-class ContinuationTest : AnnotationSpec() {
+class ContinuationTest {
 
     private lateinit var continuation: Continuation
     private val continued = AtomicInteger(0)

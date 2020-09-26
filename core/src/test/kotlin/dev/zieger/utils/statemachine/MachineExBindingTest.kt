@@ -1,10 +1,10 @@
 package dev.zieger.utils.statemachine
 
+import dev.zieger.utils.core_testing.FlakyTest
 import dev.zieger.utils.statemachine.MachineExTest.TestState.A
 import dev.zieger.utils.statemachine.conditionelements.*
-import io.kotlintest.specs.AnnotationSpec
 
-class MachineExBindingTest : AnnotationSpec() {
+class MachineExBindingTest : FlakyTest() {
 
     sealed class States : State() {
         object A : States()

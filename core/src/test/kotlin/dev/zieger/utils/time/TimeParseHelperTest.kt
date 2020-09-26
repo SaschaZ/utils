@@ -2,9 +2,9 @@
 
 package dev.zieger.utils.time
 
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
-internal class TimeParseHelperTest : AnnotationSpec() {
+internal class TimeParseHelperTest {
 
     private val datesToTest = listOf("2020-06-12T10:44:00")
 

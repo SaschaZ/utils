@@ -5,12 +5,12 @@ import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.builder.withContextEx
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.time.duration.milliseconds
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Test
 
-class ExceptionTest : AnnotationSpec() {
+class ExceptionTest {
 
     @Test
     fun testLaunch() = runBlocking {

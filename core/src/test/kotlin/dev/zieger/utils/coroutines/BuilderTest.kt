@@ -10,10 +10,10 @@ import dev.zieger.utils.time.base.plus
 import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.duration.milliseconds
 import dev.zieger.utils.time.duration.seconds
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Test
 
-class BuilderTest : AnnotationSpec() {
+class BuilderTest {
 
     @Test
     fun testLaunchEx() = runBlocking {

@@ -2,11 +2,11 @@ package dev.zieger.utils.time
 
 import dev.zieger.utils.time.duration.toDuration
 import dev.zieger.utils.time.duration.years
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 
-internal class DurationFormatTest : AnnotationSpec() {
+internal class DurationFormatTest {
 
     @Test
     fun testFormat() {

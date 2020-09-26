@@ -2,9 +2,9 @@ package dev.zieger.utils.time
 
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.json.JsonConverter
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
-class TimeZoneTest : AnnotationSpec() {
+class TimeZoneTest {
 
     @Test
     fun testTimeZone() = runTest {

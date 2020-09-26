@@ -2,10 +2,10 @@ package dev.zieger.utils.coroutines
 
 
 import dev.zieger.utils.misc.asUnit
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Test
 
-class BlockingTest : AnnotationSpec() {
+class BlockingTest {
 
     private fun blockingCall(): Boolean {
         Thread.sleep(100)

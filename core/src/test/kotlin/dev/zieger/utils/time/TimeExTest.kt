@@ -5,9 +5,9 @@ import dev.zieger.utils.time.base.minus
 import dev.zieger.utils.time.base.times
 import dev.zieger.utils.time.duration.minutes
 import dev.zieger.utils.time.duration.years
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
-class TimeExTest : AnnotationSpec() {
+class TimeExTest {
 
     @Test
     fun testPrint() {

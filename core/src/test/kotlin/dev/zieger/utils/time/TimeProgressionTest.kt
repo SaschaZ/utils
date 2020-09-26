@@ -8,9 +8,9 @@ import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.minutes
 import dev.zieger.utils.time.duration.weeks
 import dev.zieger.utils.time.progression.step
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
-class TimeProgressionTest : AnnotationSpec() {
+class TimeProgressionTest {
 
     @Test
     fun testInit() {

@@ -4,13 +4,13 @@ import dev.zieger.utils.core_testing.TestCoroutineScope
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.duration.milliseconds
-import io.kotlintest.specs.AnnotationSpec
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Test
 
-class CoroutineScopeExTest : AnnotationSpec() {
+class CoroutineScopeExTest {
 
     @Test
     fun testExecute() = runBlocking {

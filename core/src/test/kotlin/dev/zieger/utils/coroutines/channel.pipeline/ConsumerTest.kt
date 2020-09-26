@@ -2,8 +2,8 @@ package dev.zieger.utils.coroutines.channel.pipeline
 
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.misc.asUnit
-import io.kotlintest.specs.AbstractAnnotationSpec.Test
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Test
 
 class ConsumerTest : IParamsHolder {
 

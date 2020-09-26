@@ -2,9 +2,9 @@
 
 package dev.zieger.utils.statemachine
 
+import dev.zieger.utils.core_testing.FlakyTest
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
-import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
 import dev.zieger.utils.statemachine.MachineExTest.TestData.*
 import dev.zieger.utils.statemachine.MachineExTest.TestEvent.*
@@ -18,9 +18,9 @@ import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI
 import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.I
 import dev.zieger.utils.statemachine.conditionelements.*
 import dev.zieger.utils.time.duration.seconds
-import io.kotlintest.specs.AnnotationSpec
+import org.junit.jupiter.api.Test
 
-class MachineExTest : AnnotationSpec() {
+class MachineExTest : FlakyTest() {
 
     sealed class TestState : State() {
 

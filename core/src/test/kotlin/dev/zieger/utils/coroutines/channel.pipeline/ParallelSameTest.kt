@@ -3,7 +3,7 @@ package dev.zieger.utils.coroutines.channel.pipeline
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.time.duration.seconds
-import io.kotlintest.specs.AbstractAnnotationSpec.Test
+import org.junit.jupiter.api.Test
 
 class ParallelSameTest : ProcessorBaseTest(
     ParallelProcessingType.SAME
