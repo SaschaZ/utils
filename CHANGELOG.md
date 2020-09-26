@@ -1,5 +1,9 @@
 # Changelog
 
+##### 2.2.34
+
+* fixed FlakyTest exception output
+
 ##### 2.2.33
 
 * fixed MachineEx log output when state was changed
