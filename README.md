@@ -10,6 +10,7 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/cbd0727a672b2178f75e/maintainability)](https://codeclimate.com/github/SaschaZ/utils/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/cbd0727a672b2178f75e/test_coverage)](https://codeclimate.com/github/SaschaZ/utils/test_coverage)
 [![Codacy](https://api.codacy.com/project/badge/Grade/13ba69ac93234d2da6a3b55474a4fcc7)](https://www.codacy.com/manual/SaschaZ/utils?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=SaschaZ/utils&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Coverage/13ba69ac93234d2da6a3b55474a4fcc7)](https://www.codacy.com/manual/SaschaZ/utils/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=SaschaZ/utils&amp;utm_campaign=Badge_Coverage)
 
 
 ## Contains utilities for
