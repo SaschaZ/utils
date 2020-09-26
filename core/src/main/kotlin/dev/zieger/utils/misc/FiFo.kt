@@ -47,7 +47,7 @@ interface IFiFo<T> : List<T> {
 abstract class BaseFiFo<T>(
     protected val initial: List<T> = emptyList(),
     protected val internal: MutableList<T> = LinkedList(initial),
-    protected val shouldRemove: List<T>.(T) -> Boolean
+    protected val doRemove: MutableList<T>.() -> Unit
 ) : IFiFo<T>, List<T> by internal {
 
     override fun put(value: T, update: Boolean): List<T> {
@@ -63,8 +63,7 @@ abstract class BaseFiFo<T>(
 
     protected open fun onInsert(value: T) {
         internal.add(value)
-        val arrayList = ArrayList(internal)
-        internal.removeAll { arrayList.shouldRemove(it) }
+        internal.doRemove()
     }
 
     override fun clear() = internal.clear()
@@ -78,7 +77,7 @@ abstract class BaseFiFo<T>(
 open class FiFo<T>(
     val capacity: Int,
     initial: List<T> = emptyList()
-) : BaseFiFo<T>(initial, shouldRemove = { size == capacity + 1 && indexOf(it) == 0 }) {
+) : BaseFiFo<T>(initial, doRemove = { while (size > capacity) removeAt(0) }) {
 
     /**
      * Copy constructor.
