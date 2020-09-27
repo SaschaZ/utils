@@ -6,6 +6,7 @@ import dev.zieger.utils.misc.catch
 import dev.zieger.utils.time.base.IDurationEx
 import dev.zieger.utils.time.seconds
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -58,5 +59,6 @@ abstract class FlakyTest(private val defaultMaxExecutions: Int = 5) {
                 t.printStackTrace()
             }
         }
+        scope.cancel()
     }.asUnit()
 }
