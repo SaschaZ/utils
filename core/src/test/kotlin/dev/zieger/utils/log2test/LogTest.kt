@@ -38,7 +38,7 @@ internal class LogTest {
     }
 
     @Test
-    fun testBasics() = runTest(10.seconds) {
+    fun testBasics() = runTest(15.seconds) {
         Log.tag = "moofoo"
         Log += "woomoo"
         Log += "bamdam"
@@ -63,7 +63,7 @@ internal class LogTest {
             Log += LogSpamFilter(1.seconds, this@runTest)
 
             repeat(20) {
-                message = null
+                message = ""
                 Log.i("inside scope #$it")
                 if (it % 4 == 0)
                     message isMatching """I-[0-9\-:]+: inside scope #$it - \[foomoo\|bamdam]"""
@@ -74,9 +74,8 @@ internal class LogTest {
         Log.i("outside scope")
         message isMatching """I-[0-9\-:]+-.+: outside scope - \[moofoo\|bamdam]"""
 
-        message = null
+        message = ""
         messageObs.nextChange(5.seconds) isMatching """I-[0-9\-:]+: inside scope #19 - \[foomoo\|bamdam]"""
-        delay(5.seconds)
     }
 
     @Test
