@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-./gradlew build jacocoTestReport publishToMavenLocal
+./gradlew --no-daemon build jacocoTestReport publishToMavenLocal
 
 cp -r ./build/publications ./
 cp -r ./android/build/javadoc ./publications/android
