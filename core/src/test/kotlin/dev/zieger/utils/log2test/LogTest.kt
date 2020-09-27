@@ -2,8 +2,8 @@
 
 package dev.zieger.utils.log2test
 
+import dev.zieger.utils.core_testing.assertion2.isBlankOrNull
 import dev.zieger.utils.core_testing.assertion2.isMatching
-import dev.zieger.utils.core_testing.assertion2.isNull
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.log2.*
@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test
 
 internal class LogTest {
 
-    private val messageObs = Observable<String?>(null)
+    private val messageObs = Observable<String?>("")
     private var message by messageObs
 
     @BeforeEach
@@ -46,15 +46,15 @@ internal class LogTest {
         Log.v("test", "fooboo", "boofoo")
         message isMatching """V-[0-9\-:]+: test - \[moofoo\|woomoo\|bamdam\|fooboo\|boofoo]"""
 
-        message = null
+        message = ""
         Log.logLevel = LogLevel.DEBUG
         Log.v("test")
-        message.isNull()
+        message
 
         Log.messageBuilder = LogMessageBuilder(LOG_MESSAGE_WITH_CALL_ORIGIN)
         Log -= "woomoo"
         Log.d("test delay", filter = logPreFilter { next -> launchEx(delayed = 1.seconds) { next(this@logPreFilter) } })
-        message.isNull()
+        message.isBlankOrNull()
         messageObs.nextChange(5.seconds) { it isMatching """D-[0-9\-:]+-.+: test delay - \[moofoo\|bamdam\]""" }
 
         Log.scope {
@@ -67,7 +67,7 @@ internal class LogTest {
                 Log.i("inside scope #$it")
                 if (it % 4 == 0)
                     message isMatching """I-[0-9\-:]+: inside scope #$it - \[foomoo\|bamdam]"""
-                else message.isNull()
+                else message.isBlankOrNull()
                 delay(250.milliseconds)
             }
         }
@@ -75,7 +75,8 @@ internal class LogTest {
         message isMatching """I-[0-9\-:]+-.+: outside scope - \[moofoo\|bamdam]"""
 
         message = null
-        messageObs.nextChange(5.seconds) { it isMatching """I-[0-9\-:]+: inside scope #19 - \[foomoo\|bamdam]""" }
+        messageObs.nextChange(5.seconds) isMatching """I-[0-9\-:]+: inside scope #19 - \[foomoo\|bamdam]"""
+        delay(5.seconds)
     }
 
     @Test

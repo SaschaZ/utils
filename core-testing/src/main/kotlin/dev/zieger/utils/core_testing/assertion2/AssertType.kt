@@ -15,6 +15,13 @@ fun Any?.isNotNull() = isNotNull { "" }
 infix fun Any?.isNotNull(msg: AssertionScope.() -> String) = this assert2 (NOT_NULL to msg)
 infix fun Any?.isNotNull(msg: String) = isNotNull { msg }
 
+infix fun Any?.isBlank(msg: AssertionScope.() -> String) = this assert2 (BLANK to msg)
+fun Any?.isBlank() = isBlank { "" }
+infix fun Any?.isBlank(msg: String) = isBlank { msg }
+infix fun Any?.isBlankOrNull(msg: AssertionScope.() -> String) = this assert2 (BLANK_OR_NULL to msg)
+fun Any?.isBlankOrNull() = isBlankOrNull() { "" }
+infix fun Any?.isBlankOrNull(msg: String) = isBlankOrNull() { msg }
+
 fun Any?.isTrue() = isTrue { "" }
 infix fun Any?.isTrue(msg: AssertionScope.() -> String) = this assert2 (TRUE to msg)
 infix fun Any?.isTrue(msg: String) = isTrue { msg }
@@ -138,6 +145,10 @@ sealed class AssertType(val assert: (Any?, Any?) -> Boolean) {
 
     object FALSE : AssertType({ v, _ -> v == false })
     object FALSE_OR_NULL : AssertType({ v, _ -> v == null || v == false })
+
+    object BLANK : AssertType({ v, _ -> ((v as? String) ?: v.toString()).none { !it.isWhitespace() } })
+    object BLANK_OR_NULL :
+        AssertType({ v, _ -> v == null || ((v as? String) ?: v.toString()).none { !it.isWhitespace() } })
 
     object EQUALS : AssertType({ a, e -> a == e })
     object EQUALS_OR_NULL : AssertType({ a, e -> a == null || a == e })
