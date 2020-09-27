@@ -1,5 +1,6 @@
 package dev.zieger.utils.core_testing
 
+import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.catch
@@ -29,33 +30,33 @@ abstract class FlakyTest(private val defaultMaxExecutions: Int = 5) {
         maxExecutions: Int = defaultMaxExecutions,
         block: suspend CoroutineScope.() -> Unit
     ) = runBlocking {
-        scope = this
+        scope = DefaultCoroutineScope().apply {
+            val throwable = LinkedList<Throwable>()
+            catch(Unit, exclude = emptyList(),
+                maxExecutions = maxExecutions,
+                printStackTrace = false,
+                logStackTrace = false,
+                onCatch = {
+                    throwable += it
+                    if (throwable.size == maxExecutions) {
+                        System.err.println("Test failed after ${throwable.size} executions.")
+                        throwable.forEachIndexed { idx, t ->
+                            System.err.println("\n\n#$idx: $t")
+                            t.printStackTrace()
+                        }
 
-        val throwable = LinkedList<Throwable>()
-        catch(Unit, exclude = emptyList(),
-            maxExecutions = maxExecutions,
-            printStackTrace = false,
-            logStackTrace = false,
-            onCatch = {
-                throwable += it
-                if (throwable.size == maxExecutions) {
-                    System.err.println("Test failed after ${throwable.size} executions.")
-                    throwable.forEachIndexed { idx, t ->
-                        System.err.println("\n\n#$idx: $t")
-                        t.printStackTrace()
-                    }
+                        throw it
+                    } else System.err.println("Test failed at execution #${throwable.size} with\n$it. Will retry…\n\n\n\n\n")
+                }) {
+                beforeEach()
+                withTimeout(timeout) { block() }
+                afterEach()
 
-                    throw it
-                } else System.err.println("Test failed at execution #${throwable.size} with\n$it. Will retry…\n\n\n\n\n")
-            }) {
-            beforeEach()
-            withTimeout(timeout) { block() }
-            afterEach()
-
-            println("Test passed after ${throwable.size + 1} executions.")
-            throwable.forEachIndexed { idx, t ->
-                System.err.println("\n\n#$idx: $t")
-                t.printStackTrace()
+                println("Test passed after ${throwable.size + 1} executions.")
+                throwable.forEachIndexed { idx, t ->
+                    System.err.println("\n\n#$idx: $t")
+                    t.printStackTrace()
+                }
             }
         }
         scope.cancel()
