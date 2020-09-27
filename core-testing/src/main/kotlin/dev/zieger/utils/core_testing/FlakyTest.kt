@@ -30,9 +30,11 @@ abstract class FlakyTest(private val defaultMaxExecutions: Int = 5) {
         maxExecutions: Int = defaultMaxExecutions,
         block: suspend CoroutineScope.() -> Unit
     ) = runBlocking {
-        scope = DefaultCoroutineScope().apply {
+        scope = DefaultCoroutineScope()
+        scope.apply {
             val throwable = LinkedList<Throwable>()
-            catch(Unit, exclude = emptyList(),
+            catch(
+                Unit, exclude = emptyList(),
                 maxExecutions = maxExecutions,
                 printStackTrace = false,
                 logStackTrace = false,
