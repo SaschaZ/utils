@@ -25,14 +25,14 @@ jobs:
          name:  "Releases"
          path:  "./build/publications"  
  
-    - name: Codeclimate
-      uses: paambaati/codeclimate-action@v2.6.0
-      env:
-         CC_TEST_REPORTER_ID: ${{secrets.CODE_CLIMATE_TOKEN}}
-         JACOCO_SOURCE_PATH: "${{github.workspace}}/core/src/main/kotlin"
-      with:
-        coverageCommand: ./gradlew build jacocoTestReport
-        coverageLocations:  ./core/build/jacoco/jacocoTestReport.xml:jacoco
+#     - name: Codeclimate
+#       uses: paambaati/codeclimate-action@v2.6.0
+#       env:
+#          CC_TEST_REPORTER_ID: ${{secrets.CODE_CLIMATE_TOKEN}}
+#          JACOCO_SOURCE_PATH: "${{github.workspace}}/core/src/main/kotlin"
+#       with:
+#         coverageCommand: ./gradlew build jacocoTestReport
+#         coverageLocations:  ./core/build/jacoco/jacocoTestReport.xml:jacoco
   
     - name: Codecov
       uses: codecov/codecov-action@v1.0.7
