@@ -42,25 +42,31 @@ abstract class FlakyTest(private val defaultMaxExecutions: Int = 5) {
                     throwable += it
                     if (throwable.size == maxExecutions) {
                         System.err.println("Test failed after ${throwable.size} executions.")
-                        throwable.forEachIndexed { idx, t ->
-                            System.err.println("\n\n#$idx: $t")
-                            t.printStackTrace()
-                        }
+                        throwable.prettyOut
 
                         throw it
-                    } else System.err.println("Test failed at execution #${throwable.size} with\n$it. Will retry…\n\n\n\n\n")
+                    } else System.err.println(
+                        "Test failed at execution #${throwable.size} " +
+                                "with ${it.message}. Will retry…\n\n\n\n\n"
+                    )
                 }) {
                 beforeEach()
                 withTimeout(timeout) { block() }
                 afterEach()
 
-                println("Test passed after ${throwable.size + 1} executions.")
-                throwable.forEachIndexed { idx, t ->
-                    System.err.println("\n\n#$idx: $t")
-                    t.printStackTrace()
-                }
+                println("Test passed after ${throwable.size + 1} executions.\n\n")
+                throwable.prettyOut
             }
         }
         scope.cancel()
     }.asUnit()
 }
+
+val List<Throwable>.prettyOut
+    get() = forEachIndexed { idx, t ->
+        System.err.println("\n\n${t.pretty(idx)}")
+    }
+
+fun Throwable.pretty(idx: Int) = "#${idx + 1}: ${message}\n" +
+        (cause?.message?.let { "Cause: $it\n" } ?: "") +
+        stackTrace.joinToString("\n")
