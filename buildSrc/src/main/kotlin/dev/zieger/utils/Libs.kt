@@ -86,6 +86,9 @@ val DependencyHandlerScope.androidXtestRules
 val DependencyHandlerScope.androidXtestExt
     get() = "testImplementation"("androidx.test.ext:junit:${Versions.androidXtestExt}")
 
+val DependencyHandlerScope.lanterna
+    get() = "implementation"("com.googlecode.lanterna:lanterna:${Versions.lanterna}")
+
 val DependencyHandlerScope.mockWebServer
     get() = "implementation"("com.squareup.okhttp3:mockwebserver:${Versions.mockWebServer}")
 val DependencyHandlerScope.bouncyCastle
@@ -95,6 +98,11 @@ val DependencyHandlerScope.mockk
     get() = "testImplementation"("io.mockk:mockk:${Versions.mockk}")
 val DependencyHandlerScope.junitJupiter
     get() = "testImplementation"("org.junit.jupiter:junit-jupiter:${Versions.junitJupiterEngine}")
+
+val DependencyHandlerScope.ktorClientGson
+    get() = "implementation"("io.ktor:ktor-client-gson:1.3.2")
+val DependencyHandlerScope.ktorServerGson
+    get() = "implementation"("io.ktor:ktor-jackson:1.3.2")
 
 val DependencyHandlerScope.koTestRunner
     get() = "testImplementation"("io.kotlintest:kotlintest-runner-junit5:${Versions.koTest}")
