@@ -3,6 +3,7 @@
 ##### 2.2.34
 
 * fixed FlakyTest exception output
+* added LanternaConsole (WIP)
 
 ##### 2.2.33
 
