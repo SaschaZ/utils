@@ -5,7 +5,7 @@ on: [label, release, push, pull_request]
 jobs:
   build:
 
-    runs-on: rs
+    runs-on: ubuntu
 
     steps:
     
