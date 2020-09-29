@@ -51,7 +51,7 @@ RUN wget -q -O tools.zip https://dl.google.com/android/repository/commandlinetoo
 # Support Gradle
 ENV TERM dumb
 ENV JAVA_OPTS "-Xms2g -Xmx5g"
-ENV GRADLE_OPTS "-Xmx2g"
+ENV GRADLE_OPTS "-Xms2g -Xmx5g -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
 
 # Add Project
 COPY . /project
