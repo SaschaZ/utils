@@ -58,7 +58,7 @@ COPY . /project
 WORKDIR /project
 
 # Remove possible temporary build files
-RUN rm ./local.properties && \
+RUN rm -f ./local.properties && \
     find . -name build -print0 | xargs -0 rm -rf
 
 CMD ["./gradlew", "publishToMavenLocal"]
