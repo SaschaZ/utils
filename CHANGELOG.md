@@ -1,5 +1,9 @@
 # Changelog
 
+##### 2.2.38
+
+*  FiFo crash fix (add new value before removing old ones)
+
 ##### 2.2.37
 
 * TypeContinuation crash fix

@@ -42,9 +42,7 @@ abstract class AbsFiFo<T>(
         else values.add(it)
     }
 
-    protected open fun onInsert(value: T): T? = (if (isFull) values.removeAt(0) else null).apply {
-        values.add(value)
-    }
+    protected open fun onInsert(value: T): T? = values.add(value).let { if (isFull) values.removeAt(0) else null }
 
     open fun reset() = values.clear()
     fun takeLast(num: Int): List<T?> = values.takeLast(num)
@@ -55,5 +53,5 @@ open class FiFo<T>(
     initial: List<T> = emptyList()
 ) : AbsFiFo<T>(initial) {
 
-    override val isFull: Boolean get() = values.size == capacity
+    override val isFull: Boolean get() = values.size >= capacity
 }
