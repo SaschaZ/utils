@@ -213,12 +213,14 @@ runBlocking {
 
     val joinedArgs = args.filter { !it.startsWith("--") }.joinToString { it.removePrefix("-") }
     print("build new tag … ")
-    val tag = latestTag().apply {
-        when {
-            joinedArgs.contains("f") -> update(SemanticVersion(args[args.indexOfLast { it.contains("f") } + 1]))
-            args.contains("--major") -> major++
-            args.contains("--minor") -> minor++
-            else -> patch++
+    val tag = when {
+        joinedArgs.contains("f") -> SemanticVersion(args[args.indexOfLast { it.contains("f") } + 1])
+        else -> latestTag().apply {
+            when {
+                args.contains("--major") -> major++
+                args.contains("--minor") -> minor++
+                else -> patch++
+            }
         }
     }
     println("$tag")

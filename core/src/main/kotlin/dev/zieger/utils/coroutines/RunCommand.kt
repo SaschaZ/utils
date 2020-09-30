@@ -31,7 +31,7 @@ suspend fun shell(print: Boolean = true, block: suspend ShellScope.() -> Unit) =
 
 suspend fun String.runCommand(
     workingDir: File = File("."),
-    outListener: (output: String, isError: Boolean) -> Unit = { _, _ -> }
+    block: (output: String, isError: Boolean) -> Unit = { _, _ -> }
 ): CommandOutput =
     executeNativeBlocking { Runtime.getRuntime().exec(arrayOf("/bin/sh", "-c", this), null, workingDir) }.run {
         var stdOutput = ""
@@ -42,7 +42,7 @@ suspend fun String.runCommand(
                 inputStream.read(result)
                 val toString = result.toString(Charsets.UTF_8)
                 stdOutput += toString
-                outListener(toString, false)
+                block(toString, false)
             }
         }
         var errOutput = ""
@@ -53,7 +53,7 @@ suspend fun String.runCommand(
                 inputStream.read(result)
                 val toString = result.toString(Charsets.UTF_8)
                 errOutput += toString
-                outListener(toString, true)
+                block(toString, true)
             }
         }
         waitFor()

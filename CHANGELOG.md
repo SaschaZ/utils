@@ -1,5 +1,9 @@
 # Changelog
 
+##### 2.2.36
+
+* fixed build
+
 ##### 2.2.35
 
 * added StateMachine observable
