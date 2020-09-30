@@ -1,57 +1,88 @@
+@file:Suppress("MemberVisibilityCanBePrivate")
+
 package dev.zieger.utils.misc
 
-open class DelegateList<out T>(
-    private val delegate: () -> List<T>
-) : List<T> {
-    override val size: Int get() = delegate().size
+import java.util.*
+import kotlin.collections.ArrayList
 
-    override fun contains(element: @UnsafeVariance T): Boolean = delegate().contains(element)
+/**
+ * Describes a FiFo (first in - first out) queue.
+ */
+interface IFiFo<T> : List<T> {
 
-    override fun containsAll(elements: Collection<@UnsafeVariance T>): Boolean = delegate().containsAll(elements)
+    /**
+     * `true` when next [put] call would remove the oldest item in the FiFo.
+     */
+    val isFull: Boolean
 
-    override fun get(index: Int): T = delegate()[index]
+    /**
+     * `true` when next put would not remove any items from the FiFo.
+     */
+    val isNotFull: Boolean get() = !isFull
 
-    override fun indexOf(element: @UnsafeVariance T): Int = delegate().indexOf(element)
+    /**
+     * Puts a new value into the FiFo queue.
+     *
+     * @param value Value to add to the FiFo queue.
+     * @param update `true` when the latest value in the FiFo queue should be replaced with [value] instead of adding
+     *   it as a new item to the queue. Defaulting to `false`.
+     *
+     * @return Items in the FiFo queue.
+     */
+    fun put(value: T, update: Boolean = false): List<T>
 
-    override fun isEmpty(): Boolean = delegate().isEmpty()
+    /**
+     * Removes the oldest item from the FiFo queue.
+     *
+     * @return The removed item or `null`.
+     */
+    fun take(): T?
 
-    override fun iterator(): Iterator<T> = delegate().iterator()
-
-    override fun lastIndexOf(element: @UnsafeVariance T): Int = delegate().lastIndexOf(element)
-
-    override fun listIterator(): ListIterator<T> = delegate().listIterator()
-
-    override fun listIterator(index: Int): ListIterator<T> = delegate().listIterator(index)
-
-    override fun subList(fromIndex: Int, toIndex: Int): List<T> = delegate().subList(fromIndex, toIndex)
+    /**
+     * Removes all items from the FiFo queue.
+     */
+    fun clear()
 }
 
-abstract class AbsFiFo<T>(
-    initial: List<T> = emptyList(),
-    protected val values: MutableList<T> = ArrayList(initial)
-) : List<T> by values {
+abstract class BaseFiFo<T>(
+    protected val initial: List<T> = emptyList(),
+    protected val internal: MutableList<T> = LinkedList(initial),
+    protected val doRemove: MutableList<T>.() -> Unit
+) : IFiFo<T>, List<T> by internal {
 
-    abstract val isFull: Boolean
-    open val isNotFull: Boolean get() = !isFull
-
-    open fun put(value: T, update: Boolean = false): T? =
-        if (update) onUpdate(value) else onInsert(value)
-
-    protected open fun onUpdate(value: T): T = value.also {
-        if (isNotEmpty()) values[values.lastIndex] = it
-        else values.add(it)
+    override fun put(value: T, update: Boolean): List<T> {
+        if (update && internal.isNotEmpty()) onUpdate(value) else onInsert(value)
+        return internal
     }
 
-    protected open fun onInsert(value: T): T? = values.add(value).let { if (isFull) values.removeAt(0) else null }
+    override fun take(): T? = internal.firstOrNull()?.also { internal.remove(it) }
 
-    open fun reset() = values.clear()
-    fun takeLast(num: Int): List<T?> = values.takeLast(num)
+    protected open fun onUpdate(value: T) {
+        internal[internal.lastIndex] = value
+    }
+
+    protected open fun onInsert(value: T) {
+        internal.add(value)
+        internal.doRemove()
+    }
+
+    override fun clear() = internal.clear()
+
+    override fun toString(): String = "$internal"
 }
 
+/**
+ * Implementation of [BaseFiFo] using a fixed [capacity] as FiFo size.
+ */
 open class FiFo<T>(
-    private val capacity: Int = 10,
+    val capacity: Int,
     initial: List<T> = emptyList()
-) : AbsFiFo<T>(initial) {
+) : BaseFiFo<T>(initial, doRemove = { while (size > capacity) removeAt(0) }) {
 
-    override val isFull: Boolean get() = values.size >= capacity
+    /**
+     * Copy constructor.
+     */
+    constructor(fifo: FiFo<T>) : this(fifo.capacity, ArrayList(fifo))
+
+    override val isFull: Boolean get() = internal.size == capacity
 }

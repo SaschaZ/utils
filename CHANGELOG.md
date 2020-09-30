@@ -1,5 +1,16 @@
 # Changelog
 
+##### 2.2.39
+
+* `FiFo`:
+  * reimplemented
+  * added `take` method to remove the first element
+  * added `DurationExFiFo`:
+    * accept values of type `ITimeEx`
+    * size is limited by the duration of the oldest to the latest item
+  * added `AtomicFiFo`:
+    * wraps `put` and `get` methods into a `Mutex`
+
 ##### 2.2.38
 
 *  FiFo crash fix (add new value before removing old ones)

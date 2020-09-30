@@ -52,7 +52,7 @@ abstract class ObservableBase<P : Any?, T : Any?>(
         observer.add(listener)
         if (notifyForInitial) OnChangedScope2(
             value, previousThisRef.get(), recentValues.lastOrNull(), recentValues,
-            { recentValues.reset() }, true
+            { recentValues.clear() }, true
         ).listener(value)
         updateSubscriberState()
 
@@ -68,7 +68,7 @@ abstract class ObservableBase<P : Any?, T : Any?>(
             scope?.launchEx(mutex = mutex) {
                 OnChangedScope2(
                     value, previousThisRef.get(), recentValues.lastOrNull(), recentValues,
-                    { recentValues.reset() }, true
+                    { recentValues.clear() }, true
                 ).listener(value)
             }
         updateSubscriberState()

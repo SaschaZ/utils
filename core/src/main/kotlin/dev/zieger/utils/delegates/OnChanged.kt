@@ -124,7 +124,7 @@ open class OnChanged2<P : Any?, T : Any?>(
     ): T = withTimeout(timeout) {
         nextChangeContinuation.suspendUntilTrigger(timeout)
         OnChangedScope2(
-            value, previousThisRef.get(), recentValues.lastOrNull(), recentValues, { recentValues.reset() }, false
+            value, previousThisRef.get(), recentValues.lastOrNull(), recentValues, { recentValues.clear() }, false
         ) { value = it }.onChanged(value)
         value
     }
@@ -140,7 +140,7 @@ open class OnChanged2<P : Any?, T : Any?>(
         wanted
     }
 
-    override fun clearRecentValues() = recentValues.reset().asUnit()
+    override fun clearRecentValues() = recentValues.clear().asUnit()
 
     private fun onPropertyChanged(
         new: T,
