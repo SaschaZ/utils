@@ -33,14 +33,14 @@ repositories {
 
 dependencies {
     // utils
-    implementation "dev.zieger.utils:core:2.2.38"// platform independent
-    implementation "dev.zieger.utils:android:2.2.38" // android
-    implementation "dev.zieger.utils:jdk:2.2.38" // jdk
+    implementation "dev.zieger.utils:core:2.2.39"// platform independent
+    implementation "dev.zieger.utils:android:2.2.39" // android
+    implementation "dev.zieger.utils:jdk:2.2.39" // jdk
 
     // testing utils
-    implementation "dev.zieger.utils:core-testing:2.2.38" // platform independent
-    implementation "dev.zieger.utils:android-testing:2.2.38" // android
-    implementation "dev.zieger.utils:jdk-testing:2.2.38" // jdk
+    implementation "dev.zieger.utils:core-testing:2.2.39" // platform independent
+    implementation "dev.zieger.utils:android-testing:2.2.39" // android
+    implementation "dev.zieger.utils:jdk-testing:2.2.39" // jdk
 }
 ```
 
@@ -219,6 +219,17 @@ Also works with attached `Data`.
 #
 
 # Changelog
+
+##### 2.2.39
+
+* `FiFo`:
+  * reimplemented
+  * added `take` method to remove the first element
+  * added `DurationExFiFo`:
+    * accept values of type `ITimeEx`
+    * size is limited by the duration of the oldest to the latest item
+  * added `AtomicFiFo`:
+    * wraps `put` and `get` methods into a `Mutex`
 
 ##### 2.2.38
 
