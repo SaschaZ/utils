@@ -33,14 +33,14 @@ repositories {
 
 dependencies {
     // utils
-    implementation "dev.zieger.utils:core:2.2.37"// platform independent
-    implementation "dev.zieger.utils:android:2.2.37" // android
-    implementation "dev.zieger.utils:jdk:2.2.37" // jdk
+    implementation "dev.zieger.utils:core:2.2.38"// platform independent
+    implementation "dev.zieger.utils:android:2.2.38" // android
+    implementation "dev.zieger.utils:jdk:2.2.38" // jdk
 
     // testing utils
-    implementation "dev.zieger.utils:core-testing:2.2.37" // platform independent
-    implementation "dev.zieger.utils:android-testing:2.2.37" // android
-    implementation "dev.zieger.utils:jdk-testing:2.2.37" // jdk
+    implementation "dev.zieger.utils:core-testing:2.2.38" // platform independent
+    implementation "dev.zieger.utils:android-testing:2.2.38" // android
+    implementation "dev.zieger.utils:jdk-testing:2.2.38" // jdk
 }
 ```
 
@@ -219,6 +219,10 @@ Also works with attached `Data`.
 #
 
 # Changelog
+
+##### 2.2.38
+
+*  FiFo crash fix (add new value before removing old ones)
 
 ##### 2.2.37
 
