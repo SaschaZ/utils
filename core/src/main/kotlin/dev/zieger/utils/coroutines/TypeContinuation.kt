@@ -19,6 +19,7 @@ open class TypeContinuation<T> : IContinuationBase<T> {
         do {
             result = c.receive()
         } while (wanted?.let { result != it } == true)
+        c.close()
         result
     }
 
@@ -28,7 +29,6 @@ open class TypeContinuation<T> : IContinuationBase<T> {
 
         tmp.runEach {
             offer(value)
-            close()
         }
     }
 }

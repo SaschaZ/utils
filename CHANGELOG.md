@@ -1,5 +1,9 @@
 # Changelog
 
+##### 2.2.37
+
+* TypeContinuation crash fix
+
 ##### 2.2.36
 
 * fixed build

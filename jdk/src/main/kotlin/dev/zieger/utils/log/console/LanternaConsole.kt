@@ -11,11 +11,9 @@ import com.googlecode.lanterna.screen.Screen
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.executeNativeBlocking
-import dev.zieger.utils.coroutines.runCommand
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.misc.catch
 import dev.zieger.utils.misc.nullWhen
 import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.duration.milliseconds
@@ -142,44 +140,40 @@ class LanternaConsole(bufferSize: Int = BUFFER_SIZE) {
         screen.doResizeIfNecessary()
     }
 
-    private fun Any.processMessage(idx: Int): Int = screen.newTextGraphics().run {
+    private fun Any.processMessage(idx: Int): Int {
         var nlIdx = idx
         when (this@processMessage) {
             is List<*> -> forEach {
-                (it as? TextWithColor)?.also { twc ->
-                    screen.newTextGraphics().apply {
-                        foregroundColor = twc.color
-                        backgroundColor = twc.background
-                        putString(0, size.rows - nlIdx++ + bottomIdx, twc.text.toString())
-                    }
+                nlIdx = it?.processMessage(nlIdx) ?: nlIdx
+            }
+            is TextWithColor -> text(MessageScope { onBufferChanged() }).put(nlIdx, color, background)
+            else -> nlIdx = put(nlIdx)
+        }
+        return nlIdx
+    }
+
+    private fun Any.put(idx: Int, color: TextColor = WHITE, background: TextColor = BLACK): Int =
+        screen.newTextGraphics().let { g ->
+            g.foregroundColor = color
+            g.backgroundColor = background
+
+            var nlIdx = idx
+            toString().split("\n")
+                .flatMap {
+                    if (it.isEmpty()) listOf(" ") else it.chunkedSequence(screen.terminalSize.columns - 3).toList()
                 }
-            }
-            is TextWithColor -> screen.newTextGraphics().apply {
-                foregroundColor = color
-                backgroundColor = background
-                putString(0, size.rows - nlIdx++ + bottomIdx, text.toString())
-            }
-            else -> toString()
-                .split("\n")
-                .flatMap { if (it.isEmpty()) listOf(" ") else it.chunkedSequence(size.columns - 3).toList() }
                 .mapIndexed { idx, s -> if (idx == 0) ">: $s" else "   $s" }
                 .reversed()
                 .forEach {
-                    val lineIdx = size.rows - nlIdx++ + bottomIdx
-                    if (lineIdx < screen.terminalSize.rows) putString(
+                    val lineIdx = screen.terminalSize.rows - nlIdx++ + bottomIdx
+                    if (lineIdx < screen.terminalSize.rows) g.putString(
                         0, lineIdx - 2, it.filterNot { c -> c.isISOControl() }.trim()
                     )
                 }
+            nlIdx
         }
-        nlIdx
-    }
 
     private suspend fun onNewCommand(command: String) {
-        Scope().run {
-            catch(Unit, onCatch = { outNl(it) }) {
-                command.runCommand { output, isError -> outNl(output) }
-            }
-        }
     }
 
     val scope: Scope
