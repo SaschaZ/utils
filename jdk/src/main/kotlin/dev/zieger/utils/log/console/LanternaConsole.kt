@@ -3,6 +3,7 @@
 package dev.zieger.utils.log.console
 
 import com.googlecode.lanterna.TerminalSize
+import com.googlecode.lanterna.TextCharacter
 import com.googlecode.lanterna.TextColor
 import com.googlecode.lanterna.TextColor.ANSI.*
 import com.googlecode.lanterna.input.KeyStroke
@@ -38,8 +39,8 @@ class LanternaConsole(bufferSize: Int = BUFFER_SIZE) {
         fun main(args: Array<String>) = runBlocking {
             LanternaConsole().scope {
                 outNl("FooBooFo\noBooFooBooFoFoFooBFooFFoFooBoooBooFooBooooBooBoooFFooBooooBooFooBoooFoFooFooBooBooFFooBooooBoooBoooBoooBooFooBooFooBoo")
-                out("mooobooo\n")
-                out("määäää" * GREEN("foo", YELLOW) * RED("boo") * "blub")
+                outNl("mooobooo")
+                outNl("määäää" * GREEN("foo", YELLOW) * RED("boo") * "blub")
 
                 var startIdx = 0
                 var printed = 0
@@ -143,34 +144,31 @@ class LanternaConsole(bufferSize: Int = BUFFER_SIZE) {
     private fun Any.processMessage(idx: Int): Int {
         var nlIdx = idx
         when (this@processMessage) {
-            is List<*> -> forEach {
-                nlIdx = it?.processMessage(nlIdx) ?: nlIdx
+            is List<*> -> filterIsInstance<TextWithColor>().reversed().forEach {
+                nlIdx = it.processMessage(nlIdx)
             }
-            is TextWithColor -> text(MessageScope { onBufferChanged() }).put(nlIdx, color, background)
+            is TextWithColor -> nlIdx = text(MessageScope { onBufferChanged() }).put(nlIdx, color, background)
             else -> nlIdx = put(nlIdx)
         }
         return nlIdx
     }
 
-    private fun Any.put(idx: Int, color: TextColor = WHITE, background: TextColor = BLACK): Int =
-        screen.newTextGraphics().let { g ->
-            g.foregroundColor = color
-            g.backgroundColor = background
-
-            var nlIdx = idx
-            toString().split("\n")
-                .flatMap {
-                    if (it.isEmpty()) listOf(" ") else it.chunkedSequence(screen.terminalSize.columns - 3).toList()
+    private fun Any.put(idx: Int, color: TextColor = WHITE, background: TextColor = BLACK): Int {
+        var nlIdx = idx
+        toString().split("\n")
+            .flatMap {
+                if (it.isEmpty()) listOf(" ") else it.chunkedSequence(screen.terminalSize.columns - 3).toList()
+            }
+            .mapIndexed { i, s -> if (i == 0) ">: $s" else "   $s" }
+            .reversed()
+            .forEach {
+                val lineIdx = screen.terminalSize.rows - nlIdx++ + bottomIdx
+                if (lineIdx < screen.terminalSize.rows)
+                    it.filterNot { c -> c.isISOControl() }.forEachIndexed { i, c ->
+                        screen.setCharacter(i, lineIdx - 2, TextCharacter(c, color, background))
+                    }
                 }
-                .mapIndexed { idx, s -> if (idx == 0) ">: $s" else "   $s" }
-                .reversed()
-                .forEach {
-                    val lineIdx = screen.terminalSize.rows - nlIdx++ + bottomIdx
-                    if (lineIdx < screen.terminalSize.rows) g.putString(
-                        0, lineIdx - 2, it.filterNot { c -> c.isISOControl() }.trim()
-                    )
-                }
-            nlIdx
+        return nlIdx
         }
 
     private suspend fun onNewCommand(command: String) {
