@@ -3,8 +3,8 @@
 package dev.zieger.utils.time
 
 import dev.zieger.utils.misc.BaseFiFo
-import dev.zieger.utils.time.base.IDurationEx
-import dev.zieger.utils.time.base.ITimeEx
+import dev.zieger.utils.time.base.minus
+import dev.zieger.utils.time.duration.IDurationEx
 
 /**
  * FiFo queue for [ITimeEx] values limited by the duration from the oldest to the latest item.
