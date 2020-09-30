@@ -3,7 +3,10 @@ package dev.zieger.utils.statemachine
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.ICoroutineScopeEx
 import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.observable.IObservable
 import dev.zieger.utils.statemachine.conditionelements.*
+
+data class MachineState(val event: IEvent, val eventData: IData?, val state: IState, val stateData: IData?)
 
 /**
  * TODO
@@ -11,6 +14,8 @@ import dev.zieger.utils.statemachine.conditionelements.*
 interface IMachineEx {
 
     val scope: ICoroutineScopeEx
+
+    val machineObservable: IObservable<MachineState>
 
     val eventCombo: IComboElement
     val event: IEvent? get() = eventCombo.event

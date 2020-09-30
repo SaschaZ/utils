@@ -1,5 +1,10 @@
 # Changelog
 
+##### 2.2.35
+
+* added StateMachine observable
+* `runCommand` fix
+
 ##### 2.2.34
 
 * fixed FlakyTest exception output

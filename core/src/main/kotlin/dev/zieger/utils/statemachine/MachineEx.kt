@@ -8,6 +8,7 @@ import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.observable.Observable
 import dev.zieger.utils.statemachine.MachineEx.Companion.DEFAULT_PREVIOUS_CHANGES_SIZE
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel
 import dev.zieger.utils.statemachine.MachineEx.Companion.debugLevel
@@ -196,15 +197,23 @@ open class MachineEx(
 
     private val eventChannel = Channel<Pair<IComboElement, suspend (IComboElement) -> Unit>>(Channel.RENDEZVOUS)
 
+    override val machineObservable by lazy { Observable(MachineState(event!!, eventData, state!!, stateData)) }
+
     override lateinit var eventCombo: IComboElement
 
     override suspend fun setEvent(event: IComboElement): IComboElement {
         val cont = TypeContinuation<IComboElement>()
         eventChannel.send(event to { state -> cont.trigger(state) })
-        return cont.suspendUntilTrigger()
+        return cont.suspendUntilTrigger().also { updateMachineState() }
     }
 
-    private val stateComboObservable = OnChanged<IComboElement>(initialState.combo)
+    private fun updateMachineState() {
+        machineObservable.value = MachineState(event!!, eventData, state!!, stateData)
+    }
+
+    private val stateComboObservable = OnChanged<IComboElement>(initialState.combo) {
+        updateMachineState()
+    }
     override var stateCombo: IComboElement by stateComboObservable
 
     private val submittedEventCount = AtomicInteger(0)
