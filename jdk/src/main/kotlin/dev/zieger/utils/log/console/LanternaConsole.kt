@@ -155,7 +155,7 @@ class LanternaConsole(bufferSize: Int = BUFFER_SIZE) {
             var nlCnt = 0
             line.map { it to it.text(MessageScope { onBufferChanged() }).toString() }
                 .flatMap { (col, c) -> c.map { it1 -> it1 to col.color to col.background } }
-                .replace('\t', "    ")
+                .replace('\t') { tabIdx -> (0..tabIdx % 4).map { ' ' }.toString() }
                 .groupBy { (c, _, _) ->
                     if (c == '\n') nlCnt++
                     nlCnt + idx++ / screen.terminalSize.columns
@@ -206,9 +206,12 @@ class LanternaConsole(bufferSize: Int = BUFFER_SIZE) {
 
 private fun List<Triple<Char, TextColor, TextColor>>.replace(
     from: Char,
-    to: String
+    to: (Int) -> String
 ): List<Triple<Char, TextColor, TextColor>> =
-    flatMap { if (it.first == from) to.map { c -> c to it.second to it.third } else listOf(it) }
+    flatMapIndexed { idx, value ->
+        if (value.first == from) to(idx).map { c -> c to value.second to value.third }
+        else listOf(value)
+    }
 
 inline fun LanternaConsole.scope(block: LanternaConsole.Scope.() -> Unit) = scope.block()
 

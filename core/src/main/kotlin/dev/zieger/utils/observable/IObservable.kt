@@ -22,4 +22,16 @@ interface IObservable2<P : Any?, T : Any?> : IOnChanged2<P, T> {
      * Observe to changes on the internal [value]. Change notification is invoked via a coroutine.
      */
     fun observeS(listener: suspend IOnChangedScope2<P, T>.(T) -> Unit): () -> Unit
+
+    /**
+     * Observe to changes on the internal [value]. Change notification is invoked directly.
+     */
+    @Deprecated("Use observe() instead.", ReplaceWith("observe"))
+    fun control(listener: IOnChangedScope2<P, T>.(T) -> Unit): () -> Unit = observe(listener)
+
+    /**
+     * Observe to changes on the internal [value]. Change notification is invoked via a coroutine.
+     */
+    @Deprecated("Use observeS() instead.", ReplaceWith("observeS"))
+    fun controlS(listener: suspend IOnChangedScope2<P, T>.(T) -> Unit): () -> Unit = observeS(listener)
 }
