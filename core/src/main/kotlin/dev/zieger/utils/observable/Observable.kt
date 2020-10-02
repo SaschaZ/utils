@@ -109,3 +109,13 @@ class ObservableParams2<P : Any?, T : Any?>(
 ) : DataClass(), IObservableParams2<P, T>
 
 typealias ObservableParams<T> = ObservableParams2<Any?, T>
+
+/**
+ * Legacy method for old Controllable.control call.
+ *
+ * @see dev.zieger.utils.observable.Observable
+ */
+@Deprecated("Use observe instead.", ReplaceWith("observe(block)"))
+fun <P, T> IObservable2<P, T>.control(block: IOnChangedScope2<P, T>.(T) -> Unit) {
+    observe(block)
+}
