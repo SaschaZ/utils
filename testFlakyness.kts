@@ -6,8 +6,8 @@
 @file:DependsOnMaven("io.ktor:ktor-client-gson:1.3.0")
 @file:DependsOnMaven("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
 @file:DependsOnMaven("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.9")
-@file:DependsOnMaven("dev.zieger.utils:core:2.2.22")
-@file:DependsOnMaven("dev.zieger.utils:jdk:2.2.22")
+@file:DependsOnMaven("dev.zieger.utils:core:2.2.34")
+@file:DependsOnMaven("dev.zieger.utils:jdk:2.2.34")
 @file:DependsOnMaven("org.apache.commons:commons-lang3:3.10")
 @file:DependsOnMaven("com.github.ajalt:mordant:1.2.1")
 
@@ -17,6 +17,8 @@
 /**
  * To run this script you need to install kscript (https://github.com/holgerbrandl/kscript). You also need to make sure
  * that this file is executable. No parameters are needed for execution.
+ *
+ * Because of a bug in KScript it is needed, that the Utils lib is published to the local maven repository.
  *
  * This script will execute the unit tests of an existing gradle project repetitive to verify that tests are always
  * returning the same result.
@@ -28,21 +30,23 @@
 import com.github.ajalt.mordant.TermColors
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.runCommand
+import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.log.console.ConsoleControl
 import dev.zieger.utils.log.console.LogColored
 import dev.zieger.utils.log.console.termColored
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.onShutdown
+import dev.zieger.utils.time.DateFormat
+import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.TimeEx
-import dev.zieger.utils.time.base.IDurationEx
-import dev.zieger.utils.time.base.ITimeEx
 import dev.zieger.utils.time.base.TimeUnit.*
-import dev.zieger.utils.time.milliseconds
-import dev.zieger.utils.time.minus
-import dev.zieger.utils.time.string.DateFormat
-import dev.zieger.utils.time.string.parse
-import dev.zieger.utils.time.toDuration
+import dev.zieger.utils.time.base.div
+import dev.zieger.utils.time.base.minus
+import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.duration.milliseconds
+import dev.zieger.utils.time.duration.toDuration
+import dev.zieger.utils.time.parse
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
@@ -54,6 +58,30 @@ import org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4
 import java.io.File
 import kotlin.coroutines.coroutineContext
 import kotlin.system.exitProcess
+
+
+data class TestRunResult(
+    val suites: List<TestSuiteResult>,
+    val executedTests: Int = suites.size,
+    val failedTests: Int = suites.sumBy { it.numFailures },
+    val retriedTests: Int = suites.sumBy { it.retries.size }
+)
+
+data class TestSuiteResult(
+    val packageName: String,
+    val numTests: Int,
+    val numSkipped: Int,
+    val numFailures: Int,
+    val numErrors: Int,
+    val time: ITimeEx,
+    val issuer: String,
+    val duration: IDurationEx,
+    val testCases: List<TestCase> = emptyList(),
+    val stdOut: String = "",
+    val errOut: String = "",
+    val retries: List<Retry> = emptyList(),
+    val failure: List<Failure> = emptyList()
+)
 
 data class TestCase(
     val name: String,
@@ -71,29 +99,18 @@ data class Failure(
     val origin: String = ""
 )
 
-data class TestSuiteResult(
-    val packageName: String,
-    val numTests: Int,
-    val numSkipped: Int,
-    val numFailures: Int,
-    val numErrors: Int,
-    val time: ITimeEx,
-    val issuer: String,
-    val duration: IDurationEx,
-    val testCases: List<TestCase> = emptyList(),
-    val stdOut: String = "",
-    val errOut: String = "",
-    val failure: List<Failure> = emptyList()
+data class Retry(
+    val clazz: String,
+    val message: String,
+    val cause: String,
+    val stackTrace: String
 )
-
-data class TestRunResult(val suites: List<TestSuiteResult>,
-                         val executedTests: Int = suites.size,
-                         val failedTests: Int = suites.sumBy { it.numFailures })
 
 
 object ResultPrinter {
 
-    const val FAIL_LOG_ROOT = "./failed/"
+    private const val FAIL_LOG_ROOT = "./failed/"
+    private const val RETRY_LOG_ROOT = "./retries/"
 
     private lateinit var activeSince: ITimeEx
 
@@ -120,24 +137,10 @@ object ResultPrinter {
 
     private fun printProgress(channel: ReceiveChannel<TestRunResult>): () -> Unit {
         termColored {
-            var idx = 0
-            val progressJob = launchEx(interval = 100.milliseconds) {
+            val progressJob = DefaultCoroutineScope().launchEx(interval = 100.milliseconds) {
                 ConsoleControl.clearLine()
                 printResult(channel)
-
-                print(
-                    "  ${red("(")}${
-                        when (idx++) {
-                            0 -> green("|")
-                            1 -> green("/")
-                            2 -> green("-")
-                            else -> {
-                                idx = 0
-                                green("\\")
-                            }
-                        }
-                    }${red(")")}  "
-                )
+                print(progress)
             }
             return { progressJob.cancel() }
         }
@@ -146,7 +149,7 @@ object ResultPrinter {
 
     private var progressIdx = 0
     private val TermColors.progress
-        get() = "  ${red("(")}${
+        get() = "${red(sideProgress(0))}${
             when (progressIdx++) {
                 0 -> green("|")
                 1 -> green("/")
@@ -156,12 +159,22 @@ object ResultPrinter {
                     green("\\")
                 }
             }
-        }${red(")")}  "
+        }${red(sideProgress(3, ')'))}"
+
+    private fun sideProgress(idx: Int, char: Char = '(') = when (idx) {
+        0 -> "   $char"
+        1 -> "  $char "
+        2 -> " $char  "
+        else -> "$char   "
+    }
 
     private var executedRuns = 0
     private var runsWithFailedTests = 0
+    private var runsWithRetries = 0
+
     private var executedTests = 0
     private var failedTests = 0
+    private var retriedTests = 0
     private var lastResultOutput = ""
 
     private fun printResult(channel: ReceiveChannel<TestRunResult>) {
@@ -169,26 +182,85 @@ object ResultPrinter {
             channel.getAllAvailable().forEach { testRun ->
                 executedRuns++
                 if (testRun.failedTests > 0) runsWithFailedTests++
+                if (testRun.retriedTests > 0) runsWithRetries++
                 executedTests += testRun.executedTests
+                retriedTests += testRun.retriedTests
                 failedTests += testRun.failedTests
 
                 val failedRunsPercent = (100f * runsWithFailedTests) / executedRuns
+                val retriedRunsPercent = (100f * runsWithRetries) / executedRuns
                 val failedTestsPercent = (100f * failedTests) / executedTests
+                val retriedTestsPercent = (100f * retriedTests) / executedTests
 
+                printRetry(testRun)
                 printFailed(testRun)
+                val testsResult =
+                    "${"%.2f%%".format(retriedTestsPercent)}/${"%.2f%%".format(failedTestsPercent)} ($retriedTests/$failedTests)"
+                val runsResult =
+                    "${"%.2f%%".format(retriedRunsPercent)}/${"%.2f%%".format(failedRunsPercent)} ($runsWithRetries/$runsWithFailedTests)"
                 lastResultOutput = cyan(
-                    "failed tests: ${
-                        if (failedTests > 0) red("${"%.2f%%".format(failedTestsPercent)} ($failedTests/$executedTests)")
-                        else green("${"%.2f%%".format(failedTestsPercent)} ($failedTests/$executedTests)")
-                    } - failed runs: ${
-                        if (runsWithFailedTests > 0) red("${"%.2f%%".format(failedRunsPercent)} ($runsWithFailedTests/$executedRuns)")
-                        else green("${"%.2f%%".format(failedRunsPercent)} ($runsWithFailedTests/$executedRuns)")
+                    "$executedTests tests: ${
+                        when {
+                            failedTests > 0 -> red(testsResult)
+                            retriedTests > 0 -> yellow(testsResult)
+                            else -> green(testsResult)
+                        }
+                    } - $executedRuns runs: ${
+                        when {
+                            failedTests > 0 -> red(runsResult)
+                            retriedTests > 0 -> yellow(runsResult)
+                            else -> green(runsResult)
+                        }
                     }"
                 )
             }
-            val duration = (TimeEx() - activeSince).formatDuration(YEAR, DAY, HOUR, MINUTE, SECOND)
-            if (lastResultOutput.isBlank()) print(cyan("No runs have finished yet. [$duration]"))
-            else print("$lastResultOutput ${cyan("[$duration]")}")
+            val duration = TimeEx() - activeSince
+            if (lastResultOutput.isBlank()) print(
+                cyan(
+                    "No runs have finished yet. [${
+                        duration.formatDuration(
+                            YEAR,
+                            DAY,
+                            HOUR,
+                            MINUTE,
+                            SECOND
+                        )
+                    }]"
+                )
+            )
+            else print(
+                "$lastResultOutput - " +
+                        "${
+                            (duration / executedRuns.toFloat()).formatDuration(
+                                YEAR,
+                                DAY,
+                                HOUR,
+                                MINUTE,
+                                SECOND
+                            )
+                        } per run - " +
+                        cyan("[${duration.formatDuration(YEAR, DAY, HOUR, MINUTE, SECOND)}]")
+            )
+        }
+    }
+
+
+    private fun printRetry(testRun: TestRunResult) {
+        val loggedSuites = ArrayList<TestSuiteResult>()
+        termColored {
+            testRun.suites.map { suite -> suite to suite.retries }.forEach { (suite, retry) ->
+                if (suite !in loggedSuites && retry.isNotEmpty()) {
+                    File(RETRY_LOG_ROOT).mkdirs()
+                    File(RETRY_LOG_ROOT
+                            + TimeEx().let { t -> t.formatTime(DateFormat.FILENAME/*CUSTOM("yyyy-MM-dd-HH-mm-ss-SSS")*/) + "-${t.millis % 1000}" }
+                            + ".log").writeText("$suite\n\n")
+                    loggedSuites += suite
+                }
+
+                retry.forEach {
+                    println(yellow("[${TimeEx()}] ${it.clazz.split(".").last()}(${it.message})"))
+                }
+            }
         }
     }
 
@@ -198,16 +270,20 @@ object ResultPrinter {
             testRun.suites.map { suite -> suite to suite.failure }.forEach { (suite, failures) ->
                 if (suite !in loggedSuites && failures.isNotEmpty()) {
                     File(FAIL_LOG_ROOT).mkdirs()
-                    File(
-                        FAIL_LOG_ROOT
-                                + TimeEx().formatTime(DateFormat.CUSTOM("yyyy-MM-dd-HH-mm-ss-SSS"))
-                                + ".log"
-                    ).writeText("$suite\n\n")
+                    File(FAIL_LOG_ROOT
+                            + TimeEx().let { t -> t.formatTime(DateFormat.FILENAME/*CUSTOM("yyyy-MM-dd-HH-mm-ss-SSS")*/) + "-${t.millis % 1000}" }
+                            + ".log").writeText("$suite\n\n")
                     loggedSuites += suite
                 }
 
                 failures.forEach {
-                    Log.e("${it.clazz.split(".").last()}.${it.name}(${it.origin})\n\t${it.message}")
+                    println(
+                        red(
+                            "[${TimeEx()}] ${
+                                it.clazz.split(".").last()
+                            }.${it.name}(${it.origin})\n\t${it.message}"
+                        )
+                    )
                 }
             }
         }
@@ -243,7 +319,7 @@ object TestRunner {
     }
 
     private suspend fun runTests(folder: File): TestRunResult {
-        "./gradlew test".runCommand(folder)
+        "./gradlew lib:testDebug".runCommand(folder)
         return ResultParser.parseResults(folder)
     }
 }
@@ -292,7 +368,7 @@ object ResultParser {
         val stdOutRegex = """<system-out><!\[CDATA\[([\D\d]*)]]></system-out>""".toRegex()
         testSuiteResult = testSuiteResult?.copy(stdOut = stdOutRegex.find(content)?.groupValues?.get(1) ?: "")
 
-        val errOutRegex = """<system-out><!\[CDATA\[([\D\d]*)]]></system-out>""".toRegex()
+        val errOutRegex = """<system-err><!\[CDATA\[([\D\d]*)]]><\/system-err>""".toRegex()
         testSuiteResult = testSuiteResult?.copy(errOut = errOutRegex.find(content)?.groupValues?.get(1) ?: "")
 
         val failureRegex =
@@ -314,10 +390,25 @@ object ResultParser {
             "${fail.clazz}${'\\'}${'$'}${fail.name.removeSuffix("()")}${'\\'}${'$'}[0-9a-zA-Z.]+\\(([a-zA-Z0-9.:]+)\\)".toRegex()
                 .findAll(content).firstOrNull()?.groupValues?.getOrNull(1)
         }
-
-        return testSuiteResult?.copy(failure = testSuiteResult.failure.mapIndexed { idx, value ->
+        testSuiteResult = testSuiteResult?.copy(failure = testSuiteResult.failure.mapIndexed { idx, value ->
             value.copy(origin = failedOrigins?.getOrNull(idx) ?: "")
         })
+
+        val retryRegex = """#[0-9]+: ([\w :<>]+)\n(Cause: ([\w :<>]+))?([\w\n ().${'$'}:?]+)""".toRegex()
+        testSuiteResult = testSuiteResult?.copy(
+            retries = retryRegex.findAll(testSuiteResult.stdOut + "\n" + testSuiteResult.errOut).mapNotNull {
+                it.groupValues.run {
+                    Retry(
+                        clazz = testSuiteResult?.packageName ?: "UNKNOWN",
+                        message = get(1),
+                        cause = get(3),
+                        stackTrace = get(4)
+                    )
+                }
+            }.toList()
+        )
+
+        return testSuiteResult
     }
 }
 

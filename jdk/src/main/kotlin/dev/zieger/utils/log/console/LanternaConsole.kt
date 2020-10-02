@@ -26,6 +26,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
 import java.lang.Integer.max
 import java.lang.Integer.min
+import java.util.*
 
 typealias ScreenBuffer = List<List<List<Triple<Char, TextColor, TextColor>>>>
 
@@ -36,9 +37,9 @@ class LanternaConsole(bufferSize: Int = BUFFER_SIZE) {
         @JvmStatic
         fun main(args: Array<String>) = runBlocking {
             LanternaConsole().scope {
-                outNl("FooBooFo°\n°oBooFooBooFoFoFooBFooFFoFooBoooBooFooBooooBooBoooFFooBooooBooFooBoooFoFooFooBooBooFFooBooooBoooBoooBoooBooFooBooFooBoo")
-                outNl("mooo\tbooo")
-                outNl(*arrayOf(WHITE("määäää")) + GREEN("foo", YELLOW), RED { "boo" }, WHITE("blub"))
+                outNl("FooBooFo°\b\n°\boBooFooBooFoFoFooBFooFFoFooBoooBooFooBooooBooBoooFFooBooooBooFooBoooFoFooFooBooBooFFooBooooBoooBoooBoooBooFooBooFooBoo")
+                outNl("mooo\t\tbooo")
+                outNl(*arrayOf(WHITE("määäää")) + GREEN("foo", YELLOW), RED(WHITE) { "boo" }, BLUE("blub"))
 
                 var startIdx = 0
                 var printed = 0
@@ -155,7 +156,8 @@ class LanternaConsole(bufferSize: Int = BUFFER_SIZE) {
             var nlCnt = 0
             line.map { it to it.text(MessageScope { onBufferChanged() }).toString() }
                 .flatMap { (col, c) -> c.map { it1 -> it1 to col.color to col.background } }
-                .replace('\t') { tabIdx -> (0..tabIdx % 4).map { ' ' }.toString() }
+                .replace('\t') { _, tabIdx -> (0..tabIdx % 4).joinToString("") { " " } }
+                .remove('\b', 1)
                 .groupBy { (c, _, _) ->
                     if (c == '\n') nlCnt++
                     nlCnt + idx++ / screen.terminalSize.columns
@@ -204,14 +206,33 @@ class LanternaConsole(bufferSize: Int = BUFFER_SIZE) {
     }
 }
 
+private fun List<Triple<Char, TextColor, TextColor>>.remove(
+    from: Char,
+    pre: Int = 0
+): List<Triple<Char, TextColor, TextColor>> {
+    val buffer = LinkedList<Triple<Char, TextColor, TextColor>>()
+    return flatMap {
+        buffer.add(it)
+        when {
+            it.first == from -> {
+                buffer.clear()
+                emptyList()
+            }
+            buffer.size == pre + 1 -> listOf(buffer.removeAt(0))
+            else -> emptyList()
+        }
+    } + buffer
+}
+
 private fun List<Triple<Char, TextColor, TextColor>>.replace(
     from: Char,
-    to: (Int) -> String
-): List<Triple<Char, TextColor, TextColor>> =
-    flatMapIndexed { idx, value ->
-        if (value.first == from) to(idx).map { c -> c to value.second to value.third }
-        else listOf(value)
+    to: (Char, Int) -> String
+): List<Triple<Char, TextColor, TextColor>> = flatMapIndexed { idx, value ->
+    when (value.first) {
+        from -> to(value.first, idx).map { c -> c to value.second to value.third }
+        else -> listOf(value)
     }
+}
 
 inline fun LanternaConsole.scope(block: LanternaConsole.Scope.() -> Unit) = scope.block()
 
