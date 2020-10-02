@@ -2,6 +2,8 @@
 
 package dev.zieger.utils.log.console
 
+import com.googlecode.lanterna.TerminalPosition
+import com.googlecode.lanterna.TerminalPosition.TOP_LEFT_CORNER
 import com.googlecode.lanterna.TerminalSize
 import com.googlecode.lanterna.TextCharacter
 import com.googlecode.lanterna.TextColor
@@ -20,23 +22,25 @@ import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.duration.milliseconds
 import dev.zieger.utils.time.duration.minutes
 import dev.zieger.utils.time.duration.seconds
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import java.lang.Integer.max
 import java.lang.Integer.min
 import java.util.*
 
 typealias ScreenBuffer = List<List<List<Triple<Char, TextColor, TextColor>>>>
 
-class LanternaConsole(bufferSize: Int = BUFFER_SIZE) {
+class LanternaConsole(
+    val position: TerminalPosition = TOP_LEFT_CORNER,
+    private val preferredSize: TerminalSize? = null,
+    bufferSize: Int = BUFFER_SIZE,
+    private val cs: CoroutineScope = DefaultCoroutineScope()
+) {
 
     companion object {
 
         @JvmStatic
         fun main(args: Array<String>) = runBlocking {
-            LanternaConsole().scope {
+            LanternaConsole(TerminalPosition(10, 10), TerminalSize(20, 20)).scope {
                 outNl("FooBooFo°\b\n°\boBooFooBooFoFoFooBFooFFoFooBoooBooFooBooooBooBoooFFooBooooBooFooBoooFoFooFooBooBooFFooBooooBoooBoooBoooBooFooBooFooBoo")
                 outNl("mooo\t\tbooo")
                 outNl(*arrayOf(WHITE("määäää")) + GREEN("foo", YELLOW), RED(WHITE) { "boo" }, BLUE("blub"))
@@ -69,13 +73,14 @@ class LanternaConsole(bufferSize: Int = BUFFER_SIZE) {
         private const val COMMAND_PREFIX = "\$: "
     }
 
-    private val cs = DefaultCoroutineScope()
     private val screen: Screen = DefaultTerminalFactory().createScreen()
+    private val size: TerminalSize
+        get() = preferredSize ?: screen.terminalSize
 
     private val buffer = FiFo<List<TextWithColor>>(bufferSize)
     private var bufferLines = 0
     private var scrollIdx = 0
-    private var commandInput = COMMAND_PREFIX
+    private var commandInput = ""
     private var lastSize: TerminalSize = screen.terminalSize
 
     init {
@@ -95,7 +100,7 @@ class LanternaConsole(bufferSize: Int = BUFFER_SIZE) {
 
     private fun scroll(delta: Int) {
         val newDelta = when {
-            delta >= 0 -> min(delta, max(0, bufferLines - screen.terminalSize.rows - scrollIdx + 2))
+            delta >= 0 -> min(delta, max(0, bufferLines - size.rows - scrollIdx + 2))
             else -> max(-scrollIdx, delta)
         }
         screen.scrollLines(0, SCROLL_MAX, newDelta)
@@ -114,14 +119,14 @@ class LanternaConsole(bufferSize: Int = BUFFER_SIZE) {
             commandInput += keyStroke.character
             onBufferChanged()
         }
-        Backspace -> if (commandInput.length > 3) {
+        Backspace -> if (commandInput.isNotEmpty()) {
             commandInput = commandInput.take(commandInput.length - 1)
             onBufferChanged()
         } else Unit
         Enter -> {
             val newCommand = commandInput.removePrefix(COMMAND_PREFIX)
             Scope().outNl(newCommand)
-            commandInput = COMMAND_PREFIX
+            commandInput = ""
             onBufferChanged()
             launchEx { onNewCommand(newCommand) }.asUnit()
         }
@@ -130,22 +135,38 @@ class LanternaConsole(bufferSize: Int = BUFFER_SIZE) {
 
     private fun onBufferChanged() {
         screen.clear()
-        screen.newTextGraphics().run {
-            var nlIdx = 0
-            val stringArray = buffer.buildColorStringArrays()
-            stringArray.reversed().forEach { messages ->
-                messages.reversed().forEach { m ->
-                    var columnIdx = 0
-                    val lineIdx = screen.terminalSize.rows - nlIdx++ + scrollIdx - 3
-                    if (lineIdx in 0..screen.terminalSize.rows - 3) m.forEach { (c, col, back) ->
-                        screen.setCharacter(columnIdx++, lineIdx, TextCharacter(c, col, back))
-                    }
+        var nlIdx = 0
+        val stringArray = buffer.buildColorStringArrays()
+        val rows = size.rows
+        stringArray.reversed().forEach { messages ->
+            messages.reversed().forEach { m ->
+                var columnIdx = 0
+                val lineIdx = rows - nlIdx++ + scrollIdx - 3
+                if (lineIdx in 0..rows - 3) m.forEach { (c, col, back) ->
+                    screen.setCharacter(
+                        position.column + columnIdx++,
+                        position.row + lineIdx,
+                        TextCharacter(c, col, back)
+                    )
                 }
             }
-            bufferLines = nlIdx
-
-            putString(0, screen.terminalSize.rows - 1, commandInput)
         }
+        bufferLines = nlIdx
+
+        val command = commandInput.takeLast(size.columns - COMMAND_PREFIX.length - 2)
+        COMMAND_PREFIX.forEachIndexed { i, c ->
+            screen.setCharacter(position.column + i, position.row + rows - 1, TextCharacter(c, GREEN, BLACK))
+        }
+        command.forEachIndexed { i, c ->
+            screen.setCharacter(
+                position.column + COMMAND_PREFIX.length + i,
+                position.row + rows - 1, TextCharacter(c, WHITE, BLACK)
+            )
+        }
+        screen.cursorPosition = TerminalPosition(
+            position.column + min(size.columns - 2, 3 + command.length), position.row + rows - 1
+        )
+
         screen.refresh()
         screen.doResizeIfNecessary()
     }
@@ -160,12 +181,17 @@ class LanternaConsole(bufferSize: Int = BUFFER_SIZE) {
                 .remove('\b', 1)
                 .groupBy { (c, _, _) ->
                     if (c == '\n') nlCnt++
-                    nlCnt + idx++ / screen.terminalSize.columns
+                    this@LanternaConsole.size.columns.let {
+                        if (it > 3) nlCnt + idx++ / (this@LanternaConsole.size.columns - 3) else 0
+                    }
                 }.values.toList()
+                .mapIndexed { i, it -> (if (i == 0) ">: " else "   ").map { c -> c to YELLOW to BLACK } + it }
                 .map { it.filterNot { it1 -> it1.first.isISOControl() } }
         }
 
     private suspend fun onNewCommand(command: String) {
+        scrollIdx = 0
+        onBufferChanged()
     }
 
     val scope: Scope
@@ -227,10 +253,13 @@ private fun List<Triple<Char, TextColor, TextColor>>.remove(
 private fun List<Triple<Char, TextColor, TextColor>>.replace(
     from: Char,
     to: (Char, Int) -> String
-): List<Triple<Char, TextColor, TextColor>> = flatMapIndexed { idx, value ->
-    when (value.first) {
-        from -> to(value.first, idx).map { c -> c to value.second to value.third }
-        else -> listOf(value)
+): List<Triple<Char, TextColor, TextColor>> {
+    var idx = 0
+    return flatMap { value ->
+        when (value.first) {
+            from -> to(value.first, idx++).map { c -> c to value.second to value.third }
+            else -> listOf(value)
+        }
     }
 }
 

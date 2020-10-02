@@ -87,7 +87,7 @@ val DependencyHandlerScope.androidXtestExt
     get() = "testImplementation"("androidx.test.ext:junit:${Versions.androidXtestExt}")
 
 val DependencyHandlerScope.lanterna
-    get() = "implementation"("com.googlecode.lanterna:lanterna:${Versions.lanterna}")
+    get() = "api"("com.googlecode.lanterna:lanterna:${Versions.lanterna}")
 
 val DependencyHandlerScope.mockWebServer
     get() = "implementation"("com.squareup.okhttp3:mockwebserver:${Versions.mockWebServer}")
