@@ -33,14 +33,14 @@ repositories {
 
 dependencies {
     // utils
-    implementation "dev.zieger.utils:core:2.2.43"// platform independent
-    implementation "dev.zieger.utils:android:2.2.43" // android
-    implementation "dev.zieger.utils:jdk:2.2.43" // jdk
+    implementation "dev.zieger.utils:core:2.2.44"// platform independent
+    implementation "dev.zieger.utils:android:2.2.44" // android
+    implementation "dev.zieger.utils:jdk:2.2.44" // jdk
 
     // testing utils
-    implementation "dev.zieger.utils:core-testing:2.2.43" // platform independent
-    implementation "dev.zieger.utils:android-testing:2.2.43" // android
-    implementation "dev.zieger.utils:jdk-testing:2.2.43" // jdk
+    implementation "dev.zieger.utils:core-testing:2.2.44" // platform independent
+    implementation "dev.zieger.utils:android-testing:2.2.44" // android
+    implementation "dev.zieger.utils:jdk-testing:2.2.44" // jdk
 }
 ```
 
@@ -219,6 +219,12 @@ Also works with attached `Data`.
 #
 
 # Changelog
+
+##### 2.2.43
+
+* multiple non released version because of JitPack foo
+* fix for `suspendUntil` in `OnChanged` and `Observable`
+* changed the name of `OnChanged2` to `OnChangedWithParent` (same for `ObservableWithParent`) 
 
 ##### 2.2.38
 
