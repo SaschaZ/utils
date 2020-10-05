@@ -203,8 +203,8 @@ open class MachineEx(
 
     override suspend fun setEvent(event: IComboElement): IComboElement {
         val cont = TypeContinuation<IComboElement>()
-        eventChannel.send(event to { state -> cont.trigger(state) })
-        return cont.suspendUntilTrigger().also { updateMachineState() }
+        eventChannel.send(event to { state -> cont.resume(state) })
+        return cont.suspend().also { updateMachineState() }
     }
 
     private fun updateMachineState() {

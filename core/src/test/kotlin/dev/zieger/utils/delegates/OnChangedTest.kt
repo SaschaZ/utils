@@ -43,7 +43,7 @@ class OnChangedTest {
         val notifyOnChangedOnly: Boolean by bind(map)
 
         val scope: CoroutineScope? by bind(map)
-        val mutex: Mutex? by bind(map)
+        val mutex: Mutex by bind(map)
         val veto: (Int) -> Boolean by bind(map)
         val doClearPrevValues: (Int) -> Boolean by bind(map)
         val suspendedListener: Boolean by bind(map)
@@ -65,10 +65,10 @@ class OnChangedTest {
         param("notifyForInitial", true, false),
         param("notifyOnChangedOnly", true, false),
         param("scope", TestCoroutineScope(), null),
-        param("mutex", Mutex(), null),
+        param("mutex", Mutex()),
         param("veto", { value: Int -> Random.nextBoolean(0.1f) }),
         param("doClearPrevValues", { value: Int -> Random.nextBoolean(0.1f) }),
-        param("suspendedListener", true, false)
+        param("suspendedListener", /*true, */false)
     ) { block() }
 
     @Test
@@ -86,10 +86,10 @@ class OnChangedTest {
                     notifyForInitial = notifyForInitial,
                     notifyOnChangedValueOnly = notifyOnChangedOnly,
                     scope = scope, mutex = mutex, veto = { newVeto },
-                    onChangedS = { v ->
+                    onChangedS = null/*{ v ->
                         if (suspendedListener && scope != null)
                             onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
-                    },
+                    }*/,
                     onChanged = { v ->
                         if (!suspendedListener || scope == null)
                             onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
@@ -113,7 +113,7 @@ class OnChangedTest {
     }
 
     @Test
-    fun testOnChanged2() = runTest(1.minutes) {
+    fun testOnChangedWithParent() = runTest(1.minutes) {
         parameter {
             var newValue: Int = -1
             var newVeto = false
@@ -121,16 +121,16 @@ class OnChangedTest {
             val results = Channel<OnChangedResults>(Channel.UNLIMITED)
 
             var propertyValue: () -> TestValueContainer = { TestValueContainer() }
-            var testProperty by OnChanged2(
-                OnChangedParams2(
+            var testProperty by OnChangedWithParent(
+                OnChangedParamsWithParent(
                     TestValueContainer(), storeRecentValues = storePreviousValues,
                     notifyForInitial = notifyForInitial,
                     notifyOnChangedValueOnly = notifyOnChangedOnly,
                     scope = scope, mutex = mutex, veto = { newVeto },
-                    onChangedS = { v ->
+                    onChangedS = null/*{ v ->
                         if (suspendedListener && scope != null)
                             onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
-                    },
+                    }*/,
                     onChanged = { v ->
                         if (!suspendedListener || scope == null)
                             onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
@@ -153,23 +153,23 @@ class OnChangedTest {
         }.verify()
     }
 
-    private fun <P : Any?, S : IOnChangedScope2<P, @UnsafeVariance TestValueContainer>> S.onChangedListenerBlock(
+    private fun <P : Any?, S : IOnChangedScopeWithParent<P, @UnsafeVariance TestValueContainer>> S.onChangedListenerBlock(
         newClearCache: Boolean,
         results: Channel<OnChangedResults>,
         newValue: Int,
         propertyValue: () -> TestValueContainer,
         newVeto: Boolean
     ) {
-        if (newClearCache) clearPreviousValues()
-        results.offer(
-            OnChangedTestResultOutput(
-                newValue, propertyValue().value, newVeto, newClearCache,
-                OnChangedScope(
-                    value, thisRef, previousValue, ArrayList(previousValues),
-                    clearPreviousValues, isInitialNotification
-                )
-            )
-        )
+//        if (newClearCache) clearPreviousValues()
+//        results.offer(
+//            OnChangedTestResultOutput(
+//                newValue, propertyValue().value, newVeto, newClearCache,
+//                OnChangedScope(
+//                    value, "", thisRef, previousValue, ArrayList(previousValues),
+//                    clearPreviousValues, isInitialNotification
+//                )
+//            )
+//        )
     }
 
     private suspend fun Map<OnChangedParams, Channel<OnChangedResults>>.verify() {

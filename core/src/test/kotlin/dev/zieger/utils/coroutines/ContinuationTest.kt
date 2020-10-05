@@ -26,13 +26,13 @@ class ContinuationTest {
     @Test
     fun testDirect() = runTest {
         launchEx {
-            continuation.suspendUntilTrigger()
+            continuation.suspend()
             continued.incrementAndGet()
         }
 
         delay(1.seconds)
         continued.get() assert 0 % "0"
-        continuation.trigger()
+        continuation.resume()
         delay(2.seconds)
         continued.get() assert 1 % "1"
     }
@@ -40,17 +40,17 @@ class ContinuationTest {
     @Test
     fun testMultiple() = runTest {
         launchEx {
-            continuation.suspendUntilTrigger()
+            continuation.suspend()
             continued.incrementAndGet()
         }
         launchEx {
-            continuation.suspendUntilTrigger()
+            continuation.suspend()
             continued.incrementAndGet()
         }
 
         delay(1.seconds)
         continued.get() assert 0 % "0"
-        continuation.trigger()
+        continuation.resume()
         delay(2.seconds)
         continued.get() assert 2 % "1"
     }

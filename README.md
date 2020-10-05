@@ -296,7 +296,7 @@ Also works with attached `Data`.
 ##### 2.2.22
 
 * Continuation:
-    * allow multiple `suspendUntilTrigger` calls for the same trigger event
+    * allow multiple `suspend` calls for the same trigger event
     * made coroutine property nullable
     * never launch a coroutine for unsuspended trigger call when no coroutine was defined
 

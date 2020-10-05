@@ -1,11 +1,17 @@
+@file:Suppress("unused")
+
 package dev.zieger.utils.observable
 
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.delegates.*
-import dev.zieger.utils.misc.DataClass
+import dev.zieger.utils.delegates.IOnChangedScopeWithParent
+import dev.zieger.utils.delegates.OnChanged
+import dev.zieger.utils.delegates.OnChangedWithParent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlin.properties.ReadWriteProperty
+
+
+typealias Observable<T> = ObservableWithParent<Any?, T>
 
 /**
  * [ReadWriteProperty] that can be used to add a read only observer to another property with the delegate pattern.
@@ -23,37 +29,47 @@ import kotlin.properties.ReadWriteProperty
  *  }
  * ```
  */
-open class Observable2<P : Any?, T : Any?>(
-    params: IObservableParams2<P, T>
-) : IObservable2<P, T>, ObservableBase<P, T>(params) {
-    constructor(initial: T, onChanged: IOnChangedScope2<P, T>.(T) -> Unit = {}) :
-            this(ObservableParams2(initial, onChanged = onChanged))
-}
+open class ObservableWithParent<P : Any?, T : Any?>(
+    params: IObservableParamsWithParent<P, T>
+) : IObservableWithParent<P, T>,
+    OnChangedWithParent<P, T>(params) {
 
-typealias Observable<T> = Observable2<Any?, T>
+    constructor(
+        initial: T,
+        scope: CoroutineScope? = null,
+        storeRecentValues: Boolean = false,
+        previousValueSize: Int = if (storeRecentValues) 100 else 0,
+        notifyForInitial: Boolean = false,
+        notifyOnChangedValueOnly: Boolean = true,
+        mutex: Mutex = Mutex(),
+        safeSet: Boolean = false,
+        subscriberStateChanged: ((Boolean) -> Unit)? = {},
+        veto: (T) -> Boolean = { false },
+        map: (T) -> T = { it },
+        onChangedS: (suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null,
+        onChanged: (IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null
+    ) : this(
+        ObservableParamsWithParent(
+            initial, scope, storeRecentValues, previousValueSize, notifyForInitial, notifyOnChangedValueOnly, mutex,
+            safeSet, subscriberStateChanged, veto, map, onChangedS, onChanged
+        )
+    )
 
-abstract class ObservableBase<P : Any?, T : Any?>(
-    params: IObservableParams2<P, T>
-) : IObservable2<P, T>,
-    OnChanged2<P, T>(params) {
-
-    private val observer = ArrayList<IOnChangedScope2<P, T>.(T) -> Unit>()
-    private val observerS = ArrayList<suspend IOnChangedScope2<P, T>.(T) -> Unit>()
+    private val observer = ArrayList<IOnChangedScopeWithParent<P, T>.(T) -> Unit>()
+    private val observerS = ArrayList<suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit>()
     private var subscribersAvailable by OnChanged(false) { new ->
-        params.subscriberStateChanged?.invoke(new)
+        params.onSubscriberStateChanged?.invoke(new)
     }
 
     init {
         @Suppress("LeakingThis")
-        observe(params.onChanged)
+        params.onChanged?.also { observe(it) }
     }
 
-    override fun observe(listener: IOnChangedScope2<P, T>.(T) -> Unit): () -> Unit {
+    override fun observe(listener: IOnChangedScopeWithParent<P, T>.(T) -> Unit): () -> Unit {
         observer.add(listener)
-        if (notifyForInitial) OnChangedScope2(
-            value, previousThisRef.get(), recentValues.lastOrNull(), recentValues,
-            { recentValues.reset() }, true
-        ).listener(value)
+        if (notifyForInitial)
+            buildOnChangedScope(null, true).listener(value)
         updateSubscriberState()
 
         return {
@@ -62,14 +78,13 @@ abstract class ObservableBase<P : Any?, T : Any?>(
         }
     }
 
-    override fun observeS(listener: suspend IOnChangedScope2<P, T>.(T) -> Unit): () -> Unit {
+    override fun observeS(listener: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit): () -> Unit {
+        require(scope != null) { "When using `observeS`, `scope` can not be `null`." }
+
         observerS.add(listener)
         if (notifyForInitial)
-            scope?.launchEx(mutex = mutex) {
-                OnChangedScope2(
-                    value, previousThisRef.get(), recentValues.lastOrNull(), recentValues,
-                    { recentValues.reset() }, true
-                ).listener(value)
+            scope!!.launchEx(mutex = mutex) {
+                buildOnChangedScope(null, true).listener(value)
             }
         updateSubscriberState()
 
@@ -79,33 +94,13 @@ abstract class ObservableBase<P : Any?, T : Any?>(
         }
     }
 
-    override fun IOnChangedScope2<P, T>.onChangedInternal(value: T) =
+    override fun IOnChangedScopeWithParent<P, T>.onChangedInternal(value: T) =
         ArrayList(observer).forEach { it(value) }
 
-    override suspend fun IOnChangedScope2<P, T>.onChangedSInternal(value: T) =
+    override suspend fun IOnChangedScopeWithParent<P, T>.onChangedSInternal(value: T) =
         ArrayList(observerS).forEach { it(value) }
 
     private fun updateSubscriberState() {
         subscribersAvailable = observer.isNotEmpty() || observerS.isNotEmpty()
     }
 }
-
-interface IObservableParams2<P : Any?, T : Any?> : IOnChangedParams2<P, T> {
-    val subscriberStateChanged: ((Boolean) -> Unit)?
-}
-
-class ObservableParams2<P : Any?, T : Any?>(
-    override val initial: T,
-    storeRecentValues: Boolean = false,
-    override val recentValueSize: Int = if (storeRecentValues) 100 else 0,
-    override val notifyForInitial: Boolean = false,
-    override val notifyOnChangedValueOnly: Boolean = true,
-    override val scope: CoroutineScope? = null,
-    override val mutex: Mutex? = null,
-    override val subscriberStateChanged: ((Boolean) -> Unit)? = {},
-    override val veto: (T) -> Boolean = { false },
-    override val onChangedS: suspend IOnChangedScope2<P, T>.(T) -> Unit = {},
-    override val onChanged: IOnChangedScope2<P, T>.(T) -> Unit = {}
-) : DataClass(), IObservableParams2<P, T>
-
-typealias ObservableParams<T> = ObservableParams2<Any?, T>
