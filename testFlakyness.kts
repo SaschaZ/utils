@@ -30,31 +30,33 @@
 
 import TestFlakyness.TestRunner.launchJob
 import com.github.ajalt.mordant.TermColors
-import com.googlecode.lanterna.TextColor
 import com.googlecode.lanterna.TextColor.ANSI.*
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.runCommand
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
+import dev.zieger.utils.coroutines.scope.IoCoroutineScope
+import dev.zieger.utils.gui.console.LanternaConsole
+import dev.zieger.utils.gui.console.IScope
+import dev.zieger.utils.gui.console.scope
+import dev.zieger.utils.gui.console.invoke
 import dev.zieger.utils.log.Log
-import dev.zieger.utils.log.console.*
+import dev.zieger.utils.log.console.ConsoleControl
+import dev.zieger.utils.log.console.LogColored
+import dev.zieger.utils.log.console.termColored
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.onShutdown
 import dev.zieger.utils.time.*
+import dev.zieger.utils.time.base.IDurationEx
 import dev.zieger.utils.time.base.ITimeEx
 import dev.zieger.utils.time.base.TimeUnit.*
-import dev.zieger.utils.time.base.div
-import dev.zieger.utils.time.base.minus
-import dev.zieger.utils.time.duration.IDurationEx
-import dev.zieger.utils.time.duration.milliseconds
-import dev.zieger.utils.time.duration.toDuration
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
+import dev.zieger.utils.time.string.DateFormat
+import dev.zieger.utils.time.string.parse
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.runBlocking
 import org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4
+import java.awt.Color.CYAN
 import java.io.File
 import kotlin.coroutines.coroutineContext
 import kotlin.system.exitProcess
@@ -66,25 +68,25 @@ data class TestRunResult(val suites: List<TestSuiteResult>,
                          val retriedTests: Int = suites.sumBy { it.retries.size })
 
 data class TestSuiteResult(
-    val packageName: String,
-    val numTests: Int,
-    val numSkipped: Int,
-    val numFailures: Int,
-    val numErrors: Int,
-    val time: ITimeEx,
-    val issuer: String,
-    val duration: IDurationEx,
-    val testCases: List<TestCase> = emptyList(),
-    val stdOut: String = "",
-    val errOut: String = "",
-    val retries: List<Retry> = emptyList(),
-    val failure: List<Failure> = emptyList()
+        val packageName: String,
+        val numTests: Int,
+        val numSkipped: Int,
+        val numFailures: Int,
+        val numErrors: Int,
+        val time: ITimeEx,
+        val issuer: String,
+        val duration: IDurationEx,
+        val testCases: List<TestCase> = emptyList(),
+        val stdOut: String = "",
+        val errOut: String = "",
+        val retries: List<Retry> = emptyList(),
+        val failure: List<Failure> = emptyList()
 )
 
 data class TestCase(
-    val name: String,
-    val clazz: String,
-    val duration: IDurationEx
+        val name: String,
+        val clazz: String,
+        val duration: IDurationEx
 )
 
 data class Failure(val name: String,
@@ -101,7 +103,7 @@ data class Retry(val clazz: String,
                  val stackTrace: String)
 
 
-object ResultPrinter {
+class ResultPrinter(scope: LanternaConsole.Scope) : IScope by scope {
 
     private const val FAIL_LOG_ROOT = "./failed/"
     private const val RETRY_LOG_ROOT = "./retries/"
@@ -191,19 +193,19 @@ object ResultPrinter {
                 val testsResult = "${"%.2f%%".format(retriedTestsPercent)}/${"%.2f%%".format(failedTestsPercent)} ($retriedTests/$failedTests)"
                 val runsResult = "${"%.2f%%".format(retriedRunsPercent)}/${"%.2f%%".format(failedRunsPercent)} ($runsWithRetries/$runsWithFailedTests)"
                 lastResultOutput = cyan(
-                    "$executedTests tests: ${
-                        when {
-                            failedTests > 0 -> red(testsResult)
-                            retriedTests > 0 -> yellow(testsResult)
-                            else -> green(testsResult)
-                        }
-                    } - $executedRuns runs: ${
-                        when {
-                            failedTests > 0 -> red(runsResult)
-                            retriedTests > 0 -> yellow(runsResult)
-                            else -> green(runsResult)
-                        }
-                    }"
+                        "$executedTests tests: ${
+                            when {
+                                failedTests > 0 -> red(testsResult)
+                                retriedTests > 0 -> yellow(testsResult)
+                                else -> green(testsResult)
+                            }
+                        } - $executedRuns runs: ${
+                            when {
+                                failedTests > 0 -> red(runsResult)
+                                retriedTests > 0 -> yellow(runsResult)
+                                else -> green(runsResult)
+                            }
+                        }"
                 )
             }
             val duration = TimeEx() - activeSince
@@ -257,7 +259,9 @@ object ResultPrinter {
 
 object TestRunner {
 
-    suspend fun SendChannel<TestRunResult>.launchJob(id: Int): Job = launchEx {
+    private val scope: CoroutineScope = IoCoroutineScope()
+
+    suspend fun SendChannel<TestRunResult>.launchJob(id: Int): Job = scope.launchEx {
         val folder = copyProject(id)
         while (true) send(runTests(folder))
     }
@@ -279,7 +283,7 @@ object TestRunner {
 
     private suspend fun deleteTemporaryFiles(folder: File) {
         "find . -iregex ^.*/build\$".runCommand(folder)?.run { stdOutput?.reader()?.readText() }?.split("./")
-            ?.forEach { File(it).deleteRecursively() }
+                ?.forEach { File(it).deleteRecursively() }
     }
 
     private suspend fun runTests(folder: File): TestRunResult {
@@ -292,38 +296,38 @@ object TestRunner {
 object ResultParser {
 
     suspend fun parseResults(projectRoot: File): TestRunResult =
-        TestRunResult(("""find . -iregex ^.*/test[DebugUnitTest]*/TEST\-[a-zA-Z0-9\.\-\_]+\.xml$"""
-            .runCommand(projectRoot)?.run { (stdOutput?.reader()?.readText() ?: "") } ?: "")
-            .split("\n").mapNotNull {
-                if (it.isBlank()) null
-                else parseResult(File(projectRoot.absolutePath + "/" + it.trim().removePrefix(".")))
-            })
+            TestRunResult(("""find . -iregex ^.*/test[DebugUnitTest]*/TEST\-[a-zA-Z0-9\.\-\_]+\.xml$"""
+                    .runCommand(projectRoot)?.run { (stdOutput?.reader()?.readText() ?: "") } ?: "")
+                    .split("\n").mapNotNull {
+                        if (it.isBlank()) null
+                        else parseResult(File(projectRoot.absolutePath + "/" + it.trim().removePrefix(".")))
+                    })
 
     private fun parseResult(file: File): TestSuiteResult? {
         val content = file.readText()
 
         val testSuiteRegex =
-            """<testsuite name="([a-zA-Z0-9.\-_]+)" tests="(\d+)" skipped="(\d+)" failures="(\d+)" errors="(\d+)" timestamp="([0-9\-:T]+)" hostname="([a-zA-Z0-9]+)" time="([0-9.]+)">\n\W+<properties/>""".toRegex()
+                """<testsuite name="([a-zA-Z0-9.\-_]+)" tests="(\d+)" skipped="(\d+)" failures="(\d+)" errors="(\d+)" timestamp="([0-9\-:T]+)" hostname="([a-zA-Z0-9]+)" time="([0-9.]+)">\n\W+<properties/>""".toRegex()
         var testSuiteResult = testSuiteRegex.find(content)?.groupValues?.run {
             TestSuiteResult(
-                packageName = get(1),
-                numTests = get(2).toInt(),
-                numSkipped = get(3).toInt(),
-                numFailures = get(4).toInt(),
-                numErrors = get(5).toInt(),
-                time = get(6).parse(),
-                issuer = get(7),
-                duration = get(8).toDouble().toDuration(SECOND)
+                    packageName = get(1),
+                    numTests = get(2).toInt(),
+                    numSkipped = get(3).toInt(),
+                    numFailures = get(4).toInt(),
+                    numErrors = get(5).toInt(),
+                    time = get(6).parse(),
+                    issuer = get(7),
+                    duration = get(8).toDouble().toDuration(SECOND)
             )
         }
 
         val testCaseRegex =
-            """<testcase name="([a-zA-Z0-9()\-_]+)" classname="([a-zA-Z0-9.]+)" time="([0-9.]+)"/?>""".toRegex()
+                """<testcase name="([a-zA-Z0-9()\-_]+)" classname="([a-zA-Z0-9.]+)" time="([0-9.]+)"/?>""".toRegex()
         testSuiteResult = testSuiteResult?.copy(testCases = testCaseRegex.findAll(content).mapNotNull {
             it.groupValues.run {
                 TestCase(name = get(1),
-                    clazz = get(2),
-                    duration = get(3).toDouble().toDuration(SECOND))
+                        clazz = get(2),
+                        duration = get(3).toDouble().toDuration(SECOND))
             }
         }.toList())
 
@@ -334,21 +338,21 @@ object ResultParser {
         testSuiteResult = testSuiteResult?.copy(errOut = errOutRegex.find(content)?.groupValues?.get(1) ?: "")
 
         val failureRegex =
-            """<testcase name="([a-zA-Z0-9()]+)" classname="([a-zA-Z0-9.]+)" time="([0-9.]+)">\n\W+<failure message="(.*)" type="(.+)">([^<>]*)</failure>""".toRegex()
+                """<testcase name="([a-zA-Z0-9()]+)" classname="([a-zA-Z0-9.]+)" time="([0-9.]+)">\n\W+<failure message="(.*)" type="(.+)">([^<>]*)</failure>""".toRegex()
         testSuiteResult = testSuiteResult?.copy(failure = failureRegex.findAll(content).mapNotNull {
             it.groupValues.run {
                 Failure(name = unescapeHtml4(get(1)),
-                    clazz = unescapeHtml4(get(2)),
-                    duration = unescapeHtml4(get(3)).toDouble().toDuration(SECOND),
-                    message = unescapeHtml4(get(4)),
-                    exception = unescapeHtml4(get(5)),
-                    stackTrace = unescapeHtml4(get(6)))
+                        clazz = unescapeHtml4(get(2)),
+                        duration = unescapeHtml4(get(3)).toDouble().toDuration(SECOND),
+                        message = unescapeHtml4(get(4)),
+                        exception = unescapeHtml4(get(5)),
+                        stackTrace = unescapeHtml4(get(6)))
             }
         }.toList())
 
         val failedOrigins = testSuiteResult?.failure?.map { fail ->
             "${fail.clazz}${'\\'}${'$'}${fail.name.removeSuffix("()")}${'\\'}${'$'}[0-9a-zA-Z.]+\\(([a-zA-Z0-9.:]+)\\)".toRegex()
-                .findAll(content).firstOrNull()?.groupValues?.getOrNull(1)
+                    .findAll(content).firstOrNull()?.groupValues?.getOrNull(1)
         }
         testSuiteResult = testSuiteResult?.copy(failure = testSuiteResult.failure.mapIndexed { idx, value ->
             value.copy(origin = failedOrigins?.getOrNull(idx) ?: "")
@@ -356,14 +360,14 @@ object ResultParser {
 
         val retryRegex = """#[0-9]+: ([\w :<>]+)\n(Cause: ([\w :<>]+))?([\w\n ().${'$'}:?]+)""".toRegex()
         testSuiteResult = testSuiteResult?.copy(
-            retries = retryRegex.findAll(testSuiteResult.stdOut + "\n" + testSuiteResult.errOut).mapNotNull {
-                it.groupValues.run {
-                    Retry(clazz = testSuiteResult?.packageName ?: "UNKNOWN",
-                        message = get(1),
-                        cause = get(3),
-                        stackTrace = get(4))
-                }
-            }.toList())
+                retries = retryRegex.findAll(testSuiteResult.stdOut + "\n" + testSuiteResult.errOut).mapNotNull {
+                    it.groupValues.run {
+                        Retry(clazz = testSuiteResult?.packageName ?: "UNKNOWN",
+                                message = get(1),
+                                cause = get(3),
+                                stackTrace = get(4))
+                    }
+                }.toList())
 
         return testSuiteResult
     }
@@ -375,14 +379,13 @@ runBlocking {
     LogColored.initialize()
 
     val jobs = if (args.getOrNull(0) == "-j") args.getOrNull(1)?.toInt()
-        ?: { throw IllegalArgumentException("invalid arguments: ${args.joinToString()}") }.invoke()
+            ?: { throw IllegalArgumentException("invalid arguments: ${args.joinToString()}") }.invoke()
     else NUM_PARALLEL
 
-    val scope = LanternaConsole().scope
+    LanternaConsole().scope {
+        outnl(BLUE_BRIGHT("test flakyness with "), CYAN("$jobs"), BLUE_BRIGHT(if (jobs > 1) "parallel jobs" else "job" + "\n"))
 
-    YELLOW
-    scope.outNl(GREEN("test flakyness with "), CYAN("$jobs"), GREEN("${if (jobs > 1) "parallel jobs" else "job"}\n"))
-
-    ResultPrinter.progress { channel -> (0 until jobs).map { channel.launchJob(it) }.joinAll() }
+        ResultPrinter(this).progress { channel -> (0 until jobs).map { channel.launchJob(it) }.joinAll() }
+    }
     exitProcess(0).asUnit()
 }

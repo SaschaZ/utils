@@ -34,7 +34,8 @@ class LanternaConsole(
     val preferredSize: TerminalSize? = null,
     isStandalone: Boolean = true,
     bufferSize: Int = BUFFER_SIZE,
-    private val cs: CoroutineScope = DefaultCoroutineScope()
+    private val cs: CoroutineScope = DefaultCoroutineScope(),
+    private val hideCommandInput: Boolean = false,
 ) {
 
     companion object {
@@ -196,38 +197,40 @@ class LanternaConsole(
             onBufferChanged()
         }
         val rows = size.rows
+        bufferLines = stringArray.sumBy { it.size }
         stringArray.reversed().forEach { messages ->
             messages.reversed().forEach { m ->
                 var columnIdx = 0
-                val lineIdx = rows - nlIdx++ + scrollIdx - 3
-                if (lineIdx in 0..rows - 3) m.forEach { (c, col, back) ->
+                val lineIdx = min(bufferLines - 1, rows - if (hideCommandInput) 1 else 2) - nlIdx++ + scrollIdx
+                if (lineIdx in 0..rows - if (hideCommandInput) 1 else 2) m.forEach { (c, col, back) ->
                     val column = position.column + columnIdx++
                     val row = position.row + lineIdx
                     graphics.setCharacter(column, row, TextCharacter(c, col, back))
                 }
             }
         }
-        bufferLines = nlIdx
     }
 
     private fun printCommandInput() {
+        if (hideCommandInput) return
+
         val rows = size.rows
         val n = size.columns - COMMAND_PREFIX.length
         val command = commandInput.takeLast(n - 2).let {
-            it + (0..max(0, n - it.length)).joinToString("") { " " }
+            it.let { s -> if (s.length == n - 2) "…${s.takeLast(s.length - 1)}" else s } +
+                    (0..max(0, n - it.length)).joinToString("") { " " }
         }
+        val row = position.row + min(bufferLines, rows - 1)
         COMMAND_PREFIX.forEachIndexed { i, c ->
-            val row = position.row + rows - 1
             val column = position.column + i
-            graphics.setCharacter(column, row, TextCharacter(c, WHITE, BLUE))
+            graphics.setCharacter(column, row, TextCharacter(c, BLACK, TextColor.Indexed.fromRGB(255, 128, 0)))
         }
         command.forEachIndexed { i, c ->
-            val row = position.row + rows - 1
             val column = position.column + COMMAND_PREFIX.length + i
-            graphics.setCharacter(column, row, TextCharacter(c, BLACK, CYAN))
+            graphics.setCharacter(column, row, TextCharacter(c, BLACK, TextColor.Indexed.fromRGB(255, 128, 0)))
         }
         screen.cursorPosition = TerminalPosition(
-            position.column + min(size.columns - 2, 3 + command.length), position.row + rows - 1
+            position.column + min(size.columns - 2, 3 + commandInput.length), row
         )
     }
 
@@ -272,24 +275,35 @@ class LanternaConsole(
         started = false
     }
 
-    inner class Scope {
+    inner class Scope : IScope {
 
-        fun out(vararg text: TextWithColor, autoRefresh: Boolean = true, newLine: Boolean = false) {
+        override fun out(vararg text: TextWithColor, autoRefresh: Boolean, newLine: Boolean) {
             messageChannel.offer(text.toList() to autoRefresh to newLine)
         }
 
-        fun out(msg: String, autoRefresh: Boolean = true, newLine: Boolean = false) =
+        override fun out(msg: String, autoRefresh: Boolean, newLine: Boolean) =
             out(WHITE(msg), autoRefresh = autoRefresh, newLine = newLine)
 
-        fun outnl(vararg text: TextWithColor, autoRefresh: Boolean = true) =
+        override fun outnl(vararg text: TextWithColor, autoRefresh: Boolean) =
             out(*text, autoRefresh = autoRefresh, newLine = true)
 
-        fun outnl(msg: String = "", autoRefresh: Boolean = true) = outnl(WHITE(msg), autoRefresh = autoRefresh)
+        override fun outnl(msg: String, autoRefresh: Boolean) = outnl(WHITE(msg), autoRefresh = autoRefresh)
 
-        fun refresh() = onBufferChanged()
+        override fun refresh() = onBufferChanged()
 
-        fun release() = this@LanternaConsole.release()
+        override fun release() = this@LanternaConsole.release()
     }
+}
+
+interface IScope {
+
+    fun out(vararg text: TextWithColor, autoRefresh: Boolean = true, newLine: Boolean = false)
+    fun out(msg: String, autoRefresh: Boolean = true, newLine: Boolean = false)
+    fun outnl(vararg text: TextWithColor, autoRefresh: Boolean = true)
+    fun outnl(msg: String = "", autoRefresh: Boolean = true)
+
+    fun refresh()
+    fun release()
 }
 
 private fun List<MessageChar>.remove(

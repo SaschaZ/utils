@@ -33,14 +33,14 @@ repositories {
 
 dependencies {
     // utils
-    implementation "dev.zieger.utils:core:2.2.22"// platform independent
-    implementation "dev.zieger.utils:android:2.2.22" // android
-    implementation "dev.zieger.utils:jdk:2.2.22" // jdk
+    implementation "dev.zieger.utils:core:2.2.44"// platform independent
+    implementation "dev.zieger.utils:android:2.2.44" // android
+    implementation "dev.zieger.utils:jdk:2.2.44" // jdk
 
     // testing utils
-    implementation "dev.zieger.utils:core-testing:2.2.22" // platform independent
-    implementation "dev.zieger.utils:android-testing:2.2.22" // android
-    implementation "dev.zieger.utils:jdk-testing:2.2.22" // jdk
+    implementation "dev.zieger.utils:core-testing:2.2.44" // platform independent
+    implementation "dev.zieger.utils:android-testing:2.2.44" // android
+    implementation "dev.zieger.utils:jdk-testing:2.2.44" // jdk
 }
 ```
 
@@ -220,6 +220,93 @@ Also works with attached `Data`.
 
 # Changelog
 
+##### 2.3.0
+
+* `OnChanged`, `Observable`:
+  * renamed `OnChanged2` to `OnChangedWithParent` and `Observable2` to `ObservableWithParent`
+  * thread safety:
+    * added `changeValue` method: 
+      * allows thread safe change of the properties value
+      * if you are also changing the properties value with the `value` property, than you should enable `safeSet` or thread safety is not guaranteed
+    * added `safeSet` parameter: 
+      * if set to `true`, setting the properties value will be done inside a `Coroutine` with the same `Mutex` used in `changeValue`
+      * because of that the properties new value is not immediately available after setting it when `safeSet` is set to `true`:
+        ```kotlin
+        val test by OnChanged(0, safeSet = true)
+        val test = 1
+        test == 1 // Not necessarily true
+        ```
+      * defaulting to `false`
+* `MachineEx`:
+  * fixed wrong `MatchScope` for state conditions
+* `Log` v2:
+  * enhanced version of the `Log` utils
+  * support for log scopes
+  * available under `dev.zieger.utils.log2` (former `Log` utils still remain in the library)
+* `FiFo`:
+  * reimplemented
+  * added `take` method to remove the first/oldest element
+  * added `DurationExFiFo`:
+    * accepts values of type `ITimeEx`
+    * size is limited by the duration of the oldest to the latest item
+* `catch`, `asyncEx`, `launchEx`, `withCoroutineEx`:
+  * added possibility to define `Throwable`s to `include` in or `exclude` from catching
+* `assert` v2:
+  * enhanced version of the `assert` utils
+  * supports multiple assertions (nullability, greater, smaller, ...)
+  * available under `dev.zieger.utils.core-testing.assertion2` (former `assert` utils remain in the library)
+
+##### 2.2.34
+
+* fixed FlakyTest exception output
+
+##### 2.2.33
+
+* fixed MachineEx log output when state was changed
+
+##### 2.2.32
+
+* fix JitPack foo
+
+##### 2.2.31
+
+* OnChanged:
+    * `suspendUntil` returns wanted value
+
+##### 2.2.30
+
+* FlakyTest:
+    * proper output of throwables
+
+##### 2.2.29
+
+* FlakyTest:
+    * print all failed test causes at the end of each test
+
+##### 2.2.28
+
+* FlakyTest fix
+
+##### 2.2.27
+
+* added more log output to FlakyTest
+
+##### 2.2.26
+
+* fixed build
+
+##### 2.2.25
+
+* added FlakyTest
+    * runs a flaky test again when it fails
+
+##### 2.2.24
+
+* upgraded to kotlin 1.4.10
+    * Coroutines: 1.3.9
+    * Koin: 2.2.0-beta-1
+    * Moshi: 1.10.0
+    
 ##### 2.2.23
 
 * build fix
