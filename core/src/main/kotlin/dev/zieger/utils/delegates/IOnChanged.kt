@@ -18,6 +18,9 @@ interface IOnChangedWithParent<P : Any?, T : Any?> : IOnChangedParamsWithParent<
      */
     var value: T
 
+    /**
+     * Suspend call to change the property in a thread safe way. [safeSet] should be enabled for full safety.
+     */
     suspend fun changeValue(block: (T) -> T)
 
     /**
@@ -51,7 +54,8 @@ interface IOnChangedWithParent<P : Any?, T : Any?> : IOnChangedParamsWithParent<
      */
     suspend fun suspendUntil(
         wanted: T,
-        timeout: IDurationEx? = null
+        timeout: IDurationEx? = null,
+        onChanged: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit = {}
     )
 
     /**

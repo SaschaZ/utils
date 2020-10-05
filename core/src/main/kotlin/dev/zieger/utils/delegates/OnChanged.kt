@@ -2,6 +2,7 @@
 
 package dev.zieger.utils.delegates
 
+import dev.zieger.utils.coroutines.Continuation
 import dev.zieger.utils.coroutines.TypeContinuation
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.withTimeout
@@ -13,6 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.lang.ref.WeakReference
+import java.util.*
 import kotlin.reflect.KProperty
 
 /**
@@ -73,6 +75,7 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
     protected open val nextChangeContinuation = TypeContinuation<T>()
     override val previousValues = FiFo<T?>(previousValueSize)
     protected open var previousValuesCleared: Boolean = false
+    protected open val valueWaiter = LinkedList<Pair<T, Continuation>>()
 
     override var value: T = initial
         set(newValue) {
@@ -111,6 +114,23 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         value
     }
 
+    override suspend fun suspendUntil(
+        wanted: T,
+        timeout: IDurationEx?,
+        onChanged: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit
+    ) {
+        val cont = Continuation()
+        withTimeout(timeout, {
+            valueWaiter.remove(wanted to cont)
+            "Timeout when waiting for $wanted. Is $value and was [${previousValues.joinToString(", ")}]."
+        })  {
+            if (value == wanted) return@withTimeout
+
+            valueWaiter.add(wanted to cont)
+            cont.suspend()
+        }
+    }
+
     protected open fun buildOnChangedScope(
         previousValue: T?,
         isInitialNotification: Boolean = false
@@ -119,16 +139,6 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
             if (isInitialNotification) initial else value, parent?.get(), propertyName, previousValue,
             previousValues, { previousValues.clear() }, isInitialNotification
         ) { value = it }
-
-    override suspend fun suspendUntil(
-        wanted: T,
-        timeout: IDurationEx?
-    ) = withTimeout(timeout) {
-        if (value == wanted) return@withTimeout
-
-        @Suppress("ControlFlowWithEmptyBody")
-        while (nextChange() != wanted);
-    }
 
     override fun clearPreviousValues() {
         previousValues.clear()
@@ -139,10 +149,17 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         new: T,
         old: T
     ) {
-        if (!previousValuesCleared)
+        if (!previousValuesCleared && previousValueSize > 0)
             previousValues.put(old)
         previousValuesCleared = false
+
         nextChangeContinuation.resume(old)
+        valueWaiter.removeAll { (wanted, cont) ->
+            if (new == wanted) {
+                cont.resume()
+                true
+            } else false
+        }
 
         buildOnChangedScope(old).apply {
             onChangedInternal(new)
