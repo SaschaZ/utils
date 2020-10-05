@@ -79,9 +79,11 @@ open class ObservableWithParent<P : Any?, T : Any?>(
     }
 
     override fun observeS(listener: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit): () -> Unit {
+        if (onChangedS != null) require(scope != null) { "When using `observeS`, `scope` can not be `null`." }
+
         observerS.add(listener)
         if (notifyForInitial)
-            scope?.launchEx(mutex = mutex) {
+            scope!!.launchEx(mutex = mutex) {
                 buildOnChangedScope(null, true).listener(value)
             }
         updateSubscriberState()
