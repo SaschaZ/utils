@@ -220,7 +220,7 @@ Also works with attached `Data`.
 
 # Changelog
 
-##### 2.2.43
+##### 2.2.44
 
 * multiple non released version because of JitPack foo
 * fix for `suspendUntil` in `OnChanged` and `Observable`
