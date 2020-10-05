@@ -3,7 +3,7 @@ package dev.zieger.utils.coroutines.scope
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 
-abstract class CoroutineScopeEx(
+open class CoroutineScopeEx(
     private val scopeName: String,
     private val dispatcher: CoroutineDispatcher
 ) : ICoroutineScopeEx {
