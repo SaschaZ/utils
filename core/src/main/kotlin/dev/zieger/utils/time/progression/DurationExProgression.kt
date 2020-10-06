@@ -23,7 +23,7 @@ open class DurationExProgression(
 }
 
 infix fun IDurationEx.until(other: IDurationEx) =
-    (this..(other.millis - 1).toDuration(TimeUnit.MS))
+    (this..(other.millis - 1).toDuration(TimeUnit.MILLI))
 
 infix fun ClosedRange<IDurationEx>.step(step: Number) =
     DurationExProgression(start, endInclusive, step.milliseconds)
