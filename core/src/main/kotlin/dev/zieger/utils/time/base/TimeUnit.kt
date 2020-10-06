@@ -1,7 +1,7 @@
 package dev.zieger.utils.time.base
 
 import dev.zieger.utils.misc.pow
-import dev.zieger.utils.time.base.TimeUnit.MS
+import dev.zieger.utils.time.base.TimeUnit.*
 import kotlin.math.absoluteValue
 
 enum class TimeUnit(
@@ -12,17 +12,11 @@ enum class TimeUnit(
 ) {
 
     MILLI(1.0 to -3, "m"),
-    MS(MILLI),
     SECOND(1.0 to 0, "s"),
-    S(SECOND),
     MINUTE(6.0 to 1, "M"),
-    M(MINUTE),
     HOUR(3.6 to 3, "H"),
-    H(HOUR),
     DAY(8.64 to 4, "D"),
-    D(DAY),
     WEEK(6.048 to 5, "W"),
-    W(WEEK),
     MONTH(2.592 to 6, "Ⅿ"),
     YEAR(3.1536 to 7, "Y");
 
@@ -43,7 +37,7 @@ enum class TimeUnit(
 fun Pair<TimeUnit, TimeUnit>.convert(value: Long) =
     (value * first.factorMillis / second.factorMillis.toDouble()).toLong()
 
-fun Long.toMillis(unit: TimeUnit = MS): Long = (unit to MS).convert(this)
+fun Long.toMillis(unit: TimeUnit = MILLI): Long = (unit to MILLI).convert(this)
 
 val String.timeUnit: TimeUnit?
-    get() = TimeUnit.values().firstOrNull { it.shortChar == this }
+    get() = values().firstOrNull { it.shortChar == this }

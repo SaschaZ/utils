@@ -16,7 +16,7 @@ open class DurationEx private constructor(
         private val newId get() = lastId.incrementAndGet()
     }
 
-    constructor(value: Number, timeUnit: TimeUnit = MS) : this(value.toLong().toMillis(timeUnit))
+    constructor(value: Number, timeUnit: TimeUnit = MILLI) : this(value.toLong().toMillis(timeUnit))
 
     override val id: Long = newId
 
@@ -27,7 +27,7 @@ open class DurationEx private constructor(
     override fun hashCode() = millis.hashCode() + javaClass.hashCode()
 }
 
-fun Number.toDuration() = toDuration(MS)
+fun Number.toDuration() = toDuration(MILLI)
 infix fun Number.toDuration(unit: TimeUnit) = DurationEx(toLong(), unit)
 fun IDurationHolder.toDuration(): IDurationEx = DurationEx(millis)
 

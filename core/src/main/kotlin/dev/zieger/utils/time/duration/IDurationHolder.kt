@@ -9,19 +9,19 @@ interface IDurationHolder : Comparable<IDurationHolder> {
 
     val millis: Long
     val seconds: Long
-        get() = (TimeUnit.MS to TimeUnit.S).convert(millis)
+        get() = (TimeUnit.MILLI to TimeUnit.SECOND).convert(millis)
     val minutes: Long
-        get() = (TimeUnit.MS to TimeUnit.M).convert(millis)
+        get() = (TimeUnit.MILLI to TimeUnit.MINUTE).convert(millis)
     val hours: Long
-        get() = (TimeUnit.MS to TimeUnit.H).convert(millis)
+        get() = (TimeUnit.MILLI to TimeUnit.HOUR).convert(millis)
     val days: Long
-        get() = (TimeUnit.MS to TimeUnit.D).convert(millis)
+        get() = (TimeUnit.MILLI to TimeUnit.DAY).convert(millis)
     val weeks: Long
-        get() = (TimeUnit.MS to TimeUnit.W).convert(millis)
+        get() = (TimeUnit.MILLI to TimeUnit.WEEK).convert(millis)
     val months: Long
-        get() = (TimeUnit.MS to TimeUnit.MONTH).convert(millis)
+        get() = (TimeUnit.MILLI to TimeUnit.MONTH).convert(millis)
     val years: Long
-        get() = (TimeUnit.MS to TimeUnit.YEAR).convert(millis)
+        get() = (TimeUnit.MILLI to TimeUnit.YEAR).convert(millis)
 
     val notZero: Boolean
         get() = millis != 0L

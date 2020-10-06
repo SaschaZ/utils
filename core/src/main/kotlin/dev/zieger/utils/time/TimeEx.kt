@@ -1,7 +1,7 @@
 package dev.zieger.utils.time
 
 import dev.zieger.utils.time.base.TimeUnit
-import dev.zieger.utils.time.base.TimeUnit.MS
+import dev.zieger.utils.time.base.TimeUnit.MILLI
 import dev.zieger.utils.time.base.toMillis
 import dev.zieger.utils.time.duration.IDurationHolder
 import java.util.*
@@ -19,7 +19,7 @@ open class TimeEx(
 
     override val id: Long = newId
 
-    constructor(value: Number, timeUnit: TimeUnit = MS, timeZone: TimeZone = TimeZone.getDefault()) :
+    constructor(value: Number, timeUnit: TimeUnit = MILLI, timeZone: TimeZone = TimeZone.getDefault()) :
             this(value.toLong().toMillis(timeUnit), timeZone)
 
     constructor(source: String, timeZone: TimeZone = TimeZone.getDefault()) :
@@ -36,7 +36,7 @@ open class TimeEx(
 }
 
 
-fun Number.toTime() = toTime(MS)
+fun Number.toTime() = toTime(MILLI)
 infix fun Number.toTime(unit: TimeUnit) = TimeEx(this, unit)
 
 val IDurationHolder.time: ITimeEx
