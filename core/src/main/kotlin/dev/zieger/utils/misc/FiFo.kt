@@ -8,7 +8,7 @@ import kotlin.collections.ArrayList
 /**
  * Describes a FiFo (first in - first out) queue.
  */
-interface IFiFo<T> : List<T> {
+interface IFiFo<T> : MutableList<T> {
 
     /**
      * `true` when next [put] call would remove the oldest item in the FiFo.
@@ -37,18 +37,13 @@ interface IFiFo<T> : List<T> {
      * @return The removed item or `null`.
      */
     fun take(): T?
-
-    /**
-     * Removes all items from the FiFo queue.
-     */
-    fun clear()
 }
 
 abstract class BaseFiFo<T>(
     protected val initial: List<T> = emptyList(),
     protected val internal: MutableList<T> = LinkedList(initial),
     protected val doRemove: MutableList<T>.() -> Unit
-) : IFiFo<T>, List<T> by internal {
+) : IFiFo<T>, MutableList<T> by internal {
 
     override fun put(value: T, update: Boolean): List<T> {
         if (update && internal.isNotEmpty()) onUpdate(value) else onInsert(value)
@@ -66,9 +61,7 @@ abstract class BaseFiFo<T>(
         internal.doRemove()
     }
 
-    override fun clear() = internal.clear()
-
-    override fun toString(): String = "$internal"
+    override fun toString(): String = "FiFo[${internal.joinToString(", ")}]"
 }
 
 /**

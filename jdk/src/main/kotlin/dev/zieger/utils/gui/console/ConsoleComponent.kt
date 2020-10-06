@@ -37,7 +37,7 @@ open class ConsoleComponent(
         }
     }
 
-    internal val console = LanternaConsole(screen, termPosition, termSize, false)
+    internal val console = LanternaConsole(screen, termPosition, termSize, isStandalone = false)
 
     override fun createDefaultRenderer(): InteractableRenderer<ConsoleComponent> = ConsoleRenderer()
 }
