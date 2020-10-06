@@ -13,16 +13,16 @@ class TimeUnitTest {
 
     @Test
     fun testMillisToSeconds() {
-        val millis = TimeUnit.MS
-        val minutes = TimeUnit.M
+        val millis = TimeUnit.MILLI
+        val minutes = TimeUnit.MONTH
         val result = (millis to minutes).convert(60000)
         result assert 1L % { "result should be 1L but was $actual" }
     }
 
     @Test
     fun testHoursToMinutes() {
-        val hours = TimeUnit.H
-        val seconds = TimeUnit.S
+        val hours = TimeUnit.HOUR
+        val seconds = TimeUnit.SECOND
         val result = (hours to seconds).convert(1)
         result assert 3600L % { "result should be 3600L but was $actual" }
     }
