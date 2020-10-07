@@ -38,14 +38,3 @@ android {
         getByName("test").assets.setSrcDirs(listOf("src/main/assets"))
     }
 }
-
-tasks {
-    withType<Test>().configureEach {
-        outputs.upToDateWhen {false}
-    }
-
-    dokka {
-        outputFormat = "html"
-        outputDirectory = "$buildDir/javadoc"
-    }
-}

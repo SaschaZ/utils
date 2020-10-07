@@ -1,3 +1,6 @@
+import org.jetbrains.dokka.gradle.DokkaTask
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
+
 buildscript {
     repositories {
         mavenLocal()
@@ -32,9 +35,21 @@ allprojects {
         maven { url = uri("https://kotlin.bintray.com/ktor") }
         maven { url = uri("https://kotlin.bintray.com/kotlinx") }
     }
-    tasks.withType(org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile::class.java).all {
-        kotlinOptions {
-            jvmTarget = "1.8"
+    tasks {
+        withType<Test>().all {
+            useJUnitPlatform()
+            outputs.upToDateWhen { false }
+        }
+
+        withType<DokkaTask>().all {
+            outputFormat = "html"
+            outputDirectory = "$buildDir/javadoc"
+        }
+
+        withType<KotlinJvmCompile>().all {
+            kotlinOptions {
+                jvmTarget = "1.8"
+            }
         }
     }
 }
