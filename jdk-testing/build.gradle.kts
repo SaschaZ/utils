@@ -11,15 +11,3 @@ plugins {
 configModule("jdk-testing", JVM_LIB) {
     jdk
 }
-
-tasks {
-    test {
-        useJUnitPlatform()
-        outputs.upToDateWhen {false}
-    }
-
-    dokka {
-        outputFormat = "html"
-        outputDirectory = "$buildDir/javadoc"
-    }
-}

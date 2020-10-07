@@ -31,6 +31,7 @@ import com.github.ajalt.mordant.TermColors
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.runCommand
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
+import dev.zieger.utils.coroutines.scope.IoCoroutineScope
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.log.console.ConsoleControl
 import dev.zieger.utils.log.console.LogColored
@@ -319,7 +320,7 @@ object TestRunner {
     }
 
     private suspend fun runTests(folder: File): TestRunResult {
-        "./gradlew lib:testDebug".runCommand(folder)
+        "./gradlew test".runCommand(folder)
         return ResultParser.parseResults(folder)
     }
 }
@@ -426,6 +427,6 @@ runBlocking {
         Log.v(brightBlue("test flakyness with ${(bold + cyan)("$jobs")} ${if (jobs > 1) "parallel jobs" else "job"}\n"))
     }
 
-    ResultPrinter.progress { channel -> (0 until jobs).map { channel.launchJob(it) }.joinAll() }
+    TestRunner.run { ResultPrinter.progress { channel -> (0 until jobs).map { channel.launchJob(it) }.joinAll() } }
     exitProcess(0).asUnit()
 }

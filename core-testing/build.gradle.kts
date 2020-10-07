@@ -15,15 +15,3 @@ configModule("core-testing", JVM_LIB) {
     coroutinesTest
     mockWebServer
 }
-
-tasks {
-    test {
-        useJUnitPlatform()
-        outputs.upToDateWhen {false}
-    }
-
-    dokka {
-        outputFormat = "html"
-        outputDirectory = "$buildDir/javadoc"
-    }
-}

@@ -26,16 +26,6 @@ configModule("core", JVM_LIB) {
 }
 
 tasks {
-    test {
-        useJUnitPlatform()
-        outputs.upToDateWhen { false }
-    }
-
-    dokka {
-        outputFormat = "html"
-        outputDirectory = "$buildDir/javadoc"
-    }
-
     jacocoTestReport {
         reports {
             xml.isEnabled = true
