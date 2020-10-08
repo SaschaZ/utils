@@ -2,6 +2,7 @@ package dev.zieger.utils.coroutines.scope
 
 import dev.zieger.utils.coroutines.scope.ICoroutineScopeEx.Companion.DEFAULT_NAME
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.TestCoroutineDispatcher
 
 
 open class DefaultCoroutineScope(
