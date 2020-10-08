@@ -59,6 +59,5 @@ abstract class FlakyTest(private val defaultMaxExecutions: Int = 5) {
                 t.printStackTrace()
             }
         }
-        scope.cancel()
     }.asUnit()
 }

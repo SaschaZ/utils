@@ -5,12 +5,16 @@ package dev.zieger.utils.delegates
 import dev.zieger.utils.coroutines.Continuation
 import dev.zieger.utils.coroutines.TypeContinuation
 import dev.zieger.utils.coroutines.builder.launchEx
+import dev.zieger.utils.coroutines.channel.forEach
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.delegates.OnChangedParamsWithParent.Companion.DEFAULT_RECENT_VALUE_BUFFER_SIZE
 import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.time.base.IDurationEx
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.RENDEZVOUS
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.lang.ref.WeakReference
@@ -77,18 +81,21 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
     protected open var previousValuesCleared: Boolean = false
     protected open val valueWaiter = LinkedList<Pair<T, Continuation>>()
 
-    override var value: T = initial
+    protected open var internalValue: T = initial
         set(newValue) {
-            fun internalSet() {
-                if (vetoInternal(newValue)) return
-                val mappedInput = mapInternal(newValue)
-                if (field != mappedInput || !notifyOnChangedValueOnly) {
-                    val old = field
-                    field = mappedInput
-                    onPropertyChanged(value, old)
-                }
+            if (vetoInternal(newValue)) return
+            val mappedInput = mapInternal(newValue)
+            if (field != mappedInput || !notifyOnChangedValueOnly) {
+                val old = field
+                field = mappedInput
+                onPropertyChanged(value, old)
             }
-            if (safeSet) scope!!.launchEx(mutex = mutex) { internalSet() } else internalSet()
+        }
+
+    override var value: T
+        get() = internalValue
+        set(newValue) {
+            if (safeSet) scope!!.launch { changeValue { newValue } } else internalValue = newValue
         }
 
     init {
@@ -102,7 +109,7 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
     }
 
     override suspend fun changeValue(block: (T) -> T): Unit = mutex.withLock {
-        value = block(value)
+        internalValue = block(internalValue)
     }.asUnit()
 
     override suspend fun nextChange(

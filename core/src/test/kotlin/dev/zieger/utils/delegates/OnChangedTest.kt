@@ -10,16 +10,17 @@ import dev.zieger.utils.core_testing.mix.ParamInstance
 import dev.zieger.utils.core_testing.mix.bind
 import dev.zieger.utils.core_testing.mix.param
 import dev.zieger.utils.core_testing.mix.parameterMixCollect
+import dev.zieger.utils.coroutines.builder.launchEx
+import dev.zieger.utils.coroutines.scope.IoCoroutineScope
+import dev.zieger.utils.coroutines.withLock
 import dev.zieger.utils.misc.joinToStringIndexed
 import dev.zieger.utils.misc.name
 import dev.zieger.utils.misc.nullWhen
 import dev.zieger.utils.misc.runEachIndexed
 import dev.zieger.utils.time.minutes
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.toList
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import org.junit.jupiter.api.Test
 import java.lang.Integer.max
@@ -285,6 +286,16 @@ class OnChangedTest : FlakyTest() {
         active isEqual 100
         active = 3
         active isEqual 100
+    }
+
+    @Test
+    fun testChangeValue() = runTest(maxExecutions = 1) {
+        val scope = IoCoroutineScope()
+        val testObs = OnChanged(0, scope = scope, safeSet = true)
+        var test by testObs
+        val numRuns = 10000
+        (0 until numRuns).map { scope.launch { testObs.changeValue { it + 1 } } }.joinAll()
+        test isEqual numRuns
     }
 }
 

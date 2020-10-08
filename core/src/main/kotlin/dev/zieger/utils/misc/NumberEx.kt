@@ -74,6 +74,8 @@ open class NumberEx(internal val internal: Number) : Number(), INumber, Comparab
     override fun toLong() = internal.toLong()
 
     override fun toShort() = internal.toShort()
+
+    override fun toString(): String = "$internal"
 }
 
 operator fun <TL : Number, TR : Number> TL.plus(o: TR): NumberEx {

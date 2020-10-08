@@ -12,7 +12,7 @@ fun Number?.format(digits: Int? = null, shortForm: Boolean = false) = this?.let 
         when {
             shortForm && toDouble().abs() > 1000000 -> toDouble() / 1000000.0
             shortForm && toDouble().abs() > 1000 -> toDouble() / 1000.0
-            else -> this
+            else -> toDouble()
         }
     ).let {
         "$it${

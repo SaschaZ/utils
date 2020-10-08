@@ -4,8 +4,10 @@ import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.statemachine.MachineExTest.TestData.TestStateData
 import dev.zieger.utils.statemachine.MachineExTest.TestEvent.*
+import dev.zieger.utils.statemachine.MachineExTest.TestEvent
 import dev.zieger.utils.statemachine.MachineExTest.TestEvent.TEST_EVENT_GROUP.FOURTH
 import dev.zieger.utils.statemachine.MachineExTest.TestState.*
+import dev.zieger.utils.statemachine.MachineExTest.TestState
 import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DEFG.D
 import org.junit.jupiter.api.Test
 
@@ -19,11 +21,13 @@ class MachineExFunctionDslTest {
             onEvent(THIRD).withState(B(TestStateData)).set(C)
             onEvent(FOURTH).withState(C).withPrevious(B.ignoreSlave[1]).set(D)
 
-            onEvent(MachineExTest.TestEvent.ignoreSlave).exec {
+            onEvent(TestEvent.ignoreSlave).exec {
 
             }
 
-            onState(MachineExTest.TestState.ignoreSlave).exec {
+            onEvent(FOURTH).fire(FIRST)
+
+            onState(TestState.ignoreSlave).withEvent(SECOND).exec {
 
             }
         }.run {

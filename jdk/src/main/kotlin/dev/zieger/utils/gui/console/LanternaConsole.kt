@@ -27,6 +27,7 @@ import kotlinx.coroutines.channels.Channel
 import java.lang.Integer.max
 import java.lang.Integer.min
 import java.util.*
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.collections.lastOrNull
 
 class LanternaConsole(
@@ -37,10 +38,10 @@ class LanternaConsole(
     isStandalone: Boolean = true,
     bufferSize: Int = BUFFER_SIZE,
     private val cs: CoroutineScope = DefaultCoroutineScope(),
-    private val hideCommandInput: Boolean = false,
+    private val hideCommandInput: Boolean = false
 ) {
 
-    companion object {
+    companion object : IScope {
 
         @JvmStatic
         fun main(args: Array<String>) = runBlocking {
@@ -79,6 +80,38 @@ class LanternaConsole(
         private const val SCROLL_DELTA = 5
         private const val SCROLL_MAX = 1024
         private const val COMMAND_PREFIX = "\$: "
+
+        private var lastInstance: LanternaConsole? = null
+
+        override fun out(vararg text: TextWithColor, autoRefresh: Boolean, newLine: Boolean, offset: Int) {
+            lastInstance?.scope?.out(*text, autoRefresh = autoRefresh, newLine = newLine, offset = offset)
+                ?: throw IllegalStateException("Can not use global scope when no LanternaConsole instance was created yet.")
+        }
+
+        override fun out(msg: String, autoRefresh: Boolean, newLine: Boolean, offset: Int) {
+            lastInstance?.scope?.out(msg, autoRefresh = autoRefresh, newLine = newLine, offset = offset)
+                ?: throw IllegalStateException("Can not use global scope when no LanternaConsole instance was created yet.")
+        }
+
+        override fun outnl(vararg text: TextWithColor, autoRefresh: Boolean, offset: Int) {
+            lastInstance?.scope?.outnl(*text, autoRefresh = autoRefresh, offset = offset)
+                ?: throw IllegalStateException("Can not use global scope when no LanternaConsole instance was created yet.")
+        }
+
+        override fun outnl(msg: String, autoRefresh: Boolean, offset: Int) {
+            lastInstance?.scope?.outnl(msg, autoRefresh = autoRefresh, offset = offset)
+                ?: throw IllegalStateException("Can not use global scope when no LanternaConsole instance was created yet.")
+        }
+
+        override fun refresh() {
+            lastInstance?.scope?.refresh()
+                ?: throw IllegalStateException("Can not use global scope when no LanternaConsole instance was created yet.")
+        }
+
+        override fun release() {
+            lastInstance?.scope?.release()
+                ?: throw IllegalStateException("Can not use global scope when no LanternaConsole instance was created yet.")
+        }
     }
 
     private lateinit var graphics: TextGraphics
@@ -133,6 +166,7 @@ class LanternaConsole(
     init {
         if (isStandalone)
             draw(screen.newTextGraphics())
+        lastInstance = this
     }
 
     private fun checkSize() {
@@ -240,12 +274,22 @@ class LanternaConsole(
         )
     }
 
+    private val lastMessageBuffer = HashMap<MessageId, String>()
+
     private fun List<List<TextWithColor>>.buildColorStringArrays(remove: (TextWithColor) -> Unit): ScreenBuffer =
         map { line ->
             var idx = 0
             var nlCnt = 0
-            line.map { it to it.text(MessageScope({ onBufferChanged() }, { remove(it) })).toString() }
-                .flatMap { (col, c) -> c.map { it1 -> it1 to col.color() to col.background() } }
+            line.map {
+                val scope =
+                    MessageScope({ onBufferChanged() }, { remove(it) }, { it.active = false }, { it.active = true })
+                val wasActive = it.active
+                val message = it.text(scope).toString()
+                it to when {
+                    it.active && wasActive || wasActive -> message.also { s -> lastMessageBuffer[it.id] = s }
+                    else -> lastMessageBuffer[it.id] ?: ""
+                }
+            }.flatMap { (col, c) -> c.map { m -> m to col.color() to col.background() } }
                 .replace('\t') { _, tabIdx -> (0..tabIdx % 4).joinToString("") { " " } }
                 .remove('\b', 1)
                 .groupBy { (c, _, _) ->
@@ -351,8 +395,11 @@ infix fun <A, B, C> Pair<A, B>.to(other: C): Triple<A, B, C> = Triple(first, sec
 
 data class MessageScope(
     val refresh: () -> Unit,
-    val remove: () -> Unit
+    val remove: () -> Unit,
+    val pause: () -> Unit,
+    val resume: () -> Unit
 )
+typealias MessageId = Long
 typealias MessageBuilder = MessageScope.() -> Any
 typealias MessageChar = Triple<Char, TextColor, TextColor>
 typealias ScreenBuffer = List<List<List<MessageChar>>>
@@ -371,14 +418,25 @@ data class TextWithColor(
     val text: MessageBuilder,
     val color: () -> TextColor,
     val background: () -> TextColor,
-    val newLine: Boolean = false
+    val newLine: Boolean = false,
+    var active: Boolean = true
 ) {
+
+    companion object {
+
+        private val lastId = AtomicLong(0)
+
+        val newId: MessageId get() = lastId.getAndIncrement()
+    }
+
     constructor(
         text: MessageBuilder,
         color: TextColor,
         background: TextColor,
         newLine: Boolean = false
     ) : this(text, { color }, { background }, newLine)
+
+    val id: MessageId = newId
 }
 
 operator fun TextWithColor.times(text: TextWithColor): List<TextWithColor> = listOf(this, text)
