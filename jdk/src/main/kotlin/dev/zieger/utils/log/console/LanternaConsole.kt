@@ -77,7 +77,7 @@ class LanternaConsole(
     private val size: TerminalSize
         get() = preferredSize ?: screen.terminalSize
 
-    private val buffer = FiFo<List<TextWithColor>>(bufferSize)
+    private val buffer = ArrayList<List<TextWithColor>>(bufferSize)
     private var bufferLines = 0
     private var scrollIdx = 0
     private var commandInput = ""
@@ -207,24 +207,26 @@ class LanternaConsole(
 
     inner class Scope {
 
-        fun out(vararg text: TextWithColor, autoRefresh: Boolean = true, newLine: Boolean = false) {
+        fun out(vararg text: TextWithColor, autoRefresh: Boolean = true, newLine: Boolean = false): () -> Unit {
             var doUpdate = false
-            buffer.put((buffer.lastOrNull()
+            val value = (buffer.lastOrNull()
                 ?.nullWhen { newLine || it.last().newLine }
                 ?.let { doUpdate = true; it + text.toList() } ?: text.toList())
-                .mapIndexed { idx, t -> if (newLine && idx == text.lastIndex) t.copy(newLine = true) else t },
-                doUpdate
-            )
+                .mapIndexed { idx, t -> if (newLine && idx == text.lastIndex) t.copy(newLine = true) else t }
+            if (doUpdate) buffer[buffer.lastIndex] = value
+            else buffer.add(value)
             if (autoRefresh) refresh()
+            return { buffer.remove(value) }
         }
 
-        fun out(msg: String, autoRefresh: Boolean = true, newLine: Boolean = false) =
+        fun out(msg: String, autoRefresh: Boolean = true, newLine: Boolean = false): () -> Unit =
             out(WHITE(msg), autoRefresh = autoRefresh, newLine = newLine)
 
-        fun outNl(vararg text: TextWithColor, autoRefresh: Boolean = true) =
+        fun outNl(vararg text: TextWithColor, autoRefresh: Boolean = true): () -> Unit =
             out(*text, autoRefresh = autoRefresh, newLine = true)
 
-        fun outNl(msg: String = "", autoRefresh: Boolean = true) = outNl(WHITE(msg), autoRefresh = autoRefresh)
+        fun outNl(msg: String = "", autoRefresh: Boolean = true): () -> Unit =
+            outNl(WHITE(msg), autoRefresh = autoRefresh)
 
         fun refresh() = onBufferChanged()
 
