@@ -38,6 +38,10 @@ fun ClosedRange<IDurationEx>.ticks(
     count: Int = 1
 ): DurationExProgression = start..endInclusive step interval * count
 
-fun ITimeEx.rangeBase(base: IDurationEx): ITimeEx { return this - this % base }
+fun ITimeEx.rangeBase(base: IDurationEx): ITimeEx {
+    return this - this % base
+}
 
-fun ITimeEx.toRange(rangeStep: IDurationEx): ClosedRange<ITimeEx> = rangeBase(rangeStep).let { it .. it + rangeStep }
+fun ITimeEx.toRange(rangeStep: IDurationEx): ClosedRange<ITimeEx> = rangeBase(rangeStep).let { it..it + rangeStep }
+
+val ClosedRange<ITimeEx>.duration get() = endInclusive - start

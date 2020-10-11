@@ -18,7 +18,10 @@ import dev.zieger.utils.coroutines.channel.forEach
 import dev.zieger.utils.coroutines.executeNativeBlocking
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.delegates.OnChanged
-import dev.zieger.utils.misc.*
+import dev.zieger.utils.misc.AntiSpamProxy
+import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.misc.nullWhen
+import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.time.base.IDurationEx
 import dev.zieger.utils.time.milliseconds
 import dev.zieger.utils.time.seconds
@@ -28,7 +31,6 @@ import java.lang.Integer.max
 import java.lang.Integer.min
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
-import kotlin.collections.lastOrNull
 
 class LanternaConsole(
     private val screen: Screen = DefaultTerminalFactory().createScreen(),
@@ -36,7 +38,7 @@ class LanternaConsole(
     val preferredSize: TerminalSize? = null,
     val refreshInterval: IDurationEx? = 100.milliseconds,
     isStandalone: Boolean = true,
-    bufferSize: Int = BUFFER_SIZE,
+    private val bufferSize: Int = BUFFER_SIZE,
     private val cs: CoroutineScope = DefaultCoroutineScope(),
     private val hideCommandInput: Boolean = false
 ) {
@@ -83,23 +85,23 @@ class LanternaConsole(
 
         private var lastInstance: LanternaConsole? = null
 
-        override fun out(vararg text: TextWithColor, autoRefresh: Boolean, newLine: Boolean, offset: Int) {
-            lastInstance?.scope?.out(*text, autoRefresh = autoRefresh, newLine = newLine, offset = offset)
+        override fun out(vararg text: TextWithColor, autoRefresh: Boolean, newLine: Boolean, offset: Int): () -> Unit {
+            return lastInstance?.scope?.out(*text, autoRefresh = autoRefresh, newLine = newLine, offset = offset)
                 ?: throw IllegalStateException("Can not use global scope when no LanternaConsole instance was created yet.")
         }
 
-        override fun out(msg: String, autoRefresh: Boolean, newLine: Boolean, offset: Int) {
-            lastInstance?.scope?.out(msg, autoRefresh = autoRefresh, newLine = newLine, offset = offset)
+        override fun out(msg: String, autoRefresh: Boolean, newLine: Boolean, offset: Int): () -> Unit {
+            return lastInstance?.scope?.out(msg, autoRefresh = autoRefresh, newLine = newLine, offset = offset)
                 ?: throw IllegalStateException("Can not use global scope when no LanternaConsole instance was created yet.")
         }
 
-        override fun outnl(vararg text: TextWithColor, autoRefresh: Boolean, offset: Int) {
-            lastInstance?.scope?.outnl(*text, autoRefresh = autoRefresh, offset = offset)
+        override fun outnl(vararg text: TextWithColor, autoRefresh: Boolean, offset: Int): () -> Unit {
+            return lastInstance?.scope?.outnl(*text, autoRefresh = autoRefresh, offset = offset)
                 ?: throw IllegalStateException("Can not use global scope when no LanternaConsole instance was created yet.")
         }
 
-        override fun outnl(msg: String, autoRefresh: Boolean, offset: Int) {
-            lastInstance?.scope?.outnl(msg, autoRefresh = autoRefresh, offset = offset)
+        override fun outnl(msg: String, autoRefresh: Boolean, offset: Int): () -> Unit {
+            return lastInstance?.scope?.outnl(msg, autoRefresh = autoRefresh, offset = offset)
                 ?: throw IllegalStateException("Can not use global scope when no LanternaConsole instance was created yet.")
         }
 
@@ -119,7 +121,7 @@ class LanternaConsole(
     private val size: TerminalSize
         get() = preferredSize ?: graphics.size
 
-    private var buffer = FiFo<List<TextWithColor>>(bufferSize)
+    private var buffer = ArrayList<List<TextWithColor>>(bufferSize)
     private var bufferLines = 0
     private var scrollIdx = 0
     private var commandInput = ""
@@ -153,7 +155,9 @@ class LanternaConsole(
                                 .mapIndexed { idx, t -> if (newLine && idx == text.lastIndex) t.copy(newLine = true) else t }
 
                             if (offset > 0) buffer.add(buffer.lastIndex - 1, value)
-                            else buffer.put(value, doUpdate)
+                            else if (doUpdate) buffer[buffer.lastIndex] = value
+                            else buffer.add(value)
+                            while (buffer.size >= bufferSize) buffer.removeAt(0)
                         }
                         if (autoRefresh) onBufferChanged()
                     }
@@ -233,7 +237,7 @@ class LanternaConsole(
     private fun printOutput() {
         var nlIdx = 0
         val stringArray = buffer.buildColorStringArrays {
-            buffer = FiFo(BUFFER_SIZE, buffer.map { m -> m.filterNot { f -> f == it } })
+            buffer = ArrayList(buffer.map { m -> m.filterNot { f -> f == it } })
             onBufferChanged()
         }
         val rows = size.rows
@@ -327,17 +331,25 @@ class LanternaConsole(
 
     inner class Scope : IScope {
 
-        override fun out(vararg text: TextWithColor, autoRefresh: Boolean, newLine: Boolean, offset: Int) {
-            messageChannel.offer(Message(text.toList(), autoRefresh, newLine, offset))
+        override fun out(vararg text: TextWithColor, autoRefresh: Boolean, newLine: Boolean, offset: Int): () -> Unit {
+            var doUpdate = false
+            val value = (buffer.lastOrNull()
+                ?.nullWhen { newLine || it.last().newLine }
+                ?.let { doUpdate = true; it + text.toList() } ?: text.toList())
+                .mapIndexed { idx, t -> if (newLine && idx == text.lastIndex) t.copy(newLine = true) else t }
+            if (doUpdate) buffer[buffer.lastIndex] = value
+            else buffer.add(value)
+            if (autoRefresh) refresh()
+            return { buffer.remove(value) }
         }
 
-        override fun out(msg: String, autoRefresh: Boolean, newLine: Boolean, offset: Int) =
+        override fun out(msg: String, autoRefresh: Boolean, newLine: Boolean, offset: Int): () -> Unit =
             out(WHITE(msg), autoRefresh = autoRefresh, newLine = newLine, offset = offset)
 
-        override fun outnl(vararg text: TextWithColor, autoRefresh: Boolean, offset: Int) =
+        override fun outnl(vararg text: TextWithColor, autoRefresh: Boolean, offset: Int): () -> Unit =
             out(*text, autoRefresh = autoRefresh, newLine = true, offset = offset)
 
-        override fun outnl(msg: String, autoRefresh: Boolean, offset: Int) =
+        override fun outnl(msg: String, autoRefresh: Boolean, offset: Int): () -> Unit =
             outnl(WHITE(msg), autoRefresh = autoRefresh, offset = offset)
 
         override fun refresh() = onBufferChanged()
@@ -348,10 +360,16 @@ class LanternaConsole(
 
 interface IScope {
 
-    fun out(vararg text: TextWithColor, autoRefresh: Boolean = true, newLine: Boolean = false, offset: Int = 0)
-    fun out(msg: String, autoRefresh: Boolean = true, newLine: Boolean = false, offset: Int = 0)
-    fun outnl(vararg text: TextWithColor, autoRefresh: Boolean = true, offset: Int = 0)
-    fun outnl(msg: String = "", autoRefresh: Boolean = true, offset: Int = 0)
+    fun out(
+        vararg text: TextWithColor,
+        autoRefresh: Boolean = true,
+        newLine: Boolean = false,
+        offset: Int = 0
+    ): () -> Unit
+
+    fun out(msg: String, autoRefresh: Boolean = true, newLine: Boolean = false, offset: Int = 0): () -> Unit
+    fun outnl(vararg text: TextWithColor, autoRefresh: Boolean = true, offset: Int = 0): () -> Unit
+    fun outnl(msg: String = "", autoRefresh: Boolean = true, offset: Int = 0): () -> Unit
 
     fun refresh()
     fun release()

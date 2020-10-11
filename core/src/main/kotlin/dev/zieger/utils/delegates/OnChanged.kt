@@ -152,7 +152,7 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         previousValuesCleared = true
     }
 
-    private fun onPropertyChanged(
+    protected open fun onPropertyChanged(
         new: T,
         old: T
     ) {
