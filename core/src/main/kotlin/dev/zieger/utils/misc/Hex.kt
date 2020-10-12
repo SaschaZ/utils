@@ -4,7 +4,7 @@ import kotlin.experimental.and
 
 private val Int.singleHex: String
     get() = when (toInt()) {
-        0 - 9 -> "${toInt()}"
+        in 0..9 -> "${toInt()}"
         10 -> "A"
         11 -> "B"
         12 -> "C"
@@ -16,7 +16,7 @@ private val Int.singleHex: String
 val Byte.hex: String get() = (toInt() and 0xF).singleHex + ((toInt() and 0xF0) shr 4).singleHex
 
 val Long.hex: String
-    get() = (this shr 24 and 0xFF).toByte().hex +
-            (this shr 16 and 0xFF).toByte().hex +
-            (this shr 8 and 0xFF).toByte().hex +
+    get() = ((this and 0xFF000000) shr 24).toByte().hex +
+            ((this and 0xFF0000) shr 16).toByte().hex +
+            ((this and 0xFF00) shr 8).toByte().hex +
             (this and 0xFF).toByte().hex
