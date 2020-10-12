@@ -4,7 +4,7 @@ import kotlin.experimental.and
 
 private val Int.singleHex: String
     get() = when (toInt()) {
-        0 - 9 -> "${toInt()}"
+        in 0..9 -> "${toInt()}"
         10 -> "A"
         11 -> "B"
         12 -> "C"
