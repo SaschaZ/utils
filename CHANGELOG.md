@@ -1,5 +1,9 @@
 # Changelog
 
+##### 2.2.45
+
+* added Coroutine scopes for testing
+
 ##### 2.2.44
 
 * multiple non released version because of JitPack foo
