@@ -1,5 +1,9 @@
 # Changelog
 
+##### 2.2.46
+
+* JitPack foo
+
 ##### 2.2.45
 
 * added Coroutine scopes for testing
