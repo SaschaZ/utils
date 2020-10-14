@@ -16,6 +16,7 @@ data class Vec2d(val x: Double, val y: Double) {
 
     fun toPoint() = Point(x.toInt(), y.toInt())
 
+    operator fun unaryMinus() = this * -1
     operator fun plus(v: Vec2d) = Vec2d(x + v.x, y + v.y)
     operator fun plus(n: Number) = Vec2d(x + n.toDouble(), y + n.toDouble())
     operator fun minus(v: Vec2d) = Vec2d(x - v.x, y - v.y)
