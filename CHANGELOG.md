@@ -1,5 +1,9 @@
 # Changelog
 
+##### 2.2.48
+
+* JitPack foo
+
 ##### 2.2.47
 
 * `OnChanged`/`Observable`: added `release()` method to stop notifying,
