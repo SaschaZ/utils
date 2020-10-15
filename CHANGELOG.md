@@ -3,7 +3,7 @@
 ##### 2.2.47
 
 * `OnChanged`/`Observable`: added `release()` method to stop notifying,
-when the class is not needed anymore
+when the instance is not needed anymore
 
 ##### 2.2.46
 
