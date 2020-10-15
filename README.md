@@ -33,14 +33,14 @@ repositories {
 
 dependencies {
     // utils
-    implementation "dev.zieger.utils:core:2.2.47"// platform independent
-    implementation "dev.zieger.utils:android:2.2.47" // android
-    implementation "dev.zieger.utils:jdk:2.2.47" // jdk
+    implementation "dev.zieger.utils:core:2.2.48"// platform independent
+    implementation "dev.zieger.utils:android:2.2.48" // android
+    implementation "dev.zieger.utils:jdk:2.2.48" // jdk
 
     // testing utils
-    implementation "dev.zieger.utils:core-testing:2.2.47" // platform independent
-    implementation "dev.zieger.utils:android-testing:2.2.47" // android
-    implementation "dev.zieger.utils:jdk-testing:2.2.47" // jdk
+    implementation "dev.zieger.utils:core-testing:2.2.48" // platform independent
+    implementation "dev.zieger.utils:android-testing:2.2.48" // android
+    implementation "dev.zieger.utils:jdk-testing:2.2.48" // jdk
 }
 ```
 
@@ -220,10 +220,14 @@ Also works with attached `Data`.
 
 # Changelog
 
+##### 2.2.48
+
+* JitPack foo
+
 ##### 2.2.47
 
 * `OnChanged`/`Observable`: added `release()` method to stop notifying,
-when the class is not needed anymore
+when the instance is not needed anymore
 
 ##### 2.2.46
 
