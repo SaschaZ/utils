@@ -10,6 +10,7 @@ import dev.zieger.utils.delegates.OnChangedParamsWithParent.Companion.DEFAULT_RE
 import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.time.duration.IDurationEx
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -76,9 +77,12 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
     override val previousValues = FiFo<T?>(previousValueSize)
     protected open var previousValuesCleared: Boolean = false
     protected open val valueWaiter = LinkedList<Pair<T, Continuation>>()
+    protected open var isReleased = false
 
     override var value: T = initial
         set(newValue) {
+            if (isReleased) return
+
             fun internalSet() {
                 if (vetoInternal(newValue)) return
                 val mappedInput = mapInternal(newValue)
@@ -105,10 +109,13 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         value = block(value)
     }.asUnit()
 
-    override suspend fun nextChange(
+    override suspend fun suspendUntilNextChange(
         timeout: IDurationEx?,
         onChanged: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit
     ): T = withTimeout(timeout) {
+        if (isReleased)
+            throw IllegalStateException("Trying to access released OnChanged delegate (suspendUntilNextChange())")
+
         val old = nextChangeContinuation.suspend(timeout)
         buildOnChangedScope(old).onChanged(value)
         value
@@ -119,11 +126,14 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         timeout: IDurationEx?,
         onChanged: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit
     ) {
+        if (isReleased)
+            throw IllegalStateException("Trying to access released OnChanged delegate (suspendUntil())")
+
         val cont = Continuation()
         withTimeout(timeout, {
             valueWaiter.remove(wanted to cont)
             "Timeout when waiting for $wanted. Is $value and was [${previousValues.joinToString(", ")}]."
-        })  {
+        }) {
             if (value == wanted) return@withTimeout
 
             valueWaiter.add(wanted to cont)
@@ -189,4 +199,10 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
 
     override fun IOnChangedScopeWithParent<P, T>.onChangedInternal(value: T) =
         onChanged?.invoke(this, value).asUnit()
+
+    override fun release() {
+        isReleased = true
+        clearPreviousValues()
+        nextChangeContinuation.resumeWithException(CancellationException())
+    }
 }

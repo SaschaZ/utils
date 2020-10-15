@@ -34,4 +34,10 @@ interface IObservableWithParent<P : Any?, T : Any?> : IOnChangedWithParent<P, T>
      */
     @Deprecated("Use observeS() instead.", ReplaceWith("observeS"))
     fun controlS(listener: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit): () -> Unit = observeS(listener)
+
+    /**
+     * Removes all observers and stops notifying for changes.
+     * Call this than this class is not needed anymore.
+     */
+    override fun release()
 }

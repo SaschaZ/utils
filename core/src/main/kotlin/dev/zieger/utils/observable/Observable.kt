@@ -67,6 +67,9 @@ open class ObservableWithParent<P : Any?, T : Any?>(
     }
 
     override fun observe(listener: IOnChangedScopeWithParent<P, T>.(T) -> Unit): () -> Unit {
+        if (isReleased)
+            throw IllegalStateException("Trying to access released OnChanged delegate (observe())")
+
         observer.add(listener)
         if (notifyForInitial)
             buildOnChangedScope(null, true).listener(value)
@@ -80,6 +83,8 @@ open class ObservableWithParent<P : Any?, T : Any?>(
 
     override fun observeS(listener: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit): () -> Unit {
         require(scope != null) { "When using `observeS`, `scope` can not be `null`." }
+        if (isReleased)
+            throw IllegalStateException("Trying to access released OnChanged delegate (observeS())")
 
         observerS.add(listener)
         if (notifyForInitial)
@@ -102,5 +107,11 @@ open class ObservableWithParent<P : Any?, T : Any?>(
 
     private fun updateSubscriberState() {
         subscribersAvailable = observer.isNotEmpty() || observerS.isNotEmpty()
+    }
+
+    override fun release() {
+        observer.clear()
+        observerS.clear()
+        super.release()
     }
 }

@@ -5,6 +5,7 @@ import dev.zieger.utils.coroutines.TypeContinuation.Companion.ContinuationHolder
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.time.duration.IDurationEx
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
@@ -85,7 +86,7 @@ open class TypeContinuation<T> {
      *
      * @param exception [Throwable] to throw when the caller of [suspend] is resumed.
      */
-    open fun resumeWithException(exception: Throwable) {
+    open fun resumeWithException(exception: Throwable = CancellationException()) {
         val tmp = channelMap
         channelMap = HashMap()
 

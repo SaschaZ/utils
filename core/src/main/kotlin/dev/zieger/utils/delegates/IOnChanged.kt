@@ -3,6 +3,7 @@
 package dev.zieger.utils.delegates
 
 import dev.zieger.utils.misc.FiFo
+import dev.zieger.utils.misc.IReleasable
 import dev.zieger.utils.time.duration.IDurationEx
 import kotlin.properties.ReadWriteProperty
 
@@ -11,7 +12,8 @@ typealias IOnChanged<T> = IOnChangedWithParent<Any?, T>
 /**
  * [ReadWriteProperty] with support for a listener that is called when the observed property changes.
  */
-interface IOnChangedWithParent<P : Any?, T : Any?> : IOnChangedParamsWithParent<P, T>, ReadWriteProperty<P, T> {
+interface IOnChangedWithParent<P : Any?, T : Any?> : IOnChangedParamsWithParent<P, T>,
+    ReadWriteProperty<P, T>, IReleasable {
 
     /**
      * Property that will notify listener when it changes.
@@ -44,7 +46,7 @@ interface IOnChangedWithParent<P : Any?, T : Any?> : IOnChangedParamsWithParent<
     /**
      * Suspends until the next change occurs. Will throw a runtime exception if the [timeout] is reached.
      */
-    suspend fun nextChange(
+    suspend fun suspendUntilNextChange(
         timeout: IDurationEx? = null,
         onChanged: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit = {}
     ): T?
@@ -76,4 +78,11 @@ interface IOnChangedWithParent<P : Any?, T : Any?> : IOnChangedParamsWithParent<
      * Clears the previous value storage.
      */
     fun clearPreviousValues()
+
+    /**
+     * Stop notifying for changes.
+     * Call this than this class is not needed anymore.
+     */
+    override fun release()
 }
+
