@@ -12,8 +12,8 @@ import dev.zieger.utils.log2.filter.LogLevel
 import dev.zieger.utils.log2.filter.LogSpamFilter
 import dev.zieger.utils.observable.Observable
 import dev.zieger.utils.time.delay
-import dev.zieger.utils.time.milliseconds
-import dev.zieger.utils.time.seconds
+import dev.zieger.utils.time.duration.milliseconds
+import dev.zieger.utils.time.duration.seconds
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

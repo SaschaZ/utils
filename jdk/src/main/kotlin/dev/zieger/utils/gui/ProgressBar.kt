@@ -13,7 +13,7 @@ import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.gui.ProgressBar.Companion.DEFAULT_SIZE
 import dev.zieger.utils.gui.ProgressBar.Companion.PROGRESS_COLORS
 import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.time.seconds
+import dev.zieger.utils.time.duration.seconds
 import kotlinx.coroutines.runBlocking
 
 @Suppress("FunctionName")

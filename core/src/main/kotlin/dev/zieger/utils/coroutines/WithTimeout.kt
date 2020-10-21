@@ -1,7 +1,7 @@
 package dev.zieger.utils.coroutines
 
 import dev.zieger.utils.misc.catch
-import dev.zieger.utils.time.base.IDurationEx
+import dev.zieger.utils.time.duration.IDurationEx
 import kotlinx.coroutines.CancellationException
 
 /**

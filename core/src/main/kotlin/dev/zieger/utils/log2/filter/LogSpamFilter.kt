@@ -5,11 +5,11 @@ import dev.zieger.utils.log2.IFilter
 import dev.zieger.utils.log2.LogFilter
 import dev.zieger.utils.log2.LogPipelineContext
 import dev.zieger.utils.time.TimeEx
-import dev.zieger.utils.time.base.IDurationEx
-import dev.zieger.utils.time.base.ITimeEx
-import dev.zieger.utils.time.minus
-import dev.zieger.utils.time.plus
-import dev.zieger.utils.time.times
+import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.ITimeEx
+import dev.zieger.utils.time.base.minus
+import dev.zieger.utils.time.base.plus
+import dev.zieger.utils.time.base.times
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

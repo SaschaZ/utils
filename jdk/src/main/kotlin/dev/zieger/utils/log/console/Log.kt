@@ -6,7 +6,7 @@ import com.github.ajalt.mordant.TermColors
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.log.LogElement
 import dev.zieger.utils.log.LogLevel
-import dev.zieger.utils.time.milliseconds
+import dev.zieger.utils.time.duration.milliseconds
 
 private const val DEFAULT_MAXIMUM_PROGRESS = 100L
 private val DEFAULT_UPDATE_INTERVAL = 100.milliseconds

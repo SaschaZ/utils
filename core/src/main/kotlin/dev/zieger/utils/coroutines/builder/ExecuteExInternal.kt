@@ -4,9 +4,9 @@ import dev.zieger.utils.UtilsSettings.LOG_EXCEPTIONS
 import dev.zieger.utils.UtilsSettings.PRINT_EXCEPTIONS
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.misc.catch
-import dev.zieger.utils.time.base.IDurationEx
+import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.delay
-import dev.zieger.utils.time.minus
+import dev.zieger.utils.time.base.minus
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

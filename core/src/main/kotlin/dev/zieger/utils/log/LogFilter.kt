@@ -1,6 +1,6 @@
 package dev.zieger.utils.log
 
-import dev.zieger.utils.time.base.IDurationEx
+import dev.zieger.utils.time.duration.IDurationEx
 import kotlin.random.Random
 
 sealed class LogFilter {

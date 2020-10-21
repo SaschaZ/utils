@@ -2,7 +2,7 @@
 
 package dev.zieger.utils.misc
 
-import dev.zieger.utils.time.milliseconds
+import dev.zieger.utils.time.duration.milliseconds
 import kotlin.math.pow
 
 interface INumber {
@@ -40,6 +40,8 @@ interface INumber {
      * Returns the value of this number as a [Byte], which may involve rounding or truncation.
      */
     fun toByte(): Byte
+
+    fun abs(): INumber
 }
 
 open class NumberEx(internal val internal: Number) : Number(), INumber, Comparable<NumberEx> {
@@ -74,6 +76,10 @@ open class NumberEx(internal val internal: Number) : Number(), INumber, Comparab
     override fun toLong() = internal.toLong()
 
     override fun toShort() = internal.toShort()
+
+    override fun abs(): NumberEx {
+        return if (internal.toDouble() < 0.0) internal * -1 else internal.ex
+    }
 
     override fun toString(): String = "$internal"
 }

@@ -3,7 +3,6 @@ package dev.zieger.utils.time
 import dev.zieger.utils.misc.INumber
 import dev.zieger.utils.misc.NumberEx
 import dev.zieger.utils.time.base.IDurationHolder
-import dev.zieger.utils.time.base.ITimeEx
 import dev.zieger.utils.time.base.TimeUnit
 import dev.zieger.utils.time.base.TimeUnit.MS
 import dev.zieger.utils.time.base.toMillis

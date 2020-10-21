@@ -1,6 +1,8 @@
-package dev.zieger.utils.time.base
+package dev.zieger.utils.time.duration
 
 import dev.zieger.utils.misc.divMod
+import dev.zieger.utils.time.base.IDurationHolderComparator
+import dev.zieger.utils.time.base.TimeUnit
 
 interface IDurationEx : IDurationHolderComparator {
 

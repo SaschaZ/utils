@@ -61,10 +61,10 @@ interface MachineOperatorDsl : MachineDslRoot {
     /**
      *
      */
-    infix fun Condition.set(state: AbsState): Unit = execAndSet { state }
-    infix fun Condition.set(state: StateCombo): Unit = execAndSet { state }
+    infix fun Condition.set(state: AbsState?): Unit = execAndSet { state }
+    infix fun Condition.set(state: StateCombo?): Unit = execAndSet { state }
 
-    infix fun Condition.fire(event: AbsEvent): Unit = execAndFire { event }
+    infix fun Condition.fire(event: AbsEvent?): Unit = execAndFire { event }
 
     /**
      *
@@ -72,10 +72,10 @@ interface MachineOperatorDsl : MachineDslRoot {
     infix fun Condition.exec(block: suspend IMatchScope.() -> Unit) =
         mapper.addCondition(this) { block(); null }.asUnit()
 
-    infix fun Condition.execAndSet(block: suspend IMatchScope.() -> AbsState) =
+    infix fun Condition.execAndSet(block: suspend IMatchScope.() -> AbsState?) =
         mapper.addCondition(this, block).asUnit()
 
-    infix fun Condition.execAndFire(block: suspend IMatchScope.() -> AbsEvent) =
+    infix fun Condition.execAndFire(block: suspend IMatchScope.() -> AbsEvent?) =
         mapper.addCondition(this, block).asUnit()
 }
 

@@ -5,7 +5,7 @@ import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.name
-import dev.zieger.utils.time.milliseconds
+import dev.zieger.utils.time.duration.milliseconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED

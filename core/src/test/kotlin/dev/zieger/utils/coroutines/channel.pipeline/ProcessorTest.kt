@@ -3,7 +3,7 @@ package dev.zieger.utils.coroutines.channel.pipeline
 import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.misc.runEachIndexed
-import dev.zieger.utils.time.minutes
+import dev.zieger.utils.time.duration.minutes
 import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.delay
 import org.junit.jupiter.api.Test

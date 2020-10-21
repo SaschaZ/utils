@@ -1,11 +1,11 @@
 package dev.zieger.utils.time.progression
 
-import dev.zieger.utils.time.base.IDurationEx
+import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.base.TimeUnit
-import dev.zieger.utils.time.milliseconds
-import dev.zieger.utils.time.plus
-import dev.zieger.utils.time.times
-import dev.zieger.utils.time.toDuration
+import dev.zieger.utils.time.duration.milliseconds
+import dev.zieger.utils.time.base.plus
+import dev.zieger.utils.time.base.times
+import dev.zieger.utils.time.duration.toDuration
 
 open class DurationExProgression(
     val start: IDurationEx,

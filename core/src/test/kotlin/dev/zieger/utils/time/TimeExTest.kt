@@ -1,6 +1,13 @@
 package dev.zieger.utils.time
 
-import dev.zieger.utils.time.base.ITimeEx
+import dev.zieger.utils.time.base.div
+import dev.zieger.utils.time.base.minus
+import dev.zieger.utils.time.base.rem
+import dev.zieger.utils.time.base.times
+import dev.zieger.utils.time.duration.days
+import dev.zieger.utils.time.duration.hours
+import dev.zieger.utils.time.duration.minutes
+import dev.zieger.utils.time.duration.years
 import dev.zieger.utils.time.string.DateFormat
 import org.junit.jupiter.api.Test
 

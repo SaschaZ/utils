@@ -4,7 +4,7 @@ import dev.zieger.utils.coroutines.TypeContinuation.Companion.ContinuationHolder
 import dev.zieger.utils.coroutines.TypeContinuation.Companion.ContinuationHolder.Value
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.misc.runEach
-import dev.zieger.utils.time.base.IDurationEx
+import dev.zieger.utils.time.duration.IDurationEx
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex

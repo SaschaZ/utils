@@ -1,5 +1,6 @@
-package dev.zieger.utils.time.base
+package dev.zieger.utils.time
 
+import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.string.StringConverter
 import dev.zieger.utils.time.zone.ITimeZoneHolder
 import java.util.*

@@ -67,7 +67,7 @@ interface IMachineExMapper : ILogScope {
                 in 0..1 -> it.firstOrNull()
                 else -> throw IllegalStateException("More than one matching event binding for $this.")
             }
-        }?.setEventSync(eventCombo)?.combo
+        }?.fire(eventCombo)?.combo
 
     private suspend fun MatchScope.finalCombo(): StateCombo? =
         matchingEventConditions().mapNotNull { it.action?.invoke(this) }.let {

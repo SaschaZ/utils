@@ -7,7 +7,7 @@ import dev.zieger.utils.core_testing.assertion2.rem
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.time.delay
-import dev.zieger.utils.time.seconds
+import dev.zieger.utils.time.duration.seconds
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicInteger

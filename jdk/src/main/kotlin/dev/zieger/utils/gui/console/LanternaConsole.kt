@@ -22,9 +22,9 @@ import dev.zieger.utils.misc.AntiSpamProxy
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.nullWhen
 import dev.zieger.utils.misc.runEach
-import dev.zieger.utils.time.base.IDurationEx
-import dev.zieger.utils.time.milliseconds
-import dev.zieger.utils.time.seconds
+import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.duration.milliseconds
+import dev.zieger.utils.time.duration.seconds
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import java.lang.Integer.max

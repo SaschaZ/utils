@@ -3,7 +3,7 @@ package dev.zieger.utils.coroutines.builder
 import dev.zieger.utils.UtilsSettings.ERROR_LOG_FILE
 import dev.zieger.utils.UtilsSettings.LOG_EXCEPTIONS
 import dev.zieger.utils.UtilsSettings.PRINT_EXCEPTIONS
-import dev.zieger.utils.time.base.IDurationEx
+import dev.zieger.utils.time.duration.IDurationEx
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException

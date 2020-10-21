@@ -211,9 +211,9 @@ open class MachineEx(
         }
     }
 
-    override fun setEvent(event: EventCombo): Job = scope.launchEx { setEventSync(event) }
+    override fun fireAndForget(event: EventCombo): Job = scope.launchEx { fire(event) }
 
-    override suspend fun setEventSync(event: EventCombo): StateCombo = suspendCoroutine { cont ->
+    override suspend fun fire(event: EventCombo): StateCombo = suspendCoroutine { cont ->
         eventChannel.send(event to { state -> cont.resume(state) })
     }
 
@@ -225,7 +225,7 @@ open class MachineEx(
             stateCombo = it
 
             mapper.processState(eventCombo, stateCombo, previousChanges.reversed())?.also { e ->
-                setEventSync(e)
+                fire(e)
             }
         }
 

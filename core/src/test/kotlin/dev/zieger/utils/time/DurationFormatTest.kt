@@ -1,5 +1,7 @@
 package dev.zieger.utils.time
 
+import dev.zieger.utils.time.duration.toDuration
+import dev.zieger.utils.time.duration.years
 import org.junit.jupiter.api.Test
 import kotlin.math.absoluteValue
 import kotlin.random.Random

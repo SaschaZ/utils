@@ -6,6 +6,7 @@ import dev.zieger.utils.core_testing.assertion.assert
 import dev.zieger.utils.core_testing.assertion.rem
 import dev.zieger.utils.time.base.TimeUnit
 import dev.zieger.utils.time.base.convert
+import dev.zieger.utils.time.duration.seconds
 import org.junit.jupiter.api.Test
 
 class TimeUnitTest {

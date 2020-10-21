@@ -3,7 +3,7 @@
 package dev.zieger.utils.log
 
 import dev.zieger.utils.core_testing.runTest
-import dev.zieger.utils.time.seconds
+import dev.zieger.utils.time.duration.seconds
 import org.junit.jupiter.api.Test
 
 

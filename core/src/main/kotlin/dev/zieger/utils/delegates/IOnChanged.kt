@@ -3,7 +3,7 @@
 package dev.zieger.utils.delegates
 
 import dev.zieger.utils.misc.FiFo
-import dev.zieger.utils.time.base.IDurationEx
+import dev.zieger.utils.time.duration.IDurationEx
 import kotlin.properties.ReadWriteProperty
 
 typealias IOnChanged<T> = IOnChangedWithParent<Any?, T>

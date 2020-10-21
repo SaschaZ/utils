@@ -6,7 +6,7 @@ import dev.zieger.utils.coroutines.channel.pipeline.IPipeValue.Companion.NO_IDX
 import dev.zieger.utils.coroutines.channel.pipeline.IPipeValue.Companion.NO_PARALLEL_EXECUTION
 import dev.zieger.utils.misc.nullWhenZero
 import dev.zieger.utils.time.TimeEx
-import dev.zieger.utils.time.base.ITimeEx
+import dev.zieger.utils.time.ITimeEx
 
 
 interface IPipeValue<out T> : Comparable<IPipeValue<@UnsafeVariance T>> {

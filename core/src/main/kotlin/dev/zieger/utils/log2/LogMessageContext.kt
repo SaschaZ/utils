@@ -2,7 +2,7 @@ package dev.zieger.utils.log2
 
 import dev.zieger.utils.log2.filter.LogLevel
 import dev.zieger.utils.time.TimeEx
-import dev.zieger.utils.time.base.ITimeEx
+import dev.zieger.utils.time.ITimeEx
 import kotlinx.coroutines.CoroutineScope
 
 /**

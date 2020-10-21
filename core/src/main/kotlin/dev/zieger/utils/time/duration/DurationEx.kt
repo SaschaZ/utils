@@ -1,9 +1,8 @@
-package dev.zieger.utils.time
+package dev.zieger.utils.time.duration
 
 import dev.zieger.utils.misc.INumber
 import dev.zieger.utils.misc.NumberEx
 import dev.zieger.utils.misc.castSafe
-import dev.zieger.utils.time.base.IDurationEx
 import dev.zieger.utils.time.base.IDurationHolder
 import dev.zieger.utils.time.base.TimeUnit
 import dev.zieger.utils.time.base.TimeUnit.*

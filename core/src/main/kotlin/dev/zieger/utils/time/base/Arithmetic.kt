@@ -1,7 +1,9 @@
-package dev.zieger.utils.time
+package dev.zieger.utils.time.base
 
-import dev.zieger.utils.time.base.IDurationEx
-import dev.zieger.utils.time.base.ITimeEx
+import dev.zieger.utils.time.ITimeEx
+import dev.zieger.utils.time.TimeEx
+import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.duration.DurationEx
 
 operator fun ITimeEx.plus(other: Number): ITimeEx =
     TimeEx(millis + other.toLong(), zone)

@@ -4,10 +4,10 @@ import com.squareup.moshi.FromJson
 import com.squareup.moshi.ToJson
 import dev.zieger.utils.json.JsonAdapter
 import dev.zieger.utils.misc.nullWhen
-import dev.zieger.utils.time.DurationEx
+import dev.zieger.utils.time.duration.DurationEx
 import dev.zieger.utils.time.TimeEx
-import dev.zieger.utils.time.base.IDurationEx
-import dev.zieger.utils.time.base.ITimeEx
+import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.ITimeEx
 import java.util.*
 
 class TimeExJsonAdapter : JsonAdapter<ITimeEx>() {

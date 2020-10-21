@@ -1,8 +1,13 @@
 package dev.zieger.utils.time.progression
 
 import dev.zieger.utils.time.*
-import dev.zieger.utils.time.base.IDurationEx
-import dev.zieger.utils.time.base.ITimeEx
+import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.ITimeEx
+import dev.zieger.utils.time.base.minus
+import dev.zieger.utils.time.base.plus
+import dev.zieger.utils.time.base.rem
+import dev.zieger.utils.time.base.times
+import dev.zieger.utils.time.duration.milliseconds
 
 open class TimeExProgression(
     val start: ITimeEx,
