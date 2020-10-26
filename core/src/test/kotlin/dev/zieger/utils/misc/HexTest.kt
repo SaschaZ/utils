@@ -7,6 +7,6 @@ class HexTest {
 
     @Test
     fun testHex() = runTest {
-        println(0x00000000L.hex)
+        println(0x00000000L.hex4)
     }
 }

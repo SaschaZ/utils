@@ -79,3 +79,4 @@ open class FiFo<T>(
 
     override val isFull: Boolean get() = internal.size == capacity
 }
+

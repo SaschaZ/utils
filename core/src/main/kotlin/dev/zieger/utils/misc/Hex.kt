@@ -15,8 +15,10 @@ private val Int.singleHex: String
     }
 val Byte.hex: String get() = (toInt() and 0xF).singleHex + ((toInt() and 0xF0) shr 4).singleHex
 
-val Long.hex: String
-    get() = ((this and 0xFF000000) shr 24).toByte().hex +
-            ((this and 0xFF0000) shr 16).toByte().hex +
+val Long.hex4: String
+    get() = ((this and 0xFF000000) shr 24).toByte().hex + hex3
+
+val Long.hex3: String
+    get() = ((this and 0xFF0000) shr 16).toByte().hex +
             ((this and 0xFF00) shr 8).toByte().hex +
             (this and 0xFF).toByte().hex

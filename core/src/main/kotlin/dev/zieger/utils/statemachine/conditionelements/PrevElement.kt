@@ -1,5 +1,6 @@
 package dev.zieger.utils.statemachine.conditionelements
 
+import dev.zieger.utils.log2.ILogScope
 import dev.zieger.utils.statemachine.IMatchScope
 import dev.zieger.utils.statemachine.Matcher
 import dev.zieger.utils.statemachine.OnStateChanged
@@ -21,8 +22,8 @@ data class PrevElement(
     override val hasEventGroup = combo.master is AbsEventGroup<*>
     override val hasPrevElement = true
 
-    suspend fun condition(matchScope: IMatchScope, block: suspend Matcher.() -> Boolean): Boolean =
-        matchScope.buildScopes().any { Matcher(it).block() }
+    suspend fun condition(matchScope: IMatchScope, logScope: ILogScope, block: suspend Matcher.() -> Boolean): Boolean =
+        matchScope.buildScopes().any { Matcher(it, logScope).block() }
 
     private fun IMatchScope.buildScopes(): List<IMatchScope> = when (range) {
         X -> (0..previousChanges.size)

@@ -5,6 +5,8 @@ package dev.zieger.utils.statemachine
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
 import dev.zieger.utils.coroutines.suspendCoroutine
+import dev.zieger.utils.log2.ILogScope
+import dev.zieger.utils.log2.LogScopeImpl
 import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.statemachine.MachineEx.Companion.DEFAULT_PREVIOUS_CHANGES_SIZE
@@ -170,6 +172,7 @@ open class MachineEx(
     val scope: CoroutineScope,
     previousChangesCacheSize: Int = DEFAULT_PREVIOUS_CHANGES_SIZE,
     debugLevel: DebugLevel = DebugLevel.ERROR,
+    logScope: ILogScope = LogScopeImpl(),
     builder: suspend MachineDsl.() -> Unit
 ) : MachineDsl, IMachineEx {
 
@@ -188,7 +191,7 @@ open class MachineEx(
             private set
     }
 
-    override val mapper: IMachineExMapper = MachineExMapper()
+    override val mapper: IMachineExMapper = MachineExMapper(logScope)
 
     private val previousChanges = FiFo<OnStateChanged>(previousChangesCacheSize)
 

@@ -3,7 +3,6 @@
 package dev.zieger.utils.statemachine
 
 import dev.zieger.utils.log2.ILogScope
-import dev.zieger.utils.log2.LogScopeImpl
 import dev.zieger.utils.log2.filter.LogCondition
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.ERROR
@@ -80,7 +79,7 @@ interface IMachineExMapper : ILogScope {
     private fun StateCombo.logNewState(event: AbsEvent): StateCombo =
         apply {
             Log.i(
-                "Found new state $this for event $event.\n\n",
+                "Setting new state $this for event $event.\n\n",
                 filter = LogCondition { !noLogging && MachineEx.debugLevel < ERROR })
         }
 
@@ -93,12 +92,11 @@ interface IMachineExMapper : ILogScope {
     private suspend fun IMatchScope.match(
         condition: Condition,
         type: Condition.DefinitionType
-    ) = Matcher(this).run {
-        (condition.type == type && condition.match()) logV
-                {
-                    filter = LogCondition { !event.noLogging && MachineEx.debugLevel == DEBUG }
-                    "#R $it => ${type.name[0]} $condition <||> $event, $state"
-                }
+    ) = Matcher(this, this@IMachineExMapper).run {
+        (condition.type == type && condition.match()) logV {
+            filter = LogCondition { !event.noLogging && MachineEx.debugLevel == DEBUG }
+            "#R $it => ${type.name[0]} $condition <||> $event, $state"
+        }
     }
 
     suspend fun processState(
@@ -117,12 +115,12 @@ interface IMachineExMapper : ILogScope {
     private fun EventCombo.logNewEvent(state: AbsState): EventCombo =
         apply {
             Log.i(
-                "Found new event $this for state $state.\n\n",
+                "Firing new event $this for state $state.\n\n",
                 filter = LogCondition { !noLogging && MachineEx.debugLevel < ERROR })
         }
 }
 
-internal class MachineExMapper : IMachineExMapper, ILogScope by LogScopeImpl() {
+internal class MachineExMapper(logScope: ILogScope) : IMachineExMapper, ILogScope by logScope {
 
     override val conditions: MutableMap<Long, Condition> = HashMap()
     override val bindings: MutableMap<Condition, IMachineEx> = HashMap()

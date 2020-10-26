@@ -1,12 +1,15 @@
 package dev.zieger.utils.statemachine
 
-import dev.zieger.utils.log.Log
+import dev.zieger.utils.log2.ILogScope
+import dev.zieger.utils.log2.filter.LogCondition
 import dev.zieger.utils.misc.name
+import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
 import dev.zieger.utils.statemachine.conditionelements.*
 
 open class Matcher(
-    val matchScope: IMatchScope
-) {
+    val matchScope: IMatchScope,
+    logScope: ILogScope
+) : ILogScope by logScope {
 
     val event: EventCombo get() = matchScope.eventCombo
     val state: StateCombo get() = matchScope.stateCombo
@@ -26,7 +29,7 @@ open class Matcher(
         is AbsState -> this === state || this === state.master
         is AbsEventGroup<*> -> groupType.isInstance(event) || groupType.isInstance(event.master)
         is AbsStateGroup<*> -> groupType.isInstance(state) || groupType.isInstance(state.master)
-        is PrevElement -> condition(matchScope) { combo.match() }
+        is PrevElement -> condition(matchScope, this@Matcher) { combo.match() }
         is External -> matchExternal(matchScope)
         is Pair<*, *> -> when (val s = second) {
             is Data -> when (val f = first) {
@@ -45,7 +48,8 @@ open class Matcher(
     }.log(this)
 
     private fun Boolean.log(element: Any): Boolean = apply {
-        Log.v("#${element::class.name} $this => $element <||> ${this@Matcher}")
+        Log.v("#${element::class.name} $this => $element <||> ${this@Matcher}",
+            filter = LogCondition { MachineEx.debugLevel == DEBUG })
     }
 
     override fun toString(): String = "M($event<->$state)"
