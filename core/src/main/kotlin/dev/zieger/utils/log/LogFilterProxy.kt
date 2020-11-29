@@ -3,8 +3,8 @@ package dev.zieger.utils.log
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.log.LogFilter.Companion.EXTERNAL
-import dev.zieger.utils.log.LogFilter.Companion.EXTERNAL.Companion.ExternalReturn.OK
-import dev.zieger.utils.log.LogFilter.Companion.EXTERNAL.Companion.ExternalReturn.RECHECK
+import dev.zieger.utils.log.ExternalReturn.OK
+import dev.zieger.utils.log.ExternalReturn.RECHECK
 import dev.zieger.utils.log.LogFilter.Companion.GENERIC
 import dev.zieger.utils.log.LogFilter.Companion.NONE
 import dev.zieger.utils.time.TimeEx

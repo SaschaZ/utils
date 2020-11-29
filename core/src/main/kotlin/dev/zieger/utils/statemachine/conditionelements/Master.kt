@@ -6,7 +6,7 @@ import kotlin.reflect.KClass
 /**
  * Base class for [AbsEvent]s and [AbsState]s.
  */
-interface Master : DefinitionElement {
+interface Master : Definition {
 
     override val hasEvent get() = this is AbsEvent
     override val hasState get() = this is AbsState

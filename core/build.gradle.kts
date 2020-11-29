@@ -3,6 +3,7 @@ import dev.zieger.utils.ModuleType.JVM_LIB
 
 plugins {
     kotlin("jvm")
+    kotlin("kapt")
     id("maven-publish")
     id("org.jetbrains.dokka")
     jacoco
@@ -19,7 +20,6 @@ tasks.register<JacocoReport>("applicationCodeCoverageReport") {
 
 configModule("core", JVM_LIB) {
     coreTesting
-    kotlinReflect
     ktorClientGson
     ktorServerGson
 }

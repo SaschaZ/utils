@@ -32,7 +32,7 @@ private fun Project.configureDependencies(type: ModuleType, block: DependencyHan
 
         kotlin
         moshi
-        moshiKotlin
+        moshiCodegen
 
         koin
         slf4jSimple

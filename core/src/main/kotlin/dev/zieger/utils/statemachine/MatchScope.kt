@@ -14,7 +14,7 @@ interface IMatchScope {
     val eventCombo: EventCombo
     val stateCombo: StateCombo
     val previousChanges: List<OnStateChanged>
-    val conditions: Map<Long, Condition>
+    val conditions: List<Condition>
     val bindings: Map<Condition, IMachineEx>
 
     val event: AbsEvent get() = eventCombo.master
@@ -28,7 +28,7 @@ interface IMatchScope {
         event: EventCombo = this.eventCombo,
         state: StateCombo = this.stateCombo,
         previousChanges: List<OnStateChanged> = this.previousChanges,
-        conditions: Map<Long, Condition> = this.conditions,
+        conditions: List<Condition> = this.conditions,
         bindings: Map<Condition, IMachineEx> = this.bindings
     ): IMatchScope
 }
@@ -40,7 +40,7 @@ class MatchScope(
     override val eventCombo: EventCombo,
     override val stateCombo: StateCombo,
     override val previousChanges: List<OnStateChanged> = emptyList(),
-    override val conditions: Map<Long, Condition> = emptyMap(),
+    override val conditions: List<Condition> = emptyList(),
     override val bindings: Map<Condition, IMachineEx> = emptyMap()
 ) : IMatchScope {
 
@@ -54,7 +54,7 @@ class MatchScope(
         event: EventCombo,
         state: StateCombo,
         previousChanges: List<OnStateChanged>,
-        conditions: Map<Long, Condition>,
+        conditions: List<Condition>,
         bindings: Map<Condition, IMachineEx>
     ): IMatchScope = MatchScope(event, state, previousChanges, conditions, bindings)
 }

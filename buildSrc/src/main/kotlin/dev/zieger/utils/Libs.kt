@@ -23,7 +23,7 @@ val DependencyHandlerScope.kotlin
 val DependencyHandlerScope.kotlinReflect
     get() = "implementation"("org.jetbrains.kotlin:kotlin-reflect:${Versions.kotlin}")
 val DependencyHandlerScope.kotlinTest
-    get() = "implementation"("org.jetbrains.kotlin:kotlin-test:${Versions.kotlin}")
+    get() = "kapt"("org.jetbrains.kotlin:kotlin-test:${Versions.kotlin}")
 
 val DependencyHandlerScope.coroutinesCore
     get() = "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
@@ -65,6 +65,8 @@ val DependencyHandlerScope.moshi
     get() = "implementation"("com.squareup.moshi:moshi:${Versions.moshi}")
 val DependencyHandlerScope.moshiKotlin
     get() = "implementation"("com.squareup.moshi:moshi-kotlin:${Versions.moshi}")
+val DependencyHandlerScope.moshiCodegen
+    get() = "kapt"("com.squareup.moshi:moshi-kotlin-codegen:${Versions.moshi}")
 
 
 val DependencyHandlerScope.slf4jSimple

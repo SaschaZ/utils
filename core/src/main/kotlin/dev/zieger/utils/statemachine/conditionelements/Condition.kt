@@ -88,13 +88,11 @@ open class Condition(
         is AbsEventGroup<*> -> EVENT
         is AbsState,
         is AbsStateGroup<*> -> STATE
-        is External -> EXTERNAL
         is Combo<*> -> when (master) {
             is AbsEvent,
             is AbsEventGroup<*> -> EVENT
             is AbsState,
             is AbsStateGroup<*> -> STATE
-            is External -> EXTERNAL
             else -> throw IllegalArgumentException("Unknown Master of type $this")
         }
         else -> throw IllegalArgumentException("Unknown Master of type $this")
@@ -112,9 +110,7 @@ open class Condition(
         master == o.master
     } == true
 
-    override fun hashCode(): Int {
-        return super.hashCode()
-    }
+    override fun hashCode(): Int = master.hashCode()
 }
 
 val Condition.isStateCondition get() = type == STATE

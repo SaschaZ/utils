@@ -4,11 +4,11 @@ package dev.zieger.utils.json
 
 import com.squareup.moshi.*
 import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dev.zieger.utils.misc.catch
 import dev.zieger.utils.time.string.ClosedTimeRangeJsonAdapter
 import dev.zieger.utils.time.string.DurationExJsonAdapter
 import dev.zieger.utils.time.string.TimeExJsonAdapter
+import dev.zieger.utils.time.string.TimeZoneAdapter
 import okio.BufferedSink
 import okio.BufferedSource
 import java.lang.reflect.Type
@@ -33,9 +33,9 @@ open class JsonConverter(vararg adapter: Any) {
     val moshi = Moshi.Builder()
         .also { m -> adapter.forEach { m.add(it) } }
         .add(TimeExJsonAdapter())
+        .add(TimeZoneAdapter())
         .add(DurationExJsonAdapter())
         .add(ClosedTimeRangeJsonAdapter())
-        .add(KotlinJsonAdapterFactory())
         .build()!!
 
     fun Any.toJson(

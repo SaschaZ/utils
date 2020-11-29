@@ -237,8 +237,9 @@ class LanternaConsole(
 
     private fun printOutput() {
         var nlIdx = 0
-        val stringArray = buffer.buildColorStringArrays {
-            buffer = ArrayList(buffer.map { m -> m.filterNot { f -> f == it } })
+        val buffCopy = ArrayList(buffer)
+        val stringArray = buffCopy.buildColorStringArrays {
+            buffer = ArrayList(buffCopy.map { m -> m.filterNot { f -> f == it } })
             onBufferChanged()
         }
         val rows = size.rows

@@ -4,6 +4,7 @@ import dev.zieger.utils.jdk
 
 plugins {
     kotlin("jvm")
+    kotlin("kapt")
     id("maven-publish")
     id("org.jetbrains.dokka")
 }

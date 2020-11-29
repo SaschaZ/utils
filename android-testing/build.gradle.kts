@@ -7,6 +7,7 @@ plugins {
     id("com.android.library")
     kotlin("android")
     id("kotlin-android-extensions")
+    kotlin("kapt")
     id("maven-publish")
     id("org.jetbrains.dokka")
 }

@@ -38,12 +38,12 @@ sealed class LogFilter {
             val callback: (LogLevel?, String) -> ExternalReturn
         ) : LogFilter() {
             companion object {
-                sealed class ExternalReturn {
-                    object OK : ExternalReturn()
-                    object DENY : ExternalReturn()
-                    class RECHECK(val duration: IDurationEx) : ExternalReturn()
-                }
             }
         }
     }
+}
+sealed class ExternalReturn {
+    object OK : ExternalReturn()
+    object DENY : ExternalReturn()
+    class RECHECK(val duration: IDurationEx) : ExternalReturn()
 }

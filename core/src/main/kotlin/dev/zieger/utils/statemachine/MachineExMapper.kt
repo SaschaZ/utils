@@ -16,23 +16,15 @@ import java.util.concurrent.atomic.AtomicLong
  */
 interface IMachineExMapper : ILogScope {
 
-    companion object {
-        private var lastId = AtomicLong(0L)
-        private val newId: Long get() = lastId.getAndIncrement()
-    }
-
-    val conditions: MutableMap<Long, Condition>
+    val conditions: MutableList<Condition>
     val bindings: MutableMap<Condition, IMachineEx>
 
-    /**
-     *
-     */
     fun addCondition(
         condition: Condition,
         action: suspend IMatchScope.() -> Master?
-    ): Long = newId.also { id ->
-        Log.v("add condition: $id => $condition", filter = LogCondition { MachineEx.debugLevel == DEBUG })
-        conditions[id] = condition.copy(action = action)
+    ) {
+        Log.v("add condition: $condition", filter = LogCondition { MachineEx.debugLevel == DEBUG })
+        conditions.add(condition.copy(action = action))
     }
 
     fun addBinding(condition: Condition, machine: IMachineEx) {
@@ -84,10 +76,10 @@ interface IMachineExMapper : ILogScope {
         }
 
     private suspend fun IMatchScope.matchingEventConditions(): Collection<Condition> =
-        conditions.filter { it.value.type != STATE && match(it.value, EVENT) }.values
+        conditions.filter { it.type != STATE && match(it, EVENT) }
 
     private suspend fun IMatchScope.matchingStateConditions(): Collection<Condition> =
-        conditions.filter { it.value.type != EVENT && match(it.value, STATE) }.values
+        conditions.filter { it.type != EVENT && match(it, STATE) }
 
     private suspend fun IMatchScope.match(
         condition: Condition,
@@ -115,13 +107,13 @@ interface IMachineExMapper : ILogScope {
     private fun EventCombo.logNewEvent(state: AbsState): EventCombo =
         apply {
             Log.i(
-                "Firing new event $this for state $state.\n\n",
+                "\n\nFiring new event $this for state $state.\n\n",
                 filter = LogCondition { !noLogging && MachineEx.debugLevel < ERROR })
         }
 }
 
 internal class MachineExMapper(logScope: ILogScope) : IMachineExMapper, ILogScope by logScope {
 
-    override val conditions: MutableMap<Long, Condition> = HashMap()
+    override val conditions: MutableList<Condition> = ArrayList()
     override val bindings: MutableMap<Condition, IMachineEx> = HashMap()
 }

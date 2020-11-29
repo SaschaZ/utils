@@ -228,7 +228,7 @@ open class MachineEx(
             stateCombo = it
 
             mapper.processState(eventCombo, stateCombo, previousChanges.reversed())?.also { e ->
-                fire(e)
+                fireAndForget(e)
             }
         }
 

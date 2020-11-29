@@ -19,7 +19,7 @@ sealed class DateFormat(val pattern: String) {
     object FILENAME : DateFormat("yyyy-MM-dd-HH-mm-ss")
     object FILENAME_DATE : DateFormat("yyyy-MM-dd")
     object FILENAME_TIME : DateFormat("HH-mm-ss")
-    object EXCHANGE : DateFormat("yyyy-MM-dd HH:mm:ss")
+    object EXCHANGE : DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     open class CUSTOM(pattern: String) : DateFormat(pattern)
 }
 

@@ -44,7 +44,7 @@ interface INumber {
     fun abs(): INumber
 }
 
-open class NumberEx(internal val internal: Number) : Number(), INumber, Comparable<NumberEx> {
+open class NumberEx(private val value: Number) : Number(), INumber, Comparable<NumberEx> {
 
     constructor(value: Double) : this(value as Number)
     constructor(value: Float) : this(value as Number)
@@ -54,8 +54,12 @@ open class NumberEx(internal val internal: Number) : Number(), INumber, Comparab
     constructor(value: Char) : this(value.toShort() as Number)
     constructor(value: Byte) : this(value as Number)
 
-    constructor(value: NumberEx) : this(value.internal)
+    constructor(value: NumberEx) : this(value.value)
 
+    val internal: Number get() = internalRecursive
+
+    private val NumberEx.internalRecursive: Number
+        get() = (value as? NumberEx)?.internalRecursive ?: value
 
     override fun compareTo(other: NumberEx): Int = internal.milliseconds.compareTo(other.milliseconds)
 

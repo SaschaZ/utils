@@ -7,8 +7,7 @@ import dev.zieger.utils.coroutines.TypeContinuation
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.delegates.OnChangedParamsWithParent.Companion.DEFAULT_RECENT_VALUE_BUFFER_SIZE
-import dev.zieger.utils.misc.FiFo
-import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.misc.*
 import dev.zieger.utils.time.duration.IDurationEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -193,4 +192,16 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
 
     override fun IOnChangedScopeWithParent<P, T>.onChangedInternal(value: T) =
         onChanged?.invoke(this, value).asUnit()
+}
+
+suspend fun IOnChangedWithParent<*, Number>.increment(): Number {
+    var result: Number = value
+    changeValue { (it.ex + 1.ex).also { r -> result = r } }
+    return result
+}
+
+suspend fun IOnChangedWithParent<*, Number>.decrement(): Number {
+    var result: Number = value
+    changeValue { (it.ex - 1.ex).also { r -> result = r } }
+    return result
 }

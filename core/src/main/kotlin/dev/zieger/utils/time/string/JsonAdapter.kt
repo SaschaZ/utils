@@ -27,6 +27,15 @@ val GMT: TimeZone
 val ECT: TimeZone
     get() = TimeZone.getTimeZone("Europe/Berlin")
 
+class TimeZoneAdapter : JsonAdapter<TimeZone>() {
+
+    @ToJson
+    override fun toJson(value: TimeZone): String = value.id
+
+    @FromJson
+    override fun fromJson(json: String): TimeZone = TimeZone.getTimeZone(json)
+}
+
 class DurationExJsonAdapter : JsonAdapter<IDurationEx>() {
     @ToJson
     override fun toJson(value: IDurationEx): String = "${value.millis}"

@@ -3,9 +3,9 @@
 package dev.zieger.utils.gui.console
 
 import com.googlecode.lanterna.TextColor
+import com.googlecode.lanterna.TextColor.ANSI.WHITE
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.gui.console.LanternaConsole.Companion.lastInstance
-import dev.zieger.utils.misc.format
 
 open class ConsoleProgressBar(
     initial: Int = 0,
@@ -136,43 +136,56 @@ class ColorGradient(vararg colors: Int) :
 fun PROGRESS(
     progressSource: IProgressSource,
     removeWhenComplete: Boolean = true,
-    useDoneBytes: Boolean = true,
     initial: Int = 0,
     max: Int = 100,
     size: Int = ConsoleProgressBar.DEFAULT_SIZE,
     foreground: IProgressColorProvider = ConsoleProgressBar.PROGRESS_COLORS,
     background: IProgressColorProvider = ColorGradient(0x000000),
     fraction: String = ConsoleProgressBar.FRACTION_2,
-    text: String? = null,
-    textProvider: ((Double) -> Any)? = (text ?: progressSource.name)?.let { t -> { t } }
+    preText: Any? = null,
+    postText: Any? = null,
+    preTextProvider: ((progress: Double) -> Any?)? = { preText ?: progressSource.preText },
+    postTextProvider: ((progress: Double) -> Any?)? = { postText ?: progressSource.postText },
 ): Array<TextWithColor> {
-    val testToUse = textProvider?.invoke(progressSource.doneBytesPercent)?.toString() ?: ""
-    var speedLength = 0
-    return arrayOf(
-        *(textProvider?.let {
-            arrayOf(TextColor.ANSI.WHITE {
-                if (removeWhenComplete && progressSource.doneBytesPercent == 1.0) remove()
-                testToUse
-            })
-        } ?: emptyArray()),
-        ConsoleProgressBar(progressSource, useDoneBytes, initial, max, size, foreground, background, fraction)
-            .textWithColor { if (removeWhenComplete && it == 1.0) remove() },
-        TextColor.ANSI.WHITE {
-            if (removeWhenComplete && progressSource.doneBytesPercent == 1.0) remove()
-            " ${progressSource.mbPerSecond.format(1)?.also { speedLength = it.length + 5 }}MB/s\n" +
-                    ("${(progressSource.doneBytes / 1024.0 / 1024).format(1)}MB|" +
-                            "${(progressSource.totalBytes / 1024.0 / 1024).format(1)}MB - " +
-                            "${progressSource.activeFor.formatDuration(maxEntities = 2)}/" +
-                            progressSource.finishedIn.formatDuration(maxEntities = 2))
-                        .center(size + testToUse.length + speedLength)
+    fun MessageScope.removeWhenComplete() {
+        if (removeWhenComplete && progressSource.donePercent >= 0.999) remove()
+    }
+
+    fun preText(): TextWithColor? = WHITE {
+        removeWhenComplete()
+        preTextProvider?.invoke(progressSource.donePercent)?.toString() ?: ""
+    }
+
+    val hideBar = max == -1
+    fun bar(): TextWithColor? =
+        if (hideBar) null else ConsoleProgressBar(progressSource, initial, max, size, foreground, background, fraction)
+            .textWithColor { removeWhenComplete() }
+
+    fun afterBarText(): TextWithColor? =
+        WHITE {
+            removeWhenComplete()
+            " ${progressSource.unitsPerSecondFormatted}${if (hideBar) " - " else "\n"}" +
+                    progressSource.doneFormatted +
+                    if (progressSource.total > 0) "|${progressSource.totalFormatted} - " else " - " +
+                            "${progressSource.activeFor.formatDuration(maxEntities = 2, sameLength = true)} - " +
+                            (if (progressSource.total > 0) progressSource.finishedIn.formatDuration(
+                                maxEntities = 2,
+                                sameLength = true
+                            ).let { "$it - " } else "") +
+                            progressSource.lastActionBefore.formatDuration(maxEntities = 2, sameLength = true)
         }
-    )
+
+    fun postText(): TextWithColor? = WHITE {
+        removeWhenComplete()
+        postTextProvider?.invoke(progressSource.donePercent)?.toString() ?: ""
+    }
+
+    return listOfNotNull(preText(), bar(), afterBarText(), postText()).toTypedArray()
 }
 
 @Suppress("FunctionName")
 fun ConsoleProgressBar(
     progressSource: IProgressSource,
-    useDoneBytes: Boolean = true,
     initial: Int = 0,
     max: Int = 100,
     size: Int = ConsoleProgressBar.DEFAULT_SIZE,
@@ -183,11 +196,9 @@ fun ConsoleProgressBar(
     val consoleProgressBar = ConsoleProgressBar(initial, max, size, foreground, background, fraction) {
         lastInstance?.scope?.refresh()
     }
-    (if (useDoneBytes) progressSource.doneBytesObservable else progressSource.doneItemsObservable)
-        .observe {
-            consoleProgressBar.progressPercent =
-                if (useDoneBytes) progressSource.doneBytesPercent else progressSource.doneItemsPercent
-        }
+    progressSource.doneObservable.observe {
+        consoleProgressBar.progressPercent = progressSource.donePercent
+    }
     return consoleProgressBar
 }
 

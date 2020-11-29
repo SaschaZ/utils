@@ -3,6 +3,7 @@ import dev.zieger.utils.ModuleType.JVM_LIB
 
 plugins {
     kotlin("jvm")
+    kotlin("kapt")
     id("maven-publish")
     id("org.jetbrains.dokka")
 }

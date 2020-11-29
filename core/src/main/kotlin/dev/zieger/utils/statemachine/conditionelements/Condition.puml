@@ -20,18 +20,16 @@ hide stereotype
 Event <<result>>
 State <<result>>
 
-ConditionElement -|> Condition
-ConditionElement --|> DefinitionElementGroup
-ConditionElement --|> InputElement
-ConditionElement --|> Master
-ConditionElement --|> Slave
-ConditionElement --|> DefinitionElement
+ConditionElement -d-|> Condition
+ConditionElement --d-|> DefinitionElementGroup
+ConditionElement ---d--|> Slave
+ConditionElement ---d-|> DefinitionElement
 
-DefinitionElement --|> ComboElement
+Condition "1" -> "N" DefinitionElementGroup
+DefinitionElementGroup "1" -> "N" DefinitionElement
+
+DefinitionElement --|> Master
 DefinitionElement --|> External
-
-Condition "1" --> "N" DefinitionElementGroup
-DefinitionElementGroup "1" --> "N" DefinitionElement
 
 Master --|> Single
 Master --|> Group
@@ -42,12 +40,10 @@ Single --|> State
 Group --|> EventGroup
 Group --|> StateGroup
 
-Slave ---|> Data
-Slave ---|> Type
+Slave --|> Data
+Slave --|> Type
 
-ComboElement --> Master
-ComboElement --> Slave
+Master --|> ComboElement
+ComboElement -u-> Slave
 
-InputElement "1" --> "2" ComboElement
-
-@enduml
+@endumlb
