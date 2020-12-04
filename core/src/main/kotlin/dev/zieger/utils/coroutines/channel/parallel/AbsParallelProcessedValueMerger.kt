@@ -6,6 +6,7 @@ import dev.zieger.utils.coroutines.channel.pipeline.IPipeValue
 import dev.zieger.utils.coroutines.channel.pipeline.IProcessingParams
 import dev.zieger.utils.coroutines.channel.pipeline.ParallelProcessingType
 import dev.zieger.utils.misc.asUnit
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 
 interface IParallelProcessedValueMerger<out T : Any> {
@@ -16,6 +17,8 @@ interface IParallelProcessedValueMerger<out T : Any> {
 abstract class AbsParallelProcessedValueMerger<out T : Any>(protected open val params: IProcessingParams) :
     IParallelProcessedValueMerger<T> {
 
+    @Suppress("LeakingThis")
+    private val scope: CoroutineScope = params.scopeFactory()
     private val mutex = Mutex()
     protected open var lastSend: IPipeValue<@UnsafeVariance T>? = null
 
@@ -33,7 +36,7 @@ abstract class AbsParallelProcessedValueMerger<out T : Any>(protected open val p
 
     protected abstract val IPipeValue<@UnsafeVariance T>.isNext: Boolean
 
-    private suspend fun processNextValidValues() = launchEx(mutex = mutex) {
+    private suspend fun processNextValidValues() = scope.launchEx(mutex = mutex) {
         val pair = valueSenderMap.firstOrNull()
         if (pair?.first?.isNext == true) {
             val removed = valueSenderMap.removeFirstSync()

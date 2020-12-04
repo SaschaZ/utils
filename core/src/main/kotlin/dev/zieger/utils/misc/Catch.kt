@@ -28,8 +28,7 @@ import kotlin.reflect.KClass
  * @param logStackTrace Append the stack trace to a file specified by [ERROR_LOG_FILE] for every matching [Throwable].
  *  Defaulting to [LOG_EXCEPTIONS].
  * @param onCatch Is always called for every matching [Throwable].
- * @param onFinally Is called at last when no [Throwable] was caught or [maxExecutions] was reached. Is not called,
- *  when the [Throwable] does not match the specified [include] and [exclude] classes.
+ * @param onFinally Is called at the end of every execution.
  * @param block Lambda to execute into try-catch-finally statement.
  *
  * @return Result of [block] or [returnOnCatch] when [maxExecutions] was reached.
@@ -41,12 +40,12 @@ inline fun <T : Any?> catch(
     exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
     printStackTrace: Boolean = PRINT_EXCEPTIONS,
     logStackTrace: Boolean = LOG_EXCEPTIONS,
-    crossinline onCatch: CatchScope.(Throwable) -> Unit = {},
-    crossinline onFinally: () -> Unit = {},
+    onCatch: CatchScope.(Throwable) -> Unit = {},
+    onFinally: () -> Unit = {},
     block: (numExecution: Int) -> T
 ): T {
     var result: T
-    var succeed = false
+    var succeed: Boolean
 
     (0 until maxExecutions).forEach { retryIndex ->
         result = try {
@@ -66,12 +65,11 @@ inline fun <T : Any?> catch(
                 throw throwable
             }
         } finally {
-            if (succeed) onFinally()
+            onFinally()
         }
         if (succeed) return result
     }
 
-    onFinally()
     return returnOnCatch
 }
 

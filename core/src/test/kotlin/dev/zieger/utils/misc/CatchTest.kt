@@ -38,11 +38,13 @@ class CatchTest {
             var finally = 0
             var throwException = false
             var numThrown = 0
+            var numExecuted = 0
 
             val receivedResult = catch(returnOnCatch, maxExecutions,
                 printStackTrace = printStackTrace, logStackTrace = logStackTrace,
                 onCatch = { caught++ }, onFinally = { finally++ }) {
 
+                numExecuted++
                 throwException = Random.nextBoolean()
                 if (throwException) {
                     numThrown++
@@ -52,7 +54,7 @@ class CatchTest {
             }
 
             caught isEqual numThrown % "caught"
-            finally isEqual 1 % "finally"
+            finally isEqual numExecuted % "finally"
             receivedResult isEqual (if (throwException || maxExecutions == 0) returnOnCatch else result) %
                     "result; throwException=$throwException; maxExecutions=$maxExecutions"
         }

@@ -210,7 +210,7 @@ class LanternaConsole(
             Scope().outnl(newCommand)
             commandInput = ""
             onBufferChanged()
-            launchEx { onNewCommand(newCommand) }.asUnit()
+            onNewCommand(newCommand).asUnit()
         }
         else -> Unit
     }

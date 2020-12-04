@@ -30,14 +30,12 @@ import kotlin.reflect.KClass
  * @param logStackTrace Append the stack trace to a file specified by [ERROR_LOG_FILE] for every matching [Throwable].
  *  Defaulting to [LOG_EXCEPTIONS].
  * @param name Name of the new coroutine. Defaulting to `null`.
- * @param isSuperVisionEnabled Defaulting to `false`.
  * @param include Caught [Throwable] must be one of this classes or it is thrown again. Defaulting to a list of
  *  [Throwable].
  * @param exclude Caught [Throwable] must not be one this classes or it is thrown again. Defaulting to a list of
  *  [CancellationException].
  * @param onCatch Is always called for every matching [Throwable]. Defaulting to empty lambda.
- * @param onFinally Is called at last when no [Throwable] was caught or [maxExecutions] was reached. Is not called,
- *  when the [Throwable] does not match the specified [include] and [exclude] classes. Defaulting to empty lambda.
+ * @param onFinally Is called at the end of every execution.
  * @param block Lambda to execute inside the [async] call.
  *
  * @return Result of [block] or [returnOnCatch] when [maxExecutions] was reached.
@@ -55,13 +53,12 @@ fun <T : Any?> CoroutineScope.asyncEx(
     printStackTrace: Boolean = PRINT_EXCEPTIONS,
     logStackTrace: Boolean = LOG_EXCEPTIONS,
     name: String? = null,
-    isSuperVisionEnabled: Boolean = false,
     include: List<KClass<out Throwable>> = listOf(Throwable::class),
     exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
     onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
     onFinally: suspend CoroutineScope.() -> Unit = {},
     block: suspend CoroutineScope.(numExecution: Int) -> T
-): Deferred<T> = buildContext(coroutineContext, name, isSuperVisionEnabled).let { ctx ->
+): Deferred<T> = buildContext(coroutineContext, name).let { ctx ->
     async(ctx, start) {
         executeExInternal(
             ctx, returnOnCatch, null, delayed, mutex, maxExecutions, retryDelay, timeout,

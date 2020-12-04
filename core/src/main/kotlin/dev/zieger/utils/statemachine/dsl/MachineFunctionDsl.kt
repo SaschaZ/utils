@@ -29,8 +29,8 @@ interface MachineFunctionDsl : IMachineEx {
     fun StateCondition.withEvent(vararg events: AbsEvent) = apply { any.addAll(events) }
     fun StateCondition.withoutEvent(vararg events: AbsEvent) = apply { none.addAll(events) }
 
-    fun Condition.withPrevious(vararg states: PrevElement) = apply { all.addAll(states) }
-    fun Condition.withoutPrevious(vararg states: PrevElement) = apply { none.addAll(states) }
+    fun Condition.withPrevious(vararg states: Previous) = apply { all.addAll(states) }
+    fun Condition.withoutPrevious(vararg states: Previous) = apply { none.addAll(states) }
 }
 
 operator fun Event.invoke(slave: Slave) = EventCombo(this, slave)

@@ -26,22 +26,22 @@ interface MachineOperatorDsl : MachineDslRoot {
     operator fun AbsState.times(slave: Slave) = combo.also { it.slave = slave }
     operator fun AbsEventGroup<*>.times(slave: Slave) = combo.also { it.slave = slave }
     operator fun AbsStateGroup<*>.times(slave: Slave) = combo.also { it.slave = slave }
-    operator fun PrevElement.times(slave: Slave): PrevElement = apply { combo.slave = slave }
+    operator fun Previous.times(slave: Slave): Previous = apply { combo.slave = slave }
 
     // Only the case when slave is added to first item. unary operators are processed before.
     operator fun Condition.times(slave: Slave) = apply {
         start.slave = slave
     }
 
-    operator fun Condition.plus(other: PrevElement): Condition = apply { all += other }
-    operator fun Condition.minus(other: PrevElement): Condition = apply { none += other }
+    operator fun Condition.plus(other: Previous): Condition = apply { all += other }
+    operator fun Condition.minus(other: Previous): Condition = apply { none += other }
 
     /**
      * Use the [Int] operator to match against one of the previous items. For example [State][3] will not try to match
      * against the current state, it will try to match against the third last [AbsState] instead.
      */
-    operator fun Master.get(idx: Int): PrevElement = this[idx..idx]
-    operator fun Master.get(range: IntRange): PrevElement = PrevElement(combo, range)
+    operator fun Master.get(idx: Int): Previous = this[idx..idx]
+    operator fun Master.get(range: IntRange): Previous = Previous(combo, range)
 
     /**
      * Use the [not] operator to ignore any slaves for this element.
@@ -50,7 +50,7 @@ interface MachineOperatorDsl : MachineDslRoot {
     operator fun AbsEventGroup<*>.not(): EventGroupCombo<*> = combo.apply { ignoreSlave = true }
     operator fun AbsState.not(): StateCombo = combo.apply { ignoreSlave = true }
     operator fun AbsStateGroup<*>.not(): StateGroupCombo<*> = combo.apply { ignoreSlave = true }
-    operator fun PrevElement.not(): PrevElement = apply { combo.ignoreSlave = true }
+    operator fun Previous.not(): Previous = apply { combo.ignoreSlave = true }
 
     /**
      * Binds the [Condition] to the specified [IMachineEx].

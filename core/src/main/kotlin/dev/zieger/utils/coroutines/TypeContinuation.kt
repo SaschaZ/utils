@@ -2,7 +2,6 @@ package dev.zieger.utils.coroutines
 
 import dev.zieger.utils.coroutines.TypeContinuation.Companion.ContinuationHolder.Exception
 import dev.zieger.utils.coroutines.TypeContinuation.Companion.ContinuationHolder.Value
-import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.time.duration.IDurationEx
 import kotlinx.coroutines.TimeoutCancellationException
@@ -15,7 +14,7 @@ import kotlin.collections.HashMap
 /**
  * Allows to suspend until [resume] with any wanted value is called.
  */
-open class TypeContinuation<T> {
+open class TypeContinuation<T : Any?> {
 
     companion object {
         sealed class ContinuationHolder<T> {
@@ -104,8 +103,8 @@ open class TypeContinuation<T> {
 /**
  *
  */
-suspend inline fun <T> suspendCoroutine(
+suspend inline fun <T : Any> suspendCoroutine(
     wanted: T? = null,
     timeout: IDurationEx? = null,
     crossinline block: suspend (continuation: TypeContinuation<T>) -> Unit
-): T = TypeContinuation<T>().let { cont -> launchEx { block(cont) }; cont.suspend(wanted, timeout) }
+): T = TypeContinuation<T>().let { cont -> block(cont); cont.suspend(wanted, timeout) }

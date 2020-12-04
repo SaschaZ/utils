@@ -11,16 +11,16 @@ import dev.zieger.utils.statemachine.OnStateChanged
 @Suppress("EmptyRange", "PropertyName")
 val X: IntRange = 0..-1
 
-data class PrevElement(
+data class Previous(
     val combo: Combo<Master>,
     val range: IntRange
-) : DefinitionElement {
+) : Definition {
 
     override val hasEvent = combo.master is AbsEvent
     override val hasState = combo.master is AbsState
     override val hasStateGroup = combo.master is AbsStateGroup<*>
     override val hasEventGroup = combo.master is AbsEventGroup<*>
-    override val hasPrevElement = true
+    override val hasPrevious = true
 
     suspend fun condition(matchScope: IMatchScope, logScope: ILogScope, block: suspend Matcher.() -> Boolean): Boolean =
         matchScope.buildScopes().any { Matcher(it, logScope).block() }

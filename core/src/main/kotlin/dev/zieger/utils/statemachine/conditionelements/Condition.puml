@@ -21,12 +21,12 @@ Event <<result>>
 State <<result>>
 
 ConditionElement -d-|> Condition
-ConditionElement --d-|> DefinitionElementGroup
+ConditionElement --d-|> DefinitionGroup
 ConditionElement ---d--|> Slave
 ConditionElement ---d-|> DefinitionElement
 
-Condition "1" -> "N" DefinitionElementGroup
-DefinitionElementGroup "1" -> "N" DefinitionElement
+Condition "1" -> "N" DefinitionGroup
+DefinitionGroup "1" -> "N" DefinitionElement
 
 DefinitionElement --|> Master
 DefinitionElement --|> External

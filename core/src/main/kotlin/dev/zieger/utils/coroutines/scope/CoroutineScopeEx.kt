@@ -5,9 +5,10 @@ import kotlin.coroutines.CoroutineContext
 
 open class CoroutineScopeEx(
     private val scopeName: String,
-    private val dispatcher: CoroutineDispatcher
+    private val parent: CoroutineContext,
+    private val useSupervisorJob: Boolean = false,
+    private val onException: ((context: CoroutineContext, throwable: Throwable) -> Unit)? = null
 ) : ICoroutineScopeEx {
-
 
     private val job: Job
         get() = coroutineContext[Job]!!
@@ -17,7 +18,10 @@ open class CoroutineScopeEx(
     private var _coroutineContext = newCoroutineContext
 
     private val newCoroutineContext: CoroutineContext
-        get() = Job() + dispatcher + CoroutineName(scopeName)
+        get() = (parent + CoroutineName(scopeName) + if (useSupervisorJob) SupervisorJob() else Job()).run {
+            onException?.let { this + CoroutineExceptionHandler { context, throwable -> it(context, throwable) } }
+                ?: this
+        }
 
     override suspend fun cancelAndJoin() = job.cancelAndJoin()
 

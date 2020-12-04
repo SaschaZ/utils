@@ -4,12 +4,13 @@ package dev.zieger.utils.statemachine.conditionelements
 
 import dev.zieger.utils.misc.name
 import dev.zieger.utils.statemachine.IMatchScope
-import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.*
-import dev.zieger.utils.statemachine.conditionelements.DefinitionElementGroup.MatchType.*
+import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.EVENT
+import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.STATE
+import dev.zieger.utils.statemachine.conditionelements.DefinitionGroup.MatchType.*
 
 class EventCondition(
     start: Combo<*>,
-    items: List<DefinitionElementGroup>,
+    items: List<DefinitionGroup>,
     action: (suspend IMatchScope.() -> Master?)? = null
 ) : Condition(start, items, action) {
 
@@ -17,14 +18,14 @@ class EventCondition(
 
     override fun copy(
         start: Combo<*>,
-        items: List<DefinitionElementGroup>,
+        items: List<DefinitionGroup>,
         action: (suspend IMatchScope.() -> Master?)?
     ): EventCondition = EventCondition(start, items, action)
 }
 
 class StateCondition(
     start: Combo<*>,
-    items: List<DefinitionElementGroup>,
+    items: List<DefinitionGroup>,
     action: (suspend IMatchScope.() -> Master?)? = null
 ) : Condition(start, items, action) {
 
@@ -32,7 +33,7 @@ class StateCondition(
 
     override fun copy(
         start: Combo<*>,
-        items: List<DefinitionElementGroup>,
+        items: List<DefinitionGroup>,
         action: (suspend IMatchScope.() -> Master?)?
     ): StateCondition = StateCondition(start, items, action)
 }
@@ -40,7 +41,7 @@ class StateCondition(
 @Suppress("DataClassPrivateConstructor")
 open class Condition(
     val start: Combo<*>,
-    val items: List<DefinitionElementGroup> = INITIAL_ITEMS.apply { all.add(start) },
+    val items: List<DefinitionGroup> = INITIAL_ITEMS.apply { all.add(start) },
     val action: (suspend IMatchScope.() -> Master?)? = null
 ) : ConditionElement {
 
@@ -60,19 +61,19 @@ open class Condition(
     companion object {
         internal val INITIAL_ITEMS
             get() = listOf(
-                DefinitionElementGroup(ANY, ArrayList()),
-                DefinitionElementGroup(ALL, ArrayList()),
-                DefinitionElementGroup(NONE, ArrayList())
+                DefinitionGroup(ANY, ArrayList()),
+                DefinitionGroup(ALL, ArrayList()),
+                DefinitionGroup(NONE, ArrayList())
             )
 
-        internal val List<DefinitionElementGroup>.any get() = first { it.matchType == ANY }
-        internal val List<DefinitionElementGroup>.all get() = first { it.matchType == ALL }
-        internal val List<DefinitionElementGroup>.none get() = first { it.matchType == NONE }
+        internal val List<DefinitionGroup>.any get() = first { it.matchType == ANY }
+        internal val List<DefinitionGroup>.all get() = first { it.matchType == ALL }
+        internal val List<DefinitionGroup>.none get() = first { it.matchType == NONE }
     }
 
-    internal val any: DefinitionElementGroup get() = items.any
-    internal val all: DefinitionElementGroup get() = items.all
-    internal val none: DefinitionElementGroup get() = items.none
+    internal val any: DefinitionGroup get() = items.any
+    internal val all: DefinitionGroup get() = items.all
+    internal val none: DefinitionGroup get() = items.none
 
     enum class DefinitionType {
         STATE,
@@ -83,26 +84,11 @@ open class Condition(
     val type: DefinitionType
         get() = start.type
 
-    private fun Master.getType(): DefinitionType = when (this) {
-        is AbsEvent,
-        is AbsEventGroup<*> -> EVENT
-        is AbsState,
-        is AbsStateGroup<*> -> STATE
-        is Combo<*> -> when (master) {
-            is AbsEvent,
-            is AbsEventGroup<*> -> EVENT
-            is AbsState,
-            is AbsStateGroup<*> -> STATE
-            else -> throw IllegalArgumentException("Unknown Master of type $this")
-        }
-        else -> throw IllegalArgumentException("Unknown Master of type $this")
-    }
-
     override fun toString(): String = "C($items)"
 
     open fun copy(
         start: Combo<*> = this.start,
-        items: List<DefinitionElementGroup> = this.items,
+        items: List<DefinitionGroup> = this.items,
         action: (suspend IMatchScope.() -> Master?)? = this.action
     ) = Condition(start, items, action)
 

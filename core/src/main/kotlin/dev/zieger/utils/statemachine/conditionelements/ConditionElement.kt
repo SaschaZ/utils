@@ -2,7 +2,7 @@ package dev.zieger.utils.statemachine.conditionelements
 
 
 /**
- * Base class for [Master]s, [Slave]s, [ComboElement] and [Condition].
+ * Base class for [Master]s, [Slave]s, [Combo] and [Condition].
  */
 interface ConditionElement
 

@@ -5,14 +5,14 @@ package dev.zieger.utils.statemachine.conditionelements
 import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType
 import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.*
 
-interface DefinitionElement : ConditionElement {
+interface Definition : ConditionElement {
 
-    val hasExternal: Boolean get() = false
     val hasEvent: Boolean get() = false
     val hasState: Boolean get() = false
     val hasStateGroup: Boolean get() = false
     val hasEventGroup: Boolean get() = false
-    val hasPrevElement: Boolean get() = false
+    val hasExternal: Boolean get() = false
+    val hasPrevious: Boolean get() = false
 
     @Suppress("LeakingThis")
     val hasGroup: Boolean

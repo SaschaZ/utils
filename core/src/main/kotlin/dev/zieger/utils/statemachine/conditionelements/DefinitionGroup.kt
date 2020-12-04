@@ -2,10 +2,10 @@
 
 package dev.zieger.utils.statemachine.conditionelements
 
-data class DefinitionElementGroup(
+data class DefinitionGroup(
     val matchType: MatchType,
-    val elements: MutableList<DefinitionElement>
-) : ConditionElement, MutableList<DefinitionElement> by elements {
+    val elements: MutableList<Definition>
+) : ConditionElement, MutableList<Definition> by elements {
 
     enum class MatchType {
         ALL,

@@ -10,7 +10,6 @@ interface ICoroutineScopeEx : CoroutineScope {
     }
 
     suspend fun cancelAndJoin()
-
     suspend fun join()
     fun reset()
 }
