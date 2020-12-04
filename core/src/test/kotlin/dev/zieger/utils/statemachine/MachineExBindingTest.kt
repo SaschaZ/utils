@@ -4,6 +4,7 @@ import dev.zieger.utils.core_testing.FlakyTest
 import dev.zieger.utils.core_testing.assertion2.isEqual
 import dev.zieger.utils.core_testing.assertion2.isNull
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
+import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
 import dev.zieger.utils.statemachine.MachineExBindingTest.Events.*
 import dev.zieger.utils.statemachine.MachineExBindingTest.Events.THIRD.*
 import dev.zieger.utils.statemachine.MachineExBindingTest.States.*
@@ -65,7 +66,7 @@ class MachineExBindingTest : FlakyTest() {
     override suspend fun beforeEach() {
         lastChildState = null
         scope = DefaultCoroutineScope()
-        childMachine = MachineEx(CA, scope) {
+        childMachine = MachineEx(CA, scope, debugLevel = DEBUG) {
             +THIRD0 set CB
             +THIRD1 + CB set CC * Data0()
             +THIRD2 + CC * Data0 set CA
@@ -74,7 +75,7 @@ class MachineExBindingTest : FlakyTest() {
             }
         }
         lastState = null
-        machine = MachineEx(A, scope) {
+        machine = MachineEx(A, scope, debugLevel = DEBUG) {
             +FIRST set B
             +SECOND + CB set A
             +THIRD bind childMachine

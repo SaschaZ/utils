@@ -4,12 +4,15 @@ import dev.zieger.utils.coroutines.TypeContinuation.Companion.ContinuationHolder
 import dev.zieger.utils.coroutines.TypeContinuation.Companion.ContinuationHolder.Value
 import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.time.duration.IDurationEx
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.HashMap
+import kotlin.coroutines.coroutineContext
 
 /**
  * Allows to suspend until [resume] with any wanted value is called.
@@ -106,5 +109,8 @@ open class TypeContinuation<T : Any?> {
 suspend inline fun <T : Any> suspendCoroutine(
     wanted: T? = null,
     timeout: IDurationEx? = null,
-    crossinline block: suspend (continuation: TypeContinuation<T>) -> Unit
-): T = TypeContinuation<T>().let { cont -> block(cont); cont.suspend(wanted, timeout) }
+    crossinline block: suspend TypeContinuation<T>.() -> Unit
+): T = TypeContinuation<T>().run {
+    CoroutineScope(coroutineContext).launch { block() }
+    suspend(wanted, timeout)
+}

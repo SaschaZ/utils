@@ -8,7 +8,6 @@ import dev.zieger.utils.core_testing.assertion2.isTrue
 import dev.zieger.utils.core_testing.assertion2.rem
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
-import dev.zieger.utils.log2.Log
 import dev.zieger.utils.log2.LogScope
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
 import dev.zieger.utils.statemachine.MachineExTest.TestData.*

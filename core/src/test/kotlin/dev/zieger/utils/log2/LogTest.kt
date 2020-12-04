@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package dev.zieger.utils.log2test
+package dev.zieger.utils.log2
 
 import dev.zieger.utils.core_testing.assertion2.isBlankOrNull
 import dev.zieger.utils.core_testing.assertion2.isMatching
@@ -80,7 +80,14 @@ internal class LogTest {
 
     @Test
     fun testCalls() = runTest {
+        TestClass(LogScopeImpl(Log.copy())).apply {
+            testOne()
+            message isMatching """V-[0-9\-:]+: testOne"""
+        }
+    }
 
+    class TestClass(logScope: ILogScope) : ILogScope by logScope {
+        fun testOne() = Log.v("testOne")
     }
 }
 

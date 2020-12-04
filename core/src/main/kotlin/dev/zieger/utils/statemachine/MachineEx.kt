@@ -6,12 +6,13 @@ import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.CoroutineScopeEx
 import dev.zieger.utils.coroutines.suspendCoroutine
 import dev.zieger.utils.log2.ILogScope
+import dev.zieger.utils.log2.Log
 import dev.zieger.utils.log2.LogScopeImpl
+import dev.zieger.utils.log2.filter.LogLevel
 import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.statemachine.MachineEx.Companion.DEFAULT_PREVIOUS_CHANGES_SIZE
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel
-import dev.zieger.utils.statemachine.MachineEx.Companion.debugLevel
 import dev.zieger.utils.statemachine.conditionelements.*
 import dev.zieger.utils.statemachine.dsl.MachineDsl
 import kotlinx.coroutines.CoroutineScope
@@ -172,7 +173,13 @@ open class MachineEx(
     val scope: CoroutineScope,
     previousChangesCacheSize: Int = DEFAULT_PREVIOUS_CHANGES_SIZE,
     debugLevel: DebugLevel = DebugLevel.ERROR,
-    logScope: ILogScope = LogScopeImpl(),
+    logScope: ILogScope = LogScopeImpl(Log.copy().apply {
+        logLevel = when (debugLevel) {
+            DebugLevel.DEBUG -> LogLevel.VERBOSE
+            DebugLevel.INFO -> LogLevel.INFO
+            DebugLevel.ERROR -> LogLevel.EXCEPTION
+        }
+    }),
     builder: suspend MachineDsl.() -> Unit
 ) : MachineDsl, IMachineEx {
 
@@ -186,9 +193,6 @@ open class MachineEx(
             INFO,
             ERROR
         }
-
-        internal var debugLevel: DebugLevel = DebugLevel.ERROR
-            private set
     }
 
     override val mapper: IMachineExMapper = MachineExMapper(logScope)
@@ -206,8 +210,6 @@ open class MachineEx(
     override val stateData: Data? get() = stateCombo.slave as? Data
 
     init {
-        MachineEx.debugLevel = debugLevel
-
         scope.launchEx {
             this@MachineEx.builder()
             for (event in eventChannel) event.processEvent()
@@ -216,20 +218,26 @@ open class MachineEx(
 
     override fun fireAndForget(event: EventCombo): Job = scope.launchEx { fire(event) }
 
-    override suspend fun fire(event: EventCombo): StateCombo = suspendCoroutine { cont ->
-        eventChannel.send(event to { state -> cont.resume(state) })
+    override suspend fun fire(event: EventCombo): StateCombo = suspendCoroutine {
+        eventChannel.send(event to { state -> resume(state) })
     }
 
     private suspend fun Pair<EventCombo, (StateCombo) -> Unit>.processEvent() {
         eventCombo = first
 
-        mapper.processEvent(eventCombo, stateCombo, previousChanges.reversed())?.let {
-            previousChanges.put(OnStateChanged(eventCombo, stateCombo, it))
-            stateCombo = it
+        val newEvents = ArrayList<AbsEvent>()
+        mapper.processEvent(eventCombo, stateCombo, previousChanges.reversed()) { fireAndForget(it) }?.let {
+            suspend fun onNewState(newState: StateCombo): StateCombo? {
+                previousChanges.put(OnStateChanged(eventCombo, stateCombo, newState))
+                stateCombo = newState
 
-            mapper.processState(eventCombo, stateCombo, previousChanges.reversed())?.also { e ->
-                fireAndForget(e)
+                return mapper.processState(eventCombo, stateCombo, previousChanges.reversed()) { e -> fireAndForget(e) }
             }
+
+            var newState: StateCombo? = it
+            do {
+                newState = newState?.let { ns -> onNewState(ns) }
+            } while (newState != null)
         }
 
         second(stateCombo)

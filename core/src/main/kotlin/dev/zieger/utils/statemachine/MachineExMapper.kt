@@ -4,12 +4,9 @@ package dev.zieger.utils.statemachine
 
 import dev.zieger.utils.log2.ILogScope
 import dev.zieger.utils.log2.filter.LogCondition
-import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
-import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.ERROR
 import dev.zieger.utils.statemachine.conditionelements.*
 import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.EVENT
 import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.STATE
-import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Responsible to map the incoming [AbsEvent]s to their [AbsState]s defined by provided mappings.
@@ -23,11 +20,12 @@ interface IMachineExMapper : ILogScope {
         condition: Condition,
         action: suspend IMatchScope.() -> Master?
     ) {
-        Log.v("add condition: $condition", filter = LogCondition { MachineEx.debugLevel == DEBUG })
+        Log.d("add condition: $condition")
         conditions.add(condition.copy(action = action))
     }
 
     fun addBinding(condition: Condition, machine: IMachineEx) {
+        Log.d("add binding: $condition to $machine")
         bindings[condition] = machine
     }
 
@@ -40,76 +38,67 @@ interface IMachineExMapper : ILogScope {
     suspend fun processEvent(
         event: EventCombo,
         state: StateCombo,
-        previousChanges: List<OnStateChanged>
+        previousChanges: List<OnStateChanged>,
+        onNewEvent: (event: AbsEvent) -> Unit
     ): StateCombo? = MatchScope(event, state, previousChanges, conditions, bindings).log.run {
-        comboForEventBinding() ?: finalCombo()
+        val boundMachine = matchingEventBinding()
+        (if (boundMachine == null)
+            matchingEventConditions()
+                .mapNotNull { it.action?.invoke(this) }.run {
+                    filterIsInstance<AbsEvent>().forEach { onNewEvent(it) }
+                    filterIsInstance<AbsState>().run {
+                        when (size) {
+                            in 0..1 -> firstOrNull()
+                            else -> throw IllegalStateException("More than one matching event condition setting a state for $this.")
+                        }
+                    }
+                }
+        else boundMachine.fire(event))?.combo?.logNewState(event)
     }
 
-    private val MatchScope.log: MatchScope
-        get() = apply {
-            Log.v(
-                "\n\n\n\nNew incoming event $eventCombo with state $stateCombo.",
-                filter = LogCondition { !noLogging && MachineEx.debugLevel < ERROR })
-        }
-
-    private suspend fun MatchScope.comboForEventBinding(): StateCombo? =
-        bindings.filter { match(it.key, EVENT) }.values.let {
-            when (it.size) {
-                in 0..1 -> it.firstOrNull()
-                else -> throw IllegalStateException("More than one matching event binding for $this.")
+    suspend fun processState(
+        event: EventCombo,
+        state: StateCombo,
+        previousChanges: List<OnStateChanged>,
+        onNewEvent: (event: AbsEvent) -> Unit
+    ): StateCombo? = MatchScope(event, state, previousChanges, conditions, bindings).run {
+        matchingStateConditions().mapNotNull { it.action?.invoke(this) }.run {
+            filterIsInstance<AbsEvent>().forEach { onNewEvent(it) }
+            filterIsInstance<AbsState>().run {
+                when (size) {
+                    in 0..1 -> firstOrNull()?.combo
+                    else -> throw IllegalStateException("More than one matching state condition setting a state for $this.")
+                }
             }
-        }?.fire(eventCombo)?.combo
+        }?.logNewState(event)
+    }
 
-    private suspend fun MatchScope.finalCombo(): StateCombo? =
-        matchingEventConditions().mapNotNull { it.action?.invoke(this) }.let {
-            when (it.filterIsInstance<AbsState>().size) {
-                in 0..1 -> it.firstOrNull()?.combo as? StateCombo
-                else -> throw IllegalStateException("More than one matching event condition setting a state for $this.")
-            }
-        }?.logNewState(eventCombo)
-
-    private fun StateCombo.logNewState(event: AbsEvent): StateCombo =
-        apply {
-            Log.i(
-                "Setting new state $this for event $event.\n\n",
-                filter = LogCondition { !noLogging && MachineEx.debugLevel < ERROR })
-        }
+    private suspend fun IMatchScope.matchingEventBinding(): IMachineEx? =
+        bindings.filter { match(it.key, EVENT) }.values.firstOrNull()
 
     private suspend fun IMatchScope.matchingEventConditions(): Collection<Condition> =
-        conditions.filter { it.type != STATE && match(it, EVENT) }
+        conditions.filter { match(it, EVENT) }
 
     private suspend fun IMatchScope.matchingStateConditions(): Collection<Condition> =
-        conditions.filter { it.type != EVENT && match(it, STATE) }
+        conditions.filter { match(it, STATE) }
 
     private suspend fun IMatchScope.match(
         condition: Condition,
         type: Condition.DefinitionType
     ) = Matcher(this, this@IMachineExMapper).run {
         (condition.type == type && condition.match()) logV {
-            filter = LogCondition { !event.noLogging && MachineEx.debugLevel == DEBUG }
+            filter = LogCondition { !event.noLogging }
             "#R $it => ${type.name[0]} $condition <||> $event, $state"
         }
     }
 
-    suspend fun processState(
-        event: EventCombo,
-        state: StateCombo,
-        previousChanges: List<OnStateChanged>
-    ): EventCombo? = MatchScope(event, state, previousChanges, conditions, bindings).run {
-        matchingStateConditions().mapNotNull { it.action?.invoke(this) }.let {
-            when (it.filterIsInstance<AbsEvent>().size) {
-                in 0..1 -> it.firstOrNull()?.combo as? EventCombo
-                else -> throw IllegalStateException("More than one matching event condition firing an event for $this.")
-            }
-        }?.logNewEvent(state)
-    }
-
-    private fun EventCombo.logNewEvent(state: AbsState): EventCombo =
-        apply {
-            Log.i(
-                "\n\nFiring new event $this for state $state.\n\n",
-                filter = LogCondition { !noLogging && MachineEx.debugLevel < ERROR })
+    private val MatchScope.log: MatchScope
+        get() = apply {
+            Log.i("New incoming event $eventCombo with state $stateCombo.", filter = LogCondition { !noLogging })
         }
+
+    private fun StateCombo.logNewState(event: AbsEvent): StateCombo =
+        apply { Log.i("Setting new state $this for event $event.", filter = LogCondition { !noLogging }) }
 }
 
 internal class MachineExMapper(logScope: ILogScope) : IMachineExMapper, ILogScope by logScope {

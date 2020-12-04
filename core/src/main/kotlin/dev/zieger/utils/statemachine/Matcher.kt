@@ -1,9 +1,7 @@
 package dev.zieger.utils.statemachine
 
 import dev.zieger.utils.log2.ILogScope
-import dev.zieger.utils.log2.filter.LogCondition
 import dev.zieger.utils.misc.name
-import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
 import dev.zieger.utils.statemachine.conditionelements.*
 
 open class Matcher(
@@ -48,8 +46,7 @@ open class Matcher(
     }.log(this)
 
     private fun Boolean.log(element: Any): Boolean = apply {
-        Log.v("#${element::class.name} $this => $element <||> ${this@Matcher}",
-            filter = LogCondition { MachineEx.debugLevel == DEBUG })
+        Log.v("#${element::class.name} $this => $element <||> ${this@Matcher}")
     }
 
     override fun toString(): String = "M($event<->$state)"

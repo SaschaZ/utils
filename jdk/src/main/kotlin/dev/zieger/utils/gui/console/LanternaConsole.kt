@@ -14,23 +14,18 @@ import com.googlecode.lanterna.input.KeyType.*
 import com.googlecode.lanterna.screen.Screen
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.coroutines.channel.forEach
 import dev.zieger.utils.coroutines.executeNativeBlocking
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.delegates.OnChanged
-import dev.zieger.utils.misc.AntiSpamProxy
 import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.misc.nullWhen
 import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.milliseconds
 import dev.zieger.utils.time.duration.seconds
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
 import java.lang.Integer.max
 import java.lang.Integer.min
 import java.util.*
-import java.util.concurrent.atomic.AtomicLong
 
 class LanternaConsole(
     private val screen: Screen = DefaultTerminalFactory().createScreen(),
@@ -121,16 +116,11 @@ class LanternaConsole(
 
     private val size: TerminalSize
         get() = preferredSize ?: graphics.size
+    private lateinit var lastSize: TerminalSize
 
-    private var buffer = ArrayList<List<TextWithColor>>(bufferSize)
     private var bufferLines = 0
     private var scrollIdx = 0
     private var commandInput = ""
-    private lateinit var lastSize: TerminalSize
-
-    private val messageChannel = Channel<Message>(Channel.UNLIMITED)
-    private val antiSpamProxy = AntiSpamProxy(100.milliseconds, cs)
-    private val singleDispatcher = newSingleThreadContext("")
 
     private val graphicJobs = ArrayList<Job>()
 
@@ -148,18 +138,19 @@ class LanternaConsole(
                 }
                 graphicJobs += cs.launchEx {
                     messageChannel.forEach { (text, autoRefresh, newLine, offset) ->
-                        withContext(singleDispatcher) {
-                            var doUpdate = false
-                            val value = (buffer.lastOrNull()
-                                ?.nullWhen { n -> offset > 0 || newLine || n.last().newLine }
-                                ?.let { l -> doUpdate = true; l + text.toList() } ?: text.toList())
-                                .mapIndexed { idx, t -> if (newLine && idx == text.lastIndex) t.copy(newLine = true) else t }
+                        var doUpdate = false
+                        val value = (buffer.lastOrNull()
+                            ?.nullWhen { n -> offset > 0 || newLine || n.last().newLine }
+                            ?.let { l -> doUpdate = true; l + text.toList() } ?: text.toList())
+                            .mapIndexed { idx, t -> if (newLine && idx == text.lastIndex) t.copy(newLine = true) else t }
 
-                            if (offset > 0) buffer.add(buffer.lastIndex - 1, value)
-                            else if (doUpdate) buffer[buffer.lastIndex] = value
-                            else buffer.add(value)
-                            while (buffer.size >= bufferSize) buffer.removeAt(0)
+                        when {
+                            offset > 0 -> buffer.add(buffer.lastIndex - 1, value)
+                            doUpdate -> buffer[buffer.lastIndex] = value
+                            else -> buffer.add(value)
                         }
+
+                        while (buffer.size >= bufferSize) buffer.removeAt(0)
                         if (autoRefresh) onBufferChanged()
                     }
                 }
@@ -225,13 +216,11 @@ class LanternaConsole(
     private fun onBufferChanged() {
         if (!::graphics.isInitialized) return
         antiSpamProxy {
-            withContext(singleDispatcher) {
-                screen.clear()
-                printOutput()
-                printCommandInput()
-                screen.refresh()
-                screen.doResizeIfNecessary()
-            }
+            screen.clear()
+            printOutput()
+            printCommandInput()
+            screen.refresh()
+            screen.doResizeIfNecessary()
         }
     }
 
@@ -280,34 +269,6 @@ class LanternaConsole(
         )
     }
 
-    private val lastMessageBuffer = HashMap<MessageId, String>()
-
-    private fun List<List<TextWithColor>>.buildColorStringArrays(remove: (TextWithColor) -> Unit): ScreenBuffer =
-        map { line ->
-            var idx = 0
-            var nlCnt = 0
-            line.map {
-                val scope =
-                    MessageScope({ onBufferChanged() }, { remove(it) }, { it.active = false }, { it.active = true })
-                val wasActive = it.active
-                val message = it.text(scope).toString()
-                it to when {
-                    it.active && wasActive || wasActive -> message.also { s -> lastMessageBuffer[it.id] = s }
-                    else -> lastMessageBuffer[it.id] ?: ""
-                }
-            }.flatMap { (col, c) -> c.map { m -> m to col.color() to col.background() } }
-                .replace('\t') { _, tabIdx -> (0..tabIdx % 4).joinToString("") { " " } }
-                .remove('\b', 1)
-                .groupBy { (c, _, _) ->
-                    if (c == '\n') nlCnt++
-                    this@LanternaConsole.size.columns.let {
-                        if (it > 3) nlCnt + idx++ / (this@LanternaConsole.size.columns - 3) else 0
-                    }
-                }.values.toList()
-                .mapIndexed { i, it -> (if (i == 0) ">: " else "   ").map { c -> c to YELLOW to BLACK } + it }
-                .map { it.filterNot { it1 -> it1.first.isISOControl() } }
-        }
-
     private suspend fun onNewCommand(command: String) {
         scrollIdx = 0
         onBufferChanged()
@@ -345,15 +306,6 @@ class LanternaConsole(
             return { buffer.remove(value) }
         }
 
-        override fun out(msg: String, autoRefresh: Boolean, newLine: Boolean, offset: Int): () -> Unit =
-            out(WHITE(msg), autoRefresh = autoRefresh, newLine = newLine, offset = offset)
-
-        override fun outnl(vararg text: TextWithColor, autoRefresh: Boolean, offset: Int): () -> Unit =
-            out(*text, autoRefresh = autoRefresh, newLine = true, offset = offset)
-
-        override fun outnl(msg: String, autoRefresh: Boolean, offset: Int): () -> Unit =
-            outnl(WHITE(msg), autoRefresh = autoRefresh, offset = offset)
-
         override fun refresh() = onBufferChanged()
 
         override fun release() = this@LanternaConsole.release()
@@ -369,111 +321,20 @@ interface IScope {
         offset: Int = 0
     ): () -> Unit
 
-    fun out(msg: String, autoRefresh: Boolean = true, newLine: Boolean = false, offset: Int = 0): () -> Unit
-    fun outnl(vararg text: TextWithColor, autoRefresh: Boolean = true, offset: Int = 0): () -> Unit
-    fun outnl(msg: String = "", autoRefresh: Boolean = true, offset: Int = 0): () -> Unit
+    fun out(msg: String, autoRefresh: Boolean = true, newLine: Boolean = false, offset: Int = 0): () -> Unit =
+        out(WHITE(msg), autoRefresh = autoRefresh, newLine = newLine, offset = offset)
+
+    fun outnl(vararg text: TextWithColor, autoRefresh: Boolean = true, offset: Int = 0): () -> Unit =
+        out(*text, autoRefresh = autoRefresh, newLine = true, offset = offset)
+
+    fun outnl(msg: String = "", autoRefresh: Boolean = true, offset: Int = 0): () -> Unit =
+        outnl(WHITE(msg), autoRefresh = autoRefresh, offset = offset)
 
     fun refresh()
     fun release()
 }
 
-private fun List<MessageChar>.remove(
-    from: Char,
-    pre: Int = 0
-): List<MessageChar> {
-    val buffer = LinkedList<MessageChar>()
-    return flatMap {
-        buffer.add(it)
-        when {
-            it.first == from -> {
-                buffer.clear()
-                emptyList()
-            }
-            buffer.size == pre + 1 -> listOf(buffer.removeAt(0))
-            else -> emptyList()
-        }
-    } + buffer
-}
-
-private fun List<MessageChar>.replace(
-    from: Char,
-    to: (Char, Int) -> String
-): List<MessageChar> {
-    var idx = 0
-    return flatMap { value ->
-        when (value.first) {
-            from -> to(value.first, idx++).map { c -> c to value.second to value.third }
-            else -> listOf(value)
-        }
-    }
-}
-
 inline fun <T> LanternaConsole.scope(block: LanternaConsole.Scope.() -> T): T = scope.block()
 
-infix fun <A, B, C> Pair<A, B>.to(other: C): Triple<A, B, C> = Triple(first, second, other)
+infix fun <A, B, C> Pair<A, B>.to(third: C): Triple<A, B, C> = Triple(first, second, third)
 
-
-data class MessageScope(
-    val refresh: () -> Unit,
-    val remove: () -> Unit,
-    val pause: () -> Unit,
-    val resume: () -> Unit
-)
-typealias MessageId = Long
-typealias MessageBuilder = MessageScope.() -> Any
-typealias MessageChar = Triple<Char, TextColor, TextColor>
-typealias ScreenBuffer = List<List<List<MessageChar>>>
-
-data class Message(
-    val message: List<TextWithColor>,
-    val autoRefresh: Boolean,
-    val newLine: Boolean,
-    val offset: Int
-)
-
-operator fun TextColor.invoke(bg: TextColor = BLACK, msg: MessageBuilder) = TextWithColor(msg, this, bg)
-operator fun TextColor.invoke(msg: Any, bg: TextColor = BLACK) = TextWithColor({ msg }, this, bg)
-
-data class TextWithColor(
-    val text: MessageBuilder,
-    val color: () -> TextColor,
-    val background: () -> TextColor,
-    val newLine: Boolean = false,
-    var active: Boolean = true
-) {
-
-    companion object {
-
-        private val lastId = AtomicLong(0)
-
-        val newId: MessageId get() = lastId.getAndIncrement()
-    }
-
-    constructor(
-        text: MessageBuilder,
-        color: TextColor,
-        background: TextColor,
-        newLine: Boolean = false
-    ) : this(text, { color }, { background }, newLine)
-
-    val id: MessageId = newId
-}
-
-operator fun TextWithColor.times(text: TextWithColor): List<TextWithColor> = listOf(this, text)
-operator fun TextWithColor.times(text: String): List<TextWithColor> = listOf(this, WHITE(text))
-operator fun TextWithColor.times(text: List<TextWithColor>): List<TextWithColor> =
-    listOf(this, *text.toTypedArray())
-
-operator fun String.times(text: TextWithColor): List<TextWithColor> = listOf(WHITE(this), text)
-operator fun String.times(text: String): List<TextWithColor> = listOf(WHITE(this), WHITE(text))
-operator fun String.times(text: List<TextWithColor>): List<TextWithColor> =
-    listOf(WHITE(this), *text.toTypedArray())
-
-operator fun List<TextWithColor>.times(text: TextWithColor): List<TextWithColor> =
-    listOf(*toTypedArray(), text)
-
-operator fun List<TextWithColor>.times(text: String): List<TextWithColor> =
-    listOf(*toTypedArray(), WHITE(text))
-
-operator fun List<TextWithColor>.times(text: List<TextWithColor>): List<TextWithColor> =
-    listOf(*toTypedArray(), *text.toTypedArray())
