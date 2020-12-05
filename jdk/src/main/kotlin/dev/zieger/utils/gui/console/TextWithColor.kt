@@ -7,8 +7,8 @@ import java.util.concurrent.atomic.AtomicLong
 
 data class TextWithColor(
     val text: MessageBuilder,
-    val color: () -> TextColor,
-    val background: () -> TextColor,
+    val color: MessageColor,
+    val background: MessageColor,
     val newLine: Boolean = false,
     var visible: Boolean = true,
     var active: Boolean = true
@@ -33,6 +33,12 @@ data class TextWithColor(
 
 typealias MessageId = Long
 typealias MessageBuilder = MessageScope.() -> Any
+typealias MessageColor = MessageColorScope.(idx: Int) -> TextColor
+
+data class MessageColorScope(
+    val message: String,
+    val character: Char
+)
 
 operator fun TextColor.invoke(bg: TextColor = BLACK, msg: MessageBuilder) = TextWithColor(msg, this, bg)
 operator fun TextColor.invoke(msg: Any, bg: TextColor = BLACK) = TextWithColor({ msg }, this, bg)

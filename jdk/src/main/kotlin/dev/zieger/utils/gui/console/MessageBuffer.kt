@@ -8,12 +8,13 @@ import com.googlecode.lanterna.TextColor.ANSI.YELLOW
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.channel.forEach
 import dev.zieger.utils.misc.AntiSpamProxy
-import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.nullWhen
 import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.*
 
 class MessageBuffer(
@@ -31,6 +32,7 @@ class MessageBuffer(
     }
 
     private var buffer = ArrayList<List<TextWithColor>>(size)
+    private val bufferMutex = Mutex()
     private val messageChannel = Channel<Message>(Channel.UNLIMITED)
     private val antiSpamProxy = AntiSpamProxy(spamDuration, scope)
     private val lastMessageBuffer = HashMap<MessageId, String>()
@@ -38,27 +40,33 @@ class MessageBuffer(
     init {
         scope.launchEx {
             messageChannel.forEach { (text, autoRefresh, newLine, offset) ->
-                var doUpdate = false
-                val value = (buffer.lastOrNull()
-                    ?.nullWhen { n -> offset > 0 || newLine || n.last().newLine }
-                    ?.let { l -> doUpdate = true; l + text.toList() } ?: text.toList())
-                    .mapIndexed { idx, t -> if (newLine && idx == text.lastIndex) t.copy(newLine = true) else t }
+                bufferMutex.withLock {
+                    var doUpdate = false
+                    val value = (buffer.lastOrNull()
+                        ?.nullWhen { n -> offset > 0 || newLine || n.last().newLine }
+                        ?.let { l -> doUpdate = true; l + text.toList() } ?: text.toList())
+                        .mapIndexed { idx, t -> if (newLine && idx == text.lastIndex) t.copy(newLine = true) else t }
 
-                when {
-                    offset > 0 -> buffer.add(buffer.size - offset, value)
-                    doUpdate -> buffer[buffer.lastIndex] = value
-                    else -> buffer.add(value)
+                    when {
+                        offset > 0 -> buffer.add(buffer.size - offset, value)
+                        doUpdate -> buffer[buffer.lastIndex] = value
+                        else -> buffer.add(value)
+                    }
+
+                    while (buffer.size >= size) buffer.removeAt(0)
+                    if (autoRefresh) update()
                 }
-
-                while (buffer.size >= size) buffer.removeAt(0)
-                if (autoRefresh) update()
             }
         }
     }
 
-    fun update() = antiSpamProxy { onUpdate(buildScreenBuffer()) }
+    var lastScreenBuffer: ScreenBuffer? = null
+        private set
 
-    fun addMessage(msg: Message) = messageChannel.offer(msg).asUnit()
+    fun update() =
+        antiSpamProxy { onUpdate(bufferMutex.withLock { buildScreenBuffer().also { lastScreenBuffer = it } }) }
+
+    fun addMessage(msg: Message) = messageChannel.offer(msg).let { { msg.message.forEach { it.visible = false } } }
 
     private fun buildScreenBuffer(): ScreenBuffer = buffer.map { line ->
         var idx = 0
@@ -68,12 +76,18 @@ class MessageBuffer(
             val wasActive = it.active
             val message = it.text(scope).toString()
             it to when {
-                it.visible -> ""
+                !it.visible -> ""
                 it.active || wasActive -> message.also { s -> lastMessageBuffer[it.id] = s }
                 else -> lastMessageBuffer[it.id] ?: ""
             }
-        }.flatMap { (col, c) -> c.map { m -> m to col.color() to col.background() } }
-            .replace('\t') { _, tabIdx -> (0..tabIdx % 4).joinToString("") { " " } }
+        }.filter { it.first.visible }
+            .flatMap { (col, c) ->
+                c.mapIndexed { idx, m ->
+                    MessageColorScope(c, m).run {
+                        m to col.color(this, idx) to col.background(this, idx)
+                    }
+                }
+            }.replace('\t') { _, tabIdx -> (0..tabIdx % 4).joinToString("") { " " } }
             .remove('\b', 1)
             .groupBy { (c, _, _) ->
                 if (c == '\n') nlCnt++

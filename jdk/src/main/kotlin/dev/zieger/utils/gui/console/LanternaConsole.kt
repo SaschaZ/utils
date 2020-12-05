@@ -26,6 +26,7 @@ import kotlinx.coroutines.*
 import java.lang.Integer.max
 import java.lang.Integer.min
 import java.util.*
+import kotlin.random.Random
 
 class LanternaConsole(
     private val screen: Screen = DefaultTerminalFactory().createScreen(),
@@ -57,19 +58,29 @@ class LanternaConsole(
                         " boofoo$printed "
                     } else "  DU HURENSOHN$printed  "
                 })
-                repeat(500) { out(WHITE { "${it + startIdx}|" }, autoRefresh = false) }
+                repeat(500) {
+                    out(
+                        TextWithColor(
+                            { "${it + startIdx}|" },
+                            { if (Random.nextBoolean()) YELLOW else GREEN },
+                            { BLACK }), autoRefresh = false
+                    )
+                }
                 outnl()
                 refresh()
 
                 outnl("hey")
                 outnl("du")
                 outnl("krasser")
-                outnl("typ :-*")
+                outnl(
+                    TextWithColor({ "typ :-*" }, { if (Random.nextBoolean()) YELLOW else GREEN }, { BLACK }),
+                    offset = 2
+                )
 
                 val progress = ConsoleProgressBar { refresh() }
                 outnl(CYAN { if (progress.progressPercent == 1.0) remove(); "fooProg: " },
                     progress.textWithColor { if (it == 1.0) remove() })
-                launchEx(interval = 1.milliseconds) { progress.progressPercent += 0.0001 }
+                launchEx(interval = 50.milliseconds) { progress.progressPercent += 0.001 }
             }
         }.asUnit()
 
@@ -118,6 +129,8 @@ class LanternaConsole(
         get() = preferredSize ?: graphics.size
     private lateinit var lastSize: TerminalSize
 
+    private val buffer = MessageBuffer(cs, { size.columns }) { onBufferChanged() }
+
     private var bufferLines = 0
     private var scrollIdx = 0
     private var commandInput = ""
@@ -135,24 +148,6 @@ class LanternaConsole(
                 }
                 graphicJobs += cs.launchEx(interval = 100.milliseconds) {
                     checkSize()
-                }
-                graphicJobs += cs.launchEx {
-                    messageChannel.forEach { (text, autoRefresh, newLine, offset) ->
-                        var doUpdate = false
-                        val value = (buffer.lastOrNull()
-                            ?.nullWhen { n -> offset > 0 || newLine || n.last().newLine }
-                            ?.let { l -> doUpdate = true; l + text.toList() } ?: text.toList())
-                            .mapIndexed { idx, t -> if (newLine && idx == text.lastIndex) t.copy(newLine = true) else t }
-
-                        when {
-                            offset > 0 -> buffer.add(buffer.lastIndex - 1, value)
-                            doUpdate -> buffer[buffer.lastIndex] = value
-                            else -> buffer.add(value)
-                        }
-
-                        while (buffer.size >= bufferSize) buffer.removeAt(0)
-                        if (autoRefresh) onBufferChanged()
-                    }
                 }
             }
             false -> graphicJobs.runEach { cancel() }
@@ -215,22 +210,16 @@ class LanternaConsole(
 
     private fun onBufferChanged() {
         if (!::graphics.isInitialized) return
-        antiSpamProxy {
-            screen.clear()
-            printOutput()
-            printCommandInput()
-            screen.refresh()
-            screen.doResizeIfNecessary()
-        }
+        screen.clear()
+        printOutput()
+        printCommandInput()
+        screen.refresh()
+        screen.doResizeIfNecessary()
     }
 
     private fun printOutput() {
         var nlIdx = 0
-        val buffCopy = ArrayList(buffer)
-        val stringArray = buffCopy.buildColorStringArrays {
-            buffer = ArrayList(buffCopy.map { m -> m.filterNot { f -> f == it } })
-            onBufferChanged()
-        }
+        val stringArray = buffer.lastScreenBuffer ?: return
         val rows = size.rows
         bufferLines = stringArray.sumBy { it.size }
         stringArray.reversed().forEach { messages ->
@@ -294,17 +283,8 @@ class LanternaConsole(
 
     inner class Scope : IScope {
 
-        override fun out(vararg text: TextWithColor, autoRefresh: Boolean, newLine: Boolean, offset: Int): () -> Unit {
-            var doUpdate = false
-            val value = (buffer.lastOrNull()
-                ?.nullWhen { newLine || it.last().newLine }
-                ?.let { doUpdate = true; it + text.toList() } ?: text.toList())
-                .mapIndexed { idx, t -> if (newLine && idx == text.lastIndex) t.copy(newLine = true) else t }
-            if (doUpdate) buffer[buffer.lastIndex] = value
-            else buffer.add(value)
-            if (autoRefresh) refresh()
-            return { buffer.remove(value) }
-        }
+        override fun out(vararg text: TextWithColor, autoRefresh: Boolean, newLine: Boolean, offset: Int): () -> Unit =
+            buffer.addMessage(Message(text.toList(), autoRefresh, newLine, offset))
 
         override fun refresh() = onBufferChanged()
 
