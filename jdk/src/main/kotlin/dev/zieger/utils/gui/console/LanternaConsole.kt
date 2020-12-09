@@ -17,7 +17,12 @@ import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.executeNativeBlocking
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.delegates.OnChanged
+import dev.zieger.utils.gui.console.ProgressEntity.*
+import dev.zieger.utils.gui.console.ScreenBuffer.Companion.buffer
+import dev.zieger.utils.gui.console.ScreenLine.Companion.line
+import dev.zieger.utils.gui.console.ScreenLineGroup.Companion.group
 import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.misc.nullWhen
 import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.milliseconds
@@ -46,18 +51,18 @@ class LanternaConsole(
             LanternaConsole().scope {
                 outnl("FooBooFo°\b\n°\boBooFooBooFoFoFooBFooFFoFooBoooBooFooBooooBooBoooFFooBooooBooFooBoooFoFooFooBooBooFFooBooooBoooBoooBoooBooFooBooFooBoo")
                 outnl("mooo\t\tbooo")
-                outnl(*arrayOf(WHITE("määäää")) + GREEN("foo", YELLOW), RED(WHITE) { "boo" }, BLUE("blub"))
+                outnl(+"määäää" + "foo" * GREEN / YELLOW + TWC({ "boo" }, { RED }, { WHITE }) + "blub" * BLUE)
 
                 var startIdx = 0
                 var printed = 0
                 var job: Job? = null
-                outnl(WHITE {
+                outnl(TWC({
                     startIdx++
                     if (printed == 0) {
                         job = job ?: launchEx(interval = 1.seconds, delayed = 1.seconds) { printed++; refresh() }
                         " boofoo$printed "
                     } else "  DU HURENSOHN$printed  "
-                })
+                }))
                 repeat(500) {
                     out(
                         TextWithColor(
@@ -77,10 +82,10 @@ class LanternaConsole(
                     offset = 2
                 )
 
-                val progress = ConsoleProgressBar { refresh() }
-                outnl(CYAN { if (progress.progressPercent == 1.0) remove(); "fooProg: " },
-                    progress.textWithColor { if (it == 1.0) remove() })
-                launchEx(interval = 50.milliseconds) { progress.progressPercent += 0.001 }
+                ProgressSource(this@runBlocking, total = 1000).run {
+                    outnl(PROGRESS(this, Bar(), RemoveWhen(1.0)))
+                    launchEx(interval = 50.milliseconds) { done += 1 }
+                }
             }
         }.asUnit()
 
@@ -133,7 +138,10 @@ class LanternaConsole(
 
     private var bufferLines = 0
     private var scrollIdx = 0
+    private var lastScrollIdx: Int = scrollIdx
     private var commandInput = ""
+
+    private var lastScreenBuffer: ScreenBuffer? = null
 
     private val graphicJobs = ArrayList<Job>()
 
@@ -141,7 +149,7 @@ class LanternaConsole(
         when (it) {
             true -> {
                 refreshInterval?.also { interval ->
-                    graphicJobs += cs.launchEx(interval = interval) { onBufferChanged() }
+                    graphicJobs += cs.launchEx(interval = interval) { buffer.update() }
                 }
                 graphicJobs += cs.launchEx {
                     while (isActive) onKeyPressed(executeNativeBlocking { screen.readInput() })
@@ -210,26 +218,64 @@ class LanternaConsole(
 
     private fun onBufferChanged() {
         if (!::graphics.isInitialized) return
-        screen.clear()
-        printOutput()
-        printCommandInput()
-        screen.refresh()
-        screen.doResizeIfNecessary()
+        val screenBuffer = buffer.lastScreenBuffer ?: return
+
+        val clear = lastScreenBuffer?.numLines?.let { it == screenBuffer.numLines } != true
+                || scrollIdx != lastScrollIdx
+        screen.draw(clear) {
+            printOutput(screenBuffer - lastScreenBuffer)
+            printCommandInput()
+        }
+        lastScreenBuffer = screenBuffer
+        lastScrollIdx = scrollIdx
     }
 
-    private fun printOutput() {
+    private val ScreenBuffer.numLines: Int get() = sumBy { it.size }
+
+    private operator fun ScreenBuffer.minus(other: ScreenBuffer?): ScreenBuffer =
+        if (other?.size != size) this else
+            mapIndexed { index, group -> other.getOrNull(index)?.let { group - it } ?: group }.buffer
+
+    private operator fun ScreenLineGroup.minus(other: ScreenLineGroup): ScreenLineGroup =
+        if (other.size != size) this else
+            mapIndexed { index, line -> other.getOrNull(index)?.let { line - it } ?: line }.group
+
+    private operator fun ScreenLine.minus(other: ScreenLine): ScreenLine =
+        (0..max(lastIndex, other.lastIndex)).map { index ->
+            getOrNull(index)?.let { char ->
+                other.getOrNull(index)?.let { char - it } ?: char
+            } ?: ScreenChar(' ')
+        }.line
+
+    private operator fun ScreenChar?.minus(other: ScreenChar?): ScreenChar? = nullWhen { it == other }
+
+    private fun Screen.draw(clear: Boolean, block: Screen.() -> Unit) {
+        if (clear) clear()
+        block()
+        refresh()
+        doResizeIfNecessary()
+    }
+
+    private fun printOutput(stringArray: ScreenBuffer) {
         var nlIdx = 0
-        val stringArray = buffer.lastScreenBuffer ?: return
         val rows = size.rows
         bufferLines = stringArray.sumBy { it.size }
         stringArray.reversed().forEach { messages ->
             messages.reversed().forEach { m ->
                 var columnIdx = 0
                 val lineIdx = min(bufferLines - 1, rows - if (hideCommandInput) 1 else 2) - nlIdx++ + scrollIdx
-                if (lineIdx in 0..rows - if (hideCommandInput) 1 else 2) m.forEach { (c, col, back) ->
-                    val column = position.column + columnIdx++
-                    val row = position.row + lineIdx
-                    graphics.setCharacter(column, row, TextCharacter(c, col, back))
+                if (lineIdx in 0..rows - if (hideCommandInput) 1 else 2) m.forEach { sc ->
+                    sc?.let { (c, col, back) ->
+                        val column = position.column + columnIdx++
+                        val row = position.row + lineIdx
+                        graphics.setCharacter(
+                            column, row, TextCharacter(
+                                c,
+                                col ?: graphics.foregroundColor,
+                                back ?: graphics.backgroundColor
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -301,14 +347,25 @@ interface IScope {
         offset: Int = 0
     ): () -> Unit
 
+    fun out(
+        text: List<TextWithColor>,
+        autoRefresh: Boolean = true,
+        newLine: Boolean = false,
+        offset: Int = 0
+    ): () -> Unit = out(*text.toTypedArray(), autoRefresh = autoRefresh, newLine = newLine, offset = offset)
+
     fun out(msg: String, autoRefresh: Boolean = true, newLine: Boolean = false, offset: Int = 0): () -> Unit =
-        out(WHITE(msg), autoRefresh = autoRefresh, newLine = newLine, offset = offset)
+        out(TWC({ msg }), autoRefresh = autoRefresh, newLine = newLine, offset = offset)
+
 
     fun outnl(vararg text: TextWithColor, autoRefresh: Boolean = true, offset: Int = 0): () -> Unit =
         out(*text, autoRefresh = autoRefresh, newLine = true, offset = offset)
 
+    fun outnl(text: List<TextWithColor>, autoRefresh: Boolean = true, offset: Int = 0): () -> Unit =
+        out(text, autoRefresh = autoRefresh, newLine = true, offset = offset)
+
     fun outnl(msg: String = "", autoRefresh: Boolean = true, offset: Int = 0): () -> Unit =
-        outnl(WHITE(msg), autoRefresh = autoRefresh, offset = offset)
+        outnl(TWC({ msg }), autoRefresh = autoRefresh, offset = offset)
 
     fun refresh()
     fun release()

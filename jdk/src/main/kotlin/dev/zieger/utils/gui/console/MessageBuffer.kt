@@ -7,6 +7,9 @@ import com.googlecode.lanterna.TextColor.ANSI.BLACK
 import com.googlecode.lanterna.TextColor.ANSI.YELLOW
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.channel.forEach
+import dev.zieger.utils.gui.console.ScreenBuffer.Companion.buffer
+import dev.zieger.utils.gui.console.ScreenLine.Companion.line
+import dev.zieger.utils.gui.console.ScreenLineGroup.Companion.group
 import dev.zieger.utils.misc.AntiSpamProxy
 import dev.zieger.utils.misc.nullWhen
 import dev.zieger.utils.time.duration.IDurationEx
@@ -48,7 +51,7 @@ class MessageBuffer(
                         .mapIndexed { idx, t -> if (newLine && idx == text.lastIndex) t.copy(newLine = true) else t }
 
                     when {
-                        offset > 0 -> buffer.add(buffer.size - offset, value)
+                        offset > 0 -> buffer.add(buffer.lastIndex - offset, value)
                         doUpdate -> buffer[buffer.lastIndex] = value
                         else -> buffer.add(value)
                     }
@@ -71,8 +74,10 @@ class MessageBuffer(
     private fun buildScreenBuffer(): ScreenBuffer = buffer.map { line ->
         var idx = 0
         var nlCnt = 0
+        val columns = columns()
         line.map {
-            val scope = MessageScope({ update() }, { it.visible = false }, { it.active = false }, { it.active = true })
+            val scope =
+                MessageScope({ update() }, { it.visible = false }, { it.active = false }, { it.active = true })
             val wasActive = it.active
             val message = it.text(scope).toString()
             it to when {
@@ -84,35 +89,39 @@ class MessageBuffer(
             .flatMap { (col, c) ->
                 c.mapIndexed { idx, m ->
                     MessageColorScope(c, m).run {
-                        m to col.color(this, idx) to col.background(this, idx)
+                        ScreenChar(m, col.color?.invoke(this, idx), col.background?.invoke(this, idx))
                     }
                 }
-            }.replace('\t') { _, tabIdx -> (0..tabIdx % 4).joinToString("") { " " } }
+            }.line
+            .replace('\t') { _, tabIdx -> (0..tabIdx % 4).joinToString("") { " " } }
             .remove('\b', 1)
-            .groupBy { (c, _, _) ->
-                if (c == '\n') nlCnt++
-                columns().let { if (it > 3) nlCnt + idx++ / (it - 3) else 0 }
+            .groupBy { sc ->
+                if (sc?.character == '\n') {
+                    nlCnt++
+                    idx = 0
+                }
+                if (columns > 3) nlCnt + idx++ / (columns - 3) else 0
             }.values.toList()
-            .mapIndexed { i, it -> (if (i == 0) ">: " else "   ").map { c -> c to YELLOW to BLACK } + it }
-            .map { it.filterNot { it1 -> it1.first.isISOControl() } }
-    }
+            .mapIndexed { i, it -> (if (i == 0) ">: " else "   ").map { c -> ScreenChar(c, YELLOW) } + it }
+            .map { it.filterNot { it1 -> it1?.character?.isISOControl() == true }.line }.group
+    }.buffer
 
     private fun ScreenLine.remove(
         from: Char,
         pre: Int = 0
     ): ScreenLine {
-        val buffer = LinkedList<ScreenChar>()
-        return flatMap {
+        val buffer = LinkedList<ScreenChar?>()
+        return (flatMap {
             buffer.add(it)
             when {
-                it.first == from -> {
+                it?.character == from -> {
                     buffer.clear()
                     emptyList()
                 }
                 buffer.size == pre + 1 -> listOf(buffer.removeAt(0))
                 else -> emptyList()
             }
-        } + buffer
+        } + buffer).line
     }
 
     private fun ScreenLine.replace(
@@ -121,18 +130,37 @@ class MessageBuffer(
     ): ScreenLine {
         var idx = 0
         return flatMap { value ->
-            when (value.first) {
-                from -> to(value.first, idx++).map { c -> c to value.second to value.third }
+            when (value?.character) {
+                from -> to(value.character, idx++).map { c -> value.copy(character = c) }
                 else -> listOf(value)
             }
-        }
+        }.line
     }
 }
 
-typealias ScreenChar = Triple<Char, TextColor, TextColor>
-typealias ScreenLine = List<ScreenChar>
-typealias ScreenLineGroup = List<ScreenLine>
-typealias ScreenBuffer = List<ScreenLineGroup>
+data class ScreenChar(
+    val character: Char,
+    val foreground: TextColor? = null,
+    val background: TextColor? = null
+)
+
+class ScreenLine(line: List<ScreenChar?>) : List<ScreenChar?> by line {
+    companion object {
+        val List<ScreenChar?>.line: ScreenLine get() = ScreenLine(this)
+    }
+}
+
+class ScreenLineGroup(group: List<ScreenLine>) : List<ScreenLine> by group {
+    companion object {
+        val List<ScreenLine>.group: ScreenLineGroup get() = ScreenLineGroup(this)
+    }
+}
+
+class ScreenBuffer(buffer: List<ScreenLineGroup>) : List<ScreenLineGroup> by buffer {
+    companion object {
+        val List<ScreenLineGroup>.buffer: ScreenBuffer get() = ScreenBuffer(this)
+    }
+}
 
 data class Message(
     val message: List<TextWithColor>,

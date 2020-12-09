@@ -3,7 +3,6 @@
 package dev.zieger.utils.gui.console
 
 import com.googlecode.lanterna.TextColor
-import com.googlecode.lanterna.TextColor.ANSI.WHITE
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.gui.console.LanternaConsole.Companion.lastInstance
 
@@ -14,6 +13,7 @@ open class ConsoleProgressBar(
     foreground: IProgressColorProvider = PROGRESS_COLORS,
     background: IProgressColorProvider = ColorGradient(0x000000),
     private val fraction: String = FRACTION_2,
+    private val midPart: (done: Int, max: Int) -> String? = { d, m -> (d / m.toDouble() * 100).let { " %.1f%%".format(it) } },
     private val refresh: () -> Unit
 ) {
 
@@ -23,11 +23,6 @@ open class ConsoleProgressBar(
         const val FRACTION_10 = " ▏▎▍▌▋▊▉██"
         const val FRACTION_100 = " ⡀⡄⡆⡇⣇⣧⣷⣿░"
         const val FRACTION_2 = "▱▰"
-
-        data class ProgressTestData(
-            val progress: Int = 0,
-            val max: Int = 100
-        )
 
         val PROGRESS_COLORS = ColorGradient(
             0xFF0000,
@@ -42,23 +37,6 @@ open class ConsoleProgressBar(
             0x40FF00,
             0x00FF00
         )
-
-        private fun buildProgress(progress: Double, size: Int, fraction: String): String {
-            val progressPercent = progress.coerceIn(0.0..1.0)
-            val progressStr = " %.1f%% ".format(progressPercent * 100)
-            val progressDigits = (size - 7).let { it + it % 2 }
-            val done = progressPercent * progressDigits
-            val doneInt = done.toInt()
-            val fractionIdx = ((done - doneInt) * fraction.lastIndex).toInt()
-                .coerceIn(0..fraction.lastIndex)
-            return (0 until progressDigits).joinToString("") { idx ->
-                when {
-                    idx < doneInt || progressPercent == 1.0 -> "${fraction.last()}"
-                    idx == doneInt -> "${fraction[fractionIdx]}"
-                    else -> "${fraction.first()}"
-                }
-            }.run { substring(0 until length / 2) + progressStr + substring(length / 2 until length) }
-        }
     }
 
     private var foregroundColor = foreground(0.0)
@@ -71,7 +49,7 @@ open class ConsoleProgressBar(
     ) {
         foregroundColor = foreground(it)
         backgroundColor = background(it)
-        text = buildProgress(it, size, fraction)
+        text = it.buildProgress()
         refresh()
     }
 
@@ -79,8 +57,28 @@ open class ConsoleProgressBar(
         progressPercent = it / max.toDouble()
     }
 
-    var text: String = buildProgress(progressPercent, size, FRACTION_2)
+    var text: String = progressPercent.buildProgress()
         private set
+
+    private fun Double.buildProgress(): String {
+        val progressPercent = coerceIn(0.0..1.0)
+        val progressStr = midPart((progressPercent * max).toInt(), max)
+        val progressDigits = (size - 7).let { it + it % 2 }
+        val done = progressPercent * progressDigits
+        val doneInt = done.toInt()
+        val fractionIdx = ((done - doneInt) * fraction.lastIndex).toInt()
+            .coerceIn(0..fraction.lastIndex)
+        return (0 until progressDigits).joinToString("") { idx ->
+            when {
+                idx < doneInt || progressPercent == 1.0 -> "${fraction.last()}"
+                idx == doneInt -> "${fraction[fractionIdx]}"
+                else -> "${fraction.first()}"
+            }
+        }.run {
+            if (progressStr == null) this
+            else substring(0 until length / 2) + progressStr + substring(length / 2 until length)
+        }
+    }
 
     val textWithColor get() = TextWithColor({ text }, { foregroundColor }, { backgroundColor })
 
@@ -133,56 +131,6 @@ class ColorGradient(vararg colors: Int) :
     fun reversed() = ColorGradient(*colorList.reversed().toIntArray())
 }
 
-fun PROGRESS(
-    progressSource: IProgressSource,
-    removeWhenComplete: Boolean = true,
-    initial: Int = 0,
-    max: Int = 100,
-    size: Int = ConsoleProgressBar.DEFAULT_SIZE,
-    foreground: IProgressColorProvider = ConsoleProgressBar.PROGRESS_COLORS,
-    background: IProgressColorProvider = ColorGradient(0x000000),
-    fraction: String = ConsoleProgressBar.FRACTION_2,
-    preText: Any? = null,
-    postText: Any? = null,
-    preTextProvider: ((progress: Double) -> Any?)? = { preText ?: progressSource.preText },
-    postTextProvider: ((progress: Double) -> Any?)? = { postText ?: progressSource.postText },
-): Array<TextWithColor> {
-    fun MessageScope.removeWhenComplete() {
-        if (removeWhenComplete && progressSource.donePercent >= 0.999) remove()
-    }
-
-    fun preText(): TextWithColor? = WHITE {
-        removeWhenComplete()
-        preTextProvider?.invoke(progressSource.donePercent)?.toString() ?: ""
-    }
-
-    val hideBar = max == -1
-    fun bar(): TextWithColor? =
-        if (hideBar) null else ConsoleProgressBar(progressSource, initial, max, size, foreground, background, fraction)
-            .textWithColor { removeWhenComplete() }
-
-    fun afterBarText(): TextWithColor? =
-        WHITE {
-            removeWhenComplete()
-            " ${progressSource.unitsPerSecondFormatted}${if (hideBar) " - " else "\n"}" +
-                    progressSource.doneFormatted +
-                    if (progressSource.total > 0) "|${progressSource.totalFormatted} - " else " - " +
-                            "${progressSource.activeFor.formatDuration(maxEntities = 2, sameLength = true)} - " +
-                            (if (progressSource.total > 0) progressSource.finishedIn.formatDuration(
-                                maxEntities = 2,
-                                sameLength = true
-                            ).let { "$it - " } else "") +
-                            progressSource.lastActionBefore.formatDuration(maxEntities = 2, sameLength = true)
-        }
-
-    fun postText(): TextWithColor? = WHITE {
-        removeWhenComplete()
-        postTextProvider?.invoke(progressSource.donePercent)?.toString() ?: ""
-    }
-
-    return listOfNotNull(preText(), bar(), afterBarText(), postText()).toTypedArray()
-}
-
 @Suppress("FunctionName")
 fun ConsoleProgressBar(
     progressSource: IProgressSource,
@@ -191,9 +139,10 @@ fun ConsoleProgressBar(
     size: Int = ConsoleProgressBar.DEFAULT_SIZE,
     foreground: IProgressColorProvider = ConsoleProgressBar.PROGRESS_COLORS,
     background: IProgressColorProvider = ColorGradient(0x000000),
-    fraction: String = ConsoleProgressBar.FRACTION_2
+    fraction: String = ConsoleProgressBar.FRACTION_2,
+    midPart: (done: Int, max: Int) -> String? = { d, m -> (d / m.toDouble() * 100).let { " %.1f%%".format(it) } }
 ): ConsoleProgressBar {
-    val consoleProgressBar = ConsoleProgressBar(initial, max, size, foreground, background, fraction) {
+    val consoleProgressBar = ConsoleProgressBar(initial, max, size, foreground, background, fraction, midPart) {
         lastInstance?.scope?.refresh()
     }
     progressSource.doneObservable.observe {

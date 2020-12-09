@@ -2,6 +2,7 @@ package dev.zieger.utils.gui.console
 
 import dev.zieger.utils.gui.console.ProgressUnit.Items
 import dev.zieger.utils.misc.format
+import dev.zieger.utils.misc.pretty
 import dev.zieger.utils.observable.IObservable
 import dev.zieger.utils.observable.Observable
 import dev.zieger.utils.time.ITimeEx
@@ -11,21 +12,20 @@ import dev.zieger.utils.time.base.minus
 import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.toDuration
 import kotlinx.coroutines.CoroutineScope
-import java.text.DecimalFormat
 
 sealed class ProgressUnit {
 
-    abstract fun formatAmount(value: Long): String
+    abstract fun formatAmount(value: Number): String
 
-    open fun formatSpeed(value: Double): String = "${formatAmount(value.toLong())}/s"
+    open fun formatSpeed(value: Number): String = "${formatAmount(value)}/s"
 
     data class Items(val name: String? = null) : ProgressUnit() {
-        override fun formatAmount(value: Long): String =
-            "%,d".format(value).let { f -> name?.let { n -> "$f$n" } ?: f }
+        override fun formatAmount(value: Number): String =
+            value.pretty.let { f -> name?.let { n -> "$f$n" } ?: f }
     }
 
     object Bytes : ProgressUnit() {
-        override fun formatAmount(value: Long): String {
+        override fun formatAmount(value: Number): String {
             var newValue = value.toDouble()
             var numDivides = 0
             while (newValue > 1000) {
@@ -47,43 +47,43 @@ sealed class ProgressUnit {
     }
 
     class Custom(
-        private val amount: (unit: Long) -> String,
-        private val speed: (unit: Double) -> String
+        private val amount: (unit: Number) -> String,
+        private val speed: (unit: Number) -> String
     ) : ProgressUnit() {
-        override fun formatAmount(value: Long): String = amount(value)
-        override fun formatSpeed(value: Double): String = speed(value)
+        override fun formatAmount(value: Number): String = amount(value)
+        override fun formatSpeed(value: Number): String = speed(value)
     }
 }
 
 interface IProgressSource {
 
-    val preText: Any?
-    val postText: Any?
-
     val activeSince: ITimeEx
     val activeFor: IDurationEx get() = TimeEx() - activeSince
     val finishedIn: IDurationEx get() = (remaining / unitsPerSecond).toDuration(TimeUnit.SECOND)
+
     val lastAction: ITimeEx
     val lastActionBefore: IDurationEx get() = TimeEx() - lastAction
 
     val doneObservable: IObservable<Long>
     var done: Long
-    val doneFormatted: String get() = unit.formatAmount(done)
+
     val totalObservable: IObservable<Long>
     var total: Long
-    val totalFormatted: String get() = unit.formatAmount(total)
+
     val donePercent: Double get() = done.toDouble() / total
     val remaining: Long get() = total - done
-    val remainingFormatted: String get() = unit.formatAmount(remaining)
+
+    val unit: ProgressUnit
     val unitsPerSecond: Double get() = done / activeFor.seconds.toDouble()
     val unitsPerSecondFormatted: String get() = unit.formatSpeed(unitsPerSecond)
-    val unit: ProgressUnit
+
+    val doneFormatted: String get() = unit.formatAmount(done)
+    val totalFormatted: String get() = unit.formatAmount(total)
+    val remainingFormatted: String get() = unit.formatAmount(remaining)
 }
 
 class ProgressSource(
     scope: CoroutineScope,
-    override var preText: Any? = null,
-    override var postText: Any? = null,
     override val activeSince: ITimeEx = TimeEx(),
     done: Long = 0,
     total: Long = -1,

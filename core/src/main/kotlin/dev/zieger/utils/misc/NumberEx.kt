@@ -187,3 +187,9 @@ fun <T : Number> Iterable<T>.derivation(grade: Int = 1): List<NumberEx> {
 }
 
 fun <T : NumberEx> Iterable<T>.median() = if (iterator().hasNext()) (max()!! - min()!!) / 2.0 else 0.0.ex
+
+val Number.pretty: String get() = when {
+    toDouble() in -9.99..9.99 -> "%.2f"
+    toDouble() in -99.9..99.9 -> "%.1f"
+    else -> "%,d"
+}

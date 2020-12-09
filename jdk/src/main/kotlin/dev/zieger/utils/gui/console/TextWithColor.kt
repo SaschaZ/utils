@@ -7,8 +7,8 @@ import java.util.concurrent.atomic.AtomicLong
 
 data class TextWithColor(
     val text: MessageBuilder,
-    val color: MessageColor,
-    val background: MessageColor,
+    val color: MessageColor? = null,
+    val background: MessageColor? = null,
     val newLine: Boolean = false,
     var visible: Boolean = true,
     var active: Boolean = true
@@ -23,45 +23,49 @@ data class TextWithColor(
 
     constructor(
         text: MessageBuilder,
-        color: TextColor,
-        background: TextColor,
+        color: TextColor? = null,
+        background: TextColor? = null,
         newLine: Boolean = false
     ) : this(text, { color }, { background }, newLine)
 
     val id: MessageId = newId
 }
 
+typealias TWC = TextWithColor
+
 typealias MessageId = Long
 typealias MessageBuilder = MessageScope.() -> Any
-typealias MessageColor = MessageColorScope.(idx: Int) -> TextColor
+typealias MessageColor = MessageColorScope.(idx: Int) -> TextColor?
 
 data class MessageColorScope(
     val message: String,
     val character: Char
 )
 
-operator fun TextColor.invoke(bg: TextColor = BLACK, msg: MessageBuilder) = TextWithColor(msg, this, bg)
-operator fun TextColor.invoke(msg: Any, bg: TextColor = BLACK) = TextWithColor({ msg }, this, bg)
+operator fun MessageBuilder.times(color: MessageColor): TextWithColor = TWC(this, color)
+operator fun MessageBuilder.times(color: TextColor): TextWithColor = TWC(this, { color })
+operator fun String.times(color: MessageColor): TextWithColor = TWC({ this }, color)
+operator fun String.times(color: TextColor): TextWithColor = TWC({ this }, { color })
 
-operator fun TextWithColor.times(text: TextWithColor): List<TextWithColor> = listOf(this, text)
-operator fun TextWithColor.times(text: String): List<TextWithColor> = listOf(this, WHITE(text))
-operator fun TextWithColor.times(text: List<TextWithColor>): List<TextWithColor> =
+operator fun TextWithColor.div(background: MessageColor): TextWithColor = copy(background = background)
+operator fun TextWithColor.div(background: TextColor): TextWithColor = copy(background = { background })
+operator fun MessageBuilder.div(background: MessageColor): TextWithColor = TWC(this, background = background)
+operator fun MessageBuilder.div(background: TextColor): TextWithColor = TWC(this, background = { background })
+operator fun String.div(background: MessageColor): TextWithColor = TWC({ this }, background = background)
+operator fun String.div(background: TextColor): TextWithColor = TWC({ this }, background = { background })
+
+operator fun String.unaryPlus(): TextWithColor = TWC({ this })
+
+operator fun TextWithColor.plus(text: TextWithColor): List<TextWithColor> = listOf(this, text)
+operator fun TextWithColor.plus(text: String): List<TextWithColor> = listOf(this, TWC({ text }))
+operator fun TextWithColor.plus(text: List<TextWithColor>): List<TextWithColor> =
     listOf(this, *text.toTypedArray())
 
-operator fun String.times(text: TextWithColor): List<TextWithColor> = listOf(WHITE(this), text)
-operator fun String.times(text: String): List<TextWithColor> = listOf(
-    WHITE(this),
-    WHITE(text)
-)
-
-operator fun String.times(text: List<TextWithColor>): List<TextWithColor> =
-    listOf(WHITE(this), *text.toTypedArray())
-
-operator fun List<TextWithColor>.times(text: TextWithColor): List<TextWithColor> =
+operator fun List<TextWithColor>.plus(text: TextWithColor): List<TextWithColor> =
     listOf(*toTypedArray(), text)
 
-operator fun List<TextWithColor>.times(text: String): List<TextWithColor> =
-    listOf(*toTypedArray(), WHITE(text))
+operator fun List<TextWithColor>.plus(text: String): List<TextWithColor> =
+    listOf(*toTypedArray(), +text)
 
-operator fun List<TextWithColor>.times(text: List<TextWithColor>): List<TextWithColor> =
+operator fun List<TextWithColor>.plus(text: List<TextWithColor>): List<TextWithColor> =
     listOf(*toTypedArray(), *text.toTypedArray())
