@@ -22,8 +22,6 @@ val DependencyHandlerScope.kotlin
     get() = "implementation"("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${Versions.kotlin}")
 val DependencyHandlerScope.kotlinReflect
     get() = "implementation"("org.jetbrains.kotlin:kotlin-reflect:${Versions.kotlin}")
-val DependencyHandlerScope.kotlinTest
-    get() = "kapt"("org.jetbrains.kotlin:kotlin-test:${Versions.kotlin}")
 
 val DependencyHandlerScope.coroutinesCore
     get() = "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")

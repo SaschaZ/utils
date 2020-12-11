@@ -33,6 +33,48 @@ import java.lang.Integer.min
 import java.util.*
 import kotlin.random.Random
 
+fun main() = runBlocking {
+    LanternaConsole().scope {
+        outnl("FooBooFo°\b\n°\boBooFooBooFoFoFooBFooFFoFooBoooBooFooBooooBooBoooFFooBooooBooFooBoooFoFooFooBooBooFFooBooooBoooBoooBoooBooFooBooFooBoo")
+        outnl("mooo\t\tbooo")
+        outnl(+"määäää" + "foo" * GREEN / YELLOW + TWC({ "boo" }, { RED }, { WHITE }) + "blub" * BLUE)
+
+        var startIdx = 0
+        var printed = 0
+        var job: Job? = null
+        outnl(TWC({
+            startIdx++
+            if (printed == 0) {
+                job = job ?: launchEx(interval = 1.seconds, delayed = 1.seconds) { printed++; refresh() }
+                " boofoo$printed "
+            } else "  DU HURENSOHN$printed  "
+        }))
+        repeat(500) {
+            out(
+                TWC(
+                    { "${it + startIdx}|" },
+                    { if (Random.nextBoolean()) YELLOW else GREEN },
+                    { BLACK }), autoRefresh = false
+            )
+        }
+        outnl()
+        refresh()
+
+        outnl("hey")
+        outnl("du")
+        outnl("krasser")
+        outnl(
+            TWC({ "typ :-*" }, { if (Random.nextBoolean()) YELLOW else GREEN }, { BLACK }),
+            offset = 2
+        )
+
+        ProgressSource(this@runBlocking, total = 1000).run {
+            outnl(PROGRESS(this, Bar(), RemoveWhen(1.0)))
+            launchEx(interval = 50.milliseconds) { done += 1 }
+        }
+    }
+}.asUnit()
+
 class LanternaConsole(
     private val screen: Screen = DefaultTerminalFactory().createScreen(),
     val position: TerminalPosition = TOP_LEFT_CORNER,
@@ -45,49 +87,6 @@ class LanternaConsole(
 ) {
 
     companion object : IScope {
-
-        @JvmStatic
-        fun main(args: Array<String>) = runBlocking {
-            LanternaConsole().scope {
-                outnl("FooBooFo°\b\n°\boBooFooBooFoFoFooBFooFFoFooBoooBooFooBooooBooBoooFFooBooooBooFooBoooFoFooFooBooBooFFooBooooBoooBoooBoooBooFooBooFooBoo")
-                outnl("mooo\t\tbooo")
-                outnl(+"määäää" + "foo" * GREEN / YELLOW + TWC({ "boo" }, { RED }, { WHITE }) + "blub" * BLUE)
-
-                var startIdx = 0
-                var printed = 0
-                var job: Job? = null
-                outnl(TWC({
-                    startIdx++
-                    if (printed == 0) {
-                        job = job ?: launchEx(interval = 1.seconds, delayed = 1.seconds) { printed++; refresh() }
-                        " boofoo$printed "
-                    } else "  DU HURENSOHN$printed  "
-                }))
-                repeat(500) {
-                    out(
-                        TextWithColor(
-                            { "${it + startIdx}|" },
-                            { if (Random.nextBoolean()) YELLOW else GREEN },
-                            { BLACK }), autoRefresh = false
-                    )
-                }
-                outnl()
-                refresh()
-
-                outnl("hey")
-                outnl("du")
-                outnl("krasser")
-                outnl(
-                    TextWithColor({ "typ :-*" }, { if (Random.nextBoolean()) YELLOW else GREEN }, { BLACK }),
-                    offset = 2
-                )
-
-                ProgressSource(this@runBlocking, total = 1000).run {
-                    outnl(PROGRESS(this, Bar(), RemoveWhen(1.0)))
-                    launchEx(interval = 50.milliseconds) { done += 1 }
-                }
-            }
-        }.asUnit()
 
         private const val BUFFER_SIZE = 4098
         private const val SCROLL_DELTA = 5

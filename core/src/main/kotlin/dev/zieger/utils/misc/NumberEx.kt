@@ -192,4 +192,4 @@ val Number.pretty: String get() = when {
     toDouble() in -9.99..9.99 -> "%.2f"
     toDouble() in -99.9..99.9 -> "%.1f"
     else -> "%,d"
-}
+}.format(this)

@@ -36,26 +36,20 @@ sealed class ProgressEntity {
     }
 
     class ItemsPerSecond(color: MessageColor? = null, background: MessageColor? = null) :
-        Text({ listOf(TWC({ unitsPerSecondFormatted }, color, background)) }) {
-        constructor(color: TextColor? = null, background: TextColor? = null) : this({ color }, { background })
-    }
+        Text({ listOf(TWC({ unitsPerSecondFormatted }, color, background)) })
 
     class Remaining(color: MessageColor? = null, background: MessageColor? = null) :
-        Text({ listOf(TWC({ remainingFormatted }, color, background)) }) {
-        constructor(color: TextColor? = null, background: TextColor? = null) : this({ color }, { background })
-    }
+        Text({ listOf(TWC({ remainingFormatted }, color, background)) })
 
     class DoneOfTotal(color: MessageColor? = null, background: MessageColor? = null) :
-        Text({ listOf(TWC({ "$doneFormatted/$totalFormatted" }, color, background)) }) {
-        constructor(color: TextColor? = null, background: TextColor? = null) : this({ color }, { background })
-    }
+        Text({ listOf(TWC({ "$doneFormatted/$totalFormatted" }, color, background)) })
 
     object NewLine : Text("\n")
     object Space : Text(" ")
 
     class RemoveWhen(private val removeWhen: IProgressSource.() -> Boolean) :
         Text({ listOf(TWC({ if (removeWhen()) remove(); "" })) }) {
-        constructor(removeWhen: Double) : this({ donePercent == removeWhen })
+        constructor(removeWhen: Double) : this({ donePercent >= removeWhen })
     }
 }
 

@@ -5,6 +5,7 @@ package dev.zieger.utils.gui.console
 import com.googlecode.lanterna.TextColor
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.gui.console.LanternaConsole.Companion.lastInstance
+import dev.zieger.utils.observable.IObservable
 
 open class ConsoleProgressBar(
     initial: Int = 0,

@@ -1,18 +1,12 @@
 package dev.zieger.utils.gui.console
 
-import com.googlecode.lanterna.TextColor
 import com.googlecode.lanterna.TextColor.ANSI.*
-import dev.zieger.utils.coroutines.CommandOutput
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.exec
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.delegates.OnChanged
-import dev.zieger.utils.gui.console.ConsoleProgressBar
-import dev.zieger.utils.gui.console.ConsoleProgressBar.Companion.PROGRESS_COLORS
-import dev.zieger.utils.gui.console.LanternaConsole
 import dev.zieger.utils.gui.console.LanternaConsole.Companion.lastInstance
 import dev.zieger.utils.gui.console.ProgressEntity.*
-import dev.zieger.utils.gui.console.TextWithColor
 import dev.zieger.utils.misc.nullWhen
 import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.duration.IDurationEx
@@ -107,20 +101,16 @@ fun main() = runBlocking {
 }
 
 @Suppress("FunctionName")
-fun CoroutineScope.SysInfo(): Array<TextWithColor> = lastInstance?.scope {
-    val top = TopParser(scope = DefaultCoroutineScope(), autoUpdateActive = true)
-    val cpuProg = ProgressSource(this@SysInfo, total = top.cachedInfo?.mem?.toLong() ?: 0)
-    val memProg = ProgressSource(this@SysInfo)
-    PROGRESS(cpuProg, Text {
-        done = top.cachedInfo?.cpu?.let { it.toLong() / 100 } ?: 0
+fun CoroutineScope.SysInfo(): List<TextWithColor> {
+    val top = TopParser(scope = this, autoUpdateActive = true)
+    val cpuProg = ProgressSource(this)
+    val memProg = ProgressSource(this)
+    return PROGRESS(cpuProg, Text {
+        done = top.cachedInfo?.cpu?.toLong() ?: 0
         listOf(+"CPU ")
-    }, Bar(size = 17)) + PROGRESS(memProg, Text(" - MEM "), Bar(size = 17))
-    arrayOf(WHITE {
-        cpuProg.progressPercent = top.cachedInfo?.cpu?.let { it / 100.0 } ?: 0.0
-        "CPU  "
-    }, cpuProg.textWithColor, WHITE(" - MEM "), memProg.textWithColor,
-        WHITE {
-            memProg.progressPercent = top.cachedInfo?.memPercent ?: 0.0
-            " ${DecimalFormat("0.0").format(top.cachedInfo?.res?.let { it / 1024.0 / 1024 } ?: 0.0)}MB\n"
-        })
-} ?: emptyArray()
+    }, Bar(size = 17)) + PROGRESS(memProg, Text {
+        done = top.cachedInfo?.mem?.toLong() ?: 0
+        total = top.cachedInfo?.mem?.toLong() ?: 0
+        listOf(+" - MEM ")
+    }, Bar(size = 17))
+}

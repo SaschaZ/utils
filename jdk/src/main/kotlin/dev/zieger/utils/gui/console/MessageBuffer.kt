@@ -3,7 +3,6 @@
 package dev.zieger.utils.gui.console
 
 import com.googlecode.lanterna.TextColor
-import com.googlecode.lanterna.TextColor.ANSI.BLACK
 import com.googlecode.lanterna.TextColor.ANSI.YELLOW
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.channel.forEach
@@ -66,8 +65,7 @@ class MessageBuffer(
     var lastScreenBuffer: ScreenBuffer? = null
         private set
 
-    fun update() =
-        antiSpamProxy { onUpdate(bufferMutex.withLock { buildScreenBuffer().also { lastScreenBuffer = it } }) }
+    suspend fun update() = onUpdate(bufferMutex.withLock { buildScreenBuffer().also { lastScreenBuffer = it } })
 
     fun addMessage(msg: Message) = messageChannel.offer(msg).let { { msg.message.forEach { it.visible = false } } }
 
@@ -170,7 +168,7 @@ data class Message(
 )
 
 data class MessageScope(
-    val refresh: () -> Unit,
+    val refresh: suspend () -> Unit,
     val remove: () -> Unit,
     val pause: () -> Unit,
     val resume: () -> Unit

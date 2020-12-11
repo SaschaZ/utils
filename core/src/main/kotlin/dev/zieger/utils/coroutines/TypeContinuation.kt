@@ -2,6 +2,7 @@ package dev.zieger.utils.coroutines
 
 import dev.zieger.utils.coroutines.TypeContinuation.Companion.ContinuationHolder.Exception
 import dev.zieger.utils.coroutines.TypeContinuation.Companion.ContinuationHolder.Value
+import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.time.duration.IDurationEx
 import kotlinx.coroutines.CoroutineScope
@@ -111,6 +112,6 @@ suspend inline fun <T : Any> suspendCoroutine(
     timeout: IDurationEx? = null,
     crossinline block: suspend TypeContinuation<T>.() -> Unit
 ): T = TypeContinuation<T>().run {
-    CoroutineScope(coroutineContext).launch { block() }
+    CoroutineScope(coroutineContext).launchEx(onCatch = { resumeWithException(it) }) { block() }
     suspend(wanted, timeout)
 }

@@ -64,7 +64,7 @@ interface IProgressSource {
     val lastAction: ITimeEx
     val lastActionBefore: IDurationEx get() = TimeEx() - lastAction
 
-    val doneObservable: IObservable<Long>
+    val doneObservable: Observable<Long>
     var done: Long
 
     val totalObservable: IObservable<Long>

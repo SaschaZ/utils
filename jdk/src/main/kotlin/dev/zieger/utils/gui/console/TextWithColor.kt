@@ -42,30 +42,29 @@ data class MessageColorScope(
     val character: Char
 )
 
-operator fun MessageBuilder.times(color: MessageColor): TextWithColor = TWC(this, color)
-operator fun MessageBuilder.times(color: TextColor): TextWithColor = TWC(this, { color })
-operator fun String.times(color: MessageColor): TextWithColor = TWC({ this }, color)
-operator fun String.times(color: TextColor): TextWithColor = TWC({ this }, { color })
+operator fun String.unaryPlus(): TextWithColor = TWC({ this@unaryPlus })
+
+operator fun TextWithColor.times(color: MessageColor): TextWithColor = copy(color = color)
+operator fun TextWithColor.times(color: TextColor): TextWithColor = copy(color = { color })
+operator fun MessageBuilder.times(color: MessageColor): TextWithColor = TWC(this@times, color)
+operator fun MessageBuilder.times(color: TextColor): TextWithColor = TWC(this@times, { color })
+operator fun String.times(color: MessageColor): TextWithColor = TWC({ this@times }, color)
+operator fun String.times(color: TextColor): TextWithColor = TWC({ this@times }, { color })
 
 operator fun TextWithColor.div(background: MessageColor): TextWithColor = copy(background = background)
 operator fun TextWithColor.div(background: TextColor): TextWithColor = copy(background = { background })
-operator fun MessageBuilder.div(background: MessageColor): TextWithColor = TWC(this, background = background)
-operator fun MessageBuilder.div(background: TextColor): TextWithColor = TWC(this, background = { background })
-operator fun String.div(background: MessageColor): TextWithColor = TWC({ this }, background = background)
-operator fun String.div(background: TextColor): TextWithColor = TWC({ this }, background = { background })
-
-operator fun String.unaryPlus(): TextWithColor = TWC({ this })
+operator fun MessageBuilder.div(background: MessageColor): TextWithColor = TWC(this@div, background = background)
+operator fun MessageBuilder.div(background: TextColor): TextWithColor = TWC(this@div, background = { background })
+operator fun String.div(background: MessageColor): TextWithColor = TWC({ this@div }, background = background)
+operator fun String.div(background: TextColor): TextWithColor = TWC({ this@div }, background = { background })
 
 operator fun TextWithColor.plus(text: TextWithColor): List<TextWithColor> = listOf(this, text)
 operator fun TextWithColor.plus(text: String): List<TextWithColor> = listOf(this, TWC({ text }))
-operator fun TextWithColor.plus(text: List<TextWithColor>): List<TextWithColor> =
-    listOf(this, *text.toTypedArray())
+operator fun TextWithColor.plus(text: List<TextWithColor>): List<TextWithColor> = listOf(this, *text.toTypedArray())
 
 operator fun List<TextWithColor>.plus(text: TextWithColor): List<TextWithColor> =
     listOf(*toTypedArray(), text)
-
 operator fun List<TextWithColor>.plus(text: String): List<TextWithColor> =
     listOf(*toTypedArray(), +text)
-
 operator fun List<TextWithColor>.plus(text: List<TextWithColor>): List<TextWithColor> =
     listOf(*toTypedArray(), *text.toTypedArray())
