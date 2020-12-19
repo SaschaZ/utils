@@ -54,7 +54,7 @@ class CatchTest {
             }
 
             caught isEqual numThrown % "caught"
-            finally isEqual numExecuted % "finally"
+            finally isEqual 1 % "finally"
             receivedResult isEqual (if (throwException || maxExecutions == 0) returnOnCatch else result) %
                     "result; throwException=$throwException; maxExecutions=$maxExecutions"
         }

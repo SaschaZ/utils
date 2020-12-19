@@ -13,9 +13,11 @@ import dev.zieger.utils.time.duration.minutes
 import dev.zieger.utils.time.duration.seconds
 import kotlinx.coroutines.Job
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
+@Disabled
 internal class LanternaConsoleTest {
 
     @Test
