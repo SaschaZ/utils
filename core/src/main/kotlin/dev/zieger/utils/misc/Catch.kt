@@ -41,7 +41,7 @@ inline fun <T : Any?> catch(
     printStackTrace: Boolean = PRINT_EXCEPTIONS,
     logStackTrace: Boolean = LOG_EXCEPTIONS,
     onCatch: CatchScope.(Throwable) -> Unit = {},
-    onFinally: () -> Unit = {},
+    onFinally: (successful: Boolean) -> Unit = {},
     block: (numExecution: Int) -> T
 ): T {
     var result: T
@@ -64,12 +64,14 @@ inline fun <T : Any?> catch(
             } else {
                 throw throwable
             }
-        } finally {
-            onFinally()
         }
-        if (succeed) return result
+        if (succeed) {
+            onFinally(true)
+            return result
+        }
     }
 
+    onFinally(false)
     return returnOnCatch
 }
 

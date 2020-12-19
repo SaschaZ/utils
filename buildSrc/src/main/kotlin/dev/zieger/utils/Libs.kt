@@ -100,9 +100,9 @@ val DependencyHandlerScope.junitJupiter
     get() = "testImplementation"("org.junit.jupiter:junit-jupiter:${Versions.junitJupiterEngine}")
 
 val DependencyHandlerScope.ktorClientGson
-    get() = "implementation"("io.ktor:ktor-client-gson:1.3.2")
+    get() = "implementation"("io.ktor:ktor-client-gson:1.4.3")
 val DependencyHandlerScope.ktorServerGson
-    get() = "implementation"("io.ktor:ktor-jackson:1.3.2")
+    get() = "implementation"("io.ktor:ktor-jackson:1.4.3")
 
 val DependencyHandlerScope.koTestRunner
     get() = "testImplementation"("io.kotest:kotest-runner-junit5:${Versions.koTest}")

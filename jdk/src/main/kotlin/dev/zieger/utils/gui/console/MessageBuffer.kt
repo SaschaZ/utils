@@ -10,7 +10,10 @@ import dev.zieger.utils.gui.console.ScreenBuffer.Companion.buffer
 import dev.zieger.utils.gui.console.ScreenLine.Companion.line
 import dev.zieger.utils.gui.console.ScreenLineGroup.Companion.group
 import dev.zieger.utils.misc.AntiSpamProxy
+import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.nullWhen
+import dev.zieger.utils.misc.runEach
+import dev.zieger.utils.time.base.times
 import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.milliseconds
 import kotlinx.coroutines.CoroutineScope
@@ -18,9 +21,10 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.*
+import java.util.concurrent.atomic.AtomicLong
 
 class MessageBuffer(
-    scope: CoroutineScope,
+    private val scope: CoroutineScope,
     private val columns: () -> Int,
     private val size: Int = BUFFER_SIZE,
     spamDuration: IDurationEx = SPAM_DURATION,
@@ -30,13 +34,23 @@ class MessageBuffer(
     companion object {
 
         private const val BUFFER_SIZE = 4098
-        private val SPAM_DURATION = 100.milliseconds
+        internal val SPAM_DURATION = 250.milliseconds
+
+        internal data class Entity(val text: List<TextWithColor>) {
+
+            companion object {
+                private val lastId = AtomicLong(0)
+                val newId get() = lastId.getAndIncrement()
+            }
+
+            val id: Long = newId
+        }
     }
 
-    private var buffer = ArrayList<List<TextWithColor>>(size)
+    private val buffer = ArrayList<Entity>(size)
     private val bufferMutex = Mutex()
     private val messageChannel = Channel<Message>(Channel.UNLIMITED)
-    private val antiSpamProxy = AntiSpamProxy(spamDuration, scope)
+    private val antiSpamProxy = AntiSpamProxy(spamDuration * 0.95, scope)
     private val lastMessageBuffer = HashMap<MessageId, String>()
 
     init {
@@ -44,10 +58,15 @@ class MessageBuffer(
             messageChannel.forEach { (text, autoRefresh, newLine, offset) ->
                 bufferMutex.withLock {
                     var doUpdate = false
+
                     val value = (buffer.lastOrNull()
-                        ?.nullWhen { n -> offset > 0 || newLine || n.last().newLine }
-                        ?.let { l -> doUpdate = true; l + text.toList() } ?: text.toList())
-                        .mapIndexed { idx, t -> if (newLine && idx == text.lastIndex) t.copy(newLine = true) else t }
+                        ?.nullWhen { (text) -> offset > 0 || newLine || text.last().newLine }
+                        ?.let { doUpdate = true; it.copy(text = it.text + text.toList()) }
+                        ?: Entity(text.toList())).let {
+                        it.copy(text = it.text.mapIndexed { idx, t ->
+                            if (newLine && idx == text.lastIndex) t.copy(newLine = true) else t
+                        })
+                    }
 
                     when {
                         offset > 0 -> buffer.add(buffer.lastIndex - offset, value)
@@ -56,7 +75,7 @@ class MessageBuffer(
                     }
 
                     while (buffer.size >= size) buffer.removeAt(0)
-                    if (autoRefresh) update()
+                    if (autoRefresh) this@MessageBuffer.scope.launchEx { update() }
                 }
             }
         }
@@ -65,17 +84,23 @@ class MessageBuffer(
     var lastScreenBuffer: ScreenBuffer? = null
         private set
 
-    suspend fun update() = onUpdate(bufferMutex.withLock { buildScreenBuffer().also { lastScreenBuffer = it } })
+    suspend fun update() = antiSpamProxy { onUpdate(screenBuffer()) }
 
-    fun addMessage(msg: Message) = messageChannel.offer(msg).let { { msg.message.forEach { it.visible = false } } }
+    fun addMessage(msg: Message): () -> Unit =
+        messageChannel.offer(msg).let { { msg.message.runEach { visible = false } } }
 
-    private fun buildScreenBuffer(): ScreenBuffer = buffer.map { line ->
-        var idx = 0
-        var nlCnt = 0
-        val columns = columns()
-        line.map {
-            val scope =
-                MessageScope({ update() }, { it.visible = false }, { it.active = false }, { it.active = true })
+    private fun Long.remove() = this@MessageBuffer.scope.launchEx {
+        bufferMutex.withLock {
+            buffer.removeAll { e -> this@remove == e.id }
+        }
+    }.asUnit()
+
+    suspend fun screenBuffer(): ScreenBuffer = bufferMutex.withLock {
+        fun Entity.line() = text.map {
+            val scope = MessageScope({ update() }, {
+                text.runEach { visible = false }
+                id.remove()
+            }, { text.runEach { active = false } }, { text.runEach { active = true } })
             val wasActive = it.active
             val message = it.text(scope).toString()
             it to when {
@@ -84,25 +109,33 @@ class MessageBuffer(
                 else -> lastMessageBuffer[it.id] ?: ""
             }
         }.filter { it.first.visible }
-            .flatMap { (col, c) ->
-                c.mapIndexed { idx, m ->
-                    MessageColorScope(c, m).run {
-                        ScreenChar(m, col.color?.invoke(this, idx), col.background?.invoke(this, idx))
+            .flatMap { (text, str) ->
+                str.mapIndexed { idx, character ->
+                    MessageColorScope(str, character, idx).let { s ->
+                        ScreenChar(character, text.color?.invoke(s), text.background?.invoke(s))
                     }
                 }
             }.line
-            .replace('\t') { _, tabIdx -> (0..tabIdx % 4).joinToString("") { " " } }
-            .remove('\b', 1)
-            .groupBy { sc ->
-                if (sc?.character == '\n') {
-                    nlCnt++
-                    idx = 0
-                }
-                if (columns > 3) nlCnt + idx++ / (columns - 3) else 0
-            }.values.toList()
-            .mapIndexed { i, it -> (if (i == 0) ">: " else "   ").map { c -> ScreenChar(c, YELLOW) } + it }
-            .map { it.filterNot { it1 -> it1?.character?.isISOControl() == true }.line }.group
-    }.buffer
+
+        fun ScreenLine.group(columns: Int): ScreenLineGroup {
+            var idx = 0
+            var nlCnt = 0
+
+            return replace('\t') { _, tabIdx -> (0..tabIdx % 4).joinToString("") { " " } }
+                .remove('\b', 1)
+                .groupBy { sc ->
+                    if (sc?.character == '\n') {
+                        nlCnt++
+                        idx = 0
+                    }
+                    if (columns > 3) nlCnt + idx++ / (columns - 3) else 0
+                }.values.toList()
+                .mapIndexed { i, it -> (if (i == 0) ">: " else "   ").map { c -> ScreenChar(c, YELLOW) } + it }
+                .map { it.filterNot { it1 -> it1?.character?.isISOControl() == true }.line }.group
+        }
+
+        buffer.map { it.line().group(columns()) }.buffer.also { lastScreenBuffer = it }
+    }
 
     private fun ScreenLine.remove(
         from: Char,
@@ -159,17 +192,3 @@ class ScreenBuffer(buffer: List<ScreenLineGroup>) : List<ScreenLineGroup> by buf
         val List<ScreenLineGroup>.buffer: ScreenBuffer get() = ScreenBuffer(this)
     }
 }
-
-data class Message(
-    val message: List<TextWithColor>,
-    val autoRefresh: Boolean,
-    val newLine: Boolean,
-    val offset: Int
-)
-
-data class MessageScope(
-    val refresh: suspend () -> Unit,
-    val remove: () -> Unit,
-    val pause: () -> Unit,
-    val resume: () -> Unit
-)

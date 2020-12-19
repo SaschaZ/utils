@@ -44,7 +44,8 @@ interface INumber {
     fun abs(): INumber
 }
 
-open class NumberEx(private val value: Number) : Number(), INumber, Comparable<NumberEx> {
+open class
+NumberEx(private val value: Number) : Number(), INumber, Comparable<NumberEx> {
 
     constructor(value: Double) : this(value as Number)
     constructor(value: Float) : this(value as Number)
@@ -186,10 +187,12 @@ fun <T : Number> Iterable<T>.derivation(grade: Int = 1): List<NumberEx> {
     return result!!
 }
 
-fun <T : NumberEx> Iterable<T>.median() = if (iterator().hasNext()) (max()!! - min()!!) / 2.0 else 0.0.ex
+fun <T : NumberEx> Iterable<T>.median() = if (iterator().hasNext()) (maxOrNull()!! - minOrNull()!!) / 2.0 else 0.0.ex
 
 val Number.pretty: String get() = when {
-    toDouble() in -9.99..9.99 -> "%.2f"
-    toDouble() in -99.9..99.9 -> "%.1f"
-    else -> "%,d"
-}.format(this)
+    toDouble() in -0.09..0.09 -> "%e".format(toDouble())
+    toDouble() in -0.99..0.99 -> "%.3f".format(toDouble())
+    toDouble() in -9.99..9.99 -> "%.2f".format(toDouble())
+    toDouble() in -99.9..99.9 -> "%.1f".format(toDouble())
+    else -> "%,d".format(toLong())
+}

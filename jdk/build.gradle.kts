@@ -10,6 +10,7 @@ plugins {
 
 configModule("jdk", JVM_LIB) {
     core
+    coreTesting
     mordant
     progressbar
     coroutinesSwing

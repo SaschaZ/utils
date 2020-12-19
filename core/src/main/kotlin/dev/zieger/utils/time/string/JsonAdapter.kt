@@ -4,10 +4,10 @@ import com.squareup.moshi.FromJson
 import com.squareup.moshi.ToJson
 import dev.zieger.utils.json.JsonAdapter
 import dev.zieger.utils.misc.nullWhen
-import dev.zieger.utils.time.duration.DurationEx
-import dev.zieger.utils.time.TimeEx
-import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.ITimeEx
+import dev.zieger.utils.time.TimeEx
+import dev.zieger.utils.time.duration.DurationEx
+import dev.zieger.utils.time.duration.IDurationEx
 import java.util.*
 
 class TimeExJsonAdapter : JsonAdapter<ITimeEx>() {
@@ -59,10 +59,20 @@ class ClosedTimeRangeJsonAdapter : JsonAdapter<ClosedRange<ITimeEx>>() {
                 TimeZone.getTimeZone(l[1])
             )
         }..it[1].split("|").let { l ->
-                    TimeEx(
-                        l[0].toLong(),
-                        TimeZone.getTimeZone(l[1])
-                    )
-                }
+            TimeEx(
+                l[0].toLong(),
+                TimeZone.getTimeZone(l[1])
+            )
+        }
     }
+}
+
+class ClosedDoubleRangeJsonAdapter : JsonAdapter<ClosedRange<Double>>() {
+
+    @ToJson
+    override fun toJson(value: ClosedRange<Double>): String = "${value.start}..${value.endInclusive}"
+
+    @FromJson
+    override fun fromJson(json: String): ClosedRange<Double> =
+        json.split("..").run { get(0).toDouble()..get(1).toDouble() }
 }

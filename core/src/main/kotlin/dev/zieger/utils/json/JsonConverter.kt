@@ -5,10 +5,7 @@ package dev.zieger.utils.json
 import com.squareup.moshi.*
 import com.squareup.moshi.JsonAdapter
 import dev.zieger.utils.misc.catch
-import dev.zieger.utils.time.string.ClosedTimeRangeJsonAdapter
-import dev.zieger.utils.time.string.DurationExJsonAdapter
-import dev.zieger.utils.time.string.TimeExJsonAdapter
-import dev.zieger.utils.time.string.TimeZoneAdapter
+import dev.zieger.utils.time.string.*
 import okio.BufferedSink
 import okio.BufferedSource
 import java.lang.reflect.Type
@@ -36,6 +33,7 @@ open class JsonConverter(vararg adapter: Any) {
         .add(TimeZoneAdapter())
         .add(DurationExJsonAdapter())
         .add(ClosedTimeRangeJsonAdapter())
+        .add(ClosedDoubleRangeJsonAdapter())
         .build()!!
 
     fun Any.toJson(

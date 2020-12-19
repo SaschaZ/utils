@@ -1,15 +1,15 @@
 package dev.zieger.utils.misc
 
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.coroutines.builder.withContextEx
-import dev.zieger.utils.time.TimeEx
-import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.ITimeEx
+import dev.zieger.utils.time.TimeEx
 import dev.zieger.utils.time.base.minus
 import dev.zieger.utils.time.base.plus
+import dev.zieger.utils.time.duration.IDurationEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 interface ICodeProxy : (suspend () -> Unit) -> Unit {
 
@@ -32,7 +32,7 @@ class AntiSpamProxy(
     override fun execute(code: suspend () -> Unit) =
         scope.launchEx { coExecute { code() } }.asUnit()
 
-    override suspend fun coExecute(code: suspend () -> Unit) = withContextEx(Unit, mutex = mutex) {
+    override suspend fun coExecute(code: suspend () -> Unit) = mutex.withLock {
         job?.cancel()
         val current = TimeEx()
         val before = lastExecuteTime

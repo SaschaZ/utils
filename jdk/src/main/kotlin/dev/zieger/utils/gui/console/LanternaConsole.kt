@@ -17,6 +17,7 @@ import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.executeNativeBlocking
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.delegates.OnChanged
+import dev.zieger.utils.gui.console.MessageBuffer.Companion.SPAM_DURATION
 import dev.zieger.utils.gui.console.ProgressEntity.*
 import dev.zieger.utils.gui.console.ScreenBuffer.Companion.buffer
 import dev.zieger.utils.gui.console.ScreenLine.Companion.line
@@ -26,60 +27,17 @@ import dev.zieger.utils.misc.nullWhen
 import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.milliseconds
-import dev.zieger.utils.time.duration.seconds
 import kotlinx.coroutines.*
 import java.lang.Integer.max
 import java.lang.Integer.min
 import java.util.*
-import kotlin.random.Random
 
-fun main() = runBlocking {
-    LanternaConsole().scope {
-        outnl("FooBooFo°\b\n°\boBooFooBooFoFoFooBFooFFoFooBoooBooFooBooooBooBoooFFooBooooBooFooBoooFoFooFooBooBooFFooBooooBoooBoooBoooBooFooBooFooBoo")
-        outnl("mooo\t\tbooo")
-        outnl(+"määäää" + "foo" * GREEN / YELLOW + TWC({ "boo" }, { RED }, { WHITE }) + "blub" * BLUE)
-
-        var startIdx = 0
-        var printed = 0
-        var job: Job? = null
-        outnl(TWC({
-            startIdx++
-            if (printed == 0) {
-                job = job ?: launchEx(interval = 1.seconds, delayed = 1.seconds) { printed++; refresh() }
-                " boofoo$printed "
-            } else "  DU HURENSOHN$printed  "
-        }))
-        repeat(500) {
-            out(
-                TWC(
-                    { "${it + startIdx}|" },
-                    { if (Random.nextBoolean()) YELLOW else GREEN },
-                    { BLACK }), autoRefresh = false
-            )
-        }
-        outnl()
-        refresh()
-
-        outnl("hey")
-        outnl("du")
-        outnl("krasser")
-        outnl(
-            TWC({ "typ :-*" }, { if (Random.nextBoolean()) YELLOW else GREEN }, { BLACK }),
-            offset = 2
-        )
-
-        ProgressSource(this@runBlocking, total = 1000).run {
-            outnl(PROGRESS(this, Bar(), RemoveWhen(1.0)))
-            launchEx(interval = 50.milliseconds) { done += 1 }
-        }
-    }
-}.asUnit()
 
 class LanternaConsole(
     private val screen: Screen = DefaultTerminalFactory().createScreen(),
     val position: TerminalPosition = TOP_LEFT_CORNER,
     val preferredSize: TerminalSize? = null,
-    val refreshInterval: IDurationEx? = 100.milliseconds,
+    val refreshInterval: IDurationEx? = SPAM_DURATION,
     isStandalone: Boolean = true,
     private val bufferSize: Int = BUFFER_SIZE,
     private val cs: CoroutineScope = DefaultCoroutineScope(),
@@ -133,7 +91,9 @@ class LanternaConsole(
         get() = preferredSize ?: graphics.size
     private lateinit var lastSize: TerminalSize
 
-    private val buffer = MessageBuffer(cs, { size.columns }) { onBufferChanged() }
+    private val buffer = MessageBuffer(cs, { size.columns }, spamDuration = refreshInterval ?: SPAM_DURATION) {
+        onBufferChanged()
+    }
 
     private var bufferLines = 0
     private var scrollIdx = 0
@@ -157,13 +117,17 @@ class LanternaConsole(
                     checkSize()
                 }
             }
-            false -> graphicJobs.runEach { cancel() }
+            false -> {
+                graphicJobs.runEach { cancel() }
+                graphicJobs.clear()
+            }
         }
     }
 
     init {
         if (isStandalone)
             draw(screen.newTextGraphics())
+        if (hideCommandInput) screen.cursorPosition = null
         lastInstance = this
     }
 
@@ -354,7 +318,7 @@ interface IScope {
     ): () -> Unit = out(*text.toTypedArray(), autoRefresh = autoRefresh, newLine = newLine, offset = offset)
 
     fun out(msg: String, autoRefresh: Boolean = true, newLine: Boolean = false, offset: Int = 0): () -> Unit =
-        out(TWC({ msg }), autoRefresh = autoRefresh, newLine = newLine, offset = offset)
+        out(text({ msg }), autoRefresh = autoRefresh, newLine = newLine, offset = offset)
 
 
     fun outnl(vararg text: TextWithColor, autoRefresh: Boolean = true, offset: Int = 0): () -> Unit =
@@ -364,7 +328,7 @@ interface IScope {
         out(text, autoRefresh = autoRefresh, newLine = true, offset = offset)
 
     fun outnl(msg: String = "", autoRefresh: Boolean = true, offset: Int = 0): () -> Unit =
-        outnl(TWC({ msg }), autoRefresh = autoRefresh, offset = offset)
+        outnl(text({ msg }), autoRefresh = autoRefresh, offset = offset)
 
     fun refresh()
     fun release()

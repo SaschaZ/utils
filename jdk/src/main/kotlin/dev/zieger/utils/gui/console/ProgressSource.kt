@@ -1,7 +1,6 @@
 package dev.zieger.utils.gui.console
 
 import dev.zieger.utils.gui.console.ProgressUnit.Items
-import dev.zieger.utils.misc.format
 import dev.zieger.utils.misc.pretty
 import dev.zieger.utils.observable.IObservable
 import dev.zieger.utils.observable.Observable
@@ -17,7 +16,11 @@ sealed class ProgressUnit {
 
     abstract fun formatAmount(value: Number): String
 
-    open fun formatSpeed(value: Number): String = "${formatAmount(value)}/s"
+    open fun formatSpeed(value: Number): String = when {
+        value.toDouble() == 0.0 -> ""
+        value.toDouble() < 1.0 -> "1/${(1 / value.toDouble()).toInt().toDuration(TimeUnit.SECOND)}"
+        else -> "${formatAmount(value)}/s"
+    }
 
     data class Items(val name: String? = null) : ProgressUnit() {
         override fun formatAmount(value: Number): String =
@@ -28,11 +31,11 @@ sealed class ProgressUnit {
         override fun formatAmount(value: Number): String {
             var newValue = value.toDouble()
             var numDivides = 0
-            while (newValue > 1000) {
+            do {
                 newValue /= 1000
                 numDivides++
-            }
-            return "${newValue.format(3)}${
+            } while (newValue > 1000)
+            return "${newValue.pretty}${
                 when (numDivides) {
                     0 -> "B"
                     1 -> "KB"
@@ -64,6 +67,8 @@ interface IProgressSource {
     val lastAction: ITimeEx
     val lastActionBefore: IDurationEx get() = TimeEx() - lastAction
 
+    val initial: Long
+
     val doneObservable: Observable<Long>
     var done: Long
 
@@ -74,7 +79,7 @@ interface IProgressSource {
     val remaining: Long get() = total - done
 
     val unit: ProgressUnit
-    val unitsPerSecond: Double get() = done / activeFor.seconds.toDouble()
+    val unitsPerSecond: Double get() = (done - initial) / activeFor.seconds.toDouble()
     val unitsPerSecondFormatted: String get() = unit.formatSpeed(unitsPerSecond)
 
     val doneFormatted: String get() = unit.formatAmount(done)
@@ -85,14 +90,14 @@ interface IProgressSource {
 class ProgressSource(
     scope: CoroutineScope,
     override val activeSince: ITimeEx = TimeEx(),
-    done: Long = 0,
+    override val initial: Long = 0,
     total: Long = -1,
     override var unit: ProgressUnit = Items()
 ) : IProgressSource {
 
     override var lastAction: ITimeEx = TimeEx(0L)
 
-    override val doneObservable = Observable(done, scope, safeSet = true) {
+    override val doneObservable = Observable(initial, scope, safeSet = true) {
         lastAction = TimeEx()
     }
     override var done: Long by doneObservable
