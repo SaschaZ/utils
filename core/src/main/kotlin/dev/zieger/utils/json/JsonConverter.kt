@@ -6,8 +6,11 @@ import com.squareup.moshi.*
 import com.squareup.moshi.JsonAdapter
 import dev.zieger.utils.misc.catch
 import dev.zieger.utils.time.string.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
 import okio.BufferedSink
 import okio.BufferedSource
+import java.io.OutputStream
 import java.lang.reflect.Type
 import kotlin.reflect.KClass
 
@@ -80,6 +83,18 @@ open class JsonConverter(vararg adapter: Any) {
         valueType: KClass<*> = V::class,
         printException: Boolean = true
     ): String? = toJsonReified(Map::class, keyType.java, valueType.java, printException = printException)
+
+    suspend inline fun <reified T> Flow<T>.toJson(
+        output: OutputStream,
+        crossinline writer: suspend com.google.gson.stream.JsonWriter.(T) -> Unit
+    ) {
+        com.google.gson.stream.JsonWriter(output.bufferedWriter()).run {
+            isLenient = true
+            beginArray()
+            collect { writer(it) }
+            endArray()
+        }
+    }
 
     inline fun <reified T : Any> String.fromJson(
         vararg genericTypes: Type,

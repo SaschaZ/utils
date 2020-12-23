@@ -89,11 +89,11 @@ open class ConsoleProgressBar(
         })
 }
 
-interface IProgressColorProvider : (Double) -> TextColor {
+interface IProgressColorProvider : (Double) -> TextColor? {
 
-    override fun invoke(progress: Double): TextColor = colorFor(progress)
+    override fun invoke(progress: Double): TextColor? = colorFor(progress)
 
-    fun colorFor(progress: Double): TextColor
+    fun colorFor(progress: Double): TextColor?
 }
 
 class ColorGradient(vararg colors: Int) :
@@ -117,8 +117,8 @@ class ColorGradient(vararg colors: Int) :
         return TextColor.RGB(r, g, b)
     }
 
-    override fun colorFor(progress: Double): TextColor {
-        if (colorList.isEmpty()) return TextColor.RGB(0, 0, 0)
+    override fun colorFor(progress: Double): TextColor? {
+        if (colorList.isEmpty()) return null
 
         val colorIndex = (progress / singleColorRange).toInt().coerceIn(0..colorList.lastIndex)
         val colorProgress = progress % singleColorRange * (colorList.size - 1)

@@ -49,12 +49,19 @@ data class Message(
     val offset: Int
 )
 
-data class MessageScope(
-    val refresh: suspend () -> Unit,
-    val remove: () -> Unit,
-    val pause: () -> Unit,
+interface MessageScope {
+    val refresh: suspend () -> Unit
+    val remove: () -> Unit
+    val pause: () -> Unit
     val resume: () -> Unit
-)
+}
+
+data class MessageScopeImpl(
+    override val refresh: suspend () -> Unit,
+    override val remove: () -> Unit,
+    override val pause: () -> Unit,
+    override val resume: () -> Unit
+) : MessageScope
 
 data class MessageColorScope(
     val message: String,

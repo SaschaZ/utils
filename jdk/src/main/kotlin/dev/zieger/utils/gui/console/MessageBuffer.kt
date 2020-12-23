@@ -97,7 +97,7 @@ class MessageBuffer(
 
     suspend fun screenBuffer(): ScreenBuffer = bufferMutex.withLock {
         fun Entity.line() = text.map {
-            val scope = MessageScope({ update() }, {
+            val scope = MessageScopeImpl({ update() }, {
                 text.runEach { visible = false }
                 id.remove()
             }, { text.runEach { active = false } }, { text.runEach { active = true } })
