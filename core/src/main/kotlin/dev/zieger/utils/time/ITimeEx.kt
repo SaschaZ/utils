@@ -22,11 +22,22 @@ interface ITimeEx : IDurationEx, ITimeZoneHolder, StringConverter {
         get() = getCalendarField(Calendar.YEAR)
     val month: Int
         get() = getCalendarField(Calendar.MONTH)
+    val weekOfYear: Int
+        get() = getCalendarField(Calendar.WEEK_OF_YEAR)
+    val dayOfYear: Int
+        get() = getCalendarField(Calendar.DAY_OF_YEAR)
     val dayOfMonth: Int
         get() = getCalendarField(Calendar.DAY_OF_MONTH)
     val dayOfWeek: Int
         get() = getCalendarField(Calendar.DAY_OF_WEEK)
     val hourOfDay: Int
         get() = getCalendarField(Calendar.HOUR_OF_DAY)
+
+    val daysInMonth: Int
+        get() = when (month + 1) {
+            2 -> 28
+            1, 3, 5, 7, 8, 10, 12 -> 31
+            else -> 30
+        }
 }
 

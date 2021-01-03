@@ -6,9 +6,9 @@ import dev.zieger.utils.log2.LogPipelineContext
 
 data class LogMessageFilter(val regex: Regex) : LogFilter.LogPreFilter() {
 
-    override fun LogPipelineContext.call(next: IFilter<LogPipelineContext>) {
-        if (regex.matches(message.toString())) next(this)
-        else cancel()
+    override fun call(context: LogPipelineContext, next: IFilter<LogPipelineContext>) {
+        if (regex.matches(context.message.toString())) next(context)
+        else context.cancel()
     }
 
     override fun copy() = LogMessageFilter(regex)

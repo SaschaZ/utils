@@ -49,7 +49,7 @@ class LogMessageBuilder(
         }
     }
 
-    override fun LogPipelineContext.call() {
-        message = LogMessageBuilderContext(this).build()
+    override fun call(context: LogPipelineContext) {
+        context.message = LogMessageBuilderContext(context).build()
     }
 }

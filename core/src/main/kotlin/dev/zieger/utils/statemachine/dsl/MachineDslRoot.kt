@@ -1,9 +1,9 @@
 package dev.zieger.utils.statemachine.dsl
 
-import dev.zieger.utils.statemachine.IMachineExMapper
+import dev.zieger.utils.statemachine.IMachineExProcesor
 
 interface MachineDslRoot {
 
-    val mapper: IMachineExMapper
+    val procesor: IMachineExProcesor
 }
 

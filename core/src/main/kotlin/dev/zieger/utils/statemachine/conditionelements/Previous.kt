@@ -8,36 +8,41 @@ import dev.zieger.utils.statemachine.OnStateChanged
 /**
  *
  */
-@Suppress("EmptyRange", "PropertyName")
+@Suppress("EmptyRange", "PrmxopertyName")
 val X: IntRange = 0..-1
 
-data class Previous(
-    val combo: Combo<Master>,
-    val range: IntRange
-) : Definition {
+@Suppress("DELEGATED_MEMBER_HIDES_SUPERTYPE_OVERRIDE")
+class EventPrevious(combo: EventCombo, range: IntRange) : Previous<AbsEventType>(combo, range),
+    AbsEventType by combo.master
 
-    override val hasEvent = combo.master is AbsEvent
-    override val hasState = combo.master is AbsState
-    override val hasStateGroup = combo.master is AbsStateGroup<*>
-    override val hasEventGroup = combo.master is AbsEventGroup<*>
+@Suppress("DELEGATED_MEMBER_HIDES_SUPERTYPE_OVERRIDE")
+class StatePrevious(combo: StateCombo, range: IntRange) : Previous<AbsStateType>(combo, range),
+    AbsStateType by combo.master
+
+open class Previous<out T : Master>(
+    val combo: Combo<T>,
+    private val range: IntRange
+) : Combo<T> by combo {
+
     override val hasPrevious = true
 
     suspend fun condition(matchScope: IMatchScope, logScope: ILogScope, block: suspend Matcher.() -> Boolean): Boolean =
         matchScope.buildScopes().any { Matcher(it, logScope).block() }
 
-    private fun IMatchScope.buildScopes(): List<IMatchScope> = when (range) {
-        X -> (0..previousChanges.size)
-        else -> if (range.last > previousChanges.size) (0..previousChanges.size) else range
+    private fun IMatchScope.buildScopes(): List<IMatchScope> = when {
+        range == X -> (0..previousChanges.size)
+        range.last > previousChanges.size -> (range.first..previousChanges.size)
+        else -> range
     }.map { copy(eventForIdx(it), stateForIdx(it), prevChangesForIdx(it)) }
 
     private fun IMatchScope.eventForIdx(idx: Int): EventCombo = when (idx) {
         0 -> eventCombo
-        else -> previousChanges[idx - 1].event
+        else -> previousChanges[idx].event
     }
 
     private fun IMatchScope.stateForIdx(idx: Int): StateCombo = when (idx) {
         0 -> stateCombo
-        else -> previousChanges[idx - 1].stateBefore
+        else -> previousChanges[idx].stateBefore
     }
 
     private fun IMatchScope.prevChangesForIdx(idx: Int): List<OnStateChanged> = when (idx) {

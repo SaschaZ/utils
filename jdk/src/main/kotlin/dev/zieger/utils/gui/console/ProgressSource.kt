@@ -34,7 +34,8 @@ interface IProgressSource {
     val remaining: Long get() = total - done
 
     val unit: ProgressUnit
-    val unitsPerSecond: Double get() = (done - initial) / activeFor.seconds.toDouble()
+    val unitsPerSecond: Double
+        get() = activeFor.seconds.let { if (it > 0) (done - initial) / it.toDouble() else (done - initial).toDouble() }
     val unitsPerSecondFormatted: String get() = unit.formatSpeed(unitsPerSecond)
 
     val doneFormatted: String get() = unit.formatAmount(done)
@@ -81,3 +82,5 @@ class ProgressSource(
     override val totalObservable = Observable(total, scope, safeSet = true)
     override var total: Long by totalObservable
 }
+
+suspend fun IObservable<Long>.increment() = changeValue { it + 1 }

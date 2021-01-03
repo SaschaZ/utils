@@ -181,10 +181,6 @@ open class JsonConverter(vararg adapter: Any) {
             adapter<Map<K, V>>(keyType.java, valueType.java, *annotations).fromJson(this)
         }
 
-    fun KClass<*>.with(vararg types: Type): Type =
-        if (types.isEmpty()) java
-        else Types.newParameterizedType(java, *types.toList().toTypedArray())
-
     inline fun <reified T : Any> adapter(vararg types: Type): JsonAdapter<T> =
         moshi.adapter(T::class.with(*types))
 }
@@ -205,4 +201,13 @@ object UtilsJsonConverter : JsonConverter() {
 }
 
 inline fun <T> json(crossinline block: UtilsJsonConverter.() -> T): T = UtilsJsonConverter.run { block() }
+
+fun KClass<*>.with(vararg types: KClass<*>, owner: KClass<*>? = null): Type =
+    with(*types.map { it.java }.toTypedArray(), owner = owner?.java)
+
+fun KClass<*>.with(vararg types: Type, owner: Type? = null): Type = when {
+    types.isEmpty() -> java
+    owner != null -> Types.newParameterizedTypeWithOwner(owner, java, *types.toList().toTypedArray())
+    else -> Types.newParameterizedType(java, *types.toList().toTypedArray())
+}
 

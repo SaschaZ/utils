@@ -11,7 +11,7 @@ import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.
 /**
  * Responsible to map the incoming [AbsEvent]s to their [AbsState]s defined by provided mappings.
  */
-interface IMachineExMapper : ILogScope {
+interface IMachineExProcesor : ILogScope {
 
     val conditions: MutableList<Condition>
     val bindings: MutableMap<Condition, IMachineEx>
@@ -31,21 +31,21 @@ interface IMachineExMapper : ILogScope {
 
     /**
      * Is called to determine the next state when a new event is processed.
-     * Also executes possible event and state actions.
      *
-     * @return new state
+     * 1. check matching bindings -> fire event to binding -> result is new state
+     * 2. otherwise check matching event conditions -> execute actions -> result can be one new state only
+     *
+     * @return new state or `null` if the state did not changed
      */
     suspend fun processEvent(
         event: EventCombo,
         state: StateCombo,
-        previousChanges: List<OnStateChanged>,
-        onNewEvent: (event: AbsEvent) -> Unit
+        previousChanges: List<OnStateChanged>
     ): StateCombo? = MatchScope(event, state, previousChanges, conditions, bindings).log.run {
         val boundMachine = matchingEventBinding()
         (if (boundMachine == null)
             matchingEventConditions()
                 .mapNotNull { it.action?.invoke(this) }.run {
-                    filterIsInstance<AbsEvent>().forEach { onNewEvent(it) }
                     filterIsInstance<AbsState>().run {
                         when (size) {
                             in 0..1 -> firstOrNull()
@@ -56,21 +56,25 @@ interface IMachineExMapper : ILogScope {
         else boundMachine.fire(event))?.combo?.logNewState(event)
     }
 
+    /**
+     * Is called when a new state was set.
+     * Will execute all actions of the matching state conditions.
+     *
+     * @return new event to fire or `null`
+     */
     suspend fun processState(
         event: EventCombo,
         state: StateCombo,
-        previousChanges: List<OnStateChanged>,
-        onNewEvent: (event: AbsEvent) -> Unit
-    ): StateCombo? = MatchScope(event, state, previousChanges, conditions, bindings).run {
+        previousChanges: List<OnStateChanged>
+    ): EventCombo? = MatchScope(event, state, previousChanges, conditions, bindings).run {
         matchingStateConditions().mapNotNull { it.action?.invoke(this) }.run {
-            filterIsInstance<AbsEvent>().forEach { onNewEvent(it) }
-            filterIsInstance<AbsState>().run {
+            filterIsInstance<AbsEvent>().run {
                 when (size) {
                     in 0..1 -> firstOrNull()?.combo
                     else -> throw IllegalStateException("More than one matching state condition setting a state for $this.")
                 }
             }
-        }?.logNewState(event)
+        }
     }
 
     private suspend fun IMatchScope.matchingEventBinding(): IMachineEx? =
@@ -85,23 +89,23 @@ interface IMachineExMapper : ILogScope {
     private suspend fun IMatchScope.match(
         condition: Condition,
         type: Condition.DefinitionType
-    ) = Matcher(this, this@IMachineExMapper).run {
-        (condition.type == type && condition.match()) logV {
+    ) = Matcher(this, this@IMachineExProcesor).run {
+        (condition.type == type && condition.match()) logD {
             filter = LogCondition { !event.noLogging }
-            "#R $it => ${type.name[0]} $condition <||> $event, $state"
+            "#R $it => ${type.name[0]} $condition <||> (E: $event | S: $state)"
         }
     }
 
     private val MatchScope.log: MatchScope
         get() = apply {
-            Log.i("New incoming event $eventCombo with state $stateCombo.", filter = LogCondition { !noLogging })
+            Log.i("NEW INCOMING EVENT $eventCombo with state $stateCombo.", filter = LogCondition { !noLogging })
         }
 
     private fun StateCombo.logNewState(event: AbsEvent): StateCombo =
-        apply { Log.i("Setting new state $this for event $event.", filter = LogCondition { !noLogging }) }
+        apply { Log.i("SETTING NEW STATE $this for event $event.", filter = LogCondition { !noLogging }) }
 }
 
-internal class MachineExMapper(logScope: ILogScope) : IMachineExMapper, ILogScope by logScope {
+internal class MachineExProcessor(logScope: ILogScope) : IMachineExProcesor, ILogScope by logScope {
 
     override val conditions: MutableList<Condition> = ArrayList()
     override val bindings: MutableMap<Condition, IMachineEx> = HashMap()

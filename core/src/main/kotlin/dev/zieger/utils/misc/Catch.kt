@@ -4,10 +4,13 @@ import dev.zieger.utils.UtilsSettings.ERROR_LOG_FILE
 import dev.zieger.utils.UtilsSettings.LOG_EXCEPTIONS
 import dev.zieger.utils.UtilsSettings.LOG_SCOPE
 import dev.zieger.utils.UtilsSettings.PRINT_EXCEPTIONS
+import dev.zieger.utils.log2.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.io.OutputStream
+import java.io.PrintStream
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.reflect.KClass
@@ -55,10 +58,19 @@ inline fun <T : Any?> catch(
                 && exclude.none { it.isInstance(throwable) }) {
                 succeed = false
                 CatchScope(retryIndex).onCatch(throwable)
-                if (printStackTrace) {
-                    System.err.println("${throwable.javaClass.simpleName}: ${throwable.message}")
-                    throwable.printStackTrace()
-                }
+                if (printStackTrace) throwable.printStackTrace(PrintStream(object : OutputStream() {
+                    private var buffer = ""
+
+                    override fun write(b: Int) {
+                        val char = b.toChar()
+                        buffer += char
+                    }
+
+                    override fun close() {
+                        super.close()
+                        Log.e(buffer)
+                    }
+                }))
                 if (logStackTrace) throwable.log()
                 returnOnCatch
             } else {

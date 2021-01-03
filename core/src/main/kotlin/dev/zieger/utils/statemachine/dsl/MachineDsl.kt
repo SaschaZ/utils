@@ -1,3 +1,3 @@
 package dev.zieger.utils.statemachine.dsl
 
-interface MachineDsl : MachineFunctionDsl, MachineOperatorDsl
+interface MachineDsl : MachineFunctionDsl, MachineOperatorDsl, ActionDsl

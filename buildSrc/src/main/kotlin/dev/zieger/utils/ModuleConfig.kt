@@ -38,9 +38,9 @@ private fun Project.configureDependencies(type: ModuleType, block: DependencyHan
         slf4jSimple
 
         junitJupiter
-//        koTestRunner
-//        koTestAssertions
-//        koTestProperty
+        koTestRunner
+        koTestAssertions
+        koTestProperty
 
         mockk
         koinTest

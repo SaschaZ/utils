@@ -22,6 +22,7 @@ configModule("core", JVM_LIB) {
     coreTesting
     ktorClientGson
     ktorServerGson
+    testImplementation(project(":jdk"))
 }
 
 tasks {

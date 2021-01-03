@@ -9,6 +9,6 @@ class LogCondition(val condition: ILogMessageContext.() -> Boolean) : LogFilter.
 
     override fun copy(): LogPreFilter = LogCondition(condition)
 
-    override fun LogPipelineContext.call(next: IFilter<LogPipelineContext>) =
-        if (condition()) next(this) else Unit
+    override fun call(context: LogPipelineContext, next: IFilter<LogPipelineContext>) =
+        if (condition(context)) next(context) else Unit
 }

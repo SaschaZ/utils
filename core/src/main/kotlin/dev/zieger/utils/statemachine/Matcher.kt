@@ -16,6 +16,7 @@ open class Matcher(
         is Condition -> (all.isEmpty() || all.all { it.match() })
                 && (any.isEmpty() || any.any { it.match() })
                 && (none.isEmpty() || none.none { it.match() })
+        is Previous<*> -> condition(matchScope, this@Matcher) { combo.match() }
         is Combo<*> -> master.match() && (ignoreSlave || when (master) {
             is AbsEvent,
             is AbsEventGroup<*> -> event.ignoreSlave || event.slave == null && slave == null || (event.slave to slave).match()
@@ -27,7 +28,6 @@ open class Matcher(
         is AbsState -> this === state || this === state.master
         is AbsEventGroup<*> -> groupType.isInstance(event) || groupType.isInstance(event.master)
         is AbsStateGroup<*> -> groupType.isInstance(state) || groupType.isInstance(state.master)
-        is Previous -> condition(matchScope, this@Matcher) { combo.match() }
         is External -> matchExternal(matchScope)
         is Pair<*, *> -> when (val s = second) {
             is Data -> when (val f = first) {
@@ -49,5 +49,5 @@ open class Matcher(
         Log.v("#${element::class.name} $this => $element <||> ${this@Matcher}")
     }
 
-    override fun toString(): String = "M($event<->$state)"
+    override fun toString(): String = "(E: $event | S: $state)"
 }

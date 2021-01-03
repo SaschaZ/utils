@@ -6,13 +6,13 @@ typealias ILogOutput = IFilter<LogPipelineContext>
 
 object SystemPrintOutput : ILogOutput {
 
-    override fun LogPipelineContext.call() = when (level) {
-        EXCEPTION -> System.err.println(message)
-        else -> println(message)
+    override fun call(context: LogPipelineContext) = when (context.level) {
+        EXCEPTION -> System.err.println(context.message)
+        else -> println(context.message)
     }
 }
 
 @Suppress("FunctionName")
 fun LogOutput(block: LogPipelineContext.() -> Unit) = object : ILogOutput {
-    override fun LogPipelineContext.call() = block()
+    override fun call(context: LogPipelineContext) = block(context)
 }

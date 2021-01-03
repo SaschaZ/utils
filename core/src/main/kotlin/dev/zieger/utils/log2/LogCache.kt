@@ -47,9 +47,9 @@ class LogCache(
         reset()
     }
 
-    override fun LogPipelineContext.call(next: IFilter<LogPipelineContext>) {
+    override fun call(context: LogPipelineContext, next: IFilter<LogPipelineContext>) = context.run {
         scope.launchEx(mutex = mutex) {
-            cache[level.ordinal].second.put(LogMessage(message.toString(), this@call))
+            cache[level.ordinal].second.put(LogMessage(message.toString(), context))
             listener(messages)
         }
         next(this)

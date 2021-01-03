@@ -3,12 +3,9 @@
 package dev.zieger.utils.statemachine.dsl
 
 import dev.zieger.utils.statemachine.IMachineEx
-import dev.zieger.utils.statemachine.IMachineExMapper
 import dev.zieger.utils.statemachine.conditionelements.*
 
-interface MachineFunctionDsl : IMachineEx {
-
-    val mapper: IMachineExMapper
+interface MachineFunctionDsl : MachineDslRoot {
 
     fun onEvent(vararg events: AbsEventType) = EventCondition(*events)
     fun onState(vararg states: AbsStateType) = StateCondition(*states)
@@ -22,15 +19,36 @@ interface MachineFunctionDsl : IMachineEx {
     val State.ignoreSlave get() = StateCombo(this, ignoreSlave = true)
     val EventGroup<*>.ignoreSlave get() = EventGroupCombo(this, ignoreSlave = true)
     val StateGroup<*>.ignoreSlave get() = StateGroupCombo(this, ignoreSlave = true)
+    val EventPrevious.foo get() = apply { combo.ignoreSlave = true }
+    val StatePrevious.foo get() = apply { combo.ignoreSlave = true }
 
-    fun EventCondition.withState(vararg states: AbsState) = apply { any.addAll(states) }
-    fun EventCondition.withoutState(vararg states: AbsState) = apply { none.addAll(states) }
+    fun EventCondition.withState(vararg states: AbsStateType) = apply {
+        states.forEach {
+            when (it) {
+                is Previous<*> -> all.add(it)
+                else -> any.add(it)
+            }
+        }
+    }
 
-    fun StateCondition.withEvent(vararg events: AbsEvent) = apply { any.addAll(events) }
-    fun StateCondition.withoutEvent(vararg events: AbsEvent) = apply { none.addAll(events) }
+    fun EventCondition.withoutState(vararg states: AbsStateType) = apply { none.addAll(states) }
 
-    fun Condition.withPrevious(vararg states: Previous) = apply { all.addAll(states) }
-    fun Condition.withoutPrevious(vararg states: Previous) = apply { none.addAll(states) }
+    fun StateCondition.withEvent(vararg events: AbsEventType) = apply {
+        events.forEach {
+            when (it) {
+                is Previous<*> -> all.add(it)
+                else -> any.add(it)
+            }
+        }
+    }
+
+    fun StateCondition.withoutEvent(vararg events: AbsEventType) = apply { none.addAll(events) }
+
+    /**
+     * Binds the [Condition] to the specified [IMachineEx].
+     * A bound [IMachineEx] will process all events as long as the condition matches.
+     */
+    infix fun Condition.bind(machine: IMachineEx) = procesor.addBinding(this, machine)
 }
 
 operator fun Event.invoke(slave: Slave) = EventCombo(this, slave)

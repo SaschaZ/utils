@@ -38,10 +38,9 @@ class StateCondition(
     ): StateCondition = StateCondition(start, items, action)
 }
 
-@Suppress("DataClassPrivateConstructor")
 open class Condition(
     val start: Combo<*>,
-    val items: List<DefinitionGroup> = INITIAL_ITEMS.apply { all.add(start) },
+    private val items: List<DefinitionGroup> = INITIAL_ITEMS.apply { all.add(start) },
     val action: (suspend IMatchScope.() -> Master?)? = null
 ) : ConditionElement {
 
