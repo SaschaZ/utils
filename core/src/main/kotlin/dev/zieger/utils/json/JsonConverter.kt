@@ -2,14 +2,17 @@
 
 package dev.zieger.utils.json
 
+import com.google.gson.stream.JsonReader
 import com.squareup.moshi.*
 import com.squareup.moshi.JsonAdapter
 import dev.zieger.utils.misc.catch
 import dev.zieger.utils.time.string.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 import okio.BufferedSink
 import okio.BufferedSource
+import java.io.File
 import java.io.OutputStream
 import java.lang.reflect.Type
 import kotlin.reflect.KClass
@@ -93,6 +96,7 @@ open class JsonConverter(vararg adapter: Any) {
             beginArray()
             collect { writer(it) }
             endArray()
+            close()
         }
     }
 
@@ -180,6 +184,19 @@ open class JsonConverter(vararg adapter: Any) {
         catch(null, onCatch = { if (printException) print("${it.CATCH_MESSAGE} from '$this' ") }) {
             adapter<Map<K, V>>(keyType.java, valueType.java, *annotations).fromJson(this)
         }
+
+    inline fun <reified T : Any> File.fromJson(
+        crossinline readItem: suspend JsonReader.() -> Unit
+    ): Flow<T> = flow {
+        JsonReader(bufferedReader()).run {
+            isLenient = true
+            beginArray()
+            while (hasNext()) readItem()
+            endArray()
+            close()
+        }
+    }
+
 
     inline fun <reified T : Any> adapter(vararg types: Type): JsonAdapter<T> =
         moshi.adapter(T::class.with(*types))
