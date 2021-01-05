@@ -6,7 +6,7 @@ import dev.zieger.utils.statemachine.Matcher
 import dev.zieger.utils.statemachine.OnStateChanged
 
 /**
- *
+ * Defines a range that will match against all previous state changes.
  */
 @Suppress("EmptyRange", "PrmxopertyName")
 val X: IntRange = 0..-1
@@ -19,10 +19,10 @@ class EventPrevious(combo: EventCombo, range: IntRange) : Previous<AbsEventType>
 class StatePrevious(combo: StateCombo, range: IntRange) : Previous<AbsStateType>(combo, range),
     AbsStateType by combo.master
 
-open class Previous<out T : Master>(
+sealed class Previous<out T : Master>(
     val combo: Combo<T>,
     private val range: IntRange
-) : Combo<T> by combo {
+) : Master {
 
     override val hasPrevious = true
 

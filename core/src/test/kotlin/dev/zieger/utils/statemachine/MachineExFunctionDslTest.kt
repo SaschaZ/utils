@@ -18,8 +18,8 @@ class MachineExFunctionDslTest : FunSpec({
             onEvent(FIRST).withState(INITIAL).set(A)
             onEvent(SECOND).withState(A).set(B(TestStateData(true)))
             onEvent(THIRD).withState(B(TestStateData)).set(C)
-            onEvent(FOURTH).withState(C, !B[1]).set(D)
-//            +FOURTH + C /*+ B(TestStateData)[1]*/ set D
+            onEvent(FOURTH).withState(C, B).set(D)
+//            +FOURTH + C + B(TestStateData)[1] set D
 
 //            onEvent(TestEvent.ignoreSlave).exec {
 //

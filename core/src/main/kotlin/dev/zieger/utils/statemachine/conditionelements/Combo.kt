@@ -3,40 +3,40 @@ package dev.zieger.utils.statemachine.conditionelements
 interface Combo<out M : Master> : Master {
     val master: M
     var slave: Slave?
-    var ignoreSlave: Boolean
+    var matchMasterOnly: Boolean
 }
 
 data class EventCombo(
     override val master: AbsEvent,
     override var slave: Slave? = null,
-    override var ignoreSlave: Boolean = false
+    override var matchMasterOnly: Boolean = false
 ) : Combo<AbsEvent>, AbsEvent by master {
-    override fun toString(): String = "EC($master|$slave|${ignoreSlave.toString()[0]})"
+    override fun toString(): String = "EC($master|$slave|${matchMasterOnly.toString()[0]})"
 }
 
 data class StateCombo(
     override val master: AbsState,
     override var slave: Slave? = null,
-    override var ignoreSlave: Boolean = false
+    override var matchMasterOnly: Boolean = false
 ) : Combo<AbsState>, AbsState by master {
-    override fun toString(): String = "SC($master|$slave|${ignoreSlave.toString()[0]})"
+    override fun toString(): String = "SC($master|$slave|${matchMasterOnly.toString()[0]})"
 }
 
 data class EventGroupCombo<T : AbsEvent>(
     override val master: AbsEventGroup<T>,
     override var slave: Slave? = null,
-    override var ignoreSlave: Boolean = false
+    override var matchMasterOnly: Boolean = false
 ) : Combo<AbsEventGroup<T>>, AbsEventGroup<T> by master {
-    override fun toString(): String = "EgC($master|$slave|${ignoreSlave.toString()[0]})"
+    override fun toString(): String = "EgC($master|$slave|${matchMasterOnly.toString()[0]})"
 }
 
 data class StateGroupCombo<T : AbsState>(
     override val master: AbsStateGroup<T>,
     override var slave: Slave? = null,
-    override var ignoreSlave: Boolean = false
+    override var matchMasterOnly: Boolean = false
 ) : Combo<AbsStateGroup<T>>, AbsStateGroup<T> by master {
 
-    override fun toString(): String = "SgC($master|$slave|${ignoreSlave.toString()[0]})"
+    override fun toString(): String = "SgC($master|$slave|${matchMasterOnly.toString()[0]})"
 }
 
 val Master.combo: Combo<*>
@@ -75,4 +75,4 @@ val AbsStateGroup<*>.combo: StateGroupCombo<*>
 
 val ConditionElement.master get() = (this as? Combo<*>)?.master ?: this as? Master
 val ConditionElement.slave get() = (this as? Combo<*>)?.slave ?: this as? Slave
-val ConditionElement.ignoreSlave get() = (this as? Combo<*>)?.ignoreSlave == true
+val ConditionElement.ignoreSlave get() = (this as? Combo<*>)?.matchMasterOnly == true

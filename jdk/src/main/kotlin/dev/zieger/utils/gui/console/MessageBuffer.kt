@@ -34,7 +34,7 @@ class MessageBuffer(
     companion object {
 
         private const val BUFFER_SIZE = 4098
-        internal val SPAM_DURATION = 250.milliseconds
+        internal val SPAM_DURATION = 500.milliseconds
 
         internal data class Entity(val text: List<TextWithColor>) {
 

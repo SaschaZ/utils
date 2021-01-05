@@ -7,20 +7,29 @@ import dev.zieger.utils.statemachine.conditionelements.*
 
 interface MachineFunctionDsl : MachineDslRoot {
 
-    fun onEvent(vararg events: AbsEventType) = EventCondition(*events)
-    fun onState(vararg states: AbsStateType) = StateCondition(*states)
+    fun rawCondition(all: List<Definition>, any: List<Definition>, none: List<Definition>) =
+        RawCondition(
+            listOf(
+                DefinitionGroup(DefinitionGroup.MatchType.ALL, ArrayList(all)),
+                DefinitionGroup(DefinitionGroup.MatchType.ANY, ArrayList(any)),
+                DefinitionGroup(DefinitionGroup.MatchType.NONE, ArrayList(none))
+            )
+        )
+
+    fun onEvent(event: AbsEventType) = EventCondition(event)
+    fun onState(state: AbsStateType) = StateCondition(state)
 
     operator fun Event.invoke(slave: Slave) = EventCombo(this, slave)
     operator fun State.invoke(slave: Slave) = StateCombo(this, slave)
     operator fun EventGroup<*>.invoke(slave: Slave) = EventGroupCombo(this, slave)
     operator fun StateGroup<*>.invoke(slave: Slave) = StateGroupCombo(this, slave)
 
-    val Event.ignoreSlave get() = EventCombo(this, ignoreSlave = true)
-    val State.ignoreSlave get() = StateCombo(this, ignoreSlave = true)
-    val EventGroup<*>.ignoreSlave get() = EventGroupCombo(this, ignoreSlave = true)
-    val StateGroup<*>.ignoreSlave get() = StateGroupCombo(this, ignoreSlave = true)
-    val EventPrevious.foo get() = apply { combo.ignoreSlave = true }
-    val StatePrevious.foo get() = apply { combo.ignoreSlave = true }
+    val Event.ignoreSlave get() = EventCombo(this, matchMasterOnly = true)
+    val State.ignoreSlave get() = StateCombo(this, matchMasterOnly = true)
+    val EventGroup<*>.ignoreSlave get() = EventGroupCombo(this, matchMasterOnly = true)
+    val StateGroup<*>.ignoreSlave get() = StateGroupCombo(this, matchMasterOnly = true)
+    val EventPrevious.ignoreSlave get() = apply { combo.matchMasterOnly = true }
+    val StatePrevious.ignoreSlave get() = apply { combo.matchMasterOnly = true }
 
     fun EventCondition.withState(vararg states: AbsStateType) = apply {
         states.forEach {

@@ -2,60 +2,57 @@
 
 package dev.zieger.utils.statemachine.conditionelements
 
-import dev.zieger.utils.misc.name
+import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.statemachine.IMatchScope
 import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.EVENT
 import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.STATE
 import dev.zieger.utils.statemachine.conditionelements.DefinitionGroup.MatchType.*
 
 class EventCondition(
-    start: Combo<*>,
     items: List<DefinitionGroup>,
     action: (suspend IMatchScope.() -> Master?)? = null
-) : Condition(start, items, action) {
+) : Condition(items, action) {
 
-    constructor(vararg events: AbsEventType) : this(events.first().combo, INITIAL_ITEMS.apply { any.addAll(events) })
+    constructor(vararg events: AbsEventType) :
+            this(INITIAL_ITEMS.apply { any.addAll(events) })
 
     override fun copy(
-        start: Combo<*>,
         items: List<DefinitionGroup>,
         action: (suspend IMatchScope.() -> Master?)?
-    ): EventCondition = EventCondition(start, items, action)
+    ): EventCondition = EventCondition(items, action)
 }
 
 class StateCondition(
-    start: Combo<*>,
     items: List<DefinitionGroup>,
     action: (suspend IMatchScope.() -> Master?)? = null
-) : Condition(start, items, action) {
+) : Condition(items, action) {
 
-    constructor(vararg states: AbsStateType) : this(states.first().combo, INITIAL_ITEMS.apply { any.addAll(states) })
+    constructor(vararg states: AbsStateType) :
+            this(INITIAL_ITEMS.apply { any.addAll(states) })
 
     override fun copy(
-        start: Combo<*>,
         items: List<DefinitionGroup>,
         action: (suspend IMatchScope.() -> Master?)?
-    ): StateCondition = StateCondition(start, items, action)
+    ): StateCondition = StateCondition(items, action)
 }
 
-open class Condition(
-    val start: Combo<*>,
-    private val items: List<DefinitionGroup> = INITIAL_ITEMS.apply { all.add(start) },
+class RawCondition(
+    items: List<DefinitionGroup>,
+    action: (suspend IMatchScope.() -> Master?)? = null
+) : Condition(items, action) {
+    override fun copy(
+        items: List<DefinitionGroup>,
+        action: (suspend IMatchScope.() -> Master?)?
+    ): Condition = RawCondition(items, action)
+}
+
+sealed class Condition(
+    private val items: List<DefinitionGroup> = INITIAL_ITEMS,
     val action: (suspend IMatchScope.() -> Master?)? = null
 ) : ConditionElement {
 
-    constructor(start: Master) : this(
-        when (start) {
-            is Combo<*> -> start
-            is AbsEvent -> start.combo
-            is AbsState -> start.combo
-            is AbsEventGroup<*> -> start.combo
-            is AbsStateGroup<*> -> start.combo
-            else -> throw IllegalArgumentException("Unknown Master type ${start::class.name}")
-        }, action = null
-    )
-
-    constructor(vararg master: Master) : this(master.first().combo, INITIAL_ITEMS.apply { any.addAll(master) })
+    constructor(vararg master: Master) :
+            this(INITIAL_ITEMS.apply { all.addAll(master.toList().runEach { combo }) })
 
     companion object {
         internal val INITIAL_ITEMS
@@ -69,6 +66,8 @@ open class Condition(
         internal val List<DefinitionGroup>.all get() = first { it.matchType == ALL }
         internal val List<DefinitionGroup>.none get() = first { it.matchType == NONE }
     }
+
+    val start: Combo<*> get() = (items.all.first() as Master).combo
 
     internal val any: DefinitionGroup get() = items.any
     internal val all: DefinitionGroup get() = items.all
@@ -85,11 +84,10 @@ open class Condition(
 
     override fun toString(): String = "C($items)"
 
-    open fun copy(
-        start: Combo<*> = this.start,
+    abstract fun copy(
         items: List<DefinitionGroup> = this.items,
         action: (suspend IMatchScope.() -> Master?)? = this.action
-    ) = Condition(start, items, action)
+    ): Condition
 
     override fun equals(other: Any?): Boolean = (other as? Condition)?.let { o ->
         master == o.master

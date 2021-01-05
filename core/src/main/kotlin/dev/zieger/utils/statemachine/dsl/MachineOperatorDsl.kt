@@ -31,7 +31,7 @@ interface MachineOperatorDsl : MachineDslRoot {
 
     // Only the case when slave is added to first item. unary operators are processed before.
     operator fun <C : Condition> C.times(slave: Slave): C = apply {
-        start.slave = slave
+        start.combo.slave = slave
     }
 
     /**
@@ -46,12 +46,12 @@ interface MachineOperatorDsl : MachineDslRoot {
     /**
      * Use the [not] operator to ignore any slaves for this element.
      */
-    operator fun AbsEvent.not(): EventCombo = combo.apply { ignoreSlave = true }
-    operator fun AbsEventGroup<*>.not(): EventGroupCombo<*> = combo.apply { ignoreSlave = true }
-    operator fun AbsState.not(): StateCombo = combo.apply { ignoreSlave = true }
-    operator fun AbsStateGroup<*>.not(): StateGroupCombo<*> = combo.apply { ignoreSlave = true }
-    operator fun EventPrevious.not() = apply { combo.ignoreSlave = true }
-    operator fun StatePrevious.not() = apply { combo.ignoreSlave = true }
+    operator fun AbsEvent.not(): EventCombo = combo.apply { matchMasterOnly = true }
+    operator fun AbsEventGroup<*>.not(): EventGroupCombo<*> = combo.apply { matchMasterOnly = true }
+    operator fun AbsState.not(): StateCombo = combo.apply { matchMasterOnly = true }
+    operator fun AbsStateGroup<*>.not(): StateGroupCombo<*> = combo.apply { matchMasterOnly = true }
+    operator fun EventPrevious.not() = apply { combo.matchMasterOnly = true }
+    operator fun StatePrevious.not() = apply { combo.matchMasterOnly = true }
 }
 
 operator fun AbsEvent.times(slave: Slave) = combo.also { it.slave = slave }

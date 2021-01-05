@@ -16,18 +16,18 @@ open class Matcher(
         is Condition -> (all.isEmpty() || all.all { it.match() })
                 && (any.isEmpty() || any.any { it.match() })
                 && (none.isEmpty() || none.none { it.match() })
-        is Previous<*> -> condition(matchScope, this@Matcher) { combo.match() }
-        is Combo<*> -> master.match() && (ignoreSlave || when (master) {
+        is Combo<*> -> master.match() && (matchMasterOnly || when (master) {
             is AbsEvent,
-            is AbsEventGroup<*> -> event.ignoreSlave || event.slave == null && slave == null || (event.slave to slave).match()
+            is AbsEventGroup<*> -> event.matchMasterOnly || event.slave == null && slave == null || (event.slave to slave).match()
             is AbsState,
-            is AbsStateGroup<*> -> state.ignoreSlave || state.slave == null && slave == null || (state.slave to slave).match()
+            is AbsStateGroup<*> -> state.matchMasterOnly || state.slave == null && slave == null || (state.slave to slave).match()
             else -> throw IllegalArgumentException("Can not match $this with event $event and state $state")
         })
         is AbsEvent -> this === event || this === event.master
         is AbsState -> this === state || this === state.master
         is AbsEventGroup<*> -> groupType.isInstance(event) || groupType.isInstance(event.master)
         is AbsStateGroup<*> -> groupType.isInstance(state) || groupType.isInstance(state.master)
+        is Previous<*> -> condition(matchScope, this@Matcher) { combo.match() }
         is External -> matchExternal(matchScope)
         is Pair<*, *> -> when (val s = second) {
             is Data -> when (val f = first) {

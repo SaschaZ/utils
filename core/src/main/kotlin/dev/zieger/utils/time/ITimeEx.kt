@@ -47,7 +47,7 @@ interface ITimeEx : IDurationEx, ITimeZoneHolder, StringConverter {
     fun addCalendarDays(delta: Int): ITimeEx {
         var day = dayOfMonth
         var month = month + 1
-        var year = years
+        var year = year
 
         repeat(delta.absoluteValue) {
             day += if (delta > 0) 1 else -1
@@ -77,7 +77,7 @@ interface ITimeEx : IDurationEx, ITimeZoneHolder, StringConverter {
 
     fun addCalendarMonths(delta: Int): ITimeEx {
         var month = month + 1
-        var year = years
+        var year = year
 
         repeat(delta.absoluteValue) {
             month += if (delta > 0) 1 else -1
