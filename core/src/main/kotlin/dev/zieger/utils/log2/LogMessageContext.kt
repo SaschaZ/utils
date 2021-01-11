@@ -1,8 +1,8 @@
 package dev.zieger.utils.log2
 
 import dev.zieger.utils.log2.filter.LogLevel
-import dev.zieger.utils.time.TimeEx
 import dev.zieger.utils.time.ITimeEx
+import dev.zieger.utils.time.TimeEx
 import kotlinx.coroutines.CoroutineScope
 
 /**
@@ -14,7 +14,7 @@ interface ILogMessageContext : ILogContext {
     var coroutineScope: CoroutineScope?
     var createdAt: ITimeEx
     var message: Any
-    var messageTag: List<Any>
+    var messageTags: List<Any>
     var filter: IDelayFilter<LogPipelineContext>
 }
 
@@ -29,5 +29,5 @@ class LogMessageContext(
     vararg messageTag: Any
 ) : ILogContext by logContext, ILogMessageContext {
 
-    override var messageTag: List<Any> = messageTag.toList()
+    override var messageTags: List<Any> = messageTag.toList()
 }

@@ -1,5 +1,7 @@
 package dev.zieger.utils
 
+import java.util.*
+
 object OsInfo {
 
     enum class OsType {
@@ -13,10 +15,15 @@ object OsInfo {
 
     val type: OsType get() = cachedType ?: determineOsType().also { cachedType = it }
 
-    private fun determineOsType(): OsType = when (System.getProperty("os.name")) {
-        "Windows" -> OsType.WINDOWS
-        "Mac OS X" -> OsType.MACOS
-        "Linux" -> OsType.LINUX
-        else -> OsType.OTHER
+    private fun determineOsType(): OsType {
+        val name = System.getProperty("os.name").toLowerCase(Locale.getDefault())
+        return when {
+            name.contains("win") -> OsType.WINDOWS
+            name.contains("mac") -> OsType.MACOS
+            name.contains("nux")
+                    || name.contains("nix")
+                    || name.contains("aix") -> OsType.LINUX
+            else -> OsType.OTHER
+        }
     }
 }

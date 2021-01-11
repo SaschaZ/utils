@@ -113,43 +113,48 @@ open class LogPipelineContext(
     }
 }
 
-inline fun <C : ICancellable> delayFilter(crossinline block: C.(next: C.() -> Unit) -> Unit): IDelayFilter<C> =
+private inline fun <C : ICancellable> delayFilter(crossinline block: C.(next: C.() -> Unit) -> Unit): IDelayFilter<C> =
     object : IDelayFilter<C> {
         override fun call(context: C, next: IFilter<C>) = context.block { next(this) }
     }
 
-inline fun <C : ICancellable> filter(crossinline block: C.() -> Unit): IFilter<C> = object : IFilter<C> {
+private inline fun <C : ICancellable> filter(crossinline block: C.() -> Unit): IFilter<C> = object : IFilter<C> {
     override fun call(context: C) = block(context)
 }
 
 sealed class LogFilter : IDelayFilter<LogPipelineContext> {
+
+    abstract val tag: Any?
     abstract fun copy(): LogFilter
 
-    abstract class LogPreFilter : LogFilter() {
+    abstract class LogPreFilter(override val tag: Any? = null) : LogFilter() {
         abstract override fun copy(): LogPreFilter
     }
 
-    abstract class LogPostFilter : LogFilter() {
+    abstract class LogPostFilter(override val tag: Any? = null) : LogFilter() {
         abstract override fun copy(): LogPostFilter
     }
 }
 
-inline fun logPreFilter(crossinline block: LogPipelineContext.(next: LogPipelineContext.() -> Unit) -> Unit): LogPreFilter =
-    object : LogPreFilter() {
+inline fun logPreFilter(
+    tag: Any? = null,
+    crossinline block: LogPipelineContext.(next: LogPipelineContext.() -> Unit) -> Unit
+): LogPreFilter =
+    object : LogPreFilter(tag) {
         override fun call(context: LogPipelineContext, next: IFilter<LogPipelineContext>) = context.block { next(this) }
         override fun copy(): LogPreFilter = this
     }
 
-inline fun logPostFilter(crossinline block: LogPipelineContext.(next: LogPipelineContext.() -> Unit) -> Unit): LogPostFilter =
-    object : LogPostFilter() {
+inline fun logPostFilter(
+    tag: Any? = null,
+    crossinline block: LogPipelineContext.(next: LogPipelineContext.() -> Unit) -> Unit
+): LogPostFilter =
+    object : LogPostFilter(tag) {
         override fun call(context: LogPipelineContext, next: IFilter<LogPipelineContext>) = context.block { next(this) }
         override fun copy(): LogPostFilter = this
     }
 
-
-open class EmptyFilter : LogPreFilter(), IDelayFilter<LogPipelineContext> {
+object EmptyLogFilter : LogPreFilter(), IDelayFilter<LogPipelineContext> {
     override fun call(context: LogPipelineContext, next: IFilter<LogPipelineContext>) = next(context)
-    override fun copy(): LogPreFilter = EmptyFilter()
+    override fun copy(): EmptyLogFilter = this
 }
-
-object EmptyLogFilter : EmptyFilter()

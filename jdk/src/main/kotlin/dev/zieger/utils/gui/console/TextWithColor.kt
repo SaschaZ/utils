@@ -9,8 +9,6 @@ data class TextWithColor internal constructor(
     val color: MessageColor? = null,
     val background: MessageColor? = null,
     val newLine: Boolean = false,
-    var visible: Boolean = true,
-    var active: Boolean = true,
     val groupId: Long = NO_GROUP_ID
 ) {
 
@@ -46,21 +44,17 @@ data class Message(
     val message: List<TextWithColor>,
     val autoRefresh: Boolean,
     val newLine: Boolean,
-    val offset: Int
+    val offset: Int?
 )
 
 interface MessageScope {
     val refresh: suspend () -> Unit
     val remove: () -> Unit
-    val pause: () -> Unit
-    val resume: () -> Unit
 }
 
 data class MessageScopeImpl(
     override val refresh: suspend () -> Unit,
-    override val remove: () -> Unit,
-    override val pause: () -> Unit,
-    override val resume: () -> Unit
+    override val remove: () -> Unit
 ) : MessageScope
 
 data class MessageColorScope(

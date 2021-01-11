@@ -23,7 +23,7 @@ class LogLevelFilter(private val pipeline: ILogPipeline) : ILogLevelFilter {
     override fun copyLogLevelFilter(pipeline: ILogPipeline): ILogLevelFilter = LogLevelFilter(pipeline)
 }
 
-fun logLevelFilter(minLevel: LogLevel) = logPreFilter {
+private fun logLevelFilter(minLevel: LogLevel) = logPreFilter {
     when {
         level >= minLevel -> it(this)
         else -> cancel()

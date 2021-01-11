@@ -1,10 +1,10 @@
 package dev.zieger.utils.time.progression
 
-import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.base.TimeUnit
-import dev.zieger.utils.time.duration.milliseconds
 import dev.zieger.utils.time.base.plus
 import dev.zieger.utils.time.base.times
+import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.duration.milliseconds
 import dev.zieger.utils.time.duration.toDuration
 
 open class DurationExProgression(

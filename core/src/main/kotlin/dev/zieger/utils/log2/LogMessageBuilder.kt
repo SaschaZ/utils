@@ -18,8 +18,9 @@ interface ILogMessageBuilder : IFilter<LogPipelineContext> {
 
 open class LogMessageBuilderContext(pipelineContext: LogPipelineContext): ILogPipelineContext by pipelineContext {
 
-    val tagsFormatted: String? get() = if (tags.isNotEmpty() || messageTag.isNotEmpty())
-        "[${(listOf(tag) + tags + messageTag).joinToString("|")}]" else null
+    val tagsFormatted: String?
+        get() = if (tags.isNotEmpty() || messageTags.isNotEmpty())
+            "[${(listOf(tag) + tags + messageTags).joinToString("|")}]" else null
 
     fun callOrigin(
         ignorePackages: List<String> = listOf("dev.zieger.utils.log2.", "dev.zieger.utils.coroutines.", "kotlin"),
@@ -28,8 +29,10 @@ open class LogMessageBuilderContext(pipelineContext: LogPipelineContext): ILogPi
         !trace.className.startsWithAny(ignorePackages)
                 && trace.fileName?.anyOf(ignoreFiles) == false
     }?.run {
-        "[(${fileName}:${lineNumber})#${(className.split(".").last().split("$").getOrNull(1)
-            ?: methodName).nullWhen { it == "DefaultImpls" } ?: ""}]"
+        "[(${fileName}:${lineNumber})#${
+            (className.split(".").last().split("$").getOrNull(1)
+                ?: methodName).nullWhen { it == "DefaultImpls" } ?: ""
+        }]"
     } ?: ""
 
     fun time(format: DateFormat = TIME_ONLY) = createdAt.formatTime(format)

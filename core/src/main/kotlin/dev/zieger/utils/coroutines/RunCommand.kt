@@ -2,9 +2,6 @@
 
 package dev.zieger.utils.coroutines
 
-import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
-import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.misc.runEach
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.*
@@ -65,13 +62,13 @@ data class ProcessHolder(
         coroutineScope {
             launch {
                 process.inputStream.reader().forEachLine { line ->
-                    stdOut += line
+                    stdOut += "$line\n"
                     stdLines.forEach { it(line) }
                 }
             }
             launch {
                 process.errorStream.reader().forEachLine { line ->
-                    errOut += line
+                    errOut += "$line\n"
                     errLines.forEach { it(line) }
                 }
             }

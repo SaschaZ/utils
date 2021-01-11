@@ -7,7 +7,6 @@ import dev.zieger.utils.time.duration.IDurationEx
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.coroutineContext
 import kotlin.reflect.KClass
 
 /**
@@ -39,7 +38,6 @@ import kotlin.reflect.KClass
  *
  * @return A [Job] representing the execution of this coroutine.
  */
-@Deprecated("")
 suspend fun launchEx(
     start: CoroutineStart = CoroutineStart.DEFAULT,
     interval: IDurationEx? = null,
@@ -51,17 +49,13 @@ suspend fun launchEx(
     printStackTrace: Boolean = PRINT_EXCEPTIONS,
     logStackTrace: Boolean = LOG_EXCEPTIONS,
     name: String? = null,
-    isSuperVisionEnabled: Boolean = false,
     include: List<KClass<out Throwable>> = listOf(Throwable::class),
     exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
     onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
     onFinally: suspend CoroutineScope.() -> Unit = {},
     block: suspend CoroutineScope.(numExecution: Int) -> Unit
-): Job {
-    val ctx = coroutineContext
-    return object : CoroutineScope {
-        override val coroutineContext: CoroutineContext = ctx
-    }.launchEx(
+): Job = coroutineScope {
+    launchEx(
         coroutineContext, start, interval, delayed, maxExecutions, retryDelay, timeout, mutex,
         printStackTrace, logStackTrace, name, include, exclude, onCatch, onFinally, block
     )

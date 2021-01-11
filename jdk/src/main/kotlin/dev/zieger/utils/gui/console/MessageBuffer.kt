@@ -36,7 +36,7 @@ class MessageBuffer(
         private const val BUFFER_SIZE = 4098
         internal val SPAM_DURATION = 500.milliseconds
 
-        internal data class Entity(val text: List<TextWithColor>) {
+        internal data class Entity(val text: MutableList<TextWithColor>) {
 
             companion object {
                 private val lastId = AtomicLong(0)
@@ -51,7 +51,6 @@ class MessageBuffer(
     private val bufferMutex = Mutex()
     private val messageChannel = Channel<Message>(Channel.UNLIMITED)
     private val antiSpamProxy = AntiSpamProxy(spamDuration * 0.95, scope)
-    private val lastMessageBuffer = HashMap<MessageId, String>()
 
     init {
         scope.launchEx {
@@ -60,16 +59,16 @@ class MessageBuffer(
                     var doUpdate = false
 
                     val value = (buffer.lastOrNull()
-                        ?.nullWhen { (text) -> offset > 0 || newLine || text.last().newLine }
-                        ?.let { doUpdate = true; it.copy(text = it.text + text.toList()) }
-                        ?: Entity(text.toList())).let {
+                        ?.nullWhen { (text) -> offset != null || newLine || text.last().newLine }
+                        ?.let { doUpdate = true; it.copy(text = (it.text + text.toList()).toMutableList()) }
+                        ?: Entity(text.toMutableList())).let {
                         it.copy(text = it.text.mapIndexed { idx, t ->
                             if (newLine && idx == text.lastIndex) t.copy(newLine = true) else t
-                        })
+                        }.toMutableList())
                     }
 
                     when {
-                        offset > 0 -> buffer.add(buffer.lastIndex - offset, value)
+                        offset != null -> buffer.add(buffer.size - offset, value)
                         doUpdate -> buffer[buffer.lastIndex] = value
                         else -> buffer.add(value)
                     }
@@ -87,35 +86,34 @@ class MessageBuffer(
     suspend fun update() = antiSpamProxy { onUpdate(screenBuffer()) }
 
     fun addMessage(msg: Message): () -> Unit =
-        messageChannel.offer(msg).let { { msg.message.runEach { visible = false } } }
+        messageChannel.offer(msg).let { { msg.message.runEach { remove() } } }
 
-    private fun Long.remove() = this@MessageBuffer.scope.launchEx {
+    private fun TextWithColor.remove(): Unit = scope.launchEx {
         bufferMutex.withLock {
-            buffer.removeAll { e -> this@remove == e.id }
+            buffer.forEach { e -> e.text.removeAll { it.id == id } }
+            buffer.removeAll { e -> e.text.isEmpty() }
         }
+        update()
+    }.asUnit()
+
+    private fun Entity.remove(): Unit = scope.launchEx {
+        bufferMutex.withLock {
+            buffer.removeAll { e -> id == e.id }
+        }
+        update()
     }.asUnit()
 
     suspend fun screenBuffer(): ScreenBuffer = bufferMutex.withLock {
         fun Entity.line() = text.map {
-            val scope = MessageScopeImpl({ update() }, {
-                text.runEach { visible = false }
-                id.remove()
-            }, { text.runEach { active = false } }, { text.runEach { active = true } })
-            val wasActive = it.active
-            val message = it.text(scope).toString()
-            it to when {
-                !it.visible -> ""
-                it.active || wasActive -> message.also { s -> lastMessageBuffer[it.id] = s }
-                else -> lastMessageBuffer[it.id] ?: ""
-            }
-        }.filter { it.first.visible }
-            .flatMap { (text, str) ->
-                str.mapIndexed { idx, character ->
-                    MessageColorScope(str, character, idx).let { s ->
-                        ScreenChar(character, text.color?.invoke(s), text.background?.invoke(s))
-                    }
+            val scope = MessageScopeImpl({ update() }, { remove() })
+            it to it.text(scope).toString()
+        }.flatMap { (text, str) ->
+            str.mapIndexed { idx, character ->
+                MessageColorScope(str, character, idx).let { s ->
+                    ScreenChar(character, text.color?.invoke(s), text.background?.invoke(s))
                 }
-            }.line
+            }
+        }.line
 
         fun ScreenLine.group(columns: Int): ScreenLineGroup {
             var idx = 0

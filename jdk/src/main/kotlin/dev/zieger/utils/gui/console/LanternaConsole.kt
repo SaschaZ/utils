@@ -13,6 +13,7 @@ import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.input.KeyType.*
 import com.googlecode.lanterna.screen.Screen
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
+import com.googlecode.lanterna.terminal.swing.SwingTerminalFontConfiguration
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.executeNativeBlocking
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
@@ -22,19 +23,21 @@ import dev.zieger.utils.gui.console.ProgressEntity.*
 import dev.zieger.utils.gui.console.ScreenBuffer.Companion.buffer
 import dev.zieger.utils.gui.console.ScreenLine.Companion.line
 import dev.zieger.utils.gui.console.ScreenLineGroup.Companion.group
-import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.misc.nullWhen
-import dev.zieger.utils.misc.runEach
+import dev.zieger.utils.misc.*
 import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.milliseconds
 import kotlinx.coroutines.*
-import java.lang.Integer.max
-import java.lang.Integer.min
+import java.awt.Font
 import java.util.*
 
 
 class LanternaConsole(
-    private val screen: Screen = DefaultTerminalFactory().createScreen(),
+    fontSize: Int = 14,
+    private val screen: Screen = DefaultTerminalFactory().setTerminalEmulatorFontConfiguration(
+        SwingTerminalFontConfiguration.newInstance(
+            Font("Monospaced", Font.PLAIN, fontSize)
+        )
+    ).createScreen(),
     val position: TerminalPosition = TOP_LEFT_CORNER,
     val preferredSize: TerminalSize? = null,
     val refreshInterval: IDurationEx? = SPAM_DURATION,
@@ -54,22 +57,22 @@ class LanternaConsole(
         internal var lastInstance: LanternaConsole? = null
             private set
 
-        override fun out(vararg text: TextWithColor, autoRefresh: Boolean, newLine: Boolean, offset: Int): () -> Unit {
+        override fun out(vararg text: TextWithColor, autoRefresh: Boolean, newLine: Boolean, offset: Int?): () -> Unit {
             return lastInstance?.scope?.out(*text, autoRefresh = autoRefresh, newLine = newLine, offset = offset)
                 ?: throw IllegalStateException("Can not use global scope when no LanternaConsole instance was created yet.")
         }
 
-        override fun out(msg: String, autoRefresh: Boolean, newLine: Boolean, offset: Int): () -> Unit {
+        override fun out(msg: String, autoRefresh: Boolean, newLine: Boolean, offset: Int?): () -> Unit {
             return lastInstance?.scope?.out(msg, autoRefresh = autoRefresh, newLine = newLine, offset = offset)
                 ?: throw IllegalStateException("Can not use global scope when no LanternaConsole instance was created yet.")
         }
 
-        override fun outnl(vararg text: TextWithColor, autoRefresh: Boolean, offset: Int): () -> Unit {
+        override fun outnl(vararg text: TextWithColor, autoRefresh: Boolean, offset: Int?): () -> Unit {
             return lastInstance?.scope?.outnl(*text, autoRefresh = autoRefresh, offset = offset)
                 ?: throw IllegalStateException("Can not use global scope when no LanternaConsole instance was created yet.")
         }
 
-        override fun outnl(msg: String, autoRefresh: Boolean, offset: Int): () -> Unit {
+        override fun outnl(msg: String, autoRefresh: Boolean, offset: Int?): () -> Unit {
             return lastInstance?.scope?.outnl(msg, autoRefresh = autoRefresh, offset = offset)
                 ?: throw IllegalStateException("Can not use global scope when no LanternaConsole instance was created yet.")
         }
@@ -196,15 +199,13 @@ class LanternaConsole(
     private val ScreenBuffer.numLines: Int get() = sumBy { it.size }
 
     private operator fun ScreenBuffer.minus(other: ScreenBuffer?): ScreenBuffer =
-        if (other?.size != size) this else
-            mapIndexed { index, group -> other.getOrNull(index)?.let { group - it } ?: group }.buffer
+        mapIndexed { index, group -> other?.getOrNull(index)?.let { group - it } ?: group }.buffer
 
     private operator fun ScreenLineGroup.minus(other: ScreenLineGroup): ScreenLineGroup =
-        if (other.size != size) this else
-            mapIndexed { index, line -> other.getOrNull(index)?.let { line - it } ?: line }.group
+        mapIndexed { index, line -> other.getOrNull(index)?.let { line - it } ?: line }.group
 
     private operator fun ScreenLine.minus(other: ScreenLine): ScreenLine =
-        (0..max(lastIndex, other.lastIndex)).map { index ->
+        (0..max(lastIndex, other.lastIndex) + 2).map { index ->
             getOrNull(index)?.let { char ->
                 other.getOrNull(index)?.let { char - it } ?: char
             } ?: ScreenChar(' ')
@@ -292,7 +293,7 @@ class LanternaConsole(
 
     inner class Scope : IScope {
 
-        override fun out(vararg text: TextWithColor, autoRefresh: Boolean, newLine: Boolean, offset: Int): () -> Unit =
+        override fun out(vararg text: TextWithColor, autoRefresh: Boolean, newLine: Boolean, offset: Int?): () -> Unit =
             buffer.addMessage(Message(text.toList(), autoRefresh, newLine, offset))
 
         override fun refresh() = onBufferChanged()
@@ -307,28 +308,28 @@ interface IScope {
         vararg text: TextWithColor,
         autoRefresh: Boolean = true,
         newLine: Boolean = false,
-        offset: Int = 0
+        offset: Int? = null
     ): () -> Unit
 
     fun out(
         text: List<TextWithColor>,
         autoRefresh: Boolean = true,
         newLine: Boolean = false,
-        offset: Int = 0
+        offset: Int? = null
     ): () -> Unit = out(*text.toTypedArray(), autoRefresh = autoRefresh, newLine = newLine, offset = offset)
 
-    fun out(msg: String, autoRefresh: Boolean = true, newLine: Boolean = false, offset: Int = 0): () -> Unit =
-        out(text({ msg }), autoRefresh = autoRefresh, newLine = newLine, offset = offset)
+    fun out(msg: String, autoRefresh: Boolean = true, newLine: Boolean = false, offset: Int? = null): () -> Unit =
+        out(text { msg }, autoRefresh = autoRefresh, newLine = newLine, offset = offset)
 
 
-    fun outnl(vararg text: TextWithColor, autoRefresh: Boolean = true, offset: Int = 0): () -> Unit =
+    fun outnl(vararg text: TextWithColor, autoRefresh: Boolean = true, offset: Int? = null): () -> Unit =
         out(*text, autoRefresh = autoRefresh, newLine = true, offset = offset)
 
-    fun outnl(text: List<TextWithColor>, autoRefresh: Boolean = true, offset: Int = 0): () -> Unit =
+    fun outnl(text: List<TextWithColor>, autoRefresh: Boolean = true, offset: Int? = null): () -> Unit =
         out(text, autoRefresh = autoRefresh, newLine = true, offset = offset)
 
-    fun outnl(msg: String = "", autoRefresh: Boolean = true, offset: Int = 0): () -> Unit =
-        outnl(text({ msg }), autoRefresh = autoRefresh, offset = offset)
+    fun outnl(msg: String = "", autoRefresh: Boolean = true, offset: Int? = null): () -> Unit =
+        outnl(text { msg }, autoRefresh = autoRefresh, offset = offset)
 
     fun refresh()
     fun release()

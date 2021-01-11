@@ -42,7 +42,7 @@ interface ITimeEx : IDurationEx, ITimeZoneHolder, StringConverter {
     val milliOfSecond: Int
         get() = getCalendarField(Calendar.MILLISECOND)
 
-    val daysInMonth: Int get() = (month + 1).daysInMonth
+    val daysInMonth: Int get() = (month + 1).daysInMonth(year)
 
     fun addCalendarDays(delta: Int): ITimeEx {
         var day = dayOfMonth
@@ -52,13 +52,13 @@ interface ITimeEx : IDurationEx, ITimeZoneHolder, StringConverter {
         repeat(delta.absoluteValue) {
             day += if (delta > 0) 1 else -1
             when {
-                day > month.daysInMonth -> {
-                    day -= month.daysInMonth
+                day > month.daysInMonth(year) -> {
+                    day -= month.daysInMonth(year)
                     month++
                 }
                 day < 1 -> {
                     month--
-                    day += month.daysInMonth
+                    day += month.daysInMonth(year)
                 }
             }
             when {
@@ -92,15 +92,16 @@ interface ITimeEx : IDurationEx, ITimeZoneHolder, StringConverter {
                 }
             }
         }
-        val day = min(dayOfMonth, month.daysInMonth)
+        val day = min(dayOfMonth, month.daysInMonth(year))
         return "$day.$month.$year'T'$hourOfDay:$minuteOfHour:$secondOfMinute.${milliOfSecond}X".parse(zone)
     }
 }
 
-internal val Int.daysInMonth: Int
-    get() = when (this) {
-        2 -> 28
-        1, 3, 5, 7, 8, 10, 12 -> 31
-        else -> 30
-    }
+internal fun Int.daysInMonth(year: Int): Int = when (this) {
+    2 -> if (year.isLeap) 29 else 28
+    1, 3, 5, 7, 8, 10, 12 -> 31
+    else -> 30
+}
+
+private val Int.isLeap: Boolean get() = this % 4 == 0 && this % 100 != 0
 

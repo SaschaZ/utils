@@ -22,7 +22,7 @@ sealed class ProgressEntity {
         private val background: IProgressColorProvider = ColorGradient(),
         private val fraction: String = ConsoleProgressBar.FRACTION_2,
         private val midPart: (done: Long, max: Long) -> String? = { d, m ->
-            (d / m.toDouble() * 100).let { " %.1f%% ".format(it) }
+            (d / m.toDouble() * 100).let { " %4.1f%% ".format(it) }
         }
     ) : ProgressEntity() {
 

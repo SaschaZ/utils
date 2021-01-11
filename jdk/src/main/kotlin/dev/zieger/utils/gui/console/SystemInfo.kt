@@ -39,6 +39,8 @@ class TopInfo(
         private set
     var totalMem: Double = 0.0
         private set
+    var usedMem: Double = 0.0
+        private set
     var availMem: Double = 0.0
         private set
 
@@ -67,7 +69,7 @@ class TopInfo(
                 }
             }
         LINUX -> "%Cpu\\(s\\): {2}([0-9,.]+) us, {2}([0-9,.]+) sy, {2}([0-9,.]+) ni, ([0-9,.]+) id".toRegex()
-            .find(cachedOutput ?: "top -n 1 -1".runCommand().stdOutput.also { cachedOutput = it })?.groupValues?.run {
+            .find("top -n 1 -1".runCommand().stdOutput)?.groupValues?.run {
                 whenNotNull(getOrNull(1)?.toDoubleOrNull(), getOrNull(2)?.toDoubleOrNull()) { user, sys ->
                     (user + sys) / 100
                 }
@@ -79,21 +81,25 @@ class TopInfo(
         MACOS -> ("PhysMem: ([0-9,.]+)([A-Z]) used.\\(([0-9.,]+)([A-Z]) wired\\). ([0-9,.]+)([A-Z]) unused.").toRegex()
             .find(cachedOutput ?: "top -l 1 -n 1".runCommand().stdOutput.also { cachedOutput = it })?.groupValues?.run {
                 whenNotNull(
-                    getOrNull(1)?.toDoubleOrNull(), getOrNull(2),
                     getOrNull(5)?.toDoubleOrNull(), getOrNull(6)
-                ) { total, totalUnit, unused, unusedUnit ->
-                    totalMem = total * totalUnit.unitFactor
-                    availMem = totalMem - unused * unusedUnit.unitFactor
-                    availMem / totalMem
+                ) { unused, unusedUnit ->
+                    totalMem = "sysctl hw.memsize".runCommand().stdOutput.split(" ")[1].toDouble()
+                    availMem = unused * unusedUnit.unitFactor
+                    usedMem = totalMem - availMem
+                    usedMem / totalMem
                 }
             }
-        LINUX -> ("[a-zA-Z ]*: *([0-9,.]+)[a-zA-Z ]*, *([0-9,.]+)[a-zA-Z ]*, *([0-9,.]+)[a-zA-Z ]*, *([0-9,.]+)[a-zA-Z/ ]*" +
-                "\\n[a-zA-Z ]*: *([0-9,.]+)[a-zA-Z ]*, *([0-9,.]+)[a-zA-Z ]*, *([0-9,.]+)[a-zA-Z ]*\\. *([0-9,.]+)[a-zA-Z ]*").toRegex()
-            .find(cachedOutput ?: "top -n 1 -1 ".runCommand().stdOutput.also { cachedOutput = it })?.groupValues?.run {
-                whenNotNull(getOrNull(1)?.toDoubleOrNull(), getOrNull(8)?.toDoubleOrNull()) { total, avail ->
-                    totalMem = total
-                    availMem = avail
-                    availMem / totalMem
+        LINUX -> ("Mem: *([0-9]*) *([0-9]*) *([0-9]*) *([0-9]*) *([0-9]*) *([0-9]*)").toRegex()
+            .find("free -m | grep Mem:".runCommand().stdOutput)?.groupValues?.run {
+                whenNotNull(
+                    getOrNull(1)?.toDoubleOrNull(),
+                    getOrNull(2)?.toDoubleOrNull(),
+                    getOrNull(3)?.toDoubleOrNull()
+                ) { total, used, avail ->
+                    totalMem = total * 1024 * 1024
+                    usedMem = used * 1024 * 1024
+                    availMem = avail * 1024 * 1024
+                    usedMem / totalMem
                 }
             }
         else -> null
@@ -189,8 +195,8 @@ fun CoroutineScope.SysInfo(
         })
     }, Bar(size = 17, foreground = PROGRESS_COLORS.reversed())) + PROGRESS(memProg, Text {
         listOf(text {
-            done = top.availMem.toLong()
-            total = top.totalMem.toLong()
+            done = Runtime.getRuntime().run { totalMemory() - freeMemory() }
+            total = Runtime.getRuntime().totalMemory()
             " - MEM "
         })
     }, Bar(size = 17, foreground = PROGRESS_COLORS.reversed()), Space, DoneOfTotal())

@@ -4,8 +4,15 @@ import dev.zieger.utils.misc.asUnit
 
 interface ILogTags {
 
-    val tags: Set<Any>
+    /**
+     * Primary TAG
+     */
     var tag: Any?
+
+    /**
+     * Secondary TAGs
+     */
+    val tags: Set<Any>
 
     operator fun plusAssign(tag: Any)
     operator fun minusAssign(tag: Any)
