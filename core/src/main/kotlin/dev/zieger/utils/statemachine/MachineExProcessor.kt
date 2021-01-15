@@ -4,6 +4,7 @@ package dev.zieger.utils.statemachine
 
 import dev.zieger.utils.log2.ILogScope
 import dev.zieger.utils.log2.filter.LogCondition
+import dev.zieger.utils.misc.ifNull
 import dev.zieger.utils.statemachine.conditionelements.*
 import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.EVENT
 import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.STATE
@@ -11,7 +12,7 @@ import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.
 /**
  * Responsible to map the incoming [AbsEvent]s to their [AbsState]s defined by provided mappings.
  */
-interface IMachineExProcesor : ILogScope {
+interface IMachineExProcessor : ILogScope {
 
     val conditions: MutableList<Condition>
     val bindings: MutableMap<Condition, IMachineEx>
@@ -42,8 +43,7 @@ interface IMachineExProcesor : ILogScope {
         state: StateCombo,
         previousChanges: List<OnStateChanged>
     ): StateCombo? = MatchScope(event, state, previousChanges, conditions, bindings).log.run {
-        val boundMachine = matchingEventBinding()
-        (if (boundMachine == null)
+        (matchingEventBinding()?.run { fire(event) } ifNull {
             matchingEventConditions()
                 .mapNotNull { it.action?.invoke(this) }.run {
                     filterIsInstance<AbsState>().run {
@@ -53,7 +53,7 @@ interface IMachineExProcesor : ILogScope {
                         }
                     }
                 }
-        else boundMachine.fire(event))?.combo?.logNewState(event)
+        })?.combo?.logNewState(event)
     }
 
     /**
@@ -89,7 +89,7 @@ interface IMachineExProcesor : ILogScope {
     private suspend fun IMatchScope.match(
         condition: Condition,
         type: Condition.DefinitionType
-    ) = Matcher(this, this@IMachineExProcesor).run {
+    ) = Matcher(this, this@IMachineExProcessor).run {
         (condition.type == type && condition.match()) logD {
             filter = LogCondition { !event.noLogging }
             "#R $it => ${type.name[0]} $condition <||> (E: $event | S: $state)"
@@ -105,7 +105,7 @@ interface IMachineExProcesor : ILogScope {
         apply { Log.i("SETTING NEW STATE $this for event $event.", filter = LogCondition { !noLogging }) }
 }
 
-internal class MachineExProcessor(logScope: ILogScope) : IMachineExProcesor, ILogScope by logScope {
+internal class MachineExProcessor(logScope: ILogScope) : IMachineExProcessor, ILogScope by logScope {
 
     override val conditions: MutableList<Condition> = ArrayList()
     override val bindings: MutableMap<Condition, IMachineEx> = HashMap()

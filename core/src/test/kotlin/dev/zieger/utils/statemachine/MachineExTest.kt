@@ -6,114 +6,111 @@ import dev.zieger.utils.core_testing.assertion2.isEqual
 import dev.zieger.utils.core_testing.assertion2.isNull
 import dev.zieger.utils.core_testing.assertion2.isTrue
 import dev.zieger.utils.core_testing.assertion2.rem
-import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.log2.LogScope
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
-import dev.zieger.utils.statemachine.MachineExTest.TestData.*
-import dev.zieger.utils.statemachine.MachineExTest.TestEvent.*
-import dev.zieger.utils.statemachine.MachineExTest.TestEvent.TEST_EVENT_GROUP.*
-import dev.zieger.utils.statemachine.MachineExTest.TestState.*
-import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DEFG.D
-import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DEFG.E
-import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG.F
-import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG.G
-import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.H
-import dev.zieger.utils.statemachine.MachineExTest.TestState.TEST_STATE_GROUP_HI.I
+import dev.zieger.utils.statemachine.TestData.*
+import dev.zieger.utils.statemachine.TestEvent.*
+import dev.zieger.utils.statemachine.TestEvent.TEST_EVENT_GROUP.*
+import dev.zieger.utils.statemachine.TestState.*
+import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_DEFG.*
+import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG.F
+import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG.G
+import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_HI.H
+import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_HI.I
 import dev.zieger.utils.statemachine.conditionelements.*
+import dev.zieger.utils.time.duration.seconds
+import io.kotest.core.spec.style.FunSpec
 import kotlinx.coroutines.cancel
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 
-class MachineExTest {
 
-    enum class TestState2 : AbsState by State() {
-        A, B, C;
+enum class TestState2 : AbsState by State() {
+    A, B, C;
 
-        companion object : StateGroup<TestState2>(TestState2::class)
+    companion object : StateGroup<TestState2>(TestState2::class)
+}
+
+sealed class TestState : State() {
+
+    object INITIAL : TestState()
+    object A : TestState()
+    object B : TestState()
+    object C : TestState()
+
+    sealed class TEST_STATE_GROUP_DEFG : TestState() {
+        object D : TEST_STATE_GROUP_DEFG()
+        object E : TEST_STATE_GROUP_DEFG()
+
+        sealed class TEST_STATE_GROUP_FG : TestState() {
+            object F : TEST_STATE_GROUP_FG()
+            object G : TEST_STATE_GROUP_FG()
+
+            companion object : StateGroup<TEST_STATE_GROUP_FG>(TEST_STATE_GROUP_FG::class)
+        }
+
+        companion object : StateGroup<TEST_STATE_GROUP_DEFG>(TEST_STATE_GROUP_DEFG::class)
     }
 
-    sealed class TestState : State() {
+    sealed class TEST_STATE_GROUP_HI : TestState() {
+        object H : TEST_STATE_GROUP_HI()
+        object I : TEST_STATE_GROUP_HI()
 
-        object INITIAL : TestState()
-        object A : TestState()
-        object B : TestState()
-        object C : TestState()
-
-        sealed class TEST_STATE_GROUP_DEFG : TestState() {
-            object D : TEST_STATE_GROUP_DEFG()
-            object E : TEST_STATE_GROUP_DEFG()
-
-            sealed class TEST_STATE_GROUP_FG : TestState() {
-                object F : TEST_STATE_GROUP_FG()
-                object G : TEST_STATE_GROUP_FG()
-
-                companion object : StateGroup<TEST_STATE_GROUP_FG>(TEST_STATE_GROUP_FG::class)
-            }
-
-            companion object : StateGroup<TEST_STATE_GROUP_DEFG>(TEST_STATE_GROUP_DEFG::class)
-        }
-
-        sealed class TEST_STATE_GROUP_HI : TestState() {
-            object H : TEST_STATE_GROUP_HI()
-            object I : TEST_STATE_GROUP_HI()
-
-            companion object : StateGroup<TEST_STATE_GROUP_HI>(TEST_STATE_GROUP_HI::class)
-        }
-
-        companion object : StateGroup<TestState>(TestState::class)
+        companion object : StateGroup<TEST_STATE_GROUP_HI>(TEST_STATE_GROUP_HI::class)
     }
 
-    sealed class TestData : Data {
+    companion object : StateGroup<TestState>(TestState::class)
+}
 
-        data class TestEventData(val foo: String) : TestData() {
-            companion object : Type<TestEventData>(TestEventData::class)
-        }
+sealed class TestData : Data {
 
-        data class TestEventData2(val foo: String) : TestData() {
-            companion object : Type<TestEventData2>(TestEventData2::class)
-        }
-
-        data class TestStateData(val moo: Boolean) : TestData() {
-            companion object : Type<TestStateData>(TestStateData::class)
-        }
-
-        companion object : Type<TestData>(TestData::class)
+    data class TestEventData(val foo: String) : TestData() {
+        companion object : Type<TestEventData>(TestEventData::class)
     }
 
-    sealed class TestEvent : Event() {
-
-        object FIRST : TestEvent()
-        object SECOND : TestEvent()
-        object THIRD : TestEvent()
-
-        sealed class TEST_EVENT_GROUP : TestEvent() {
-            object FOURTH : TEST_EVENT_GROUP()
-            object FIFTH : TEST_EVENT_GROUP()
-            object SIXTH : TEST_EVENT_GROUP()
-
-            companion object : EventGroup<TEST_EVENT_GROUP>(TEST_EVENT_GROUP::class)
-        }
-
-        companion object : EventGroup<TestEvent>(TestEvent::class)
+    data class TestEventData2(val foo: String) : TestData() {
+        companion object : Type<TestEventData2>(TestEventData2::class)
     }
 
-    private val scope = DefaultCoroutineScope()
+    data class TestStateData(val moo: Boolean) : TestData() {
+        companion object : Type<TestStateData>(TestStateData::class)
+    }
 
-    @BeforeEach
-    fun beforeEach() {
+    companion object : Type<TestData>(TestData::class)
+}
+
+sealed class TestEvent : Event() {
+
+    object FIRST : TestEvent()
+    object SECOND : TestEvent()
+    object THIRD : TestEvent()
+
+    sealed class TEST_EVENT_GROUP : TestEvent() {
+        object FOURTH : TEST_EVENT_GROUP()
+        object FIFTH : TEST_EVENT_GROUP()
+        object SIXTH : TEST_EVENT_GROUP()
+
+        companion object : EventGroup<TEST_EVENT_GROUP>(TEST_EVENT_GROUP::class)
+    }
+
+    companion object : EventGroup<TestEvent>(TestEvent::class)
+}
+
+class MachineExTest : FunSpec({
+
+    ENABLE_COLORED_LOG
+    timeout = 10.seconds.millis
+
+    val scope = DefaultCoroutineScope()
+
+    beforeTest {
         scope.reset()
     }
 
-    @AfterEach
-    fun afterEach() {
+    afterTest {
         scope.cancel()
     }
 
-    @Test
-    fun testSlaveBug() = runTest {
-
+    test("Slave Bug") {
         MachineEx(INITIAL, scope, debugLevel = DEBUG) {
             +THIRD + INITIAL execAndSet {
                 C
@@ -130,8 +127,7 @@ class MachineExTest {
         }
     }
 
-    @Test
-    fun testComplex() = runTest {
+    test("complex") {
         var executed = 0
         var executed2 = 0
         MachineEx(INITIAL, scope, debugLevel = DEBUG) {
@@ -186,8 +182,7 @@ class MachineExTest {
         }
     }
 
-    @Test
-    fun testBuilderSyncSet() = runTest {
+    test("builder sync set") {
         MachineEx(INITIAL, scope, debugLevel = DEBUG) {
             +FIRST + INITIAL set A
         }.run {
@@ -205,8 +200,7 @@ class MachineExTest {
         }
     }
 
-    @Test
-    fun testPrev() = runTest {
+    test("previous") {
         var lastEvent: AbsEvent? = null
         var lastState: AbsState? = null
         MachineEx(INITIAL, scope, debugLevel = DEBUG) {
@@ -249,8 +243,7 @@ class MachineExTest {
         }
     }
 
-    @Test
-    fun testData() = runTest {
+    test("data") {
         MachineEx(INITIAL, scope, debugLevel = DEBUG) {
             +FIRST + INITIAL * TestEventData set A
             +SECOND + INITIAL set A * TestStateData(false)
@@ -281,7 +274,7 @@ class MachineExTest {
             state isEqual C % "THIRD"
 
             fire eventSync FIFTH
-            state isEqual C
+            state isEqual C % "FIFTH without data"
 
             fire eventSync FIFTH * TestEventData2("foo")
             state isEqual C % "FIFTH with TestEventData2"
@@ -297,12 +290,11 @@ class MachineExTest {
         }
     }
 
-    @Test
-    fun testGroup() = runTest {
+    test("group") {
         MachineEx(INITIAL, scope, debugLevel = DEBUG) {
             +TestEvent + INITIAL set D
             +SECOND + TEST_STATE_GROUP_DEFG set E
-            +THIRD * TestData + TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG set G
+            +THIRD * TestData + TEST_STATE_GROUP_FG set G
             +FOURTH + TEST_STATE_GROUP_DEFG set F
             +FIFTH + TEST_STATE_GROUP_HI set I
             +SIXTH set H
@@ -335,8 +327,7 @@ class MachineExTest {
         }
     }
 
-    @Test
-    fun testSubclassOf() = runTest {
+    test("subclass of") {
         val event = FOURTH
         val eventGroup = TEST_EVENT_GROUP
 
@@ -345,8 +336,7 @@ class MachineExTest {
         }
     }
 
-    @Test
-    fun testExternal() = runTest {
+    test("external") {
         var isActive = false
         MachineEx(INITIAL, scope, debugLevel = DEBUG) {
             +FIRST + INITIAL + { isActive } set A * TestStateData(true)
@@ -385,4 +375,4 @@ class MachineExTest {
             state isEqual E % "SIXTH with isActive == true"
         }
     }
-}
+})

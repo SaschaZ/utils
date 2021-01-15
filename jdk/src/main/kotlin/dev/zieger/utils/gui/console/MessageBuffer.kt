@@ -33,7 +33,7 @@ class MessageBuffer(
 
     companion object {
 
-        private const val BUFFER_SIZE = 4098
+        internal const val BUFFER_SIZE = 4098
         internal val SPAM_DURATION = 500.milliseconds
 
         internal data class Entity(val text: MutableList<TextWithColor>) {
@@ -47,7 +47,7 @@ class MessageBuffer(
         }
     }
 
-    private val buffer = ArrayList<Entity>(size)
+    private val buffer = ArrayList<Entity>()
     private val bufferMutex = Mutex()
     private val messageChannel = Channel<Message>(Channel.UNLIMITED)
     private val antiSpamProxy = AntiSpamProxy(spamDuration * 0.95, scope)
@@ -73,7 +73,7 @@ class MessageBuffer(
                         else -> buffer.add(value)
                     }
 
-                    while (buffer.size >= size) buffer.removeAt(0)
+//                    while (buffer.size >= size) buffer.removeAt(0)
                     if (autoRefresh) this@MessageBuffer.scope.launchEx { update() }
                 }
             }
@@ -104,7 +104,7 @@ class MessageBuffer(
     }.asUnit()
 
     suspend fun screenBuffer(): ScreenBuffer = bufferMutex.withLock {
-        fun Entity.line() = text.map {
+        fun Entity.line(): ScreenLine = text.map {
             val scope = MessageScopeImpl({ update() }, { remove() })
             it to it.text(scope).toString()
         }.flatMap { (text, str) ->

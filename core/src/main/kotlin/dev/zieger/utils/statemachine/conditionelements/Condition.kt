@@ -2,7 +2,6 @@
 
 package dev.zieger.utils.statemachine.conditionelements
 
-import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.statemachine.IMatchScope
 import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.EVENT
 import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.STATE
@@ -13,8 +12,7 @@ class EventCondition(
     action: (suspend IMatchScope.() -> Master?)? = null
 ) : Condition(items, action) {
 
-    constructor(vararg events: AbsEventType) :
-            this(INITIAL_ITEMS.apply { any.addAll(events) })
+    constructor(event: AbsEventType) : this(INITIAL_ITEMS.apply { all.add(event.combo) })
 
     override fun copy(
         items: List<DefinitionGroup>,
@@ -27,8 +25,7 @@ class StateCondition(
     action: (suspend IMatchScope.() -> Master?)? = null
 ) : Condition(items, action) {
 
-    constructor(vararg states: AbsStateType) :
-            this(INITIAL_ITEMS.apply { any.addAll(states) })
+    constructor(state: AbsStateType) : this(INITIAL_ITEMS.apply { all.add(state.combo) })
 
     override fun copy(
         items: List<DefinitionGroup>,
@@ -50,9 +47,6 @@ sealed class Condition(
     private val items: List<DefinitionGroup> = INITIAL_ITEMS,
     val action: (suspend IMatchScope.() -> Master?)? = null
 ) : ConditionElement {
-
-    constructor(vararg master: Master) :
-            this(INITIAL_ITEMS.apply { all.addAll(master.toList().runEach { combo }) })
 
     companion object {
         internal val INITIAL_ITEMS

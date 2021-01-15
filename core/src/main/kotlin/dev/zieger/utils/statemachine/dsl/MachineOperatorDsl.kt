@@ -26,12 +26,11 @@ interface MachineOperatorDsl : MachineDslRoot {
     operator fun AbsState.times(slave: Slave) = combo.also { it.slave = slave }
     operator fun AbsEventGroup<*>.times(slave: Slave) = combo.also { it.slave = slave }
     operator fun AbsStateGroup<*>.times(slave: Slave) = combo.also { it.slave = slave }
-    operator fun StatePrevious.times(slave: Slave) = apply { combo.slave = slave }
-    operator fun EventPrevious.times(slave: Slave) = apply { combo.slave = slave }
+    operator fun <T : Master, P : Previous<T>> P.times(testStateData: Slave): P = apply { combo.slave = testStateData }
 
     // Only the case when slave is added to first item. unary operators are processed before.
     operator fun <C : Condition> C.times(slave: Slave): C = apply {
-        start.combo.slave = slave
+        start.slave = slave
     }
 
     /**
@@ -58,3 +57,4 @@ operator fun AbsEvent.times(slave: Slave) = combo.also { it.slave = slave }
 operator fun AbsState.times(slave: Slave) = combo.also { it.slave = slave }
 operator fun AbsEventGroup<*>.times(slave: Slave) = combo.also { it.slave = slave }
 operator fun AbsStateGroup<*>.times(slave: Slave) = combo.also { it.slave = slave }
+operator fun <T : Master, P : Previous<T>> P.times(testStateData: Slave): P = apply { combo.slave = testStateData }

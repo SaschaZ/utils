@@ -18,6 +18,7 @@ import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.executeNativeBlocking
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.delegates.OnChanged
+import dev.zieger.utils.gui.console.MessageBuffer.Companion.BUFFER_SIZE
 import dev.zieger.utils.gui.console.MessageBuffer.Companion.SPAM_DURATION
 import dev.zieger.utils.gui.console.ProgressEntity.*
 import dev.zieger.utils.gui.console.ScreenBuffer.Companion.buffer
@@ -42,14 +43,13 @@ class LanternaConsole(
     val preferredSize: TerminalSize? = null,
     val refreshInterval: IDurationEx? = SPAM_DURATION,
     isStandalone: Boolean = true,
-    private val bufferSize: Int = BUFFER_SIZE,
+    bufferSize: Int = BUFFER_SIZE,
     private val cs: CoroutineScope = DefaultCoroutineScope(),
     private val hideCommandInput: Boolean = false
 ) {
 
     companion object : IScope {
 
-        private const val BUFFER_SIZE = 4098
         private const val SCROLL_DELTA = 5
         private const val SCROLL_MAX = 1024
         private const val COMMAND_PREFIX = "\$: "
@@ -94,9 +94,10 @@ class LanternaConsole(
         get() = preferredSize ?: graphics.size
     private lateinit var lastSize: TerminalSize
 
-    private val buffer = MessageBuffer(cs, { size.columns }, spamDuration = refreshInterval ?: SPAM_DURATION) {
-        onBufferChanged()
-    }
+    private val buffer =
+        MessageBuffer(cs, { size.columns }, bufferSize, spamDuration = refreshInterval ?: SPAM_DURATION) {
+            onBufferChanged()
+        }
 
     private var bufferLines = 0
     private var scrollIdx = 0

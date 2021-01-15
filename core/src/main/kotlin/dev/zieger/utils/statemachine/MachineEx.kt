@@ -195,7 +195,7 @@ open class MachineEx(
         }
     }
 
-    override val procesor: IMachineExProcesor = MachineExProcessor(logScope)
+    override val processor: IMachineExProcessor = MachineExProcessor(logScope)
 
     private val previousChanges = FiFo<OnStateChanged>(previousChangesCacheSize)
 
@@ -225,11 +225,11 @@ open class MachineEx(
     private suspend fun Pair<EventCombo, (StateCombo) -> Unit>.processEvent() {
         eventCombo = first
 
-        procesor.processEvent(eventCombo, stateCombo, previousChanges.reversed())?.also { newState ->
+        processor.processEvent(eventCombo, stateCombo, previousChanges.reversed())?.also { newState ->
             previousChanges.put(OnStateChanged(eventCombo, stateCombo, newState))
             stateCombo = newState
 
-            procesor.processState(eventCombo, stateCombo, previousChanges.reversed())?.also { newEvent ->
+            processor.processState(eventCombo, stateCombo, previousChanges.reversed())?.also { newEvent ->
                 (newEvent to { sc: StateCombo -> second(sc) }).processEvent()
             } ?: second(stateCombo)
         } ?: second(stateCombo)

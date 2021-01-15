@@ -17,11 +17,11 @@ interface ActionDsl : MachineDslRoot {
      *
      */
     infix fun Condition.exec(block: suspend IMatchScope.() -> Unit) =
-        procesor.addCondition(this) { block(); null }.asUnit()
+        processor.addCondition(this) { block(); null }.asUnit()
 
     infix fun EventCondition.execAndSet(block: suspend IMatchScope.() -> AbsStateType?) =
-        procesor.addCondition(this, block).asUnit()
+        processor.addCondition(this, block).asUnit()
 
     infix fun StateCondition.execAndFire(block: suspend IMatchScope.() -> AbsEventType?) =
-        procesor.addCondition(this, block).asUnit()
+        processor.addCondition(this, block).asUnit()
 }
