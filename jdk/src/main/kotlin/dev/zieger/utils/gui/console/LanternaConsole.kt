@@ -295,7 +295,7 @@ class LanternaConsole(
     inner class Scope : IScope {
 
         override fun out(vararg text: TextWithColor, autoRefresh: Boolean, newLine: Boolean, offset: Int?): () -> Unit =
-            buffer.addMessage(Message(text.toList(), autoRefresh, newLine, offset))
+            buffer.addMessage(Message(text.toList() + TextWithColor({ "" }), autoRefresh, newLine, offset))
 
         override fun refresh() = onBufferChanged()
 

@@ -39,6 +39,8 @@ class TopInfo(
         private set
     var totalMem: Double = 0.0
         private set
+    var overallUsedMem: Double = 0.0
+        private set
     var usedMem: Double = 0.0
         private set
     var availMem: Double = 0.0
@@ -47,6 +49,8 @@ class TopInfo(
     private var cachedOutput: String? = null
 
     private var autoUpdateJob: Job? = null
+
+    private val pid: Long get() = ManagementFactory.getRuntimeMXBean().name.split("@").first().toLong()
 
     init {
         autoUpdateInterval?.also {
@@ -77,33 +81,41 @@ class TopInfo(
         else -> null
     } ?: -1.0
 
-    private suspend fun determineMemPercent(): Double = when (OsInfo.type) {
-        MACOS -> ("PhysMem: ([0-9,.]+)([A-Z]) used.\\(([0-9.,]+)([A-Z]) wired\\). ([0-9,.]+)([A-Z]) unused.").toRegex()
-            .find(cachedOutput ?: "top -l 1 -n 1".runCommand().stdOutput.also { cachedOutput = it })?.groupValues?.run {
-                whenNotNull(
-                    getOrNull(5)?.toDoubleOrNull(), getOrNull(6)
-                ) { unused, unusedUnit ->
-                    totalMem = "sysctl hw.memsize".runCommand().stdOutput.split(" ")[1].toDouble()
-                    availMem = unused * unusedUnit.unitFactor
-                    usedMem = totalMem - availMem
-                    usedMem / totalMem
+    private suspend fun updateAll() {
+        when (OsInfo.type) {
+            MACOS -> ("""[\w]+: ([\d]+)([KMG]?) [\w]+ \(([\d]+)([KMG]?) [\w]+\), ([\d]+)([KMG]?) [\w]+.[\W\w]+[\w]+ +([\d.]+) +([\d]+)([KMG]?)([-+]?)""").toRegex()
+                .find(
+                    cachedOutput ?: "top -l 2 -stats command,cpu,mem -pid $pid".runCommand().stdOutput.also {
+                        cachedOutput = it
+                    })?.groupValues?.run {
+                    whenNotNull(
+                        getOrNull(5)?.toDoubleOrNull(), getOrNull(6),
+                        getOrNull(7)?.toDoubleOrNull(), getOrNull(8)?.toIntOrNull(), getOrNull(9)
+                    ) { unused, unusedUnit, cpu, mem, memUnit ->
+                        totalMem = "sysctl hw.memsize".runCommand().stdOutput.split(" ")[1].toDouble()
+                        availMem = unused * unusedUnit.unitFactor
+                        overallUsedMem = totalMem - availMem
+                        usedMem = mem * memUnit.unitFactor.toDouble()
+                        memPercent = overallUsedMem / totalMem
+                        cpuPercent = cpu
+                    }
                 }
-            }
-        LINUX -> ("Mem: *([0-9]*) *([0-9]*) *([0-9]*) *([0-9]*) *([0-9]*) *([0-9]*)").toRegex()
-            .find("free -m | grep Mem:".runCommand().stdOutput)?.groupValues?.run {
-                whenNotNull(
-                    getOrNull(1)?.toDoubleOrNull(),
-                    getOrNull(2)?.toDoubleOrNull(),
-                    getOrNull(3)?.toDoubleOrNull()
-                ) { total, used, avail ->
-                    totalMem = total * 1024 * 1024
-                    usedMem = used * 1024 * 1024
-                    availMem = avail * 1024 * 1024
-                    usedMem / totalMem
+            LINUX -> ("Mem: *([0-9]*) *([0-9]*) *([0-9]*) *([0-9]*) *([0-9]*) *([0-9]*)").toRegex()
+                .find("free -m | grep Mem:".runCommand().stdOutput)?.groupValues?.run {
+                    whenNotNull(
+                        getOrNull(1)?.toDoubleOrNull(),
+                        getOrNull(2)?.toDoubleOrNull(),
+                        getOrNull(3)?.toDoubleOrNull()
+                    ) { total, used, avail ->
+                        totalMem = total * 1024 * 1024
+                        usedMem = used * 1024 * 1024
+                        availMem = avail * 1024 * 1024
+                        memPercent = usedMem / totalMem
+                    }
                 }
-            }
-        else -> null
-    } ?: -1.0
+            else -> Unit
+        }
+    }
 
     private val String.unitFactor
         get() = when (this) {

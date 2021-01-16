@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package dev.zieger.utils.statemachine
 
 import dev.zieger.utils.statemachine.conditionelements.AbsEvent
@@ -5,7 +7,7 @@ import dev.zieger.utils.statemachine.conditionelements.AbsState
 import dev.zieger.utils.statemachine.conditionelements.Data
 import dev.zieger.utils.statemachine.conditionelements.EventCombo
 
-interface IMachineExHolder : IMachineEx  {
+interface IMachineExHolder : IMachineEx {
 
     val machine: IMachineEx
 
