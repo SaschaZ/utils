@@ -3,6 +3,7 @@
 package dev.zieger.utils.log2
 
 import dev.zieger.utils.core_testing.assertion2.isBlankOrNull
+import dev.zieger.utils.core_testing.assertion2.isEqual
 import dev.zieger.utils.core_testing.assertion2.isMatching
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.launchEx
@@ -20,7 +21,7 @@ import org.junit.jupiter.api.Test
 
 internal class LogTest {
 
-    private val messageObs = Observable<String?>("")
+    private val messageObs = Observable<String?>("", previousValueSize = 20)
     private var message by messageObs
 
     @BeforeEach
@@ -58,24 +59,20 @@ internal class LogTest {
         messageObs.nextChange(5.seconds) { it isMatching """D-[0-9\-:]+-.+: test delay - \[moofoo\|bamdam\]""" }
 
         Log.scope {
+            message = ""
+            messageObs.clearPreviousValues()
             Log.tag = "foomoo"
             Log.messageBuilder = LogMessageBuilder()
             Log += LogSpamFilter(1.seconds, this@runTest)
 
             repeat(20) {
-                message = ""
                 Log.i("inside scope #$it")
-                if (it % 4 == 0)
-                    message isMatching """I-[0-9\-:]+: inside scope #$it - \[foomoo\|bamdam]"""
-                else message.isBlankOrNull()
                 delay(250.milliseconds)
             }
+            messageObs.previousValues.size isEqual 5
         }
         Log.i("outside scope")
         message isMatching """I-[0-9\-:]+-.+: outside scope - \[moofoo\|bamdam]"""
-
-        message = ""
-        messageObs.nextChange(5.seconds) isMatching """I-[0-9\-:]+: inside scope #19 - \[foomoo\|bamdam]"""
     }
 
     @Test
