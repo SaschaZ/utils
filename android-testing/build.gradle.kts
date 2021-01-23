@@ -1,7 +1,6 @@
 import dev.zieger.utils.Android
 import dev.zieger.utils.ModuleType.ANDROID_LIB
 import dev.zieger.utils.configModule
-import dev.zieger.utils.core
 
 plugins {
     id("com.android.library")
@@ -13,7 +12,9 @@ plugins {
 }
 
 configModule("android-testing", ANDROID_LIB) {
-    core
+    implementation(project(":android"))
+    implementation(project(":core"))
+    implementation(project(":core-testing"))
 }
 
 android {

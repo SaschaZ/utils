@@ -2,16 +2,32 @@
 
 package dev.zieger.utils.gui.console
 
-import dev.zieger.utils.gui.console.TextWithColor.Companion.newGroupId
+import dev.zieger.utils.coroutines.scope.IoCoroutineScope
+import dev.zieger.utils.time.ITimeEx
+import dev.zieger.utils.time.TimeEx
+import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.duration.minutes
+import kotlinx.coroutines.CoroutineScope
+
+@Suppress("FunctionName")
+fun PROGRESS(
+    vararg entities: ProgressEntity,
+    scope: CoroutineScope = IoCoroutineScope(),
+    activeSince: ITimeEx = TimeEx(),
+    initial: Long = 0,
+    total: Long = -1,
+    unit: ProgressUnit = ProgressUnit.Items(),
+    doneSpeedDuration: IDurationEx = 1.minutes,
+    title: String? = null
+): Array<TextWithColor> = PROGRESS(
+    ProgressSource(scope, activeSince, initial, total, unit, doneSpeedDuration, title), *entities
+)
 
 @Suppress("FunctionName")
 fun PROGRESS(
     progressSource: IProgressSource,
     vararg entities: ProgressEntity
-): List<TextWithColor> {
-    val groupId = newGroupId
-    return entities.flatMap { it.textWithColor(progressSource) }.map { it.copy(groupId = groupId) }
-}
+): Array<TextWithColor> = entities.map { it.textWithColor(progressSource) }.toTypedArray()
 
 @Deprecated("")
 @Suppress("FunctionName")
@@ -29,7 +45,7 @@ fun PROGRESS(
     preTextProvider: ((progress: Double) -> Any?)? = { preText },
     postTextProvider: ((progress: Double) -> Any?)? = { postText }
 ): Array<TextWithColor> {
-    fun MessageScope.removeWhenComplete() {
+    fun ITextScope.removeWhenComplete() {
         if (removeWhenComplete && progressSource.donePercent >= 0.999) remove()
     }
 

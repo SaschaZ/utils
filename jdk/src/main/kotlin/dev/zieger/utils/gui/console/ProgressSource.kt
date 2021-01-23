@@ -1,17 +1,19 @@
 package dev.zieger.utils.gui.console
 
 import dev.zieger.utils.gui.console.ProgressUnit.Items
-import dev.zieger.utils.misc.nullWhenBlank
+import dev.zieger.utils.misc.mapPrev
+import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.observable.IObservable
 import dev.zieger.utils.observable.Observable
 import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.TimeEx
 import dev.zieger.utils.time.base.TimeUnit
+import dev.zieger.utils.time.base.div
 import dev.zieger.utils.time.base.minus
 import dev.zieger.utils.time.duration.IDurationEx
+import dev.zieger.utils.time.duration.minutes
 import dev.zieger.utils.time.duration.toDuration
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 
 interface IProgressSource {
 
@@ -33,6 +35,10 @@ interface IProgressSource {
     val donePercent: Double get() = done.toDouble() / total
     val remaining: Long get() = total - done
 
+    val doneSpeed: Double
+    val doneSpeedFormatted get() = unit.formatSpeed(doneSpeed)
+    val doneFinishedIn: IDurationEx get() = (remaining / doneSpeed).toDuration(TimeUnit.SECOND)
+
     val unit: ProgressUnit
     val unitsPerSecond: Double
         get() = activeFor.seconds.let { if (it > 0) (done - initial) / it.toDouble() else (done - initial).toDouble() }
@@ -42,23 +48,7 @@ interface IProgressSource {
     val totalFormatted: String get() = unit.formatAmount(total)
     val remainingFormatted: String get() = unit.formatAmount(remaining)
 
-    var job: Job?
     var title: String?
-    var subSource: IProgressSource?
-
-    fun bind(other: IProgressSource): () -> Unit {
-        fun copy() {
-            done = other.done
-            total = other.total
-            job = other.job ?: job
-            title = other.title?.nullWhenBlank() ?: title
-            subSource = other.subSource ?: subSource
-        }
-        copy()
-        val doneUnObserve = other.doneObservable.observe { copy() }
-        val totalUnObserve = other.totalObservable.observe { copy() }
-        return { doneUnObserve(); totalUnObserve() }
-    }
 }
 
 class ProgressSource(
@@ -67,15 +57,26 @@ class ProgressSource(
     override val initial: Long = 0,
     total: Long = -1,
     override var unit: ProgressUnit = Items(),
-    override var job: Job? = null,
-    override var title: String? = null,
-    override var subSource: IProgressSource? = null
+    private val doneSpeedDuration: IDurationEx = 1.minutes,
+    override var title: String? = null
 ) : IProgressSource {
 
     override var lastAction: ITimeEx = TimeEx()
 
-    override val doneObservable = Observable(initial, scope, safeSet = true) {
+    private var previousDone = HashMap<ITimeEx, Long>()
+    override var doneSpeed: Double = 0.0
+
+    override val doneObservable = Observable(initial, scope = scope, safeSet = true) {
         lastAction = TimeEx()
+        previousDone[lastAction] = it
+        val now = TimeEx()
+        previousDone.filter { (time, _) -> time < now - doneSpeedDuration }
+            .forEach { r -> previousDone.remove(r.key) }
+        if (previousDone.isNotEmpty()) {
+            doneSpeed = (previousDone.entries.runEach { key to value } + (now to it))
+                .mapPrev { (_, cur), (_, prev) -> cur - prev }.filterNotNull()
+                .sum() / previousDone.keys.run { maxOrNull()!! - minOrNull()!! }
+        }
     }
     override var done: Long by doneObservable
 

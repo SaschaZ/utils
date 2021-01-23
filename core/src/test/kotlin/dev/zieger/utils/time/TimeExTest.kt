@@ -28,7 +28,7 @@ class TimeExTest {
         println(TimeEx().formatTime(DateFormat.DATE_ONLY))
 
         val millis = System.currentTimeMillis()
-        val years = (millis / 1.years).millis
+        val years = (millis / 1.years)
         println(years)
         val days = (millis % 1.years) / 1.days
         println(days)

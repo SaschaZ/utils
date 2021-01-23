@@ -2,8 +2,8 @@ package dev.zieger.utils.time.base
 
 import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.TimeEx
-import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.DurationEx
+import dev.zieger.utils.time.duration.IDurationEx
 
 operator fun ITimeEx.plus(other: Number): ITimeEx =
     TimeEx(millis + other.toLong(), zone)
@@ -98,8 +98,8 @@ operator fun IDurationEx.div(other: IDurationEx): Double =
 operator fun IDurationEx.div(other: ITimeEx): Double =
     millis / other.millis.toDouble()
 
-operator fun Number.div(other: IDurationEx): IDurationEx =
-    DurationEx(toDouble() / other.millis)
+operator fun Number.div(other: IDurationEx): Double =
+    toDouble() / other.millis
 
 operator fun Number.div(other: ITimeEx): ITimeEx =
     TimeEx((toDouble() / other.millis).toLong(), other.zone)

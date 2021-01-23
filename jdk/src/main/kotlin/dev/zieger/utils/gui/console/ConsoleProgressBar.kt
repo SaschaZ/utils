@@ -13,9 +13,7 @@ open class ConsoleProgressBar(
     private val fraction: String = FRACTION_2,
     private val midPart: (done: Long, max: Long) -> String? = { d, m ->
         (d / m.toDouble() * 100).let {
-            " %.1f%%".format(
-                it
-            )
+            " %.1f%%".format(it)
         }
     },
     private val onUpdate: () -> Unit = {}
@@ -82,7 +80,7 @@ open class ConsoleProgressBar(
         }
     }
 
-    fun textWithColor(block: MessageScope.(Double) -> Unit = {}): TextWithColor =
+    fun textWithColor(block: ITextScope.(Double) -> Unit = {}): TextWithColor =
         textWithColor.copy(text = {
             block(donePercent)
             textWithColor.text(this)

@@ -3,81 +3,100 @@ package dev.zieger.utils.gui.console
 import com.googlecode.lanterna.TextColor
 import java.util.concurrent.atomic.AtomicLong
 
-@Suppress("DataClassPrivateConstructor")
-data class TextWithColor internal constructor(
-    val text: MessageBuilder,
+data class TextWithColor(
+    val text: MessageText,
     val color: MessageColor? = null,
-    val background: MessageColor? = null,
-    val newLine: Boolean = false,
-    val groupId: Long = NO_GROUP_ID
+    val background: MessageColor? = null
 ) {
 
     companion object {
 
-        const val NO_GROUP_ID = -1L
-
-        private val lastGroupId = AtomicLong(0L)
-        val newGroupId get() = lastGroupId.getAndIncrement()
-
-        private val lastId = AtomicLong(0)
-        internal val newId: MessageId get() = lastId.getAndIncrement()
+        private val lastId = AtomicLong(0L)
+        private val newId: TextId get() = lastId.getAndIncrement()
     }
 
     constructor(
-        text: MessageBuilder,
+        text: Any,
         color: TextColor? = null,
-        background: TextColor? = null,
-        newLine: Boolean = false
-    ) : this(text, { color }, { background }, newLine)
+        background: TextColor? = null
+    ) : this({ text }, { color }, { background })
 
-    val id: MessageId = newId
+    val id: TextId = newId
 }
 
 typealias text = TextWithColor
 
+typealias TextId = Long
 typealias MessageId = Long
-typealias MessageBuilder = MessageScope.() -> Any
-typealias MessageColor = MessageColorScope.() -> TextColor?
+typealias MessageText = ITextScope.() -> Any
+typealias MessageColor = ColorScope.() -> TextColor?
 
+class Message internal constructor(
+    initial: List<TextWithColor>,
+    val newLine: Boolean = false,
+    val offset: Int? = null,
+    ids: List<MessageId> = emptyList()
+) {
+    companion object {
 
-data class Message(
-    val message: List<TextWithColor>,
-    val autoRefresh: Boolean,
-    val newLine: Boolean,
-    val offset: Int?
-)
+        private val lastId = AtomicLong(0L)
+        private val newId: MessageId get() = lastId.getAndIncrement()
+    }
 
-interface MessageScope {
+    constructor(
+        text: TextWithColor,
+        newLine: Boolean = false,
+        offset: Int? = null
+    ) : this(listOf(text), newLine, offset)
+
+    val id: MessageId = newId
+    private val ids: List<MessageId> = ids + id
+
+    private val internalTexts = ArrayList(initial)
+    val texts: List<TextWithColor> get() = internalTexts
+
+    fun hasId(id: MessageId) = ids.contains(id)
+
+    fun merge(other: Message): Message =
+        Message(
+            texts + other.texts, newLine || other.newLine,
+            offset ?: other.offset, listOf(id, other.id)
+        )
+
+    fun remove(id: TextId) = internalTexts.removeAll { it.id == id }
+}
+
+interface ITextScope {
     val refresh: suspend () -> Unit
     val remove: () -> Unit
 }
 
-data class MessageScopeImpl(
+data class TextScope(
     override val refresh: suspend () -> Unit,
     override val remove: () -> Unit
-) : MessageScope
+) : ITextScope
 
-data class MessageColorScope(
+data class ColorScope(
     val message: String,
     val character: Char,
     val idx: Int
 )
 
 
-fun text(builder: MessageBuilder): TextWithColor = TextWithColor(builder)
+fun text(text: MessageText): TextWithColor = TextWithColor(text)
 operator fun String.unaryPlus(): TextWithColor = text { this@unaryPlus }
 
 operator fun TextWithColor.times(color: MessageColor): TextWithColor = copy(color = color)
 operator fun TextWithColor.times(color: TextColor): TextWithColor = copy(color = { color })
-operator fun MessageBuilder.times(color: MessageColor): TextWithColor = text(this@times, color)
-operator fun MessageBuilder.times(color: TextColor): TextWithColor = text(this@times, { color })
+operator fun MessageText.times(color: MessageColor): TextWithColor = text(this@times, color)
+operator fun MessageText.times(color: TextColor): TextWithColor = text(this@times, { color })
 operator fun String.times(color: MessageColor): TextWithColor = text({ this@times }, color)
 operator fun String.times(color: TextColor): TextWithColor = text({ this@times }, { color })
 
 operator fun TextWithColor.div(background: MessageColor): TextWithColor = copy(background = background)
 operator fun TextWithColor.div(background: TextColor): TextWithColor = copy(background = { background })
-operator fun MessageBuilder.div(background: MessageColor): TextWithColor = text(this@div, background = background)
-operator fun MessageBuilder.div(background: TextColor): TextWithColor = text(this@div, background = { background })
+operator fun MessageText.div(background: MessageColor): TextWithColor = text(this@div, background = background)
+operator fun MessageText.div(background: TextColor): TextWithColor = text(this@div, background = { background })
 operator fun String.div(background: MessageColor): TextWithColor = text({ this@div }, background = background)
 operator fun String.div(background: TextColor): TextWithColor = text({ this@div }, background = { background })
 

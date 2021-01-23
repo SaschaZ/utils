@@ -1,20 +1,18 @@
+@file:Suppress("unused")
+
 package dev.zieger.utils.gui.console
 
-import dev.zieger.utils.gui.console.ProgressEntity.Text
+import com.googlecode.lanterna.TextColor
 import dev.zieger.utils.time.duration.IDurationEx
 
-class SingleTextScope(
+class ProgressScope(
     source: IProgressSource,
-    scope: MessageScope
-) : IProgressSource by source, MessageScope by scope
-
-@Suppress("FunctionName")
-fun SingleText(text: SingleTextScope.() -> Any, color: MessageColor? = null, background: MessageColor? = null) =
-    Text { listOf(text({ SingleTextScope(this@Text, this).text() }, color, background)) }
+    scope: ITextScope
+) : IProgressSource by source, ITextScope by scope
 
 sealed class ProgressEntity {
 
-    abstract fun textWithColor(source: IProgressSource): List<TextWithColor>
+    abstract fun textWithColor(source: IProgressSource): TextWithColor
 
     data class Bar(
         private val size: Int = ConsoleProgressBar.DEFAULT_SIZE,
@@ -32,39 +30,46 @@ sealed class ProgressEntity {
                 fraction = fraction, midPart = midPart
             )
 
-        override fun textWithColor(source: IProgressSource): List<TextWithColor> = listOf(source.bar.textWithColor)
+        override fun textWithColor(source: IProgressSource): TextWithColor = source.bar.textWithColor
     }
 
-    open class Text(private val text: IProgressSource.() -> List<TextWithColor>) : ProgressEntity() {
-        constructor(text: String, color: MessageColor? = null, background: MessageColor? = null) :
-                this({ listOf(text({ text }, color, background)) })
+    open class Text(private val text: IProgressSource.() -> TextWithColor) : ProgressEntity() {
+        constructor(text: TextWithColor) : this({ text })
+        constructor(text: String, color: TextColor? = null, background: TextColor? = null) :
+                this(text({ text }, { color }, { background }))
 
-        override fun textWithColor(source: IProgressSource): List<TextWithColor> = source.text()
+        override fun textWithColor(source: IProgressSource): TextWithColor = source.text()
     }
 
     open class ItemsPerSecond(color: MessageColor? = null, background: MessageColor? = null) :
-        Text({ listOf(text({ unitsPerSecondFormatted }, color, background)) })
+        Text({ text({ unitsPerSecondFormatted }, color, background) })
+
+    open class DoneSpeed(color: MessageColor? = null, background: MessageColor? = null) :
+        Text({ text({ doneSpeedFormatted }, color, background) })
 
     open class FinishedIn(maxEntities: Int = 2, color: MessageColor? = null, background: MessageColor? = null) :
-        Text({ listOf(text({ finishedIn.formatDuration(maxEntities = maxEntities) }, color, background)) })
+        Text({ text({ finishedIn.formatDuration(maxEntities = maxEntities) }, color, background) })
+
+    open class DoneFinishedIn(maxEntities: Int = 2, color: MessageColor? = null, background: MessageColor? = null) :
+        Text({ text({ doneFinishedIn.formatDuration(maxEntities = maxEntities) }, color, background) })
 
     open class LastAction(
         minDuration: IDurationEx? = null,
         color: MessageColor? = null, background: MessageColor? = null
     ) : Text({
-        listOf(text({
+        text({
             if (minDuration?.let { it <= lastActionBefore } != false) lastActionBefore else ""
-        }, color, background))
+        }, color, background)
     })
 
     open class Remaining(color: MessageColor? = null, background: MessageColor? = null) :
-        Text({ listOf(text({ remainingFormatted }, color, background)) })
+        Text({ text({ remainingFormatted }, color, background) })
 
     open class DoneOfTotal(color: MessageColor? = null, background: MessageColor? = null) :
-        Text({ listOf(text({ "$doneFormatted/$totalFormatted" }, color, background)) })
+        Text({ text({ "$doneFormatted/$totalFormatted" }, color, background) })
 
     open class Done(color: MessageColor? = null, background: MessageColor? = null) :
-        Text({ listOf(text({ doneFormatted }, color, background)) })
+        Text({ text({ doneFormatted }, color, background) })
 
     object NewLine : Text("\n")
     object Space : Text(" ")
@@ -72,13 +77,13 @@ sealed class ProgressEntity {
     open class RemoveWhen(private val removeWhen: IProgressSource.() -> Boolean) :
         Text({
             var removed = false
-            listOf(text {
+            text {
                 if (!removed && removeWhen()) {
                     removed = true
                     remove()
                 }
                 ""
-            })
+            }
         }) {
         constructor(removeWhen: Double) : this({
             donePercent >= removeWhen
