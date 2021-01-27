@@ -12,6 +12,7 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.*
+import dev.zieger.utils.ModuleType.*
 
 fun Project.configurePublishing(type: ModuleType, name: String) {
     when (type) {
@@ -32,7 +33,7 @@ internal fun Project.configureLibraryJarPublication(name: String) {
 
             from(components["java"])
             artifact(getSourcesJar(JVM_LIB))
-//            artifact(getDokkaJar())
+            artifact(getDokkaJar())
         }
     }
 }
