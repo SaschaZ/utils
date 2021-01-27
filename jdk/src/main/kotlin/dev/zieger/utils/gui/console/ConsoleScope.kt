@@ -14,6 +14,7 @@ import dev.zieger.utils.coroutines.scope.IoCoroutineScope
 import dev.zieger.utils.gui.console.ConsoleDefinition.*
 import dev.zieger.utils.log2.Log
 import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.misc.nullWhenEmpty
 import dev.zieger.utils.misc.runEach
 import kotlinx.coroutines.CoroutineScope
 import java.awt.Font
@@ -88,14 +89,12 @@ suspend inline fun console(
 
     IoCoroutineScope().launchEx scope@{
         panel(title, fontSize) {
-            val consoles = definition.toList().map { def ->
+            definition.toList().flatMap { def ->
                 Log.i("create console #$def")
-                ConsoleComponent(this, this@scope, window, def).also { c ->
-                    addComponent(c)
-                    if (def.hasCommandInput) addComponent(CommandComponent(def, this, this@scope, c))
-                }
+                def.createComponent(this, this@scope, window).onEach { c -> addComponent(c) }
+            }.filterIsInstance<ConsoleComponent>().nullWhenEmpty()?.also { consoles ->
+                lastConsoleScope = ConsoleScope(this@scope, consoles).apply { launchEx { block() } }
             }
-            lastConsoleScope = ConsoleScope(this@scope, consoles).apply { launchEx { block() } }
         }
     }.join()
 }

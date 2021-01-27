@@ -1,18 +1,28 @@
+@file:Suppress("unused")
+
 package dev.zieger.utils.gui.console
 
 import com.googlecode.lanterna.TerminalPosition
 import com.googlecode.lanterna.TerminalSize
-import com.googlecode.lanterna.TextColor
+import com.googlecode.lanterna.TextColor.ANSI.YELLOW
+import com.googlecode.lanterna.TextColor.ANSI.YELLOW_BRIGHT
+import com.googlecode.lanterna.gui2.Window
 import dev.zieger.utils.gui.console.Position.Absolute
 import dev.zieger.utils.gui.console.Position.Relative
 import dev.zieger.utils.log2.calls.logV
+import kotlinx.coroutines.CoroutineScope
 
 sealed class Position {
 
-    abstract val value: Number
+    abstract val value: (size: TerminalSize) -> Number
 
-    data class Absolute(override val value: Int) : Position()
-    data class Relative(override val value: Double) : Position()
+    data class Absolute(override val value: (size: TerminalSize) -> Int) : Position() {
+        constructor(value: Int) : this({ value })
+    }
+
+    data class Relative(override val value: (size: TerminalSize) -> Double) : Position() {
+        constructor(value: Double) : this({ value })
+    }
 }
 
 val Double.rel get() = Relative(this)
@@ -22,29 +32,46 @@ data class ConsoleDefinition(
     val topLeft: Pair<Position, Position> = 0.0.rel to 0.0.rel,
     val bottomRight: Pair<Position, Position> = 1.0.rel to 1.0.rel,
     val hasCommandInput: Boolean = true,
-    val commandPrefix: TextWithColor = text(">>: ", TextColor.ANSI.YELLOW),
-    val logMessagePrefix: TextWithColor = commandPrefix
+    val commandPrefix: TextWithColor = text(">>: ", YELLOW),
+    val activeCommandPrefix: TextWithColor = text(">>: ", YELLOW_BRIGHT),
+    val logMessagePrefix: TextWithColor = text(": ", YELLOW),
+    private val componentFactory: (
+        screen: PanelScreen,
+        scope: CoroutineScope,
+        window: Window,
+        definition: ConsoleDefinition
+    ) -> AbsConsoleComponent<*> = { scr, s, w, d -> ConsoleComponent(scr, s, w, d) }
 ) {
+    fun createComponent(
+        screen: PanelScreen,
+        scope: CoroutineScope,
+        window: Window
+    ): List<AbsConsoleComponent<*>> = componentFactory(screen, scope, window, this).let { console ->
+        if (hasCommandInput && console is ConsoleComponent)
+            listOf(console, CommandComponent(this, screen, scope, console))
+        else listOf(console)
+    }
+
     fun position(size: TerminalSize): TerminalPosition =
         TerminalPosition(
             when (val position = topLeft.first) {
-                is Absolute -> position.value
-                is Relative -> size.columns * position.value
+                is Absolute -> position.value(size)
+                is Relative -> size.columns * position.value(size)
             }.toInt(),
             when (val position = topLeft.second) {
-                is Absolute -> position.value
-                is Relative -> size.rows * position.value
+                is Absolute -> position.value(size)
+                is Relative -> size.rows * position.value(size)
             }.toInt()
         ) logV { "position $topLeft -> $it with $size" }
 
     fun commandPosition(size: TerminalSize): TerminalPosition =
         TerminalPosition(
             when (val position = topLeft.first) {
-                is Absolute -> position.value
-                is Relative -> size.columns * position.value
+                is Absolute -> position.value(size)
+                is Relative -> size.columns * position.value(size)
             }.toInt(),
             when (val position = topLeft.second) {
-                is Absolute -> position.value
+                is Absolute -> position.value(size)
                 is Relative -> size(size).rows + position(size).row
             }.toInt()
         ) logV { "commandPosition $topLeft -> $it with $size" }
@@ -52,23 +79,23 @@ data class ConsoleDefinition(
     fun size(size: TerminalSize): TerminalSize =
         TerminalSize(
             when (val position = bottomRight.first) {
-                is Absolute -> position.value
-                is Relative -> size.columns * position.value - position(size).column
+                is Absolute -> position.value(size)
+                is Relative -> size.columns * position.value(size) - position(size).column
             }.toInt(),
             when (val position = bottomRight.second) {
-                is Absolute -> position.value
-                is Relative -> size.rows * position.value - position(size).row - if (hasCommandInput) 1 else 0
+                is Absolute -> position.value(size)
+                is Relative -> size.rows * position.value(size) - position(size).row - if (hasCommandInput) 1 else 0
             }.toInt()
         ) logV { "size $bottomRight -> $it with $size" }
 
     fun commandSize(size: TerminalSize): TerminalSize =
         TerminalSize(
             when (val position = bottomRight.first) {
-                is Absolute -> position.value
-                is Relative -> size.columns * position.value - position(size).column
+                is Absolute -> position.value(size)
+                is Relative -> size.columns * position.value(size) - position(size).column
             }.toInt(),
             when (val position = bottomRight.second) {
-                is Absolute -> position.value
+                is Absolute -> position.value(size)
                 is Relative -> 1
             }.toInt()
         ) logV { "commandSize $bottomRight -> $it with $size" }

@@ -4,8 +4,6 @@ package dev.zieger.utils
 
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.api.AndroidSourceSet
-import dev.zieger.utils.ModuleType.ANDROID_LIB
-import dev.zieger.utils.ModuleType.JVM_LIB
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.plugins.JavaBasePlugin
@@ -34,7 +32,7 @@ internal fun Project.configureLibraryJarPublication(name: String) {
 
             from(components["java"])
             artifact(getSourcesJar(JVM_LIB))
-            artifact(getDokkaJar())
+//            artifact(getDokkaJar())
         }
     }
 }
@@ -51,7 +49,7 @@ internal fun Project.configureLibraryAarPublication(name: String) {
 
             artifact(file("$buildDir/outputs/aar/$name-release.aar"))
             artifact(getSourcesJar(ANDROID_LIB))
-            artifact(getDokkaJar())
+//            artifact(getDokkaJar())
         }
     }
 }

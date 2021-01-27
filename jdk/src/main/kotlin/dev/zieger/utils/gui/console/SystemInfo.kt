@@ -145,7 +145,9 @@ class SystemInfoComponent(
 
         @JvmStatic
         fun main(args: Array<String>) = runBlocking {
-            console() { }
+            console(ConsoleDefinition(0.0.rel to 0.0.rel, 1.0.rel to 1.0.rel, false) { scr, s, _, d ->
+                SystemInfoComponent(d, scr, s)
+            }) { }
         }.asUnit()
     }
 

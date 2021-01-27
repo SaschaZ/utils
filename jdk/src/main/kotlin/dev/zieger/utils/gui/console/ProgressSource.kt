@@ -1,14 +1,11 @@
 package dev.zieger.utils.gui.console
 
 import dev.zieger.utils.gui.console.ProgressUnit.Items
-import dev.zieger.utils.misc.mapPrev
-import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.observable.IObservable
 import dev.zieger.utils.observable.Observable
 import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.TimeEx
 import dev.zieger.utils.time.base.TimeUnit
-import dev.zieger.utils.time.base.div
 import dev.zieger.utils.time.base.minus
 import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.minutes
@@ -69,14 +66,11 @@ class ProgressSource(
     override val doneObservable = Observable(initial, scope = scope, safeSet = true) {
         lastAction = TimeEx()
         previousDone[lastAction] = it
-        val now = TimeEx()
-        previousDone.filter { (time, _) -> time < now - doneSpeedDuration }
+        previousDone.filter { (time, _) -> time < lastAction - doneSpeedDuration }
             .forEach { r -> previousDone.remove(r.key) }
-        if (previousDone.isNotEmpty()) {
-            doneSpeed = (previousDone.entries.runEach { key to value } + (now to it))
-                .mapPrev { (_, cur), (_, prev) -> cur - prev }.filterNotNull()
-                .sum() / previousDone.keys.run { maxOrNull()!! - minOrNull()!! }
-        }
+        if (previousDone.isNotEmpty())
+            doneSpeed = (it - previousDone.values.minOrNull()!!) /
+                    (lastAction - previousDone.keys.minOrNull()!!).seconds.toDouble()
     }
     override var done: Long by doneObservable
 

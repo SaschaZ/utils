@@ -14,8 +14,7 @@ abstract class AbsConsoleComponent<T : AbstractInteractableComponent<T>>(
     protected val screen: Screen,
     protected val scope: CoroutineScope,
     private val focusable: Boolean = false
-) : AbstractInteractableComponent<T>(),
-    InteractableRenderer<T> {
+) : AbstractInteractableComponent<T>(), InteractableRenderer<T> {
 
     private var lastSize: TerminalSize? = null
 
@@ -35,10 +34,14 @@ abstract class AbsConsoleComponent<T : AbstractInteractableComponent<T>>(
         val prevSize = lastSize
         lastSize = screen.terminalSize?.also { newSize ->
             if (newSize != prevSize) {
-                position = definition.commandPosition(newSize)
-                size = definition.commandSize(newSize)
+                applySize(newSize)
                 invalidate()
             }
         } ?: prevSize
+    }
+
+    protected open fun applySize(newSize: TerminalSize) {
+        position = definition.position(newSize)
+        size = definition.size(newSize)
     }
 }
