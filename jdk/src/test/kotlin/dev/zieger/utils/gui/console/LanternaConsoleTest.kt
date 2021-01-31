@@ -3,8 +3,11 @@ package dev.zieger.utils.gui.console
 import com.googlecode.lanterna.TextColor.ANSI.*
 import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.gui.console.ProgressEntity.*
-import dev.zieger.utils.gui.console.ProgressUnit.Bytes
+import dev.zieger.utils.gui.console.progress.PROGRESS
+import dev.zieger.utils.gui.console.progress.ProgressEntity.*
+import dev.zieger.utils.gui.console.progress.ProgressSource
+import dev.zieger.utils.gui.console.progress.ProgressUnit.Bytes
+import dev.zieger.utils.gui.console.progress.RemoveWhen
 import dev.zieger.utils.log2.Log
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.time.delay
@@ -13,11 +16,10 @@ import dev.zieger.utils.time.duration.minutes
 import dev.zieger.utils.time.duration.seconds
 import kotlinx.coroutines.Job
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
-@Disabled
+//@Disabled
 internal class LanternaConsoleTest {
 
     @Test

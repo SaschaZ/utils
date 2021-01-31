@@ -29,7 +29,7 @@ typealias text = TextWithColor
 typealias TextId = Long
 typealias MessageId = Long
 typealias MessageText = ITextScope.() -> Any
-typealias MessageColor = ColorScope.() -> TextColor?
+typealias MessageColor = IColorScope.() -> TextColor?
 
 class Message internal constructor(
     initial: List<TextWithColor>,
@@ -76,11 +76,18 @@ data class TextScope(
     override val remove: () -> Unit
 ) : ITextScope
 
-data class ColorScope(
-    val message: String,
-    val character: Char,
+interface IColorScope : ITextScope {
+    val message: String
+    val character: Char
     val idx: Int
-)
+}
+
+class ColorScope(
+    override val message: String,
+    override val character: Char,
+    override val idx: Int,
+    textScope: ITextScope
+) : IColorScope, ITextScope by textScope
 
 
 fun text(text: MessageText): TextWithColor = TextWithColor(text)

@@ -9,7 +9,9 @@ import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.runCommand
 import dev.zieger.utils.gui.console.ConsoleProgressBar.Companion.PROGRESS_COLORS
 import dev.zieger.utils.gui.console.GlobalConsoleScope.refresh
-import dev.zieger.utils.gui.console.ProgressEntity.*
+import dev.zieger.utils.gui.console.progress.PROGRESS
+import dev.zieger.utils.gui.console.progress.ProgressEntity.*
+import dev.zieger.utils.gui.console.progress.ProgressUnit
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.whenNotNull
 import dev.zieger.utils.time.delay
@@ -121,17 +123,13 @@ fun CoroutineScope.SysInfo(
 ): Array<TextWithColor> {
     val top = TopInfo(scope = this, autoUpdateInterval = autoUpdateInterval, onUpdate = onUpdate)
     return PROGRESS(Text {
-        text {
-            done = ((top.cpuPercent * 1000).toLong())
-            total = 1000
-            "CPU "
-        }
+        done = ((top.cpuPercent * 1000).toLong())
+        total = 1000
+        "CPU "
     }, Bar(size = 17, foreground = PROGRESS_COLORS.reversed())) + PROGRESS(Text {
-        text {
-            done = top.usedMem.toLong()
-            total = top.run { usedMem + availMem }.toLong()
-            " - MEM "
-        }
+        done = top.usedMem.toLong()
+        total = top.run { usedMem + availMem }.toLong()
+        " - MEM "
     }, Bar(size = 17, foreground = PROGRESS_COLORS.reversed()), Space, DoneOfTotal(), unit = ProgressUnit.Bytes)
 }
 
@@ -155,17 +153,13 @@ class SystemInfoComponent(
 
     override fun drawComponent(graphics: TextGUIGraphics, component: SystemInfoComponent) {
         graphics.putText(0, 0, { invalidate() }, {}, *PROGRESS(Text {
-            text {
-                done = ((top.cpuPercent * 1000).toLong())
-                total = 1000
-                "CPU "
-            }
+            done = ((top.cpuPercent * 1000).toLong())
+            total = 1000
+            "CPU "
         }, Bar(size = 17, foreground = PROGRESS_COLORS.reversed())) + PROGRESS(Text {
-            text {
-                done = top.usedMem.toLong()
-                total = top.run { usedMem + availMem }.toLong()
-                " - MEM "
-            }
+            done = top.usedMem.toLong()
+            total = top.run { usedMem + availMem }.toLong()
+            " - MEM "
         }, Bar(size = 17, foreground = PROGRESS_COLORS.reversed()), Space, DoneOfTotal(), unit = ProgressUnit.Bytes))
     }
 }

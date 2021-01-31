@@ -1,8 +1,9 @@
 @file:Suppress("unused", "FunctionName")
 
-package dev.zieger.utils.gui.console
+package dev.zieger.utils.gui.console.progress
 
 import dev.zieger.utils.coroutines.scope.IoCoroutineScope
+import dev.zieger.utils.gui.console.*
 import dev.zieger.utils.time.ITimeEx
 import dev.zieger.utils.time.TimeEx
 import dev.zieger.utils.time.duration.IDurationEx

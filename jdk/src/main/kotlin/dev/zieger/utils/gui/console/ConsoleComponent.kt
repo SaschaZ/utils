@@ -3,6 +3,7 @@
 package dev.zieger.utils.gui.console
 
 import com.googlecode.lanterna.TextCharacter
+import com.googlecode.lanterna.TextColor
 import com.googlecode.lanterna.gui2.Interactable
 import com.googlecode.lanterna.gui2.TextGUIGraphics
 import com.googlecode.lanterna.gui2.Window
@@ -150,7 +151,12 @@ fun TextGUIGraphics.putMsg(
         .forEach {
             putText(column, row + maxRow + scrollIdx, refresh, remove, prefix)
             it.forEach { t ->
-                t.forEachIndexed { idx, c -> setCharacter(column + prefixLength + idx, row + maxRow + scrollIdx, c) }
+                t.forEachIndexed { idx, c ->
+                    setCharacter(
+                        column + prefixLength + idx, row + maxRow + scrollIdx,
+                        c.textCharacter
+                    )
+                }
                 maxRow++
             }
         }
@@ -161,7 +167,7 @@ fun List<TextWithColor>.lines(
     maxColumns: Int,
     refresh: suspend () -> Unit,
     remove: TextWithColor.() -> Unit
-): List<List<TextCharacter>> {
+): List<List<TextCharacterWrapper>> {
     return flatMap { it.characters(refresh, remove) }
         .processBackSpaces()
         .processTabs()
@@ -180,7 +186,7 @@ fun TextGUIGraphics.putText(
         .lines(size.columns - column, refresh, remove)
         .forEachIndexed { r, chars ->
             chars.forEachIndexed { c, char ->
-                setCharacter(column + c, row + r, char)
+                setCharacter(column + c, row + r, char.textCharacter)
             }
             maxRow++
         }
@@ -190,31 +196,46 @@ fun TextGUIGraphics.putText(
 private fun TextWithColor.characters(
     refresh: suspend () -> Unit,
     remove: TextWithColor.() -> Unit
-): List<TextCharacter> {
-    val text = text(TextScope(refresh) { remove() }).toString()
+): List<TextCharacterWrapper> {
+    val textScope = TextScope(refresh) { remove() }
+    val text = text(textScope).toString()
     return text.mapIndexed { idx, c ->
-        val colorScope = ColorScope(text, c, idx)
-        TextCharacter(c, color?.invoke(colorScope), background?.invoke(colorScope))
+        val colorScope = ColorScope(text, c, idx, textScope)
+        TextCharacterWrapper(c, color?.invoke(colorScope), background?.invoke(colorScope))
     }
 }
 
-private fun List<TextCharacter>.processBackSpaces(): List<TextCharacter> =
+private fun List<TextCharacterWrapper>.processBackSpaces(): List<TextCharacterWrapper> =
     filterIndexed { index, character ->
         character.character != '\b' && getOrNull(index + 1)?.character != '\b'
     }
 
-private fun List<TextCharacter>.processTabs(): List<TextCharacter> =
-    flatMap { textCharacter ->
-        if (textCharacter.character == '\t')
-            (0..3).map { TextCharacter(' ', textCharacter.foregroundColor, textCharacter.backgroundColor) }
-        else listOf(textCharacter)
+private fun List<TextCharacterWrapper>.processTabs(): List<TextCharacterWrapper> =
+    flatMap { TextCharacterWrapper ->
+        if (TextCharacterWrapper.character == '\t')
+            (0..3).map {
+                TextCharacterWrapper(
+                    ' ',
+                    TextCharacterWrapper.foregroundColor,
+                    TextCharacterWrapper.backgroundColor
+                )
+            }
+        else listOf(TextCharacterWrapper)
     }
 
-private fun List<TextCharacter>.processNewLines(): List<List<TextCharacter>> {
+private fun List<TextCharacterWrapper>.processNewLines(): List<List<TextCharacterWrapper>> {
     var line = 0
     return groupBy { if (it.character == '\n') ++line else line }
         .map { (_, tc) -> tc.filterNot { it.character == '\n' } }
 }
 
-private fun List<List<TextCharacter>>.wrapLines(columns: Int): List<List<TextCharacter>> =
+private fun List<List<TextCharacterWrapper>>.wrapLines(columns: Int): List<List<TextCharacterWrapper>> =
     flatMap { it.groupByIndexed { idx, _ -> idx / columns.coerceAtLeast(1) }.map { (_, text) -> text } }
+
+data class TextCharacterWrapper(
+    val character: Char,
+    val foregroundColor: TextColor?,
+    val backgroundColor: TextColor?
+) {
+    val textCharacter get() = TextCharacter(character, foregroundColor, backgroundColor)
+}

@@ -3,6 +3,7 @@
 package dev.zieger.utils.gui.console
 
 import com.googlecode.lanterna.TextColor
+import dev.zieger.utils.gui.console.progress.IProgressSource
 
 @Suppress("LeakingThis")
 open class ConsoleProgressBar(

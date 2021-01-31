@@ -1,4 +1,4 @@
-package dev.zieger.utils.gui.console
+package dev.zieger.utils.gui.console.progress
 
 import dev.zieger.utils.misc.pretty
 import dev.zieger.utils.time.base.TimeUnit

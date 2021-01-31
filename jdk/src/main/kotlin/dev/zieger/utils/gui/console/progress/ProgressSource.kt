@@ -1,6 +1,6 @@
-package dev.zieger.utils.gui.console
+package dev.zieger.utils.gui.console.progress
 
-import dev.zieger.utils.gui.console.ProgressUnit.Items
+import dev.zieger.utils.gui.console.progress.ProgressUnit.Items
 import dev.zieger.utils.observable.IObservable
 import dev.zieger.utils.observable.Observable
 import dev.zieger.utils.time.ITimeEx
@@ -11,6 +11,7 @@ import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.minutes
 import dev.zieger.utils.time.duration.toDuration
 import kotlinx.coroutines.CoroutineScope
+import java.util.concurrent.ConcurrentHashMap
 
 interface IProgressSource {
 
@@ -60,17 +61,21 @@ class ProgressSource(
 
     override var lastAction: ITimeEx = TimeEx()
 
-    private var previousDone = HashMap<ITimeEx, Long>()
-    override var doneSpeed: Double = 0.0
+    private var previousDone = ConcurrentHashMap<ITimeEx, Long>()
+    override val doneSpeed: Double
+        get() {
+            val now = TimeEx()
+            previousDone.filter { (time, _) -> time < now - doneSpeedDuration }
+                .forEach { r -> previousDone.remove(r.key) }
+            return if (previousDone.isNotEmpty())
+                (done - previousDone.values.minOrNull()!!) /
+                        (now - previousDone.keys.minOrNull()!!).seconds.toDouble()
+            else -1.0
+        }
 
     override val doneObservable = Observable(initial, scope = scope, safeSet = true) {
         lastAction = TimeEx()
         previousDone[lastAction] = it
-        previousDone.filter { (time, _) -> time < lastAction - doneSpeedDuration }
-            .forEach { r -> previousDone.remove(r.key) }
-        if (previousDone.isNotEmpty())
-            doneSpeed = (it - previousDone.values.minOrNull()!!) /
-                    (lastAction - previousDone.keys.minOrNull()!!).seconds.toDouble()
     }
     override var done: Long by doneObservable
 
