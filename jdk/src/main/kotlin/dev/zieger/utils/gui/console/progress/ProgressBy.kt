@@ -4,6 +4,7 @@ package dev.zieger.utils.gui.console.progress
 
 import dev.zieger.utils.gui.console.*
 import dev.zieger.utils.gui.console.progress.ProgressEntity.*
+import dev.zieger.utils.misc.nullWhenBlank
 import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.minutes
 import kotlinx.coroutines.CoroutineScope
@@ -17,8 +18,10 @@ suspend fun <R> CoroutineScope.progressBy(
     doNotRemove: Boolean = false,
     consoleIdx: Int = 0,
     consoleScope: IConsoleScope = GlobalConsoleScope,
+    showSpeed: Boolean = true,
     removeWhen: Double = 1.0,
-    vararg entities: ProgressEntity = DEFAULT_PROGRESS_ENTITIES(removeWhen, title),
+    vararg entities: ProgressEntity = DEFAULT_PROGRESS_ENTITIES(showSpeed, { donePercent >= removeWhen }, { title }),
+    removeProgress: (remove: () -> Unit) -> Unit = {},
     block: suspend IProgressSource.() -> R
 ): R = ProgressSource(
     this,
@@ -29,18 +32,20 @@ suspend fun <R> CoroutineScope.progressBy(
     doneSpeedDuration = doneSpeedDuration
 ).run {
     val removeProg = consoleScope.outnl(consoleIdx, *PROGRESS(this@run, *entities))
+    removeProgress { removeProg() }
     block().apply { if (!doNotRemove) removeProg() }
 }
 
-fun DEFAULT_PROGRESS_ENTITIES(label: (IProgressTextScope.() -> String)? = null) =
-    DEFAULT_PROGRESS_ENTITIES(1.0, label)
+fun DEFAULT_PROGRESS_ENTITIES(title: String): Array<ProgressEntity> =
+    DEFAULT_PROGRESS_ENTITIES { title }
 
-fun DEFAULT_PROGRESS_ENTITIES(removeWhen: Double = 1.0, label: String) =
-    DEFAULT_PROGRESS_ENTITIES(removeWhen) { label }
-
-fun DEFAULT_PROGRESS_ENTITIES(removeWhen: Double = 1.0, label: (IProgressTextScope.() -> String)? = null) =
-    arrayOf(
-        Text { label?.invoke(this@Text) ?: title ?: "" },
-        Space, Bar(), Space, DoneSpeed(), Space, DoneOfTotal(), RemoveWhen(removeWhen)
-    )
+fun DEFAULT_PROGRESS_ENTITIES(
+    showSpeed: Boolean = true,
+    removeWhen: (IProgressSource.() -> Boolean)? = null,
+    title: (IProgressTextScope.() -> String)? = null
+): Array<ProgressEntity> = arrayOf(
+    Text { this.title?.nullWhenBlank() ?: title?.invoke(this) ?: "" },
+    Space, Bar(), Space, if (showSpeed) DoneSpeed() else null, Space,
+    DoneOfTotal(), removeWhen?.let { RemoveWhen(it) }
+).filterNotNull().toTypedArray()
 

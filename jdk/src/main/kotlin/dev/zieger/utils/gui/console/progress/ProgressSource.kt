@@ -55,7 +55,7 @@ class ProgressSource(
     override val initial: Long = 0,
     total: Long = -1,
     override var unit: ProgressUnit = Items(),
-    private val doneSpeedDuration: IDurationEx = 1.minutes,
+    private val doneSpeedDuration: IDurationEx = 15.minutes,
     override var title: String? = null
 ) : IProgressSource {
 
