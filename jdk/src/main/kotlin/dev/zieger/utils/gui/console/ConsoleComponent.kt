@@ -14,6 +14,7 @@ import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.channel.forEach
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.misc.*
+import dev.zieger.utils.time.base.times
 import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.milliseconds
 import kotlinx.coroutines.CoroutineScope
@@ -55,7 +56,7 @@ open class ConsoleComponent(
     private val buffer = ArrayList<Message>()
     private val bufferMutex = Mutex()
 
-    private val antiSpamProxy = AntiSpamProxy(minRefreshInterval, scope)
+    private val antiSpamProxy = AntiSpamProxy(minRefreshInterval * 0.9, scope)
 
     private var scrollIdx by OnChanged(0) { refresh() }
     private var numOutputLines: Int? by OnChanged(null) { value ->
@@ -82,6 +83,7 @@ open class ConsoleComponent(
                 refresh()
             }
         }
+        scope.launchEx(interval = minRefreshInterval) { refresh() }
     }
 
     fun newMessage(message: Message): () -> Unit {
