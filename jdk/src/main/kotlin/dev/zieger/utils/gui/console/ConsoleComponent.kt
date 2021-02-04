@@ -11,11 +11,13 @@ import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.input.KeyType
 import dev.zieger.utils.UtilsSettings
 import dev.zieger.utils.coroutines.builder.launchEx
+import dev.zieger.utils.coroutines.channel.forEach
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.misc.*
 import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.milliseconds
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlin.collections.lastOrNull
@@ -65,6 +67,28 @@ open class ConsoleComponent(
         }
     }
 
+    private val messageChannel = Channel<Message>(Channel.UNLIMITED)
+
+    init {
+        scope.launchEx {
+            messageChannel.forEach { message ->
+                when {
+                    message.offset != null ->
+                        buffer.add((buffer.size - message.offset).coerceIn(0..buffer.size), message)
+                    buffer.lastOrNull()?.newLine == false ->
+                        buffer[buffer.lastIndex] = (buffer.last().merge(message))
+                    else -> buffer.add(message)
+                }
+                refresh()
+            }
+        }
+    }
+
+    fun newMessage(message: Message): () -> Unit {
+        messageChannel.offer(message)
+        return { remove(message) }
+    }
+
     internal fun scroll(delta: Int) {
         scrollIdx = when {
             (numOutputLines ?: 1) < size.rows -> 0
@@ -72,21 +96,6 @@ open class ConsoleComponent(
             delta < 0 -> (scrollIdx + delta).coerceAtLeast(-(numOutputLines ?: 1) + size.rows)
             else -> scrollIdx
         }// logV { "delta=$delta; scrollIdx=$it" }
-    }
-
-    fun newMessage(message: Message): () -> Unit {
-        launchEx(mutex = bufferMutex) {
-            when {
-                message.offset != null ->
-                    buffer.add((buffer.size - message.offset).coerceIn(0..buffer.size), message)
-                buffer.lastOrNull()?.newLine == false ->
-                    buffer[buffer.lastIndex] = (buffer.last().merge(message))
-                else -> buffer.add(message)
-            }
-            refresh()
-        }
-
-        return { remove(message) }
     }
 
     private operator fun Message.plus(other: Message): Message = merge(other)
