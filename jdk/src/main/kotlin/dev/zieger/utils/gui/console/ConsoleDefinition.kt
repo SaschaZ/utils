@@ -9,7 +9,6 @@ import com.googlecode.lanterna.TextColor.ANSI.YELLOW_BRIGHT
 import com.googlecode.lanterna.gui2.Window
 import dev.zieger.utils.gui.console.Position.Absolute
 import dev.zieger.utils.gui.console.Position.Relative
-import dev.zieger.utils.log2.calls.logV
 import kotlinx.coroutines.CoroutineScope
 
 sealed class Position {
@@ -62,7 +61,7 @@ data class ConsoleDefinition(
                 is Absolute -> position.value(size)
                 is Relative -> size.rows * position.value(size)
             }.toInt()
-        ) logV { "position $topLeft -> $it with $size" }
+        )
 
     fun commandPosition(size: TerminalSize): TerminalPosition =
         TerminalPosition(
@@ -74,7 +73,7 @@ data class ConsoleDefinition(
                 is Absolute -> position.value(size)
                 is Relative -> size(size).rows + position(size).row
             }.toInt()
-        ) logV { "commandPosition $topLeft -> $it with $size" }
+        )
 
     fun size(size: TerminalSize): TerminalSize =
         TerminalSize(
@@ -86,7 +85,7 @@ data class ConsoleDefinition(
                 is Absolute -> position.value(size)
                 is Relative -> size.rows * position.value(size) - position(size).row - if (hasCommandInput) 1 else 0
             }.toInt()
-        ) logV { "size $bottomRight -> $it with $size" }
+        )
 
     fun commandSize(size: TerminalSize): TerminalSize =
         TerminalSize(
@@ -98,5 +97,5 @@ data class ConsoleDefinition(
                 is Absolute -> position.value(size)
                 is Relative -> 1
             }.toInt()
-        ) logV { "commandSize $bottomRight -> $it with $size" }
+        )
 }

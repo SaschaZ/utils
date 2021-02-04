@@ -7,8 +7,8 @@ import dev.zieger.utils.OsInfo.OsType.LINUX
 import dev.zieger.utils.OsInfo.OsType.MACOS
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.runCommand
-import dev.zieger.utils.gui.console.ConsoleProgressBar.Companion.PROGRESS_COLORS
 import dev.zieger.utils.gui.console.GlobalConsoleScope.refresh
+import dev.zieger.utils.gui.console.progress.ConsoleProgressBar.Companion.PROGRESS_COLORS
 import dev.zieger.utils.gui.console.progress.PROGRESS
 import dev.zieger.utils.gui.console.progress.ProgressEntity.*
 import dev.zieger.utils.gui.console.progress.ProgressUnit

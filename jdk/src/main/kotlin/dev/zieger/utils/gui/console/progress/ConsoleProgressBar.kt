@@ -1,9 +1,9 @@
 @file:Suppress("FunctionName")
 
-package dev.zieger.utils.gui.console
+package dev.zieger.utils.gui.console.progress
 
 import com.googlecode.lanterna.TextColor
-import dev.zieger.utils.gui.console.progress.IProgressSource
+import dev.zieger.utils.gui.console.*
 
 @Suppress("LeakingThis")
 open class ConsoleProgressBar(

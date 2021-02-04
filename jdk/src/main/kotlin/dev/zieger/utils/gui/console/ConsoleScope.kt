@@ -90,7 +90,6 @@ suspend inline fun console(
     IoCoroutineScope().launchEx scope@{
         panel(title, fontSize) {
             definition.toList().flatMap { def ->
-                Log.i("create console #$def")
                 def.createComponent(this, this@scope, window).onEach { c -> addComponent(c) }
             }.filterIsInstance<ConsoleComponent>().nullWhenEmpty()?.also { consoles ->
                 lastConsoleScope = ConsoleScope(this@scope, consoles).apply { launchEx { block() } }
