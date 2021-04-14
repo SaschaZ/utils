@@ -10,6 +10,8 @@ interface ILogScope : ILogContext {
         tags: ILogTags = Log,
         pipeline: ILogPipeline = Log
     ): ILogScope
+
+    fun reset()
 }
 
 open class LogScopeImpl protected constructor(override val Log: ILogContext = LogContext()) : ILogScope,
@@ -30,6 +32,10 @@ open class LogScopeImpl protected constructor(override val Log: ILogContext = Lo
         tags: ILogTags,
         pipeline: ILogPipeline
     ): ILogScope = LogScopeImpl(copy(pipeline, tags)).also { LogScope = it }
+
+    override fun reset() {
+        LogScope = LogScopeImpl()
+    }
 }
 
 var LogScope: ILogScope = LogScopeImpl()

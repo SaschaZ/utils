@@ -20,7 +20,8 @@ inline fun <T> parameterMix(
     inputFactory: (Map<String, ParamInstance<*>>) -> T,
     vararg params: Pair<String, Param<*>>,
     block: T.() -> Unit
-): Unit = parameterMixCollect(inputFactory, *params) { block(); Channel<Any>(Channel.UNLIMITED) }.asUnit()
+): Unit =
+    parameterMixCollect(inputFactory, *params) { block(); Channel<Any>(Channel.UNLIMITED) }.asUnit()
 
 /**
  *
@@ -51,17 +52,23 @@ inline fun <I, R> parameterMixCollect(
     }.toMap()
 
 fun List<Pair<String, Param<*>>>.buildParams(): List<Map<String, ParamInstance<*>>> {
-    val expectedNumberCombinations: Int? = accumulate { accu, (_, valueHolder) -> (accu ?: 1) * valueHolder.amount }
+    val expectedNumberCombinations: Long =
+        fold(1L) { accu, (_, valueHolder) -> accu * valueHolder.amount }
     println("number of combinations: $expectedNumberCombinations")
 
     val result: List<List<ParamInstance<*>>> =
-        accumulate { accu, (name, valueHolder) -> (accu ?: ArrayList()).mixWithParam(name, valueHolder) } ?: emptyList()
-    if (result.size != expectedNumberCombinations)
+        fold(ArrayList<List<ParamInstance<*>>>() as List<List<ParamInstance<*>>>) { accu, (name, valueHolder) ->
+            accu.mixWithParam(name, valueHolder)
+        }
+    if (result.size.toLong() != expectedNumberCombinations)
         throw IllegalStateException("Expected number of combinations does not match resulting number of combinations.")
     return result.map { it.map { i -> i.name to i }.toMap() }
 }
 
-private fun List<List<ParamInstance<*>>>.mixWithParam(name: String, values: Param<*>): List<List<ParamInstance<*>>> {
+private fun List<List<ParamInstance<*>>>.mixWithParam(
+    name: String,
+    values: Param<*>
+): List<List<ParamInstance<*>>> {
     var idx = 0
     return if (isEmpty())
         (0 until values.amount).map {
@@ -81,16 +88,11 @@ private operator fun <T> List<T>.times(factor: Int): List<T> {
     return result
 }
 
-private inline fun <A, T> Collection<T>.accumulate(block: (A?, T) -> A): A? {
-    var accu: A? = null
-    forEach { accu = block(accu, it) }
-    return accu
-}
-
 /**
  * [ReadOnlyProperty] map the parameter to the corresponding property by their names.
  */
 inline fun <reified T : Any?> bind(map: Map<String, ParamInstance<*>>) =
     object : ReadOnlyProperty<Any?, T> {
-        override fun getValue(thisRef: Any?, property: KProperty<*>): T = map.getValue(property.name).value as T
+        override fun getValue(thisRef: Any?, property: KProperty<*>): T =
+            map.getValue(property.name).value as T
     }

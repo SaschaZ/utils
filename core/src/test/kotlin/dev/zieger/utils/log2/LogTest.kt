@@ -5,7 +5,6 @@ package dev.zieger.utils.log2
 import dev.zieger.utils.core_testing.assertion2.isBlankOrNull
 import dev.zieger.utils.core_testing.assertion2.isEqual
 import dev.zieger.utils.core_testing.assertion2.isMatching
-import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.log2.*
 import dev.zieger.utils.log2.LogMessageBuilder.Companion.LOG_MESSAGE_WITH_CALL_ORIGIN
@@ -15,76 +14,70 @@ import dev.zieger.utils.observable.Observable
 import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.duration.milliseconds
 import dev.zieger.utils.time.duration.seconds
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 
-internal class LogTest {
+internal class LogTest : FunSpec({
 
-    private val messageObs = Observable<String?>("", previousValueSize = 20)
-    private var message by messageObs
+    class TestClass(logScope: ILogScope) : ILogScope by logScope {
+        fun testOne() = Log.v("testOne")
+    }
 
-    @BeforeEach
-    fun before() {
+    val msgObs = Observable<String?>("", previousValueSize = 20)
+    var msg by msgObs
+
+    beforeEach {
+        LogScope.reset()
+        msg = ""
+        msgObs.clearPreviousValues()
+
         Log.logLevel = LogLevel.VERBOSE
         Log.output = LogOutput {
-            this@LogTest.message = message.toString()
+            msg = message.toString()
             println(message)
         }
     }
 
-    @AfterEach
-    fun afterEach() {
-        messageObs.clearPreviousValues()
-    }
-
-    @Test
-    fun testBasics() = runTest(15.seconds) {
+    test("basic") {
         Log.tag = "moofoo"
         Log += "woomoo"
         Log += "bamdam"
 
         Log.v("test", "fooboo", "boofoo")
-        message isMatching """V-[0-9\-:]+: test - \[moofoo\|woomoo\|bamdam\|fooboo\|boofoo]"""
+        msg isMatching """V-[0-9\-:]+: test - \[moofoo\|woomoo\|bamdam\|fooboo\|boofoo]"""
 
-        message = ""
+        msg = ""
         Log.logLevel = LogLevel.DEBUG
         Log.v("test")
-        message
+        msg
 
         Log.messageBuilder = LogMessageBuilder(LOG_MESSAGE_WITH_CALL_ORIGIN)
         Log -= "woomoo"
         Log.d("test delay", filter = logPreFilter { next -> launchEx(delayed = 1.seconds) { next(this@logPreFilter) } })
-        message.isBlankOrNull()
-        messageObs.nextChange(5.seconds) { it isMatching """D-[0-9\-:]+-.+: test delay - \[moofoo\|bamdam\]""" }
+        msg.isBlankOrNull()
+        msgObs.nextChange(5.seconds) { it isMatching """D-[0-9\-:]+-.+: test delay - \[moofoo\|bamdam\]""" }
 
         Log.scope {
-            message = ""
-            messageObs.clearPreviousValues()
+            msg = ""
+            msgObs.clearPreviousValues()
             Log.tag = "foomoo"
             Log.messageBuilder = LogMessageBuilder()
-            Log += LogSpamFilter(1.seconds, this@runTest)
+            Log += LogSpamFilter(1.seconds, this@test)
 
             repeat(20) {
                 Log.i("inside scope #$it")
                 delay(250.milliseconds)
             }
-            messageObs.previousValues.size isEqual 5
+            msgObs.previousValues.size isEqual 5
         }
         Log.i("outside scope")
-        message isMatching """I-[0-9\-:]+-.+: outside scope - \[moofoo\|bamdam]"""
+        msg isMatching """I-[0-9\-:]+-.+: outside scope - \[moofoo\|bamdam]"""
     }
 
-    @Test
-    fun testCalls() = runTest {
+    test("calls") {
         TestClass(LogScopeImpl(Log.copy())).apply {
             testOne()
-            message isMatching """V-[0-9\-:]+: testOne"""
+            msg isMatching """V-[0-9\-:]+: testOne"""
         }
     }
-
-    class TestClass(logScope: ILogScope) : ILogScope by logScope {
-        fun testOne() = Log.v("testOne")
-    }
-}
+})
 

@@ -7,45 +7,40 @@ import dev.zieger.utils.core_testing.assertion.rem
 import dev.zieger.utils.time.base.TimeUnit
 import dev.zieger.utils.time.base.convert
 import dev.zieger.utils.time.duration.seconds
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 
-class TimeUnitTest {
+class TimeUnitTest : FunSpec({
 
-    @Test
-    fun testMillisToSeconds() {
+    test("millis to seconds") {
         val millis = TimeUnit.MS
         val minutes = TimeUnit.M
         val result = (millis to minutes).convert(60000)
         result assert 1L % { "result should be 1L but was $actual" }
     }
 
-    @Test
-    fun testHoursToMinutes() {
+    test("hours to minutes") {
         val hours = TimeUnit.H
         val seconds = TimeUnit.S
         val result = (hours to seconds).convert(1)
         result assert 3600L % { "result should be 3600L but was $actual" }
     }
 
-    @Test
-    fun testYearToDays() {
+    test("years to days") {
         val year = TimeUnit.YEAR
         val days = TimeUnit.DAY
         val result = (year to days).convert(10)
         result assert 3650L % { "result should be 3650L but was $actual" }
     }
 
-    @Test
-    fun testSecondToSecond() {
+    test("second to second") {
         val sec0 = TimeUnit.SECOND
         val sec1 = TimeUnit.SECOND
         val result = (sec0 to sec1).convert(1)
         result assert 1L % { "result should be 1L but was $actual" }
     }
 
-    @Test
-    fun testFormatDuration() {
+    test("format duration") {
         val duration = 10.seconds
         duration.formatDuration() assert "10s" % { "format duration for 10.seconds should return 10s" }
     }
-}
+})

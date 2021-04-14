@@ -2,14 +2,13 @@ package dev.zieger.utils.time
 
 import dev.zieger.utils.time.duration.toDuration
 import dev.zieger.utils.time.duration.years
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 
-internal class DurationFormatTest {
+internal class DurationFormatTest : FunSpec({
 
-    @Test
-    fun testFormat() {
+    test("format") {
         repeat(10) {
             println(
                 Random.nextLong(50.years.millis).absoluteValue.toDuration()
@@ -17,4 +16,4 @@ internal class DurationFormatTest {
             )
         }
     }
-}
+})

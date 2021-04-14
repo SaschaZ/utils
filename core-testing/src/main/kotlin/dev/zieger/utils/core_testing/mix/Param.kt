@@ -1,6 +1,7 @@
 package dev.zieger.utils.core_testing.mix
 
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty1
 
 class Param<T : Any>(
     val type: KClass<T>,
@@ -28,14 +29,19 @@ data class ParamInstance<T : Any>(
     override fun toString(): String = "$value"
 }
 
-inline fun <reified T : Any> param(name: String, vararg value: T?) =
-    name to Param(T::class, value.toList())
+inline fun <reified P: Any, reified T : Any> param(
+    property: KProperty1<P, T?>,
+    vararg value: T?
+) = property.name to Param(T::class, value.toList())
 
-inline fun <reified T : Any> param(name: String, list: List<T?>) =
-    name to Param(T::class, list)
+inline fun <reified P: Any, reified T : Any> param(property: KProperty1<P, T?>, list: List<T?>) =
+    property.name to Param(T::class, list)
 
-inline fun <reified T : Any> param(name: String, iterable: Iterable<T?>) =
-    name to Param(T::class, iterable.toList())
+inline fun <reified P: Any, reified T : Any> param(property: KProperty1<P, T?>, iterable: Iterable<T?>) =
+    property.name to Param(T::class, iterable.toList())
 
-inline fun <reified T : Any> param(name: String, amount: Int = 1, noinline block: (Int) -> T?) =
-    name to Param(T::class, amount, block)
+inline fun <reified P: Any, reified T : Any> param(
+    property: KProperty1<P, T?>,
+    amount: Int = 1,
+    noinline block: (Int) -> T?
+) = property.name to Param(T::class, amount, block)

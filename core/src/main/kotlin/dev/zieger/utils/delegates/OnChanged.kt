@@ -3,7 +3,6 @@
 package dev.zieger.utils.delegates
 
 import dev.zieger.utils.coroutines.Continuation
-import dev.zieger.utils.coroutines.TypeContinuation
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.delegates.OnChangedParamsWithParent.Companion.DEFAULT_RECENT_VALUE_BUFFER_SIZE
@@ -72,10 +71,10 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
     protected open var parent: WeakReference<P>? = null
     open var propertyName: String = ""
         protected set
-    protected open val nextChangeContinuation = TypeContinuation<T>()
     override val previousValues = FiFo<T?>(previousValueSize)
     protected open var previousValuesCleared: Boolean = false
-    protected open val valueWaiter = LinkedList<Pair<T, Continuation>>()
+    protected open val nextChangeContinuation = Continuation()
+    protected open val valueWaiter = LinkedList<Pair<T?, Continuation>>()
 
     protected open var internalValue: T = initial
         set(newValue) {
@@ -111,10 +110,11 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
     override suspend fun nextChange(
         timeout: IDurationEx?,
         onChanged: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit
-    ): T = withTimeout(timeout) {
-        val old = nextChangeContinuation.suspend(timeout)
+    ): T {
+        val old = value
+        nextChangeContinuation.suspend(timeout,)
         buildOnChangedScope(old).onChanged(value)
-        value
+        return value
     }
 
     override suspend fun suspendUntil(
@@ -126,7 +126,7 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         withTimeout(timeout, {
             valueWaiter.remove(wanted to cont)
             "Timeout when waiting for $wanted. Is $value and was [${previousValues.joinToString(", ")}]."
-        })  {
+        }) {
             if (value == wanted) return@withTimeout
 
             valueWaiter.add(wanted to cont)
@@ -156,7 +156,7 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
             previousValues.put(old)
         previousValuesCleared = false
 
-        nextChangeContinuation.resume(old)
+        nextChangeContinuation.resume()
         valueWaiter.removeAll { (wanted, cont) ->
             if (new == wanted) {
                 cont.resume()
@@ -192,16 +192,4 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
 
     override fun IOnChangedScopeWithParent<P, T>.onChangedInternal(value: T) =
         onChanged?.invoke(this, value).asUnit()
-}
-
-suspend fun IOnChangedWithParent<*, Number>.increment(): Number {
-    var result: Number = value
-    changeValue { (it.ex + 1.ex).also { r -> result = r } }
-    return result
-}
-
-suspend fun IOnChangedWithParent<*, Number>.decrement(): Number {
-    var result: Number = value
-    changeValue { (it.ex - 1.ex).also { r -> result = r } }
-    return result
 }

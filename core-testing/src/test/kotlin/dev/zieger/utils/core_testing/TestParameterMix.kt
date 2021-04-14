@@ -23,10 +23,10 @@ class TestParameterMix {
     fun testMix() = runTest {
         parameterMix(
             { TestVars(it) },
-            param("testVars0", 8..10 step 1),
-            param("testVars1", "foo", "boo"),
-            param("testVars2", 10.5, 12.4),
-            param("testVars3", "bäm", null)
+            param(TestVars::testVars0, 8..10 step 1),
+            param(TestVars::testVars1, "foo", "boo"),
+            param(TestVars::testVars2, 10.5, 12.4),
+            param(TestVars::testVars3, "bäm", null)
         ) {
             testVars0 isInRange 8..10
             testVars1 isAnyOf listOf("foo", "boo")

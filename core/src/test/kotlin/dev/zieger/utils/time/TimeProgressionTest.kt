@@ -8,12 +8,11 @@ import dev.zieger.utils.time.duration.IDurationEx
 import dev.zieger.utils.time.duration.minutes
 import dev.zieger.utils.time.duration.weeks
 import dev.zieger.utils.time.progression.step
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 
-class TimeProgressionTest {
+class TimeProgressionTest : FunSpec({
 
-    @Test
-    fun testInit() {
+    test("init") {
         val end: ITimeEx = TimeEx()
         val start: ITimeEx = end - 2.weeks
         val step: IDurationEx = 1.minutes
@@ -21,4 +20,4 @@ class TimeProgressionTest {
             it.size assert (2.weeks / (step * 750)).toInt()
         }
     }
-}
+})

@@ -33,16 +33,6 @@ class MachineExFunctionDslTest : FunSpec({
             onEvent(SECOND).withState(A).set(B link TestStateData(true))
             onEvent(THIRD).withState(B link TestStateData).set(C)
             onEvent(FOURTH).withState(C, B.previous(1) link TestStateData(true)).set(D)
-
-//            +FOURTH + C + B(TestStateData)[1] set D
-
-//            onEvent(TestEvent.ignoreSlave).exec {
-//
-//            }
-//
-//            onState(TestState.ignoreSlave).withEvent(SECOND).exec {
-//
-//            }
         }.run {
             state isEqual INITIAL
 

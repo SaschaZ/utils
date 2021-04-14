@@ -1,30 +1,25 @@
 package dev.zieger.utils.coroutines
 
-import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.asyncEx
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.builder.withContextEx
-import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.time.*
 import dev.zieger.utils.time.base.minus
 import dev.zieger.utils.time.base.plus
+import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.duration.milliseconds
 import dev.zieger.utils.time.duration.seconds
-import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 
-class BuilderTest {
+class BuilderTest : FunSpec({
 
-    @Test
-    fun testLaunchEx() = runBlocking {
+    test("launchEx") {
         var executed = false
         launchEx { executed = true }
         delay(100.milliseconds)
         assert(executed) { "executed is false" }
-    }.asUnit()
+    }
 
-    @Test
-    fun testLaunchExDelayed() = runTest(10.seconds) {
+    test("launchEx delayed") {
         var executed = false
         val delayDuration = 5.seconds
         val checkDuration = 2.seconds
@@ -37,21 +32,19 @@ class BuilderTest {
         assert(!executed) { "executed is true" }
         delay(delayDuration - checkDuration + 1.seconds)
         assert(executed) { "executed is false" }
-    }.asUnit()
+    }
 
-    @Test
-    fun testAsyncEx() = runBlocking {
+    test("asyncEx") {
         var executed = false
         asyncEx(Unit) { executed = true }.await()
         delay(100.milliseconds)
         assert(executed) { "executed is false" }
-    }.asUnit()
+    }
 
-    @Test
-    fun testWithContextEx() = runBlocking {
+    test("withContextEx") {
         var executed = false
         withContextEx(Unit, coroutineContext) { executed = true }
         delay(100.milliseconds)
         assert(executed) { "executed is false" }
-    }.asUnit()
-}
+    }
+})

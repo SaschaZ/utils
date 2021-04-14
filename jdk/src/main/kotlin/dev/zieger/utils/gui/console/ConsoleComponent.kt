@@ -11,7 +11,7 @@ import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.input.KeyType
 import dev.zieger.utils.UtilsSettings
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.coroutines.channel.forEach
+import dev.zieger.utils.coroutines.forEach
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.misc.*
 import dev.zieger.utils.time.base.times

@@ -1,11 +1,10 @@
 import dev.zieger.utils.misc.ex
 import dev.zieger.utils.misc.times
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 
-class NumberExTest {
+class NumberExTest : FunSpec({
 
-    @Test
-    fun testIt() {
+    test("numberEx") {
         val someDouble = 5.5
         val someFloat = 3.4f
         val someLong = 100L
@@ -16,14 +15,13 @@ class NumberExTest {
         println("result=$result; type=${result.javaClass.simpleName}")
     }
 
-    @Test
-    fun testNumberExToNumberCast() {
+    test("numberEx2") {
         val nEx = 10.ex
         val n = nEx as Number
         assert(nEx == 10.ex)
         assert(n == 10)
     }
-}
+})
 
 private operator fun Double.plus(number: Number): Double {
     return this + number.toDouble()

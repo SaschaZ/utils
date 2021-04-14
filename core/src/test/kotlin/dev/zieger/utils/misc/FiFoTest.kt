@@ -2,24 +2,20 @@ package dev.zieger.utils.misc
 
 import dev.zieger.utils.core_testing.assertion2.hasSameContent
 import dev.zieger.utils.core_testing.assertion2.isTrue
-import dev.zieger.utils.core_testing.runTest
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 
-internal class FiFoTest {
+internal class FiFoTest : FunSpec({
 
-    private lateinit var fifo: FiFo<Int>
+    lateinit var fifo: FiFo<Int>
 
-    @BeforeEach
-    fun beforeEach() {
+    beforeEach {
         fifo = FiFo(3)
     }
 
-    @Test
-    fun testFiFo() = runTest {
+    test("fifo") {
         fifo.isEmpty().isTrue()
 
         repeat(5) { fifo.put(it) }
         fifo hasSameContent listOf(2, 3, 4)
     }
-}
+})

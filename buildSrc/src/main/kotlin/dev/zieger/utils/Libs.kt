@@ -22,6 +22,8 @@ val DependencyHandlerScope.kotlin
     get() = "implementation"("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${Versions.kotlin}")
 val DependencyHandlerScope.kotlinReflect
     get() = "implementation"("org.jetbrains.kotlin:kotlin-reflect:${Versions.kotlin}")
+val DependencyHandlerScope.testKotlinReflect
+    get() = "testImplementation"("org.jetbrains.kotlin:kotlin-reflect:${Versions.kotlin}")
 
 val DependencyHandlerScope.coroutinesCore
     get() = "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
@@ -54,7 +56,7 @@ val DependencyHandlerScope.androidXrecyclerView
     get() = "implementation"("androidx.recyclerview:recyclerview:${Versions.androidXrecyclerView}")
 
 val DependencyHandlerScope.koin
-    get() = "implementation"("org.koin:koin-core:2.0.1")
+    get() = "implementation"("org.koin:koin-core:${Versions.koin}")
 val DependencyHandlerScope.koinTest
     get() = "implementation"("org.koin:koin-test:${Versions.koin}")
 

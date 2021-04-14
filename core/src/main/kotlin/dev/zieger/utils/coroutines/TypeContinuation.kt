@@ -8,7 +8,6 @@ import dev.zieger.utils.time.duration.IDurationEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -57,7 +56,7 @@ open class TypeContinuation<T : Any?> {
         c.receive().let { result ->
             @Suppress("UNCHECKED_CAST")
             when (result) {
-                is Value<*> -> result.value as T
+                is Value<T> -> result.value
                 is Exception -> throw result.throwable
             }
         }
@@ -107,7 +106,7 @@ open class TypeContinuation<T : Any?> {
 /**
  *
  */
-suspend inline fun <T : Any> suspendCoroutine(
+suspend inline fun <T : Any?> suspendCoroutine(
     wanted: T? = null,
     timeout: IDurationEx? = null,
     crossinline block: suspend TypeContinuation<T>.() -> Unit

@@ -18,82 +18,14 @@ import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_DEFG.TEST_STATE_
 import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG.G
 import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_HI.H
 import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_HI.I
-import dev.zieger.utils.statemachine.conditionelements.*
+import dev.zieger.utils.statemachine.conditionelements.AbsEvent
+import dev.zieger.utils.statemachine.conditionelements.AbsState
+import dev.zieger.utils.statemachine.conditionelements.X
+import dev.zieger.utils.statemachine.conditionelements.combo
 import dev.zieger.utils.time.duration.seconds
 import io.kotest.core.spec.style.FunSpec
 import kotlinx.coroutines.cancel
 
-
-enum class TestState2 : AbsState by State() {
-    A, B, C;
-
-    companion object : StateGroup<TestState2>(TestState2::class)
-}
-
-sealed class TestState : State() {
-
-    object INITIAL : TestState()
-    object A : TestState()
-    object B : TestState()
-    object C : TestState()
-
-    sealed class TEST_STATE_GROUP_DEFG : TestState() {
-        object D : TEST_STATE_GROUP_DEFG()
-        object E : TEST_STATE_GROUP_DEFG()
-
-        sealed class TEST_STATE_GROUP_FG : TestState() {
-            object F : TEST_STATE_GROUP_FG()
-            object G : TEST_STATE_GROUP_FG()
-
-            companion object : StateGroup<TEST_STATE_GROUP_FG>(TEST_STATE_GROUP_FG::class)
-        }
-
-        companion object : StateGroup<TEST_STATE_GROUP_DEFG>(TEST_STATE_GROUP_DEFG::class)
-    }
-
-    sealed class TEST_STATE_GROUP_HI : TestState() {
-        object H : TEST_STATE_GROUP_HI()
-        object I : TEST_STATE_GROUP_HI()
-
-        companion object : StateGroup<TEST_STATE_GROUP_HI>(TEST_STATE_GROUP_HI::class)
-    }
-
-    companion object : StateGroup<TestState>(TestState::class)
-}
-
-sealed class TestData : Data {
-
-    data class TestEventData(val foo: String) : TestData() {
-        companion object : Type<TestEventData>(TestEventData::class)
-    }
-
-    data class TestEventData2(val foo: String) : TestData() {
-        companion object : Type<TestEventData2>(TestEventData2::class)
-    }
-
-    data class TestStateData(val moo: Boolean) : TestData() {
-        companion object : Type<TestStateData>(TestStateData::class)
-    }
-
-    companion object : Type<TestData>(TestData::class)
-}
-
-sealed class TestEvent : Event() {
-
-    object FIRST : TestEvent()
-    object SECOND : TestEvent()
-    object THIRD : TestEvent()
-
-    sealed class TEST_EVENT_GROUP : TestEvent() {
-        object FOURTH : TEST_EVENT_GROUP()
-        object FIFTH : TEST_EVENT_GROUP()
-        object SIXTH : TEST_EVENT_GROUP()
-
-        companion object : EventGroup<TEST_EVENT_GROUP>(TEST_EVENT_GROUP::class)
-    }
-
-    companion object : EventGroup<TestEvent>(TestEvent::class)
-}
 
 class MachineExTest : FunSpec({
 

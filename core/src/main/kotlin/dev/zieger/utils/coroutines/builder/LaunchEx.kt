@@ -26,11 +26,11 @@ import kotlin.reflect.KClass
  * @param logStackTrace Append the stack trace to a file specified by [ERROR_LOG_FILE] for every matching [Throwable].
  *  Defaulting to [LOG_EXCEPTIONS].
  * @param name Name of the new coroutine. Defaulting to `null`.
- * @param isSuperVisionEnabled Defaulting to `false`.
  * @param include Caught [Throwable] must be one of this classes or it is thrown again. Defaulting to a list of
  *  [Throwable].
  * @param exclude Caught [Throwable] must not be one this classes or it is thrown again. Defaulting to a list of
  *  [CancellationException].
+ * @param useSuperVisorJob If ´true´, a SuperVisorJob is added to the used CoroutineContext. Defaulting to `false`.
  * @param onCatch Is always called for every matching [Throwable]. Defaulting to empty lambda.
  * @param onFinally Is called at last when no [Throwable] was caught or [maxExecutions] was reached. Is not called,
  *  when the [Throwable] does not match the specified [include] and [exclude] classes. Defaulting to empty lambda.
@@ -51,13 +51,14 @@ suspend fun launchEx(
     name: String? = null,
     include: List<KClass<out Throwable>> = listOf(Throwable::class),
     exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
+    useSuperVisorJob: Boolean = false,
     onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
     onFinally: suspend CoroutineScope.() -> Unit = {},
     block: suspend CoroutineScope.(numExecution: Int) -> Unit
 ): Job = coroutineScope {
     launchEx(
         coroutineContext, start, interval, delayed, maxExecutions, retryDelay, timeout, mutex,
-        printStackTrace, logStackTrace, name, include, exclude, onCatch, onFinally, block
+        printStackTrace, logStackTrace, name, include, exclude, useSuperVisorJob, onCatch, onFinally, block
     )
 }
 
@@ -83,6 +84,7 @@ suspend fun launchEx(
  *  [Throwable].
  * @param exclude Caught [Throwable] must not be one this classes or it is thrown again. Defaulting to a list of
  *  [CancellationException].
+ * @param useSuperVisorJob If ´true´, a SuperVisorJob is added to the used CoroutineContext. Defaulting to `false`.
  * @param onCatch Is always called for every matching [Throwable]. Defaulting to empty lambda.
  * @param onFinally Is called at the end of every execution.
  * @param block Lambda to execute inside the [launch] call.
@@ -103,10 +105,11 @@ fun CoroutineScope.launchEx(
     name: String? = null,
     include: List<KClass<out Throwable>> = listOf(Throwable::class),
     exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
+    useSuperVisorJob: Boolean = false,
     onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
     onFinally: suspend CoroutineScope.() -> Unit = {},
     block: suspend CoroutineScope.(numExecution: Int) -> Unit
-): Job = buildContext(coroutineContext, name).let { ctx ->
+): Job = buildContext(coroutineContext, useSuperVisorJob, name).let { ctx ->
     launch(ctx, start) {
         executeExInternal(
             ctx, Unit, interval, delayed, mutex, maxExecutions, retryDelay, timeout, printStackTrace,

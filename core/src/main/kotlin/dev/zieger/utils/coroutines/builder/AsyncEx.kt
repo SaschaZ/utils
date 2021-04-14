@@ -34,6 +34,7 @@ import kotlin.reflect.KClass
  *  [Throwable].
  * @param exclude Caught [Throwable] must not be one this classes or it is thrown again. Defaulting to a list of
  *  [CancellationException].
+ * @param useSuperVisorJob If ´true´, a SuperVisorJob is added to the used CoroutineContext. Defaulting to `false`.
  * @param onCatch Is always called for every matching [Throwable]. Defaulting to empty lambda.
  * @param onFinally Is called at the end of every execution.
  * @param block Lambda to execute inside the [async] call.
@@ -55,10 +56,11 @@ fun <T : Any?> CoroutineScope.asyncEx(
     name: String? = null,
     include: List<KClass<out Throwable>> = listOf(Throwable::class),
     exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
+    useSuperVisorJob: Boolean = false,
     onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
     onFinally: suspend CoroutineScope.() -> Unit = {},
     block: suspend CoroutineScope.(numExecution: Int) -> T
-): Deferred<T> = buildContext(coroutineContext, name).let { ctx ->
+): Deferred<T> = buildContext(coroutineContext, useSuperVisorJob, name).let { ctx ->
     async(ctx, start) {
         executeExInternal(
             ctx, returnOnCatch, null, delayed, mutex, maxExecutions, retryDelay, timeout,

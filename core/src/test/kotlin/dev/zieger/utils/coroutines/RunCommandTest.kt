@@ -1,15 +1,13 @@
 package dev.zieger.utils.coroutines
 
-import dev.zieger.utils.core_testing.runTest
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 
-class RunCommandTest {
+class RunCommandTest : FunSpec({
 
-    @Test
-    fun testIt() = runTest {
+    test("runCommand") {
         "top -b -n 1 | grep java".runCommand().apply {
             if (stdOutput.isNotBlank()) println(stdOutput)
             if (errOutput.isNotBlank()) System.err.println(errOutput)
         }.also { println(it) }
     }
-}
+})

@@ -1,18 +1,16 @@
 package dev.zieger.utils.time
 
-import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.json.JsonConverter
 import dev.zieger.utils.time.string.DateFormat
 import dev.zieger.utils.time.string.ECT
 import dev.zieger.utils.time.string.GMT
 import dev.zieger.utils.time.string.parse
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 import java.util.*
 
-class TimeZoneTest {
+class TimeZoneTest : FunSpec({
 
-    @Test
-    fun testTimeZone() = runTest {
+    test("time zone") {
         val toTest = listOf(
             "13.6.2020-13:37:00" to ECT,
             "13.6.2020-13:37:00" to GMT,
@@ -31,9 +29,8 @@ class TimeZoneTest {
         }
     }
 
-    @Test
-    fun testJson() = runTest() {
+   test("jsonø") {
         val time = "1.1.2017 13:37".parse(GMT)
         println(time.formatTime(DateFormat.EXCHANGE))
     }
-}
+})

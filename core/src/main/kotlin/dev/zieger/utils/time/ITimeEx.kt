@@ -38,7 +38,7 @@ interface ITimeEx : IDurationEx, ITimeZoneHolder, StringConverter {
     val minuteOfHour: Int
         get() = getCalendarField(Calendar.MINUTE)
     val secondOfMinute: Int
-        get() = getCalendarField(Calendar.MINUTE)
+        get() = getCalendarField(Calendar.SECOND)
     val milliOfSecond: Int
         get() = getCalendarField(Calendar.MILLISECOND)
 

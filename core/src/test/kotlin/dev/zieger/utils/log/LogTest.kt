@@ -2,15 +2,12 @@
 
 package dev.zieger.utils.log
 
-import dev.zieger.utils.core_testing.runTest
-import dev.zieger.utils.time.duration.seconds
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 
 
-internal class LogTest {
+internal class LogTest : FunSpec({
 
-    @Test
-    fun testSpamFilter() = runTest(15.seconds) {
+    test("spam filter") {
         Log.w("before test")
     }
-}
+})

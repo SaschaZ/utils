@@ -1,19 +1,16 @@
 package dev.zieger.utils.coroutines
 
 import dev.zieger.utils.core_testing.TestCoroutineScope
-import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.duration.milliseconds
+import io.kotest.core.spec.style.FunSpec
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Test
 
-class CoroutineScopeExTest {
+class CoroutineScopeExTest : FunSpec({
 
-    @Test
-    fun testExecute() = runBlocking {
+    test("execute") {
         var executed = false
         val scope = TestCoroutineScope()
         val job = scope.launch {
@@ -21,10 +18,9 @@ class CoroutineScopeExTest {
         }
         job.join()
         assert(executed) { "block should be executed" }
-    }.asUnit()
+    }
 
-    @Test
-    fun testCancelJob() = runBlocking {
+    test("cancel job") {
         var executed = false
         val scope = TestCoroutineScope()
         val job = scope.launch {
@@ -34,10 +30,9 @@ class CoroutineScopeExTest {
         }
         job.cancel()
         assert(!executed) { "block should not be executed" }
-    }.asUnit()
+    }
 
-    @Test
-    fun testCancelScope() = runBlocking {
+    test("cancel scope") {
         var executed = false
         val scope = TestCoroutineScope()
         scope.launch {
@@ -47,10 +42,9 @@ class CoroutineScopeExTest {
         }
         scope.cancel()
         assert(!executed) { "block should not be executed" }
-    }.asUnit()
+    }
 
-    @Test
-    fun testResetScope() = runBlocking {
+    test("reset scope") {
         var executed = false
         val scope = TestCoroutineScope()
         scope.launch {
@@ -69,5 +63,5 @@ class CoroutineScopeExTest {
         }
         job.join()
         assert(executed) { "block should be executed" }
-    }.asUnit()
-}
+    }
+})

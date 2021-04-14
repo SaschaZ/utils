@@ -2,6 +2,7 @@ package dev.zieger.utils.coroutines.scope
 
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.coroutineContext
 
 open class CoroutineScopeEx(
     private val scopeName: String,
@@ -32,3 +33,5 @@ open class CoroutineScopeEx(
         _coroutineContext = newCoroutineContext
     }
 }
+
+suspend fun coroutineScope() = CoroutineScope(coroutineContext)

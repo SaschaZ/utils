@@ -1,7 +1,7 @@
 package dev.zieger.utils
 
 object Versions {
-    const val kotlin = "1.4.21"
+    const val kotlin = "1.4.30"
     const val coroutines = "1.4.2"
 
     const val multidex = "2.0.1"
@@ -10,7 +10,7 @@ object Versions {
     const val androidXconstraintLayout = "1.1.3"
     const val androidXrecyclerView = "1.1.0"
 
-    const val koin = "2.1.6"
+    const val koin = "2.2.2"
     const val slf4jSimple = "1.7.29"
     const val mordant = "1.2.1"
     const val progressbar = "0.8.0"

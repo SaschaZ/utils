@@ -1,12 +1,10 @@
 package dev.zieger.utils.misc
 
-import dev.zieger.utils.core_testing.runTest
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 
-class HexTest {
+class HexTest : FunSpec({
 
-    @Test
-    fun testHex() = runTest {
+    test("hex") {
         println(0x00000000L.hex4)
     }
-}
+})

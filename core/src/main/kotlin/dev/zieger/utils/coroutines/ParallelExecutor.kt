@@ -4,6 +4,7 @@ package dev.zieger.utils.coroutines
 
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
+import dev.zieger.utils.coroutines.scope.IoCoroutineScope
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.mapPrev
 import dev.zieger.utils.misc.runEach
@@ -74,7 +75,7 @@ suspend inline fun <R> parallelScope(
  */
 open class ParallelExecutor<R>(
     private val numParallel: Int = Runtime.getRuntime().availableProcessors(),
-    private val scope: CoroutineScope = DefaultCoroutineScope()
+    private val scope: CoroutineScope = IoCoroutineScope()
 ) {
     private val resultChannel = Channel<Pair<Long, R>>(Channel.UNLIMITED)
 

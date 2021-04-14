@@ -1,16 +1,14 @@
 package dev.zieger.utils.coroutines
 
-import dev.zieger.utils.core_testing.runTest
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 
-internal class ShellScopeTest {
+internal class ShellScopeTest : FunSpec({
 
-    @Test
-    fun testShellScope() = runTest {
+    test("test shell scope") {
         shell {
             +"ls"
             +"ls /"
             +"ip a"
         }
     }
-}
+})

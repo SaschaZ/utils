@@ -9,12 +9,11 @@ import dev.zieger.utils.core_testing.mix.ParamInstance
 import dev.zieger.utils.core_testing.mix.bind
 import dev.zieger.utils.core_testing.mix.param
 import dev.zieger.utils.core_testing.mix.parameterMix
-import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.delegates.nextInt
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 import kotlin.random.Random
 
-class CatchTest {
+class CatchTest : FunSpec({
 
     data class CatchTestData(val map: Map<String, ParamInstance<*>>) {
         val result: Int by bind(map)
@@ -24,15 +23,14 @@ class CatchTest {
         val logStackTrace: Boolean by bind(map)
     }
 
-    @Test
-    fun testCatch() {
+    test("catch") {
         parameterMix(
             { CatchTestData(it) },
-            param("result", 10) { Random.nextInt() },
-            param("returnOnCatch", 10) { Random.nextInt() },
-            param("maxExecutions", Random.nextInt(0..9)),
-            param("printStackTrace", false, false),
-            param("logStackTrace", true, false)
+            param(CatchTestData::result, 10) { Random.nextInt() },
+            param(CatchTestData::returnOnCatch, 10) { Random.nextInt() },
+            param(CatchTestData::maxExecutions, Random.nextInt(0..9)),
+            param(CatchTestData::printStackTrace, false, false),
+            param(CatchTestData::logStackTrace, true, false)
         ) {
             var caught = 0
             var finally = 0
@@ -60,9 +58,8 @@ class CatchTest {
         }
     }
 
-    @Test
-    fun testNullReturn() = runTest {
+    test("null return") {
         val result: Int? = catch(null) { throw Exception("foo") }
         result.isNull()
     }
-}
+})

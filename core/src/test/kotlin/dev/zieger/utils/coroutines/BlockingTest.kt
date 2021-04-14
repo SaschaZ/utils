@@ -2,22 +2,20 @@ package dev.zieger.utils.coroutines
 
 
 import dev.zieger.utils.misc.asUnit
-import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 
-class BlockingTest {
+class BlockingTest : FunSpec({
 
-    private fun blockingCall(): Boolean {
+    fun blockingCall(): Boolean {
         Thread.sleep(100)
         return true
     }
 
-    @Test
-    fun testBlockingCall() = runBlocking {
+    test("test blocking") {
         val result = executeNativeBlocking {
             Thread.sleep(100)
             blockingCall()
         }
         assert(result) { "result should be true" }
     }.asUnit()
-}
+})

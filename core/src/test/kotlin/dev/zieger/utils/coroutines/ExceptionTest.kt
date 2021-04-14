@@ -2,7 +2,6 @@ package dev.zieger.utils.coroutines
 
 import dev.zieger.utils.core_testing.assertion2.isFalse
 import dev.zieger.utils.core_testing.assertion2.isTrue
-import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.asyncEx
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.builder.withContextEx
@@ -10,16 +9,14 @@ import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.log2.Log
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.time.duration.milliseconds
+import io.kotest.core.spec.style.FunSpec
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Test
 
-class ExceptionTest {
+class ExceptionTest : FunSpec({
 
-    @Test
-    fun testMultiLaunch() = runTest {
+    test("multi launch") {
         val scope = DefaultCoroutineScope { _, t -> Log.e(t.localizedMessage) }
         var executed = false
         listOf(
@@ -35,8 +32,7 @@ class ExceptionTest {
         executed.isTrue()
     }
 
-    @Test
-    fun testLaunch() = runBlocking {
+    test("launch") {
         var catched = false
         var finally = false
 
@@ -57,10 +53,9 @@ class ExceptionTest {
         assert(catched) { "throwable should be catched" }
         assert(finally) { "finally should be called" }
         println("test finished - catched=$catched; isActive=${isActive}")
-    }.asUnit()
+    }
 
-    @Test
-    fun testAsync() = runBlocking {
+    test("async") {
         var catched = false
         var finally = false
 
@@ -83,10 +78,9 @@ class ExceptionTest {
         assert(catched) { "throwable should be catched" }
         assert(finally) { "finally should be called" }
         println("test finished - catched=$catched; isActive=${isActive}")
-    }.asUnit()
+    }
 
-    @Test
-    fun testWithContext() = runBlocking {
+    test("withContextEX") {
         var catched = false
         var finally = false
 
@@ -113,4 +107,4 @@ class ExceptionTest {
         assert(finally) { "finally should be called" }
         println("test finished - catched=$catched; isActive=${isActive}")
     }.asUnit()
-}
+})

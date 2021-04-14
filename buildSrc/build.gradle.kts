@@ -13,7 +13,7 @@ kotlinDslPluginOptions {
 }
 
 dependencies {
-    implementation("com.android.tools.build:gradle:3.5.4")
+    implementation("com.android.tools.build:gradle:3.6.3")
     implementation(gradleApi())
     implementation(localGroovy())
     implementation(kotlin("stdlib"))

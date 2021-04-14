@@ -9,12 +9,11 @@ import dev.zieger.utils.time.duration.hours
 import dev.zieger.utils.time.duration.minutes
 import dev.zieger.utils.time.duration.years
 import dev.zieger.utils.time.string.DateFormat
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 
-class TimeExTest {
+class TimeExTest : FunSpec({
 
-    @Test
-    fun testPrint() {
+    test("time print") {
         val firstTime = TimeEx() - 5.years
         println("$firstTime")
         val secondTime = TimeEx() - 5.years * 10 / 3
@@ -36,6 +35,6 @@ class TimeExTest {
         println(daySum)
         println(TimeEx(millis).leapYears())
     }
+})
 
-    fun ITimeEx.leapYears(since: Int = 1970): Long = (this / 1.years / 4).toLong()
-}
+fun ITimeEx.leapYears() = (0..year).count { it % 4 == 0 && it % 100 != 0 }

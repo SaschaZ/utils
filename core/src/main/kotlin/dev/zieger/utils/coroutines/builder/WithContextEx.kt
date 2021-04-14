@@ -37,6 +37,7 @@ import kotlin.reflect.KClass
  *  [Throwable].
  * @param exclude Caught [Throwable] must not be one this classes or it is thrown again. Defaulting to a list of
  *  [CancellationException].
+ * @param useSuperVisorJob If ´true´, a SuperVisorJob is added to the used CoroutineContext. Defaulting to `false`.
  * @param onCatch Is always called for every matching [Throwable]. Defaulting to empty lambda.
  * @param onFinally Is called at the end of every execution.
  * @param block Lambda to execute inside the [withContext] call.
@@ -56,10 +57,11 @@ suspend fun <T : Any?> withContextEx(
     name: String? = null,
     include: List<KClass<out Throwable>> = listOf(Throwable::class),
     exclude: List<KClass<out Throwable>> = listOf(CancellationException::class),
+    useSuperVisorJob: Boolean = false,
     onCatch: suspend CoroutineScope.(t: Throwable) -> Unit = {},
     onFinally: suspend CoroutineScope.() -> Unit = {},
     block: suspend CoroutineScope.(numExecution: Int) -> T
-): T = buildContext(context ?: coroutineContext, name).let { ctx ->
+): T = buildContext(context ?: coroutineContext, useSuperVisorJob, name).let { ctx ->
     withContext(ctx) {
         executeExInternal(
             ctx, returnOnCatch, null, delayed, mutex, maxExecutions, retryDelay, timeout,

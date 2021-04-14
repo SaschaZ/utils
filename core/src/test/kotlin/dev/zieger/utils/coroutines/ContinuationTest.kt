@@ -4,27 +4,23 @@ package dev.zieger.utils.coroutines
 
 import dev.zieger.utils.core_testing.assertion2.isEqual
 import dev.zieger.utils.core_testing.assertion2.rem
-import dev.zieger.utils.core_testing.runTest
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.duration.seconds
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.FunSpec
 import java.util.concurrent.atomic.AtomicInteger
 
-class ContinuationTest {
+class ContinuationTest : FunSpec({
 
-    private lateinit var continuation: Continuation
-    private val continued = AtomicInteger(0)
+    lateinit var continuation: Continuation
+    val continued = AtomicInteger(0)
 
-    @BeforeEach
-    fun before() {
+    beforeEach {
         continuation = Continuation()
         continued.set(0)
     }
 
-    @Test
-    fun testDirect() = runTest {
+    test("direct") {
         launchEx {
             continuation.suspend()
             continued.incrementAndGet()
@@ -37,8 +33,7 @@ class ContinuationTest {
         continued.get() isEqual 1 % "1"
     }
 
-    @Test
-    fun testMultiple() = runTest {
+    test("multiple") {
         launchEx {
             continuation.suspend()
             continued.incrementAndGet()
@@ -54,4 +49,4 @@ class ContinuationTest {
         delay(2.seconds)
         continued.get() isEqual 2 % "1"
     }
-}
+})

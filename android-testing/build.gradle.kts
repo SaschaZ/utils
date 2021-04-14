@@ -24,9 +24,9 @@ android {
         minSdkVersion(Android.minSdk)
         targetSdkVersion(Android.targetSdk)
 
-        versionCode = Android.versionCode
-        versionName = Android.versionName
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        setVersionCode(Android.versionCode)
+        setVersionName(Android.versionName)
+        setTestInstrumentationRunner("androidx.test.runner.AndroidJUnitRunner")
     }
     lintOptions {
         isAbortOnError = false

@@ -16,7 +16,7 @@ interface IOnChangedWithParent<P : Any?, T : Any?> : IOnChangedParamsWithParent<
     /**
      * Property that will notify listener when it changes.
      */
-    var value: T
+    var /**/value: T
 
     /**
      * Suspend call to change the property in a thread safe way. [safeSet] should be enabled for full safety.
