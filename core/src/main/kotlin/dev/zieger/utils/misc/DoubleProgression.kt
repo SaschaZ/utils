@@ -19,7 +19,7 @@ data class DoubleProgression(
 
         override fun nextDouble(): Double {
             val result = value ?: throw IllegalStateException("Called nextDouble() for empty Iterable")
-            value = result + step
+            value = (result + step).nullWhen { it > end }
             return result
         }
     }
