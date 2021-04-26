@@ -59,7 +59,6 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         notifyForInitial: Boolean = false,
         notifyOnChangedValueOnly: Boolean = true,
         mutex: Mutex = Mutex(),
-        safeSet: Boolean = false,
         veto: (T) -> Boolean = { false },
         map: (T) -> T = { it },
         onChangedS: (suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null,
@@ -67,7 +66,7 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
     ) : this(
         OnChangedParamsWithParent(
             initial, scope, storeRecentValues, recentValueSize, notifyForInitial, notifyOnChangedValueOnly,
-            mutex, safeSet, veto, map, onChangedS, onChanged
+            mutex, veto, map, onChangedS, onChanged
         )
     )
 
@@ -93,11 +92,10 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
     override var value: T
         get() = internalValue
         set(newValue) {
-            if (safeSet) scope!!.launch { changeValue { newValue } } else internalValue = newValue
+            scope?.launch { changeValue { newValue } } ifNull { internalValue = newValue }
         }
 
     init {
-        if (safeSet) require(scope != null) { "When `safeSet` is `true`, `scope` can not be `null`." }
         if (onChangedS != null) require(scope != null) { "When using `onChangedS`, `scope` can not be `null`." }
 
         if (notifyForInitial) buildOnChangedScope(null, true).apply {
@@ -106,8 +104,8 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         }
     }
 
-    override suspend fun changeValue(block: (T) -> T): Unit = mutex.withLock {
-        internalValue = block(internalValue)
+    override suspend fun changeValue(block: suspend IOnChangedScopeWithParent<P, T>.(T) -> T): Unit = mutex.withLock {
+        internalValue = block(buildOnChangedScope(previousValues.lastOrNull()), internalValue)
     }.asUnit()
 
     override suspend fun nextChange(
@@ -115,7 +113,7 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         onChanged: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit
     ): T {
         val old = value
-        nextChangeContinuation.suspend(timeout,)
+        nextChangeContinuation.suspend(timeout)
         buildOnChangedScope(old).onChanged(value)
         return value
     }

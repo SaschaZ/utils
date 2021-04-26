@@ -21,7 +21,7 @@ interface IOnChangedWithParent<P : Any?, T : Any?> : IOnChangedParamsWithParent<
     /**
      * Suspend call to change the property in a thread safe way. [safeSet] should be enabled for full safety.
      */
-    suspend fun changeValue(block: (T) -> T)
+    suspend fun changeValue(block: suspend IOnChangedScopeWithParent<P, T>.(T) -> T)
 
     /**
      * When [previousValueSize] is greater than 0 this [List] contains the last [previousValueSize] changed values since

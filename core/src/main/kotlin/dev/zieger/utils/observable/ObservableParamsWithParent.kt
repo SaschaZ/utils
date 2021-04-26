@@ -14,8 +14,7 @@ class ObservableParamsWithParent<P : Any?, T : Any?>(
     override val notifyForInitial: Boolean = false,
     override val notifyOnChangedValueOnly: Boolean = true,
     override val mutex: Mutex = Mutex(),
-    override val safeSet: Boolean = false,
-    override val onSubscriberStateChanged: ((Boolean) -> Unit)? = {},
+    override val onSubscriberStateChanged: ((Int) -> Unit)? = {},
     override val veto: (T) -> Boolean = { false },
     override val map: (T) -> T = { it },
     override val onChangedS: (suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null
@@ -44,7 +43,10 @@ class ObservableParamsWithParent<P : Any?, T : Any?>(
 }
 
 interface IObservableParamsWithParent<P : Any?, T : Any?> : IOnChangedParamsWithParent<P, T> {
-    val onSubscriberStateChanged: ((Boolean) -> Unit)?
+    override val scope: CoroutineScope
+    val buildScope: () -> CoroutineScope
+        get() = { scope }
+    val onSubscriberStateChanged: ((Int) -> Unit)?
 }
 
 typealias ObservableParams<T> = ObservableParamsWithParent<Any?, T>
