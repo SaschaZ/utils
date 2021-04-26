@@ -30,7 +30,7 @@ internal class LogTest : FunSpec({
     beforeEach {
         LogScope.reset()
         msg = ""
-        msgObs.nextChange()
+        msgObs.suspendUntilNextChange()
         msgObs.clearPreviousValues()
 
         Log.logLevel = LogLevel.VERBOSE
@@ -46,7 +46,7 @@ internal class LogTest : FunSpec({
         Log += "bamdam"
 
         Log.v("test", "fooboo", "boofoo")
-        msgObs.nextChange() isMatching """V-[0-9\-:]+: test - \[moofoo\|woomoo\|bamdam\|fooboo\|boofoo]"""
+        msgObs.suspendUntilNextChange() isMatching """V-[0-9\-:]+: test - \[moofoo\|woomoo\|bamdam\|fooboo\|boofoo]"""
 
         msg = ""
         Log.logLevel = LogLevel.DEBUG
@@ -56,7 +56,7 @@ internal class LogTest : FunSpec({
         Log -= "woomoo"
         Log.d("test delay", filter = logPreFilter { next -> launchEx(delayed = 1.seconds) { next(this@logPreFilter) } })
         msg.isBlankOrNull()
-        msgObs.nextChange(5.seconds) { it isMatching """D-[0-9\-:]+-.+: test delay - \[moofoo\|bamdam\]""" }
+        msgObs.suspendUntilNextChange(5.seconds) { it isMatching """D-[0-9\-:]+-.+: test delay - \[moofoo\|bamdam\]""" }
 
         Log.scope {
             msg = ""
@@ -72,13 +72,13 @@ internal class LogTest : FunSpec({
             msgObs.previousValues.size isEqual 6
         }
         Log.i("outside scope")
-        msgObs.nextChange() isMatching """I-[0-9\-:]+-.+: outside scope - \[moofoo\|bamdam]"""
+        msgObs.suspendUntilNextChange() isMatching """I-[0-9\-:]+-.+: outside scope - \[moofoo\|bamdam]"""
     }
 
     test("calls") {
         TestClass(LogScopeImpl(Log.copy())).apply {
             testOne()
-            msgObs.nextChange() isMatching """V-[0-9\-:]+: testOne"""
+            msgObs.suspendUntilNextChange() isMatching """V-[0-9\-:]+: testOne"""
         }
     }
 })

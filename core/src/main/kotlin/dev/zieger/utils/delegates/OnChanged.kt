@@ -3,16 +3,15 @@
 package dev.zieger.utils.delegates
 
 import dev.zieger.utils.coroutines.Continuation
+import dev.zieger.utils.coroutines.TypeContinuation
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.delegates.OnChangedParamsWithParent.Companion.DEFAULT_RECENT_VALUE_BUFFER_SIZE
 import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.asUnit
-import dev.zieger.utils.misc.ifNull
-import dev.zieger.utils.misc.lastOrNull
 import dev.zieger.utils.time.duration.IDurationEx
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.lang.ref.WeakReference
@@ -59,6 +58,7 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         notifyForInitial: Boolean = false,
         notifyOnChangedValueOnly: Boolean = true,
         mutex: Mutex = Mutex(),
+        safeSet: Boolean = false,
         veto: (T) -> Boolean = { false },
         map: (T) -> T = { it },
         onChangedS: (suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null,
@@ -66,56 +66,59 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
     ) : this(
         OnChangedParamsWithParent(
             initial, scope, storeRecentValues, recentValueSize, notifyForInitial, notifyOnChangedValueOnly,
-            mutex, veto, map, onChangedS, onChanged
+            mutex, safeSet, veto, map, onChangedS, onChanged
         )
     )
 
     protected open var parent: WeakReference<P>? = null
     open var propertyName: String = ""
         protected set
+    protected open val nextChangeContinuation = TypeContinuation<T>()
     override val previousValues = FiFo<T?>(previousValueSize)
     protected open var previousValuesCleared: Boolean = false
-    protected open val nextChangeContinuation = Continuation()
-    protected open val valueWaiter = LinkedList<Pair<T?, Continuation>>()
+    protected open val valueWaiter = LinkedList<Pair<T, Continuation>>()
+    protected open var isReleased = false
 
-    protected open var internalValue: T = initial
+    override var value: T = initial
         set(newValue) {
-            if (vetoInternal(newValue)) return
-            val mappedInput = mapInternal(newValue)
-            if (field != mappedInput || !notifyOnChangedValueOnly) {
-                val old = field
-                field = mappedInput
-                onPropertyChanged(value, old)
+            if (isReleased) return
+
+            fun internalSet() {
+                if (vetoInternal(newValue)) return
+                val mappedInput = mapInternal(newValue)
+                if (field != mappedInput || !notifyOnChangedValueOnly) {
+                    val old = field
+                    field = mappedInput
+                    onPropertyChanged(value, old)
+                }
             }
-        }
-
-    override var value: T
-        get() = internalValue
-        set(newValue) {
-            scope?.launch { changeValue { newValue } } ifNull { internalValue = newValue }
+            if (safeSet) scope!!.launchEx(mutex = mutex) { internalSet() } else internalSet()
         }
 
     init {
+        if (safeSet) require(scope != null) { "When `safeSet` is `true`, `scope` can not be `null`." }
         if (onChangedS != null) require(scope != null) { "When using `onChangedS`, `scope` can not be `null`." }
 
         if (notifyForInitial) buildOnChangedScope(null, true).apply {
-            onChangedInternal(initial)
-            scope?.launchEx(mutex = mutex) { onChangedSInternal(initial) }
+            onChanged?.invoke(this, value)
+            scope?.launchEx(mutex = mutex) { onChangedS?.invoke(this@apply, value) }
         }
     }
 
-    override suspend fun changeValue(block: suspend IOnChangedScopeWithParent<P, T>.(T) -> T): Unit = mutex.withLock {
-        internalValue = block(buildOnChangedScope(previousValues.lastOrNull()), internalValue)
+    override suspend fun changeValue(block: (T) -> T): Unit = mutex.withLock {
+        value = block(value)
     }.asUnit()
 
-    override suspend fun nextChange(
+    override suspend fun suspendUntilNextChange(
         timeout: IDurationEx?,
         onChanged: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit
-    ): T {
-        val old = value
-        nextChangeContinuation.suspend(timeout)
+    ): T = withTimeout(timeout) {
+        if (isReleased)
+            throw IllegalStateException("Trying to access released OnChanged delegate (suspendUntilNextChange())")
+
+        val old = nextChangeContinuation.suspend(timeout)
         buildOnChangedScope(old).onChanged(value)
-        return value
+        value
     }
 
     override suspend fun suspendUntil(
@@ -123,6 +126,9 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         timeout: IDurationEx?,
         onChanged: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit
     ) {
+        if (isReleased)
+            throw IllegalStateException("Trying to access released OnChanged delegate (suspendUntil())")
+
         val cont = Continuation()
         withTimeout(timeout, {
             valueWaiter.remove(wanted to cont)
@@ -149,7 +155,7 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         previousValuesCleared = true
     }
 
-    protected open fun onPropertyChanged(
+    private fun onPropertyChanged(
         new: T,
         old: T
     ) {
@@ -157,17 +163,17 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
             previousValues.put(old)
         previousValuesCleared = false
 
-        buildOnChangedScope(old).apply {
-            onChangedInternal(new)
-            scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
-        }
-
-        nextChangeContinuation.resume()
+        nextChangeContinuation.resume(old)
         valueWaiter.removeAll { (wanted, cont) ->
             if (new == wanted) {
                 cont.resume()
                 true
             } else false
+        }
+
+        buildOnChangedScope(old).apply {
+            onChangedInternal(new)
+            scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
         }
     }
 
@@ -193,4 +199,10 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
 
     override fun IOnChangedScopeWithParent<P, T>.onChangedInternal(value: T) =
         onChanged?.invoke(this, value).asUnit()
+
+    override fun release() {
+        isReleased = true
+        clearPreviousValues()
+        nextChangeContinuation.resumeWithException(CancellationException())
+    }
 }

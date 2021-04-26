@@ -22,7 +22,7 @@ class ObservableTest : AnnotationSpec() {
 
         val0 = 1
 
-        obs0.nextChange() isEqual 1
+        obs0.suspendUntilNextChange() isEqual 1
         val0 isEqual 1
         obs0.value isEqual 1
         obs0ListenerValue isEqual 1
@@ -32,7 +32,7 @@ class ObservableTest : AnnotationSpec() {
 
         val0 = 2
 
-        obs0.nextChange() isEqual 2
+        obs0.suspendUntilNextChange() isEqual 2
         val0 isEqual 2
         obs0.value isEqual 2
         obs0ListenerValue isEqual 2

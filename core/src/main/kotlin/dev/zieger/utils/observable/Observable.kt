@@ -1,4 +1,4 @@
-@file:Suppress("unused", "LeakingThis")
+@file:Suppress("unused")
 
 package dev.zieger.utils.observable
 
@@ -7,8 +7,6 @@ import dev.zieger.utils.delegates.IOnChangedScopeWithParent
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.delegates.OnChangedWithParent
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.sync.Mutex
 import kotlin.properties.ReadWriteProperty
 
@@ -38,97 +36,82 @@ open class ObservableWithParent<P : Any?, T : Any?>(
 
     constructor(
         initial: T,
-        buildScope: () -> CoroutineScope,
+        scope: CoroutineScope? = null,
         storeRecentValues: Boolean = false,
         previousValueSize: Int = if (storeRecentValues) 100 else 0,
         notifyForInitial: Boolean = false,
         notifyOnChangedValueOnly: Boolean = true,
         mutex: Mutex = Mutex(),
-        subscriberStateChanged: ((Int) -> Unit)? = {},
+        safeSet: Boolean = false,
+        subscriberStateChanged: ((Boolean) -> Unit)? = {},
         veto: (T) -> Boolean = { false },
         map: (T) -> T = { it },
-        onChanged: (suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null
-    ) : this(
-        ObservableParamsWithParent(
-            initial,
-            buildScope,
-            storeRecentValues,
-            previousValueSize,
-            notifyForInitial,
-            notifyOnChangedValueOnly,
-            mutex,
-            subscriberStateChanged,
-            veto,
-            map,
-            onChanged
-        )
-    )
-
-    constructor(
-        initial: T,
-        scope: CoroutineScope,
-        storeRecentValues: Boolean = false,
-        previousValueSize: Int = if (storeRecentValues) 100 else 0,
-        notifyForInitial: Boolean = false,
-        notifyOnChangedValueOnly: Boolean = true,
-        mutex: Mutex = Mutex(),
-        subscriberStateChanged: ((Int) -> Unit)? = {},
-        veto: (T) -> Boolean = { false },
-        map: (T) -> T = { it },
-        onChanged: (suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null
+        onChangedS: (suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null,
+        onChanged: (IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null
     ) : this(
         ObservableParamsWithParent(
             initial, scope, storeRecentValues, previousValueSize, notifyForInitial, notifyOnChangedValueOnly, mutex,
-            subscriberStateChanged, veto, map, onChanged
+            safeSet, subscriberStateChanged, veto, map, onChangedS, onChanged
         )
     )
 
-    private val mutableStateFlow = MutableStateFlow(initial)
-    private val subscriberAvailableStateFlow = MutableStateFlow(0)
-
-    private val observer = ArrayList<suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit>()
-    private var subscribersAvailable by OnChanged(0) { new ->
-        subscriberAvailableStateFlow.value = new
+    private val observer = ArrayList<IOnChangedScopeWithParent<P, T>.(T) -> Unit>()
+    private val observerS = ArrayList<suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit>()
+    private var subscribersAvailable by OnChanged(false) { new ->
+        params.onSubscriberStateChanged?.invoke(new)
     }
 
     init {
         @Suppress("LeakingThis")
-        params.onChangedS?.also { oc -> observe { oc(it) } }
+        params.onChanged?.also { observe(it) }
     }
 
-    override fun observe(
-        scope: CoroutineScope,
-        listener: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit
-    ): () -> Unit {
-        val job = scope.launchEx(useSuperVisorJob = true, printStackTrace = false) {
-            mutableStateFlow.collect {
-                buildOnChangedScope(previousValues.lastOrNull()).listener(value)
-            }
-            if (notifyForInitial)
-                buildOnChangedScope(null, true).listener(value)
-        }
+    override fun observe(listener: IOnChangedScopeWithParent<P, T>.(T) -> Unit): () -> Unit {
+        if (isReleased)
+            throw IllegalStateException("Trying to access released OnChanged delegate (observe())")
+
+        observer.add(listener)
+        if (notifyForInitial)
+            buildOnChangedScope(null, true).listener(value)
         updateSubscriberState()
 
         return {
-            job.cancel()
             observer.remove(listener)
             updateSubscriberState()
         }
     }
 
-    override fun IOnChangedScopeWithParent<P, T>.onChangedInternal(value: T) {
-        mutableStateFlow.value = value
+    override fun observeS(listener: suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit): () -> Unit {
+        require(scope != null) { "When using `observeS`, `scope` can not be `null`." }
+        if (isReleased)
+            throw IllegalStateException("Trying to access released OnChanged delegate (observeS())")
+
+        observerS.add(listener)
+        if (notifyForInitial)
+            scope!!.launchEx(mutex = mutex) {
+                buildOnChangedScope(null, true).listener(value)
+            }
+        updateSubscriberState()
+
+        return {
+            observerS.remove(listener)
+            updateSubscriberState()
+        }
     }
 
-    override suspend fun IOnChangedScopeWithParent<P, T>.onChangedSInternal(value: T) {
+    override fun IOnChangedScopeWithParent<P, T>.onChangedInternal(value: T) =
         ArrayList(observer).forEach { it(value) }
-    }
+
+    override suspend fun IOnChangedScopeWithParent<P, T>.onChangedSInternal(value: T) =
+        ArrayList(observerS).forEach { it(value) }
 
     private fun updateSubscriberState() {
-        subscribersAvailable = observer.size
+        subscribersAvailable = observer.isNotEmpty() || observerS.isNotEmpty()
     }
 
-    open fun release() {
+    override fun release() {
         observer.clear()
+        observerS.clear()
+        super.release()
     }
 }

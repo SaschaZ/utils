@@ -383,7 +383,7 @@ class OnChangedTest : FunSpec({
 
         var caught = false
         val nextChangeJob = launchEx(onCatch = { caught = true }, exclude = emptyList()) {
-            testPropertyObs.nextChange(200.milliseconds) { it isEqual 3 }
+            testPropertyObs.suspendUntilNextChange(200.milliseconds) { it isEqual 3 }
         }
 
         delay(100.milliseconds)

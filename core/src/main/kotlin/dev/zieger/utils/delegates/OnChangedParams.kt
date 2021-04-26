@@ -12,6 +12,7 @@ interface IOnChangedParamsWithParent<P : Any?, T : Any?> {
     val notifyOnChangedValueOnly: Boolean
     val scope: CoroutineScope?
     val mutex: Mutex
+    val safeSet: Boolean
     val veto: (T) -> Boolean
     val map: (T) -> T
     val onChangedS: (suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit)?
@@ -32,6 +33,7 @@ interface IOnChangedParamsWithParent<P : Any?, T : Any?> {
  * @property notifyOnChangedValueOnly When `false` listener are only notified when the value of the property changed.
  * When `true` every "set" to the property will notify the listener. Default is `true`.
  * @property mutex If not `null` the [Mutex] will wrap the whole execution of [scope]. Default is `null`.
+ * @property safeSet When `true`
  * @property veto Is invoked before every change of the property. When returning `true` the new value is not assigned
  * to the property. (Optional)
  * @property map Maps the new input value to the internal property. Is called after `veto` and before `onChanged`.
@@ -46,6 +48,7 @@ open class OnChangedParamsWithParent<P : Any?, T : Any?>(
     override val notifyForInitial: Boolean = false,
     override val notifyOnChangedValueOnly: Boolean = true,
     override val mutex: Mutex = Mutex(),
+    override val safeSet: Boolean = false,
     override val veto: (T) -> Boolean = { false },
     override val map: (T) -> T = { it },
     override val onChangedS: (suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null,
