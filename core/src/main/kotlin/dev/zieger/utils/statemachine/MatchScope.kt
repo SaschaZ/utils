@@ -33,6 +33,8 @@ interface IMatchScope {
     ): IMatchScope
 }
 
+inline operator fun <reified T : Data> Data?.invoke(): T = this as T
+
 inline fun <reified T : Data> IMatchScope.eventData(): T = eventCombo.slave as T
 inline fun <reified T : Data> IMatchScope.stateData(): T = stateCombo.slave as T
 

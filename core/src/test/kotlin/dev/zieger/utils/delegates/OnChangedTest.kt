@@ -6,7 +6,10 @@ import dev.zieger.utils.core_testing.assertion2.isEqual
 import dev.zieger.utils.core_testing.assertion2.isFalse
 import dev.zieger.utils.core_testing.assertion2.isTrue
 import dev.zieger.utils.core_testing.assertion2.rem
-import dev.zieger.utils.core_testing.mix.*
+import dev.zieger.utils.core_testing.mix.ParamInstance
+import dev.zieger.utils.core_testing.mix.bind
+import dev.zieger.utils.core_testing.mix.param
+import dev.zieger.utils.core_testing.mix.parameterMixCollect
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.coroutines.scope.IoCoroutineScope
@@ -18,9 +21,12 @@ import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.duration.milliseconds
 import dev.zieger.utils.time.duration.seconds
 import io.kotest.core.spec.style.FunSpec
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.toList
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import java.lang.Integer.max
 import kotlin.random.Random
@@ -329,7 +335,7 @@ class OnChangedTest : FunSpec({
     test("change value") {
         ctx.run {
             val scope = IoCoroutineScope()
-            val testObs = OnChanged(0, scope = scope, safeSet = true)
+            val testObs = OnChanged(0, scope = scope)
             var test by testObs
             val numRuns = 10000
             (0 until numRuns).map { scope.launch { testObs.changeValue { it + 1 } } }.joinAll()

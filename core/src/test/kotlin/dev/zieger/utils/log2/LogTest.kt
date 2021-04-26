@@ -6,6 +6,7 @@ import dev.zieger.utils.core_testing.assertion2.isBlankOrNull
 import dev.zieger.utils.core_testing.assertion2.isEqual
 import dev.zieger.utils.core_testing.assertion2.isMatching
 import dev.zieger.utils.coroutines.builder.launchEx
+import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
 import dev.zieger.utils.log2.*
 import dev.zieger.utils.log2.LogMessageBuilder.Companion.LOG_MESSAGE_WITH_CALL_ORIGIN
 import dev.zieger.utils.log2.filter.LogLevel
@@ -22,12 +23,14 @@ internal class LogTest : FunSpec({
         fun testOne() = Log.v("testOne")
     }
 
-    val msgObs = Observable<String?>("", previousValueSize = 20)
+    val msgObs =
+        Observable<String?>("", DefaultCoroutineScope(), notifyOnChangedValueOnly = false, previousValueSize = 20)
     var msg by msgObs
 
     beforeEach {
         LogScope.reset()
         msg = ""
+        msgObs.nextChange()
         msgObs.clearPreviousValues()
 
         Log.logLevel = LogLevel.VERBOSE
@@ -43,12 +46,11 @@ internal class LogTest : FunSpec({
         Log += "bamdam"
 
         Log.v("test", "fooboo", "boofoo")
-        msg isMatching """V-[0-9\-:]+: test - \[moofoo\|woomoo\|bamdam\|fooboo\|boofoo]"""
+        msgObs.nextChange() isMatching """V-[0-9\-:]+: test - \[moofoo\|woomoo\|bamdam\|fooboo\|boofoo]"""
 
         msg = ""
         Log.logLevel = LogLevel.DEBUG
         Log.v("test")
-        msg
 
         Log.messageBuilder = LogMessageBuilder(LOG_MESSAGE_WITH_CALL_ORIGIN)
         Log -= "woomoo"
@@ -67,16 +69,16 @@ internal class LogTest : FunSpec({
                 Log.i("inside scope #$it")
                 delay(250.milliseconds)
             }
-            msgObs.previousValues.size isEqual 5
+            msgObs.previousValues.size isEqual 6
         }
         Log.i("outside scope")
-        msg isMatching """I-[0-9\-:]+-.+: outside scope - \[moofoo\|bamdam]"""
+        msgObs.nextChange() isMatching """I-[0-9\-:]+-.+: outside scope - \[moofoo\|bamdam]"""
     }
 
     test("calls") {
         TestClass(LogScopeImpl(Log.copy())).apply {
             testOne()
-            msg isMatching """V-[0-9\-:]+: testOne"""
+            msgObs.nextChange() isMatching """V-[0-9\-:]+: testOne"""
         }
     }
 })

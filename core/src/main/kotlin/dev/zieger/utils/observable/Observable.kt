@@ -7,6 +7,8 @@ import dev.zieger.utils.delegates.IOnChangedScopeWithParent
 import dev.zieger.utils.delegates.OnChanged
 import dev.zieger.utils.delegates.OnChangedWithParent
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.sync.Mutex
 import kotlin.properties.ReadWriteProperty
 
@@ -36,7 +38,7 @@ open class ObservableWithParent<P : Any?, T : Any?>(
 
     constructor(
         initial: T,
-        scope: CoroutineScope? = null,
+        buildScope: () -> CoroutineScope,
         storeRecentValues: Boolean = false,
         previousValueSize: Int = if (storeRecentValues) 100 else 0,
         notifyForInitial: Boolean = false,
@@ -46,8 +48,7 @@ open class ObservableWithParent<P : Any?, T : Any?>(
         subscriberStateChanged: ((Boolean) -> Unit)? = {},
         veto: (T) -> Boolean = { false },
         map: (T) -> T = { it },
-        onChangedS: (suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null,
-        onChanged: (IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null
+        onChanged: (suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit)? = null
     ) : this(
         ObservableParamsWithParent(
             initial, scope, storeRecentValues, previousValueSize, notifyForInitial, notifyOnChangedValueOnly, mutex,
@@ -55,10 +56,9 @@ open class ObservableWithParent<P : Any?, T : Any?>(
         )
     )
 
-    private val observer = ArrayList<IOnChangedScopeWithParent<P, T>.(T) -> Unit>()
-    private val observerS = ArrayList<suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit>()
-    private var subscribersAvailable by OnChanged(false) { new ->
-        params.onSubscriberStateChanged?.invoke(new)
+    private val observer = ArrayList<suspend IOnChangedScopeWithParent<P, T>.(T) -> Unit>()
+    private var subscribersAvailable by OnChanged(0) { new ->
+        subscriberAvailableStateFlow.value = new
     }
 
     init {

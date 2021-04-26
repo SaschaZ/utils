@@ -36,6 +36,8 @@ open class Event(
 ) : AbsEvent {
 
     override fun toString(): String = "E(${this::class.name})"
+
+    companion object : EventGroup<Event>(Event::class)
 }
 
 interface AbsStateType : Master
@@ -48,6 +50,8 @@ interface AbsState : Single, AbsStateType
 open class State : AbsState {
 
     override fun toString(): String = "S(${this::class.name})"
+
+    companion object : StateGroup<State>(State::class)
 }
 
 interface AbsEventGroup<T : AbsEvent> : Group<T>, AbsEventType

@@ -7,7 +7,9 @@ import dev.zieger.utils.core_testing.assertion2.isNull
 import dev.zieger.utils.core_testing.assertion2.isTrue
 import dev.zieger.utils.core_testing.assertion2.rem
 import dev.zieger.utils.coroutines.scope.DefaultCoroutineScope
+import dev.zieger.utils.log2.Log
 import dev.zieger.utils.log2.LogScope
+import dev.zieger.utils.log2.filter.LogLevel
 import dev.zieger.utils.statemachine.MachineEx.Companion.DebugLevel.DEBUG
 import dev.zieger.utils.statemachine.TestData.*
 import dev.zieger.utils.statemachine.TestEvent.*
@@ -18,10 +20,7 @@ import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_DEFG.TEST_STATE_
 import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_DEFG.TEST_STATE_GROUP_FG.G
 import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_HI.H
 import dev.zieger.utils.statemachine.TestState.TEST_STATE_GROUP_HI.I
-import dev.zieger.utils.statemachine.conditionelements.AbsEvent
-import dev.zieger.utils.statemachine.conditionelements.AbsState
-import dev.zieger.utils.statemachine.conditionelements.X
-import dev.zieger.utils.statemachine.conditionelements.combo
+import dev.zieger.utils.statemachine.conditionelements.*
 import dev.zieger.utils.time.duration.seconds
 import io.kotest.core.spec.style.FunSpec
 import kotlinx.coroutines.cancel
@@ -35,6 +34,7 @@ class MachineExTest : FunSpec({
     val scope = DefaultCoroutineScope()
 
     beforeTest {
+        Log.logLevel = LogLevel.INFO
         scope.reset()
     }
 
@@ -63,6 +63,12 @@ class MachineExTest : FunSpec({
         var executed = 0
         var executed2 = 0
         MachineEx(INITIAL, scope, debugLevel = DEBUG) {
+            +!Event exec {
+                Log.i("incoming event $event")
+            }
+            +!State exec {
+                Log.i("new State $state")
+            }
             +FIRST + INITIAL set A * TestStateData(true)
             +SECOND * TestEventData set C
             +FIFTH + A * TestStateData set E

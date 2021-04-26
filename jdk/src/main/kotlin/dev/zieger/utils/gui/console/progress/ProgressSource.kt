@@ -73,13 +73,13 @@ class ProgressSource(
             else -1.0
         }
 
-    override val doneObservable = Observable(initial, scope = scope, safeSet = true) {
+    override val doneObservable = Observable(initial, scope = scope) {
         lastAction = TimeEx()
         previousDone[lastAction] = it
     }
     override var done: Long by doneObservable
 
-    override val totalObservable = Observable(total, scope, safeSet = true)
+    override val totalObservable = Observable(total, scope)
     override var total: Long by totalObservable
 }
 

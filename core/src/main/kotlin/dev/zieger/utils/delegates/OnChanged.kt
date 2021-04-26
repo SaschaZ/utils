@@ -6,7 +6,10 @@ import dev.zieger.utils.coroutines.Continuation
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.delegates.OnChangedParamsWithParent.Companion.DEFAULT_RECENT_VALUE_BUFFER_SIZE
-import dev.zieger.utils.misc.*
+import dev.zieger.utils.misc.FiFo
+import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.misc.ifNull
+import dev.zieger.utils.misc.lastOrNull
 import dev.zieger.utils.time.duration.IDurationEx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -156,17 +159,17 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
             previousValues.put(old)
         previousValuesCleared = false
 
+        buildOnChangedScope(old).apply {
+            onChangedInternal(new)
+            scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
+        }
+
         nextChangeContinuation.resume()
         valueWaiter.removeAll { (wanted, cont) ->
             if (new == wanted) {
                 cont.resume()
                 true
             } else false
-        }
-
-        buildOnChangedScope(old).apply {
-            onChangedInternal(new)
-            scope?.launchEx(mutex = mutex) { onChangedSInternal(new) }
         }
     }
 
