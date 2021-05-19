@@ -86,13 +86,11 @@ class OnChangedTest {
                     notifyForInitial = notifyForInitial,
                     notifyOnChangedValueOnly = notifyOnChangedOnly,
                     scope = scope, mutex = mutex, veto = { newVeto },
-                    onChangedS = null/*{ v ->
-                        if (suspendedListener && scope != null)
-                            onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
-                    }*/,
+                    onChangedS = { v ->
+                        onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
+                    },
                     onChanged = { v ->
-                        if (!suspendedListener || scope == null)
-                            onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
+                        onChangedListenerBlock(newClearCache, results, newValue, propertyValue, newVeto)
                     })
             )
             propertyValue = { testProperty }
@@ -153,23 +151,19 @@ class OnChangedTest {
         }.verify()
     }
 
-    private fun <P : Any?, S : IOnChangedScopeWithParent<P, @UnsafeVariance TestValueContainer>> S.onChangedListenerBlock(
+    private fun IOnChangedScopeWithParent<Any?, @UnsafeVariance TestValueContainer>.onChangedListenerBlock(
         newClearCache: Boolean,
         results: Channel<OnChangedResults>,
         newValue: Int,
         propertyValue: () -> TestValueContainer,
         newVeto: Boolean
     ) {
-//        if (newClearCache) clearPreviousValues()
-//        results.offer(
-//            OnChangedTestResultOutput(
-//                newValue, propertyValue().value, newVeto, newClearCache,
-//                OnChangedScope(
-//                    value, "", thisRef, previousValue, ArrayList(previousValues),
-//                    clearPreviousValues, isInitialNotification
-//                )
-//            )
-//        )
+        if (newClearCache) clearPreviousValues()
+        results.offer(
+            OnChangedTestResultOutput(
+                newValue, propertyValue().value, newVeto, newClearCache, this
+            )
+        )
     }
 
     private suspend fun Map<OnChangedParams, Channel<OnChangedResults>>.verify() {

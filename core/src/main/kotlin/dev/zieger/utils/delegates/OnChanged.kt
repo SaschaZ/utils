@@ -76,7 +76,7 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
     protected open val nextChangeContinuation = TypeContinuation<T>()
     override val previousValues = FiFo<T?>(previousValueSize)
     protected open var previousValuesCleared: Boolean = false
-    protected open val valueWaiter = LinkedList<Pair<T, Continuation>>()
+    protected open var valueWaiter: LinkedList<Pair<T, Continuation>> = LinkedList()
     protected open var isReleased = false
 
     override var value: T = initial
@@ -164,12 +164,12 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
         previousValuesCleared = false
 
         nextChangeContinuation.resume(old)
-        valueWaiter.removeAll { (wanted, cont) ->
-            if (new == wanted) {
-                cont.resume()
-                true
-            } else false
-        }
+
+        val waiter = valueWaiter
+        valueWaiter = LinkedList()
+        val toResume = waiter.filter { (wanted, _) -> (new == wanted) }
+        toResume.forEach { (_, cont) -> cont.resume() }
+        valueWaiter.addAll(waiter.filterNot { it in toResume })
 
         buildOnChangedScope(old).apply {
             onChangedInternal(new)

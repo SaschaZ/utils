@@ -3,6 +3,6 @@ package dev.zieger.utils
 object Globals {
 
     const val group = "dev.zieger.utils"
-    const val version = "2.2.48"
-    const val versionNumber = 189
+    const val version = "2.2.49"
+    const val versionNumber = 190
 }

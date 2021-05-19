@@ -58,7 +58,7 @@ open class TypeContinuation<T> {
                 is Value<*> -> result.value as T
                 is Exception -> throw result.throwable
             }
-        }
+        }.also { c.close() }
     }
 
     /**
@@ -77,7 +77,6 @@ open class TypeContinuation<T> {
         ((channelMap.remove(null) ?: emptyList<Channel<ContinuationHolder<T>>>()) +
                 (channelMap.remove(value) ?: emptyList())).runEach {
             offer(Value(value))
-            close()
         }
     }
 
