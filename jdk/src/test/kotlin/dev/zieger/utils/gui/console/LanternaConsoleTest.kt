@@ -15,7 +15,7 @@ import dev.zieger.utils.time.duration.milliseconds
 import dev.zieger.utils.time.duration.minutes
 import dev.zieger.utils.time.duration.seconds
 import kotlinx.coroutines.Job
-import org.junit.jupiter.api.Assertions.*
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
@@ -71,4 +71,15 @@ internal class LanternaConsoleTest {
             delay(50.seconds)
         }
     }.asUnit()
+
+    @Test
+    fun testMulti() = runBlocking {
+        console(
+            ConsoleDefinition(topLeft = 0.0.rel to 0.0.rel, bottomRight = 1.0.rel to 0.2.rel),
+            ConsoleDefinition(topLeft = 0.0.rel to 0.2.rel, bottomRight = 1.0.rel to 0.8.rel),
+            ConsoleDefinition(topLeft = 0.0.rel to 0.8.rel, bottomRight = 1.0.rel to 1.0.rel)
+        ) {
+            outnl(1, +"fooboo")
+        }
+    }
 }
