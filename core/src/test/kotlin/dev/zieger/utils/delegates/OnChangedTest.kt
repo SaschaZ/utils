@@ -158,12 +158,12 @@ class OnChangedTest {
         propertyValue: () -> TestValueContainer,
         newVeto: Boolean
     ) {
-        if (newClearCache) clearPreviousValues()
-        results.offer(
-            OnChangedTestResultOutput(
-                newValue, propertyValue().value, newVeto, newClearCache, this
-            )
-        )
+//        if (newClearCache) clearPreviousValues()
+//        results.offer(
+//            OnChangedTestResultOutput(
+//                newValue, propertyValue().value, newVeto, newClearCache, this
+//            )
+//        )
     }
 
     private suspend fun Map<OnChangedParams, Channel<OnChangedResults>>.verify() {
