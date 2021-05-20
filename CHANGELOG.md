@@ -1,5 +1,9 @@
 # Changelog
 
+##### 2.2.50
+
+* JitPack foo
+
 ##### 2.2.49
 
 * fixed OnChanged.suspendUntil() concurrency issues

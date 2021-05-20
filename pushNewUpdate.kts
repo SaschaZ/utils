@@ -1,8 +1,8 @@
 #!/usr/bin/env kscript
 @file:CompilerOpts("-jvm-target 1.8")
 @file:DependsOnMaven("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
-@file:DependsOnMaven("io.ktor:ktor-client-apache:1.3.0")
-@file:DependsOnMaven("io.ktor:ktor-client-gson:1.3.0")
+@file:DependsOnMaven("io.ktor:ktor-client-apache:1.3.2")
+@file:DependsOnMaven("io.ktor:ktor-client-gson:1.3.2")
 @file:DependsOnMaven("dev.zieger.utils:core:2.2.48")
 @file:MavenRepository("jitpack", "https://jitpack.io")
 
@@ -206,10 +206,10 @@ runBlocking {
         exitProcess(0).asUnit()
     }
 
-    if (!checkForUncommittedChanges()) {
-        System.err.println("There are uncommitted changes.")
-        exitProcess(1)
-    }
+//    if (!checkForUncommittedChanges()) {
+//        System.err.println("There are uncommitted changes.")
+//        exitProcess(1)
+//    }
 
     val joinedArgs = args.filter { !it.startsWith("--") }.joinToString { it.removePrefix("-") }
     print("build new tag … ")
