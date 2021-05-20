@@ -9,6 +9,7 @@ import dev.zieger.utils.coroutines.withTimeout
 import dev.zieger.utils.delegates.OnChangedParamsWithParent.Companion.DEFAULT_RECENT_VALUE_BUFFER_SIZE
 import dev.zieger.utils.misc.FiFo
 import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.misc.catch
 import dev.zieger.utils.time.duration.IDurationEx
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -130,14 +131,19 @@ open class OnChangedWithParent<P : Any?, T : Any?>(
             throw IllegalStateException("Trying to access released OnChanged delegate (suspendUntil())")
 
         val cont = Continuation()
-        withTimeout(timeout, {
-            valueWaiter.remove(wanted to cont)
-            "Timeout when waiting for $wanted. Is $value and was [${previousValues.joinToString(", ")}]."
+        catch(Unit, onCatch = {
+            if (it !is CancellationException || value != wanted)
+                throw it
         }) {
-            if (value == wanted) return@withTimeout
+            withTimeout(timeout, {
+                valueWaiter.remove(wanted to cont)
+                "Timeout when waiting for $wanted. Is $value and was [${previousValues.joinToString(", ")}]."
+            }) {
+                if (value == wanted) return@withTimeout
 
-            valueWaiter.add(wanted to cont)
-            cont.suspend()
+                valueWaiter.add(wanted to cont)
+                cont.suspend()
+            }
         }
     }
 

@@ -1,5 +1,9 @@
 # Changelog
 
+##### 2.2.51
+
+* fixed OnChanged.suspendUntil(): Do not throw exception when wanted is current value
+
 ##### 2.2.50
 
 * JitPack foo
