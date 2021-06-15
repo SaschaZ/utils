@@ -13,16 +13,37 @@ internal class ConsoleTest : AnnotationSpec() {
 
     @Test
     fun testConsole() = runBlocking {
-        Console {
-            component.textGUI.screen.clear()
-            outNl(+"FooBoo" * TextColor.ANSI.GREEN / TextColor.ANSI.YELLOW)
-            outNl(+"0" * TextColor.ANSI.GREEN / TextColor.ANSI.YELLOW)
-            outNl(+"1" * TextColor.ANSI.GREEN / TextColor.ANSI.YELLOW)
-            outNl(+{ "2" } * TextColor.ANSI.GREEN / { TextColor.ANSI.YELLOW })
+        Console(
+            ConsoleComponent(), ConsoleComponent(),
+            options = ConsoleOptions(
+                foreground = TextColor.ANSI.BLACK,
+                background = TextColor.ANSI.BLACK_BRIGHT,
+                commandPrefix = {
+                    "$ ".map {
+                        {
+                            TextCharacterWrapper(
+                                it,
+                                foreground = TextColor.ANSI.YELLOW_BRIGHT,
+                                background = TextColor.ANSI.RED
+                            )
+                        }
+                    }.toTypedArray()
+                })
+        ) {
+            outNl()
+            outNl("Foo\n\tBoo" * TextColor.ANSI.GREEN / TextColor.ANSI.YELLOW)
+            outNl("0" * TextColor.ANSI.GREEN / TextColor.ANSI.YELLOW)
+            outNl("1" * TextColor.ANSI.GREEN / TextColor.ANSI.YELLOW)
+            var cnt = 0
+            outNl(+{ "${cnt++}" } * TextColor.ANSI.GREEN / { TextColor.ANSI.YELLOW })
             repeat(100) {
                 out(+"$it" * TextColor.ANSI.GREEN / TextColor.ANSI.YELLOW)
                 delay(50)
             }
+            outNl(cnt)
+            outNl("plain")
+
+            activeConsole++
             repeat(100) {
                 outNl(+"FooBoo $it" * TextColor.ANSI.YELLOW / TextColor.ANSI.BLUE)
                 delay(50)
