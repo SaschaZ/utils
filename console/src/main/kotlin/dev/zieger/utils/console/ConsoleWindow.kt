@@ -17,13 +17,13 @@ class ConsoleWindow(
 ) : Window by window, ConsoleOwnerScope {
 
     private val panel = Panel(LinearLayout(Direction.VERTICAL))
-    private val consoleComponents = LinkedList<ConsoleComponent>()
-    override var activeConsole = 0
+    private val components = LinkedList<FocusableComponent>()
+    override var activeComponent = 0
         set(value) {
-            if (value in 0..consoleComponents.lastIndex) {
-                consoleComponents[field].isActiveComponent = false
+            if (value in 0..components.lastIndex) {
+                components[field].hasFocus = false
                 field = value
-                consoleComponents[field].isActiveComponent = true
+                components[field].hasFocus = true
             }
         }
 
@@ -47,20 +47,25 @@ class ConsoleWindow(
 
     internal suspend fun onKeyPressed(keyStroke: KeyStroke) {
         when (keyStroke.keyType) {
-            KeyType.PageUp -> activeConsole--
-            KeyType.PageDown -> activeConsole++
-            else -> consoleComponents[activeConsole].onKeyPressed(keyStroke)
+            KeyType.PageUp -> activeComponent--
+            KeyType.PageDown -> activeComponent++
+            else -> components[activeComponent].onKeyPressed(keyStroke)
         }
     }
 
-    fun addConsoleComponent(consoleComponent: ConsoleComponent) {
+    fun addFocusableConsoleComponent(consoleComponent: FocusableConsoleComponent) {
         consoleComponent.options = options
         consoleComponent.scope = scope
-        consoleComponent.isActiveComponent = activeConsole == consoleComponents.size
-        consoleComponents += consoleComponent
+        consoleComponent.hasFocus = activeComponent == components.size
+        components += consoleComponent
         panel.addComponent(consoleComponent)
     }
 
-    override fun out(str: TextString) = consoleComponents[activeConsole].out(str)
-    override fun outNl(str: TextString) = consoleComponents[activeConsole].outNl(str)
+    override fun out(str: TextString) {
+        (components[activeComponent] as? ConsoleScope)?.out(str)
+    }
+
+    override fun outNl(str: TextString) {
+        (components[activeComponent] as? ConsoleScope)?.outNl(str)
+    }
 }

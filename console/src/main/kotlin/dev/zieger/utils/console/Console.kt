@@ -9,7 +9,7 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import kotlinx.coroutines.*
 
 class Console(
-    vararg components: ConsoleComponent = arrayOf(ConsoleComponent()),
+    vararg components: FocusableConsoleComponent = arrayOf(ConsoleComponent()),
     scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
     options: ConsoleOptions = ConsoleOptions(),
     block: suspend ConsoleOwnerScope.() -> Unit
@@ -26,7 +26,7 @@ class Console(
             screen.startScreen()
             windowManager.addWindow(this)
             components.forEach {
-                addConsoleComponent(it)
+                addFocusableConsoleComponent(it)
             }
             scope.launch {
                 while (isActive) {

@@ -14,7 +14,8 @@ internal class ConsoleTest : AnnotationSpec() {
     @Test
     fun testConsole() = runBlocking {
         Console(
-            ConsoleComponent(), ConsoleComponent(),
+            ConsoleWithCommandComponent(),
+            ConsoleComponent(),
             options = ConsoleOptions(
                 foreground = TextColor.ANSI.BLACK,
                 background = TextColor.ANSI.BLACK_BRIGHT,
@@ -43,7 +44,7 @@ internal class ConsoleTest : AnnotationSpec() {
             outNl(cnt)
             outNl("plain")
 
-            activeConsole++
+            activeComponent++
             repeat(100) {
                 outNl(+"FooBoo $it" * TextColor.ANSI.YELLOW / TextColor.ANSI.BLUE)
                 delay(50)

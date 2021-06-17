@@ -8,10 +8,8 @@ import java.util.*
 
 class ConsoleRenderer : ComponentRenderer<ConsoleComponent> {
 
-    override fun getPreferredSize(component: ConsoleComponent): TerminalSize {
-        val buffer = LinkedList(component.buffer)
-        return TerminalSize(buffer.maxOfOrNull { it.size } ?: 1, buffer.size)
-    }
+    override fun getPreferredSize(component: ConsoleComponent): TerminalSize =
+        component.textGUI.screen.terminalSize
 
     override fun drawComponent(graphics: TextGUIGraphics, component: ConsoleComponent) {
         var bufferLine = 0
@@ -23,7 +21,7 @@ class ConsoleRenderer : ComponentRenderer<ConsoleComponent> {
                             component.position.column + col,
                             component.position.row + bufferLine + component.scrollIdx,
                             char().textCharacter.run {
-                                if (component.isActiveComponent) withModifier(SGR.ITALIC) else this
+                                if (!component.hasFocus) withModifier(SGR.ITALIC) else this
                             }
                         )
                     }

@@ -7,11 +7,15 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
-interface IObservableBase<T> : ReadOnlyProperty<Any?, T> {
+interface IObservableBase<O, T> : ReadOnlyProperty<O, T> {
 
     val value: T
+    var owner: O?
 
-    override fun getValue(thisRef: Any?, property: KProperty<*>): T = value
+    override fun getValue(thisRef: O, property: KProperty<*>): T {
+        owner = thisRef
+        return value
+    }
 
     fun clearPreviousValues()
 
@@ -23,34 +27,59 @@ interface IObservableBase<T> : ReadOnlyProperty<Any?, T> {
 
     suspend fun suspendUntil(timeout: ITimeSpan? = null, wanted: suspend (T) -> Boolean): T
 
-    suspend fun suspendUntilValid(timeout: ITimeSpan? = null): Boolean = throw NotImplementedError()
-
     suspend fun release()
 }
 
-interface IObservable<T> : IObservableBase<T> {
+interface IObservable<T> : IObservableBase<Any?, T> {
 
     suspend fun observe(
         changesOnly: Boolean = true,
-        listener: Observer<T, ObservableChangedScope<T>>
+        notifyForInitial: Boolean = false,
+        listener: Observer<T, IObservableChangedScope<T>>
+    ): suspend () -> Unit
+}
+
+interface IOwnedObservable<O, T> : IObservableBase<O, T> {
+
+    suspend fun observe(
+        changesOnly: Boolean = true,
+        notifyForInitial: Boolean = false,
+        listener: Observer<T, IOwnedObservableChangedScope<O, T>>
     ): suspend () -> Unit
 }
 
 open class Observable<T> internal constructor(
     private val mutableObservable: IMutableObservable<T>
-) : IObservable<T>, IObservableBase<T> by mutableObservable {
+) : IObservable<T>, IObservableBase<Any?, T> by mutableObservable {
 
     constructor(
         initial: T,
         dispatcher: CoroutineContext = ObservableDispatcherHolder.context,
-        observer: MutableObserver<T, ObservableChangedScope<T>>? = null
-    ) :
-            this(MutableObservable(initial, dispatcher, observer))
+        observer: MutableObserver<T, IObservableChangedScope<T>>? = null
+    ) : this(MutableObservable(initial, dispatcher, initialObserver = observer))
 
     override suspend fun observe(
         changesOnly: Boolean,
-        listener: Observer<T, ObservableChangedScope<T>>
-    ): suspend () -> Unit = mutableObservable.observe { listener(it) }
+        notifyForInitial: Boolean,
+        listener: Observer<T, IObservableChangedScope<T>>
+    ): suspend () -> Unit = mutableObservable.observe(changesOnly, notifyForInitial) { listener(it) }
+}
+
+open class OwnedObservable<O, T> internal constructor(
+    private val mutableObservable: IMutableOwnedObservable<O, T>
+) : IOwnedObservable<O, T>, IObservableBase<O, T> by mutableObservable {
+
+    constructor(
+        initial: T,
+        dispatcher: CoroutineContext = ObservableDispatcherHolder.context,
+        observer: MutableObserver<T, IObservableChangedScope<T>>? = null
+    ) : this(MutableOwnedObservable(initial, dispatcher, initialObserver = observer))
+
+    override suspend fun observe(
+        changesOnly: Boolean,
+        notifyForInitial: Boolean,
+        listener: Observer<T, IOwnedObservableChangedScope<O, T>>
+    ): suspend () -> Unit = mutableObservable.observe(changesOnly, notifyForInitial) { listener(it) }
 }
 
 typealias Observer<T, S> = suspend S.(current: T) -> Unit

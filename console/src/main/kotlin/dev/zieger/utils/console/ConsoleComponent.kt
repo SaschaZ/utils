@@ -3,53 +3,22 @@
 package dev.zieger.utils.console
 
 import com.googlecode.lanterna.TerminalSize
-import com.googlecode.lanterna.TextCharacter
 import com.googlecode.lanterna.gui2.AbstractComponent
-import com.googlecode.lanterna.gui2.ComponentRenderer
-import com.googlecode.lanterna.gui2.TextGUIGraphics
 import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.input.KeyType
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import java.util.*
 
-interface KeyStrokeHandler {
-    suspend fun onKeyPressed(keyStroke: KeyStroke)
-}
+class ConsoleComponent : AbstractComponent<ConsoleComponent>(), FocusableConsoleComponent {
 
-class CommandComponent : AbstractComponent<CommandComponent>(), KeyStrokeHandler {
-
-    override fun createDefaultRenderer(): ComponentRenderer<CommandComponent> =
-        object : ComponentRenderer<CommandComponent> {
-            override fun getPreferredSize(component: CommandComponent): TerminalSize =
-                TerminalSize(
-                    component.command.length,
-                    component.command.length / component.textGUI.screen.terminalSize.columns
-                )
-
-            override fun drawComponent(graphics: TextGUIGraphics, component: CommandComponent) = graphics.run {
-                component.command.forEachIndexed { idx, c ->
-                    setCharacter(idx % component.size.columns, idx / component.size.columns, TextCharacter(c))
-                }
-            }
-        }
-
-    private var command: String = ""
-
-    override suspend fun onKeyPressed(keyStroke: KeyStroke) {
-
-    }
-}
-
-class ConsoleComponent : AbstractComponent<ConsoleComponent>(), ConsoleScope, KeyStrokeHandler {
-
-    internal var isActiveComponent: Boolean = false
+    override var hasFocus: Boolean = false
         set(value) {
             field = value
             invalidate()
         }
 
-    internal var scope: CoroutineScope? = null
+    override var scope: CoroutineScope? = null
         set(value) {
             field = value
             value?.also { scope ->
@@ -76,7 +45,7 @@ class ConsoleComponent : AbstractComponent<ConsoleComponent>(), ConsoleScope, Ke
                 }
             }
         }
-    internal lateinit var options: ConsoleOptions
+    override lateinit var options: ConsoleOptions
     private val rawBuffer = LinkedList<TextString>()
     internal var buffer = LinkedList<List<TextString>>()
         private set

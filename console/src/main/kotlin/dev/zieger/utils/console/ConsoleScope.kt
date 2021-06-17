@@ -4,7 +4,7 @@ import com.googlecode.lanterna.TextColor
 
 interface ConsoleOwnerScope : ConsoleScope {
 
-    var activeConsole: Int
+    var activeComponent: Int
 }
 
 interface ConsoleScope {

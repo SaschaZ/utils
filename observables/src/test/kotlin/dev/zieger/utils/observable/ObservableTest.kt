@@ -3,8 +3,6 @@
 package dev.zieger.utils.observable
 
 import dev.zieger.utils.observables.MutableObservable
-import dev.zieger.utils.observables.SimpleObservable
-import dev.zieger.utils.time.seconds
 import io.kotest.core.spec.style.AnnotationSpec
 import io.kotest.core.test.TestCaseConfig
 import io.kotest.matchers.shouldBe
@@ -29,25 +27,25 @@ class ObservableTest : AnnotationSpec() {
     @Test
     fun testObservableSameThread() = runBlocking(context) {
         var first: Int? = null
-        val obs0 = MutableObservable(0, context) {
+        val obs0 = MutableObservable(0) {
             first = it
         }
         var val0 by obs0
 
         var second: Int? = null
-        val unObserve = obs0.observe { second = it }
+        val unObserve = obs0.observe {
+            second = it
+        }
 
         val0 = 1
         val0 shouldBe 1
         obs0.suspendUntil(1) shouldBe 1
-        obs0.suspendUntilValid()
         first shouldBe 1
         second shouldBe 1
 
         val0 = 2
         val0 shouldBe 2
         obs0.suspendUntil(2) shouldBe 2
-        obs0.suspendUntilValid()
         first shouldBe 2
         second shouldBe 2
 
@@ -56,7 +54,6 @@ class ObservableTest : AnnotationSpec() {
         val0 = 3
         val0 shouldBe 3
         obs0.suspendUntil(3) shouldBe 3
-        obs0.suspendUntilValid()
         first shouldBe 3
         second shouldBe 2
     }
@@ -75,14 +72,12 @@ class ObservableTest : AnnotationSpec() {
         obs0.changeValue { 1 }
         val0 shouldBe 1
         verify("suspendUntil(1)") { obs0.suspendUntil(1) shouldBe 1 }
-        verify("suspendUntilValid()") { obs0.suspendUntilValid(1.seconds) }
         first shouldBe 1
         second shouldBe 1
 
         obs0.changeValue { 2 }
         val0 shouldBe 2
         verify("suspendUntil(2)") { obs0.suspendUntil(2) shouldBe 2 }
-        verify("suspendUntilValid()") { obs0.suspendUntilValid(1.seconds) }
         first shouldBe 2
         second shouldBe 2
 
@@ -91,7 +86,6 @@ class ObservableTest : AnnotationSpec() {
         obs0.changeValue { 3 }
         val0 shouldBe 3
         verify("suspendUntil(3)") { obs0.suspendUntil(3) shouldBe 3 }
-        verify("suspendUntilValid()") { obs0.suspendUntilValid(1.seconds) }
         first shouldBe 3
         second shouldBe 2
     }
@@ -99,11 +93,11 @@ class ObservableTest : AnnotationSpec() {
     @Test
     fun testSimpleObservable() = runBlocking {
         var first: Int? = null
-        val obs0 = SimpleObservable(0)
+        val obs0 = MutableObservable(0)
         obs0.observe {
             first = it
-            if (it == 3)
-                current = 4
+//            if (it == 3)
+//                current = 4
         }
         var val0 by obs0
 
@@ -123,9 +117,8 @@ class ObservableTest : AnnotationSpec() {
         unObserve()
 
         val0 = 3
-//        val0 shouldBe 3
-        verify("suspendUntil(4)") { obs0.suspendUntil(4) shouldBe 4 }
-        first shouldBe 4
+        val0 shouldBe 3
+        first shouldBe 3
         second shouldBe 2
     }
 }

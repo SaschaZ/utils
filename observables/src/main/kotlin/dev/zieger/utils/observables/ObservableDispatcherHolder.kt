@@ -1,7 +1,9 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package dev.zieger.utils.observables
 
 import kotlinx.coroutines.newSingleThreadContext
 
 object ObservableDispatcherHolder {
-    val context = newSingleThreadContext("ObservableDispatcher")
+    var context = newSingleThreadContext("ObservableDispatcher")
 }
