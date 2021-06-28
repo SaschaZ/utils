@@ -3,6 +3,7 @@
 package dev.zieger.utils.time
 
 import dev.zieger.utils.time.TimeFormat.DATE_ONLY
+import dev.zieger.utils.time.progression.step
 import io.kotest.assertions.eq.eq
 import io.kotest.core.spec.style.AnnotationSpec
 import io.kotest.matchers.shouldBe
@@ -41,5 +42,17 @@ internal class TimeStampTest : AnnotationSpec() {
 
         time.minusMonths(18).formatTime() shouldBe "05.04.2019-00:00:00"
         time.minusMonths(30).formatTime() shouldBe "05.04.2018-00:00:00"
+    }
+
+    @Test
+    fun testTimeProgression() {
+        val start = "1.4.2021".parse()
+        val end = start + 3.days
+        (start..end step 1.days).toList().size shouldBe 4
+    }
+
+    @Test
+    fun testHashCode() {
+        "1.4.2021".parse().hashCode() shouldBe "1.4.2021".parse().hashCode()
     }
 }

@@ -50,6 +50,8 @@ typealias IMutableOwnedObservable<O, T> = IMutableObservableBase<O, T, IMutableO
 
 open class MutableObservable<T>(
     initial: T,
+    changesOnly: Boolean = true,
+    notifyForInitial: Boolean = false,
     context: CoroutineContext = ObservableDispatcherHolder.context,
     veto: (suspend IMutableObservableChangedScope<T>.(current: T) -> Boolean)? = null,
     map: (suspend IMutableObservableChangedScope<T>.(current: T) -> T)? = null,
@@ -57,6 +59,8 @@ open class MutableObservable<T>(
 ) : IMutableObservable<T>,
     MutableObservableBase<Any?, T, IMutableObservableChangedScope<T>, IObservable<T>>(
         initial,
+        changesOnly,
+        notifyForInitial,
         context,
         veto,
         map,
@@ -68,7 +72,7 @@ open class MutableObservable<T>(
     override fun buildOnChangedScope(unObserve: suspend () -> Unit): IMutableObservableChangedScope<T> =
         MutableObservableChangedScope(
             internalValue,
-            previousValues.last(),
+            previousValues.lastOrNull(),
             previousValues,
             { clearPreviousValues() },
             unObserve,
@@ -79,6 +83,8 @@ open class MutableObservable<T>(
 
 class MutableOwnedObservable<O, T>(
     initial: T,
+    changesOnly: Boolean = true,
+    notifyForInitial: Boolean = false,
     context: CoroutineContext = ObservableDispatcherHolder.context,
     veto: (suspend IMutableOwnedObservableChangedScope<O, T>.(current: T) -> Boolean)? = null,
     map: (suspend IMutableOwnedObservableChangedScope<O, T>.(current: T) -> T)? = null,
@@ -86,6 +92,8 @@ class MutableOwnedObservable<O, T>(
 ) : IMutableOwnedObservable<O, T>,
     MutableObservableBase<O, T, IMutableOwnedObservableChangedScope<O, T>, IOwnedObservable<O, T>>(
         initial,
+        changesOnly,
+        notifyForInitial,
         context,
         veto,
         map,
@@ -109,6 +117,8 @@ class MutableOwnedObservable<O, T>(
 
 abstract class MutableObservableBase<O, T, S : IMutableObservableChangedScope<T>, IT : IObservableBase<O, T>>(
     initial: T,
+    changesOnly: Boolean = true,
+    notifyForInitial: Boolean = false,
     private val context: CoroutineContext = ObservableDispatcherHolder.context,
     veto: (suspend S.(current: T) -> Boolean)? = null,
     map: (suspend S.(current: T) -> T)? = null,
@@ -145,7 +155,7 @@ abstract class MutableObservableBase<O, T, S : IMutableObservableChangedScope<T>
 
     init {
         runBlocking {
-            initialObserver?.also { observe(listener = it) }
+            initialObserver?.also { observe(changesOnly = changesOnly, notifyForInitial = notifyForInitial, listener = it) }
             veto?.let { this@MutableObservableBase.veto = it }
             map?.let { this@MutableObservableBase.map = it }
         }

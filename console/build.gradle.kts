@@ -1,7 +1,4 @@
-import dev.zieger.utils.koTestAssertions
-import dev.zieger.utils.koTestProperty
-import dev.zieger.utils.koTestRunner
-import dev.zieger.utils.lanterna
+import dev.zieger.utils.*
 
 plugins {
     id("dev.zieger.utils")
@@ -13,6 +10,8 @@ utils {
 }
 
 dependencies {
+    misc
+
     lanterna
 
     koTestRunner

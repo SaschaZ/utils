@@ -54,9 +54,11 @@ open class Observable<T> internal constructor(
 
     constructor(
         initial: T,
+        changesOnly: Boolean = true,
+        notifyForInitial: Boolean = false,
         dispatcher: CoroutineContext = ObservableDispatcherHolder.context,
         observer: MutableObserver<T, IObservableChangedScope<T>>? = null
-    ) : this(MutableObservable(initial, dispatcher, initialObserver = observer))
+    ) : this(MutableObservable(initial, changesOnly, notifyForInitial, dispatcher, initialObserver = observer))
 
     override suspend fun observe(
         changesOnly: Boolean,
@@ -71,9 +73,11 @@ open class OwnedObservable<O, T> internal constructor(
 
     constructor(
         initial: T,
+        changesOnly: Boolean = true,
+        notifyForInitial: Boolean = false,
         dispatcher: CoroutineContext = ObservableDispatcherHolder.context,
         observer: MutableObserver<T, IObservableChangedScope<T>>? = null
-    ) : this(MutableOwnedObservable(initial, dispatcher, initialObserver = observer))
+    ) : this(MutableOwnedObservable(initial, changesOnly, notifyForInitial, dispatcher, initialObserver = observer))
 
     override suspend fun observe(
         changesOnly: Boolean,

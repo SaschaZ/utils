@@ -14,20 +14,22 @@ open class TimeProgression(
     override fun iterator(): Iterator<ITimeStamp> = object : Iterator<ITimeStamp> {
         private var index: Int = 0
 
-        override fun hasNext() = start + step * (index + 1) <= end
+        override fun hasNext() = start + step * index <= end
 
-        override fun next(): ITimeStamp = start + step * ++index
+        override fun next(): ITimeStamp = start + step * index++
     }
 }
 
 infix fun <A: ITimeStamp, B: ITimeStamp> A.until(other: B) =
     (this..(other.millis - 1).toTime())
 
-infix fun <T: ITimeStamp> ClosedRange<T>.step(step: Number) =
-    TimeProgression(start, endInclusive, step.millis)
+infix fun <T: ITimeStamp> ClosedRange<T>.step(step: Number) = step(step.millis)
 
 infix fun <T: ITimeStamp> ClosedRange<T>.step(step: ITimeSpan) =
     TimeProgression(start, endInclusive, step)
+
+infix fun <T: ITimeStamp> ClosedRange<T>.stepScaled(step: ITimeSpan) =
+    (start - start % step..endInclusive + (step - endInclusive % step)).step(step)
 
 fun ClosedRange<ITimeStamp>.ticks(
     interval: ITimeSpan,

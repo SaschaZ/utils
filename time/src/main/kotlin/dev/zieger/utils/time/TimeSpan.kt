@@ -92,3 +92,5 @@ operator fun Number.compareTo(other: ITimeSpan) = toLong().compareTo(other.timeS
 fun <T : ITimeSpan> min(vararg values: T?): T = values.filterNotNull().minOrNull()!!
 fun <T : ITimeSpan> max(vararg values: T?): T = values.filterNotNull().maxOrNull()!!
 
+suspend fun delay(duration: ITimeSpan) = kotlinx.coroutines.delay(duration.millis)
+

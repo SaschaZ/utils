@@ -4,7 +4,7 @@ import kotlinx.coroutines.Job
 
 interface IObservableChangedScope<T> {
     val current: T
-    val previous: T
+    val previous: T?
     val previousValues: List<T>
     val clearPreviousValues: () -> Unit
     var unObserve: suspend () -> Unit
@@ -12,7 +12,7 @@ interface IObservableChangedScope<T> {
 
 open class ObservableChangedScope<T>(
     override val current: T,
-    override val previous: T,
+    override val previous: T?,
     override val previousValues: List<T>,
     override val clearPreviousValues: () -> Unit,
     override var unObserve: suspend () -> Unit
@@ -40,7 +40,7 @@ interface IMutableObservableChangedScope<T> : IObservableChangedScope<T> {
 
 open class MutableObservableChangedScope<T>(
     current: T,
-    previous: T,
+    previous: T?,
     previousValues: List<T>,
     clearPreviousValues: () -> Unit,
     unObserve: suspend () -> Unit,

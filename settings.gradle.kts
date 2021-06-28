@@ -15,6 +15,10 @@ pluginManagement {
 }
 
 rootProject.name = "utils3"
+include("console")
+include("coroutines")
+include("globals")
+include("log")
+include("misc")
 include("time")
 include("observables")
-include("console")

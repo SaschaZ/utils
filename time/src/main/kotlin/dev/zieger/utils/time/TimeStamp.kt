@@ -2,6 +2,7 @@
 
 package dev.zieger.utils.time
 
+import dev.zieger.utils.time.TimeStamp.Companion.DEFAULT_TIME_ZONE
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -76,7 +77,7 @@ interface ITimeStamp : ITimeSpan {
 
     fun formatTime(
         pattern: TimeFormat = TimeFormat.COMPLETE,
-        zone: TimeZone? = null,
+        zone: TimeZone? = DEFAULT_TIME_ZONE,
         locale: Locale = Locale.getDefault()
     ) = SimpleDateFormat(pattern.pattern, locale).apply { zone?.let { timeZone = it } }.format(timeStamp)
 }
@@ -84,7 +85,7 @@ interface ITimeStamp : ITimeSpan {
 @Serializable
 open class TimeStamp(override val timeStamp: Long,
                      @Serializable(with = TimeZoneSerializer::class)
-                     override val zone: TimeZone? = null) : ITimeStamp {
+                     override val zone: TimeZone? = DEFAULT_TIME_ZONE) : ITimeStamp {
 
     companion object : TimeParseHelper() {
 

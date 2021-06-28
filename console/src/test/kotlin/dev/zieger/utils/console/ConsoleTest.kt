@@ -19,17 +19,11 @@ internal class ConsoleTest : AnnotationSpec() {
             options = ConsoleOptions(
                 foreground = TextColor.ANSI.BLACK,
                 background = TextColor.ANSI.BLACK_BRIGHT,
-                commandPrefix = {
-                    "$ ".map {
-                        {
-                            TextCharacterWrapper(
-                                it,
-                                foreground = TextColor.ANSI.YELLOW_BRIGHT,
-                                background = TextColor.ANSI.RED
-                            )
-                        }
-                    }.toTypedArray()
-                })
+                commandForeground = TextColor.ANSI.BLACK,
+                commandBackground = TextColor.ANSI.GREEN,
+                outputPrefix = +"$ " * TextColor.ANSI.RED / TextColor.ANSI.YELLOW_BRIGHT,
+                commandPrefix = +": " * TextColor.ANSI.BLACK / TextColor.ANSI.GREEN
+            )
         ) {
             outNl()
             outNl("Foo\n\tBoo" * TextColor.ANSI.GREEN / TextColor.ANSI.YELLOW)
@@ -44,7 +38,7 @@ internal class ConsoleTest : AnnotationSpec() {
             outNl(cnt)
             outNl("plain")
 
-            activeComponent++
+            focusedComponent++
             repeat(100) {
                 outNl(+"FooBoo $it" * TextColor.ANSI.YELLOW / TextColor.ANSI.BLUE)
                 delay(50)

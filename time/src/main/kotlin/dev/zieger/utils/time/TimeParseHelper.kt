@@ -1,4 +1,5 @@
 package dev.zieger.utils.time
+import dev.zieger.utils.time.TimeStamp.Companion.DEFAULT_TIME_ZONE
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -27,7 +28,7 @@ open class TimeParseHelper {
         )
     }
 
-    protected fun String.stringToMillis(timeZone: TimeZone? = null): Long {
+    protected fun String.stringToMillis(timeZone: TimeZone? = DEFAULT_TIME_ZONE): Long {
         COMMON_DATA_FORMATS.forEach { format ->
             try {
                 val dateFormat = SimpleDateFormat(format, Locale.getDefault())
@@ -41,4 +42,4 @@ open class TimeParseHelper {
     }
 }
 
-fun String.parse(zone: TimeZone? = null) = TimeStamp(this, zone)
+fun String.parse(zone: TimeZone? = DEFAULT_TIME_ZONE) = TimeStamp(this, zone)

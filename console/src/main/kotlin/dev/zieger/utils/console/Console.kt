@@ -2,14 +2,16 @@
 
 package dev.zieger.utils.console
 
+import com.googlecode.lanterna.gui2.Component
 import com.googlecode.lanterna.gui2.MultiWindowTextGUI
 import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.screen.Screen
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import kotlinx.coroutines.*
+import kotlin.coroutines.EmptyCoroutineContext
 
 class Console(
-    vararg components: FocusableConsoleComponent = arrayOf(ConsoleComponent()),
+    vararg components: FocusableComponent = arrayOf(ConsoleComponent()),
     scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
     options: ConsoleOptions = ConsoleOptions(),
     block: suspend ConsoleOwnerScope.() -> Unit
@@ -34,7 +36,7 @@ class Console(
                         it.resume(textGUI?.screen?.readInput()) { t ->
                             System.err.println(t)
                         }
-                    }?.let { onKeyPressed(it) }
+                    }?.let { handleInput(it) }
                 }
             }
             scope.launch { block(this@run) }

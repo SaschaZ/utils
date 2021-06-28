@@ -61,7 +61,7 @@ class ObservableTest : AnnotationSpec() {
     @Test
     fun testObservableTwoThreads() = runBlocking {
         var first: Int? = null
-        val obs0 = MutableObservable(0, context) {
+        val obs0 = MutableObservable(0, context = context) {
             first = it
         }
         val val0 by obs0

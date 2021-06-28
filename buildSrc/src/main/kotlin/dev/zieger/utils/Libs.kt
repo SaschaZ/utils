@@ -5,6 +5,17 @@ package dev.zieger.utils
 import org.gradle.kotlin.dsl.DependencyHandlerScope
 import org.gradle.kotlin.dsl.project
 
+
+val DependencyHandlerScope.coroutines
+    get() = add("implementation", project(":coroutines"))
+val DependencyHandlerScope.globals
+    get() = add("implementation", project(":globals"))
+val DependencyHandlerScope.log
+    get() = add("implementation", project(":log"))
+val DependencyHandlerScope.misc
+    get() = add("implementation", project(":misc"))
+val DependencyHandlerScope.observables
+    get() = add("implementation", project(":observables"))
 val DependencyHandlerScope.time
     get() = add("implementation", project(":time"))
 val DependencyHandlerScope.testTime
