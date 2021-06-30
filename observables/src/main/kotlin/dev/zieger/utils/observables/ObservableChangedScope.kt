@@ -33,9 +33,7 @@ open class OwnedObservableChangedScope<O, T>(
     ObservableChangedScope<T>(current, previous, previousValues, clearPreviousValues, unObserve)
 
 interface IMutableObservableChangedScope<T> : IObservableChangedScope<T> {
-    override var current: T
-
-    val set: (T) -> Job
+    val offerValue: (T) -> Unit
 }
 
 open class MutableObservableChangedScope<T>(
@@ -44,16 +42,9 @@ open class MutableObservableChangedScope<T>(
     previousValues: List<T>,
     clearPreviousValues: () -> Unit,
     unObserve: suspend () -> Unit,
-    override val set: (T) -> Job
+    override val offerValue: (T) -> Unit
 ) : IMutableObservableChangedScope<T>,
-    ObservableChangedScope<T>(current, previous, previousValues, clearPreviousValues, unObserve) {
-
-    override var current: T = current
-        set(value) {
-            field = value
-            set(value)
-        }
-}
+    ObservableChangedScope<T>(current, previous, previousValues, clearPreviousValues, unObserve)
 
 interface IMutableOwnedObservableChangedScope<O, T> : IOwnedObservableChangedScope<O, T>,
     IMutableObservableChangedScope<T>
@@ -65,13 +56,6 @@ open class MutableOwnedObservableChangedScope<O, T>(
     previousValues: List<T>,
     clearPreviousValues: () -> Unit,
     unObserve: suspend () -> Unit,
-    override val set: (T) -> Job
+    override val offerValue: (T) -> Unit
 ) : IMutableOwnedObservableChangedScope<O, T>,
-    OwnedObservableChangedScope<O, T>(owner, current, previous, previousValues, clearPreviousValues, unObserve) {
-
-    override var current: T = current
-        set(value) {
-            field = value
-            set(value)
-        }
-}
+    OwnedObservableChangedScope<O, T>(owner, current, previous, previousValues, clearPreviousValues, unObserve)

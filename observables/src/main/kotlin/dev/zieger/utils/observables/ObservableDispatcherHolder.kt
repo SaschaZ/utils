@@ -5,5 +5,6 @@ package dev.zieger.utils.observables
 import kotlinx.coroutines.newSingleThreadContext
 
 object ObservableDispatcherHolder {
-    var context = newSingleThreadContext("ObservableDispatcher")
+    var primaryContext = newSingleThreadContext("ObservableDispatchers primary context")
+    var secondaryContext = newSingleThreadContext("ObservableDispatchers secondary context")
 }
