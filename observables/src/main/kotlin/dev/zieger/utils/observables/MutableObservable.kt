@@ -9,26 +9,26 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.*
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.properties.ReadWriteProperty
+import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
 interface IMutableObservableBase<O, T, S : IMutableObservableChangedScope<T>, IT : IObservableBase<O, T>> :
-    IObservableBase<O, T>, ReadWriteProperty<O, T> {
+    IObservableBase<O, T>, ReadOnlyProperty<O, T> {
 
-    override var value: T
+    override val value: T
+
+    val primaryScope: CoroutineScope
+    val secondaryScope: CoroutineScope
 
     override fun getValue(thisRef: O, property: KProperty<*>): T {
         owner = thisRef
         return value
     }
 
-    override fun setValue(thisRef: O, property: KProperty<*>, value: T) {
-        owner = thisRef
-        this.value = value
-    }
+    suspend fun changeValue(block: suspend S.(current: T) -> T): T
 
-    suspend fun changeValue(block: suspend S.(current: T) -> T)
+    suspend fun setValue(value: T) = changeValue { value }
+    fun offerValue(value: T) = primaryScope.launch { setValue(value) }
 
     suspend fun observe(
         changesOnly: Boolean = true,
@@ -52,7 +52,8 @@ open class MutableObservable<T>(
     initial: T,
     changesOnly: Boolean = true,
     notifyForInitial: Boolean = false,
-    context: CoroutineContext = ObservableDispatcherHolder.context,
+    primaryContext: CoroutineContext = ObservableDispatcherHolder.primaryContext,
+    secondaryContext: CoroutineContext = ObservableDispatcherHolder.secondaryContext,
     veto: (suspend IMutableObservableChangedScope<T>.(current: T) -> Boolean)? = null,
     map: (suspend IMutableObservableChangedScope<T>.(current: T) -> T)? = null,
     initialObserver: MutableObserver<T, IMutableObservableChangedScope<T>>? = null
@@ -61,7 +62,8 @@ open class MutableObservable<T>(
         initial,
         changesOnly,
         notifyForInitial,
-        context,
+        primaryContext,
+        secondaryContext,
         veto,
         map,
         initialObserver
@@ -76,7 +78,7 @@ open class MutableObservable<T>(
             previousValues,
             { clearPreviousValues() },
             unObserve,
-            { emptyScope.launch { value = it } })
+            { value -> secondaryScope.launch { changeValue { value } } })
 
     override fun toImmutableObservable(): IObservable<T> = Observable(this)
 }
@@ -85,7 +87,8 @@ class MutableOwnedObservable<O, T>(
     initial: T,
     changesOnly: Boolean = true,
     notifyForInitial: Boolean = false,
-    context: CoroutineContext = ObservableDispatcherHolder.context,
+    primaryContext: CoroutineContext = ObservableDispatcherHolder.primaryContext,
+    secondaryContext: CoroutineContext = ObservableDispatcherHolder.secondaryContext,
     veto: (suspend IMutableOwnedObservableChangedScope<O, T>.(current: T) -> Boolean)? = null,
     map: (suspend IMutableOwnedObservableChangedScope<O, T>.(current: T) -> T)? = null,
     initialObserver: MutableObserver<T, IMutableOwnedObservableChangedScope<O, T>>? = null
@@ -94,7 +97,8 @@ class MutableOwnedObservable<O, T>(
         initial,
         changesOnly,
         notifyForInitial,
-        context,
+        primaryContext,
+        secondaryContext,
         veto,
         map,
         initialObserver
@@ -110,7 +114,7 @@ class MutableOwnedObservable<O, T>(
             previousValues,
             { clearPreviousValues() },
             unObserve,
-            { emptyScope.launch { value = it } })
+            { value -> secondaryScope.launch { changeValue { value } } })
 
     override fun toImmutableObservable(): IOwnedObservable<O, T> = OwnedObservable(this)
 }
@@ -119,7 +123,8 @@ abstract class MutableObservableBase<O, T, S : IMutableObservableChangedScope<T>
     initial: T,
     changesOnly: Boolean = true,
     notifyForInitial: Boolean = false,
-    private val context: CoroutineContext = ObservableDispatcherHolder.context,
+    primaryContext: CoroutineContext = ObservableDispatcherHolder.primaryContext,
+    secondaryContext: CoroutineContext = ObservableDispatcherHolder.secondaryContext,
     veto: (suspend S.(current: T) -> Boolean)? = null,
     map: (suspend S.(current: T) -> T)? = null,
     initialObserver: MutableObserver<T, S>? = null
@@ -129,11 +134,8 @@ abstract class MutableObservableBase<O, T, S : IMutableObservableChangedScope<T>
 
     protected var internalValue: T = initial
 
-    override var value: T
+    override val value: T
         get() = internalValue
-        set(value) = runBlocking(context) {
-            changeValue { value }
-        }
     private var channelValue: T = initial
 
     internal var previousValues = LinkedList<T>()
@@ -150,21 +152,27 @@ abstract class MutableObservableBase<O, T, S : IMutableObservableChangedScope<T>
     private val valueWaiterMutex = Mutex()
     private val valueWaiter = HashMap<suspend (T) -> Boolean, suspend (T) -> Boolean>()
 
-    private val scope = CoroutineScope(context)
-    protected val emptyScope = CoroutineScope(EmptyCoroutineContext)
+    override val primaryScope = CoroutineScope(primaryContext)
+    override val secondaryScope = CoroutineScope(secondaryContext)
 
     init {
         runBlocking {
-            initialObserver?.also { observe(changesOnly = changesOnly, notifyForInitial = notifyForInitial, listener = it) }
-            veto?.let { this@MutableObservableBase.veto = it }
-            map?.let { this@MutableObservableBase.map = it }
+            initialObserver?.also {
+                observe(
+                    changesOnly = changesOnly,
+                    notifyForInitial = notifyForInitial,
+                    listener = it
+                )
+            }
+            veto?.let { this@MutableObservableBase.veto(it) }
+            map?.let { this@MutableObservableBase.map(it) }
         }
     }
 
     private suspend fun onPropertyChanged() {
         observerMutex.withLock {
             observer.forEach {
-                buildOnChangedScope { scope.launch { observerMutex.withLock { observer.remove(it) } } }.run {
+                buildOnChangedScope { primaryScope.launch { observerMutex.withLock { observer.remove(it) } } }.run {
                     it(current)
                 }
             }
@@ -172,7 +180,7 @@ abstract class MutableObservableBase<O, T, S : IMutableObservableChangedScope<T>
         valueWaiterMutex.withLock {
             channelValue = value
             valueWaiter.filter { (key, value) ->
-                buildOnChangedScope { scope.launch { valueWaiterMutex.withLock { valueWaiter.remove(key) } } }.run {
+                buildOnChangedScope { primaryScope.launch { valueWaiterMutex.withLock { valueWaiter.remove(key) } } }.run {
                     key(current) && value(current)
                 }
             }.onEach { (key, _) -> valueWaiter.remove(key) }
@@ -181,8 +189,8 @@ abstract class MutableObservableBase<O, T, S : IMutableObservableChangedScope<T>
 
     protected abstract fun buildOnChangedScope(unObserve: suspend () -> Unit = {}): S
 
-    override suspend fun changeValue(block: suspend S.(current: T) -> T) {
-        val isVeto = valueMutex.withLock {
+    override suspend fun changeValue(block: suspend S.(current: T) -> T): T {
+        valueMutex.withLock {
             val mappedValue = mapMutex.withLock {
                 map?.run {
                     buildOnChangedScope { mapMutex.withLock { map = null } }.run { invoke(this, value) }
@@ -201,20 +209,25 @@ abstract class MutableObservableBase<O, T, S : IMutableObservableChangedScope<T>
                 previousValues += value
                 internalValue = buildOnChangedScope().block(value)
             }
-            isVeto
+
+            if (!isVeto)
+                onPropertyChanged()
         }
-        if (!isVeto)
-            onPropertyChanged()
+
+        return internalValue
     }
 
-    override suspend fun suspendUntil(timeout: ITimeSpan?, wanted: suspend (T) -> Boolean): T {
+    override suspend fun suspendUntil(timeout: ITimeSpan?, wanted: suspend (T) -> Boolean): T? {
         val result = Channel<T>(Channel.UNLIMITED)
-        val channelSet = valueWaiterMutex.withLock {
-            (channelValue != value || !wanted(value)).also {
-                valueWaiter[wanted] = {
-                    result.send(it)
-                    true
-                }
+        val (channelSet, checkedValue) = valueMutex.withLock {
+            valueWaiterMutex.withLock {
+                if (!wanted(value)) {
+                    valueWaiter[wanted] = {
+                        result.send(it)
+                        true
+                    }
+                    true to value
+                } else false to value
             }
         }
 
@@ -223,10 +236,10 @@ abstract class MutableObservableBase<O, T, S : IMutableObservableChangedScope<T>
                 try {
                     withTimeout(it) { result.receive() }
                 } catch (te: TimeoutCancellationException) {
-                    return value
+                    return null
                 }
             } ?: result.receive()
-        } else value
+        } else checkedValue
     }
 
     override suspend fun observe(
@@ -270,8 +283,8 @@ abstract class MutableObservableBase<O, T, S : IMutableObservableChangedScope<T>
     }
 
     override suspend fun release() {
-        scope.cancel()
-        emptyScope.cancel()
+        primaryScope.cancel()
+        secondaryScope.cancel()
     }
 }
 

@@ -19,13 +19,13 @@ interface IObservableBase<O, T> : ReadOnlyProperty<O, T> {
 
     fun clearPreviousValues()
 
-    suspend fun suspendUntilNext(timeout: ITimeSpan? = null): T =
+    suspend fun suspendUntilNext(timeout: ITimeSpan? = null): T? =
         suspendUntil(timeout) { true }
 
-    suspend fun suspendUntil(wanted: T, timeout: ITimeSpan? = null): T =
+    suspend fun suspendUntil(wanted: T, timeout: ITimeSpan? = null): T? =
         suspendUntil(timeout) { it == wanted }
 
-    suspend fun suspendUntil(timeout: ITimeSpan? = null, wanted: suspend (T) -> Boolean): T
+    suspend fun suspendUntil(timeout: ITimeSpan? = null, wanted: suspend (T) -> Boolean): T?
 
     suspend fun release()
 }
@@ -56,9 +56,19 @@ open class Observable<T> internal constructor(
         initial: T,
         changesOnly: Boolean = true,
         notifyForInitial: Boolean = false,
-        dispatcher: CoroutineContext = ObservableDispatcherHolder.context,
+        primaryContext: CoroutineContext = ObservableDispatcherHolder.primaryContext,
+        secondaryContext: CoroutineContext = ObservableDispatcherHolder.secondaryContext,
         observer: MutableObserver<T, IObservableChangedScope<T>>? = null
-    ) : this(MutableObservable(initial, changesOnly, notifyForInitial, dispatcher, initialObserver = observer))
+    ) : this(
+        MutableObservable(
+            initial,
+            changesOnly,
+            notifyForInitial,
+            primaryContext,
+            secondaryContext,
+            initialObserver = observer
+        )
+    )
 
     override suspend fun observe(
         changesOnly: Boolean,
@@ -75,9 +85,19 @@ open class OwnedObservable<O, T> internal constructor(
         initial: T,
         changesOnly: Boolean = true,
         notifyForInitial: Boolean = false,
-        dispatcher: CoroutineContext = ObservableDispatcherHolder.context,
+        primaryContext: CoroutineContext = ObservableDispatcherHolder.primaryContext,
+        secondaryContext: CoroutineContext = ObservableDispatcherHolder.secondaryContext,
         observer: MutableObserver<T, IObservableChangedScope<T>>? = null
-    ) : this(MutableOwnedObservable(initial, changesOnly, notifyForInitial, dispatcher, initialObserver = observer))
+    ) : this(
+        MutableOwnedObservable(
+            initial,
+            changesOnly,
+            notifyForInitial,
+            primaryContext,
+            secondaryContext,
+            initialObserver = observer
+        )
+    )
 
     override suspend fun observe(
         changesOnly: Boolean,
