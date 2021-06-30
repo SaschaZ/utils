@@ -2,6 +2,7 @@
 /.gradle/
 /.idea/
 /build/
+/*/build/
 /buildSrc/.gradle/
 /buildSrc/build/
 /console/build/
