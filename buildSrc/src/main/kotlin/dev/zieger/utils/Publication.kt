@@ -64,14 +64,13 @@ private fun MavenPublication.configureNames(name: String) {
 
 internal fun Project.configurePublishTask(type: ModuleType) = afterEvaluate {
     val publish = tasks["publish"]
-    val assemble = tasks["assemble${when (type) {
-        ANDROID_LIB -> "Release"
-        JVM_LIB -> ""
-    }}"]
-    val publishLocal = tasks["publish${when (type) {
-        ANDROID_LIB -> "Aar"
-        JVM_LIB -> "MavenJava"
-    }}PublicationToMavenLocal"]
+    val assemble = tasks["assemble"]
+    val publishLocal = tasks["publish${
+        when (type) {
+            ANDROID_LIB -> "Aar"
+            JVM_LIB -> "MavenJava"
+        }
+    }PublicationToMavenLocal"]
 
     publishLocal.dependsOn(assemble).doLast { copyArtifacts(type) }
     publish.dependsOn(assemble).doLast { copyArtifacts(type) }

@@ -13,9 +13,11 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
+@Disabled
 class OnChangedTest {
 
     sealed class OnChangedResults {
