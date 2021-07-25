@@ -5,7 +5,6 @@ import dev.zieger.utils.coroutines.TypeContinuation.Companion.ContinuationHolder
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.misc.runEach
 import dev.zieger.utils.time.ITimeSpan
-import dev.zieger.utils.time.ITimeStamp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
@@ -68,7 +67,7 @@ open class TypeContinuation<T : Any?> {
      * @param timeout When suspending longer than defined in [timeout] a [TimeoutCancellationException] is thrown.
      *   If `null` no timeout is used. Defaulting to `null`.
      */
-    open suspend fun suspend(timeout: ITimeStamp? = null): T = suspend(null, timeout)
+    open suspend fun suspend(timeout: ITimeSpan? = null): T = suspend(null, timeout)
 
     /**
      * Resumes all callers of [suspend] that used [value] or `null` as wanted value.

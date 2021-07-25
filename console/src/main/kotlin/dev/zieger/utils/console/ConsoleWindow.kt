@@ -6,18 +6,27 @@ import com.googlecode.lanterna.TerminalPosition
 import com.googlecode.lanterna.TerminalSize
 import com.googlecode.lanterna.TextColor
 import com.googlecode.lanterna.graphics.SimpleTheme
-import com.googlecode.lanterna.gui2.*
+import com.googlecode.lanterna.gui2.AbsoluteLayout
+import com.googlecode.lanterna.gui2.BasicWindow
+import com.googlecode.lanterna.gui2.Panel
+import com.googlecode.lanterna.gui2.Window
 import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.input.KeyType
+import dev.zieger.utils.console.ConsoleInstances.SIZE_SCOPE
+import dev.zieger.utils.console.ConsoleInstances.UI_SCOPE
+import dev.zieger.utils.misc.asUnit
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import org.koin.core.component.get
 import java.util.*
 
 class ConsoleWindow(
     private val options: ConsoleOptions = ConsoleOptions(),
-    private val scope: CoroutineScope,
+    private val di: DI,
     window: Window = BasicWindow()
-) : Window by window, ConsoleOwnerScope {
+) : Window by window, ConsoleOwnerScope, DI by di {
 
     private val panel = Panel(AbsoluteLayout())
     private val components = LinkedList<FocusableComponent>()
@@ -49,25 +58,31 @@ class ConsoleWindow(
             window.setHints(hints)
         }
         component = panel
+        get<CoroutineScope>(SIZE_SCOPE).launch {
+            while (isActive) {
+                if (components.isNotEmpty())
+                    setPositionAndSizes()
+                delay(100)
+            }
+        }
     }
 
     override fun handleInput(key: KeyStroke): Boolean {
         when (key.keyType) {
             KeyType.PageUp -> focusedComponent--
             KeyType.PageDown -> focusedComponent++
-            else -> scope.launch { components[focusedComponent].handleKeyStroke(key) }
+            else -> get<CoroutineScope>(UI_SCOPE).launch { components[focusedComponent].handleKeyStroke(key) }
         }
         return true
     }
 
-    fun addFocusableConsoleComponent(consoleComponent: FocusableComponent) {
-        consoleComponent.options = options
-        consoleComponent.scope = scope
+    fun addFocusableConsoleComponent(consoleComponent: FocusableComponent) = get<CoroutineScope>(UI_SCOPE).launch {
+        consoleComponent.di = get()
         consoleComponent.focused = focusedComponent == components.size
         components += consoleComponent
         setPositionAndSizes()
         panel.addComponent(consoleComponent)
-    }
+    }.asUnit()
 
     private fun setPositionAndSizes(vertical: Boolean = false) {
         val height = textGUI.screen.terminalSize.rows / components.size
@@ -90,10 +105,12 @@ class ConsoleWindow(
     }
 
     override fun out(str: TextString) {
+        if (components.isEmpty()) return
         (components[focusedComponent.coerceIn(0..components.lastIndex)] as? ConsoleScope)?.out(str)
     }
 
     override fun outNl(str: TextString) {
+        if (components.isEmpty()) return
         (components[focusedComponent.coerceIn(0..components.lastIndex)] as? ConsoleScope)?.outNl(str)
     }
 }

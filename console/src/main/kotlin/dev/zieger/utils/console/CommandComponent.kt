@@ -9,20 +9,24 @@ import com.googlecode.lanterna.gui2.ComponentRenderer
 import com.googlecode.lanterna.gui2.TextGUIGraphics
 import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.input.KeyType
+import dev.zieger.utils.console.ConsoleInstances.UI_SCOPE
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-
-fun CommandComponent(
-    options: ConsoleOptions,
-    onNewCommand: (command: String) -> Unit
-): CommandComponent =
-    CommandComponent(onNewCommand).also { it.options = options }
+import org.koin.core.component.get
 
 class CommandComponent(
     private val onNewCommand: (command: String) -> Unit
 ) : AbstractFocusableComponent<CommandComponent>() {
 
+    override var di: DI? = null
+        set(value) {
+            field = value
+            scope = value?.get(UI_SCOPE)
+            options = value?.get() ?: options
+        }
+    override var options: ConsoleOptions = ConsoleOptions()
     private var rows: Int = 1
     private var cols: Int = 0
 
@@ -32,7 +36,7 @@ class CommandComponent(
             override fun getPreferredSize(component: CommandComponent): TerminalSize =
                 component.textGUI?.screen?.terminalSize?.withRows(rows) ?: TerminalSize.ONE
 
-            override fun drawComponent(graphics: TextGUIGraphics, component: CommandComponent) = graphics.run {
+            override fun drawComponent(graphics: TextGUIGraphics, component: CommandComponent): Unit = graphics.run {
                 var row = 0
                 var col = 0
                 val commandText =
@@ -58,45 +62,48 @@ class CommandComponent(
                             }
                         }
                     }
-                    cursorPosition?.also { pos ->
-                        setCharacter(
-                            pos, TextCharacter(
-                                ' ', when (cursorBlink) {
-                                    true -> options.foreground
-                                    false -> options.background
-                                }, when (cursorBlink) {
-                                    true -> options.background
-                                    false -> options.foreground
-                                }
-                            )
-                        )
-                    }
                 }
                 rows = row + 1
-                cols = if (command.isEmpty()) col else col + 1
+                cols = col
+                cursorPosition = TerminalPosition(cols.coerceAtLeast(options.commandPrefix().size), rows - 1)
+                cursorPosition?.also { pos ->
+                    val cursorBlinkActive = if ((System.currentTimeMillis() - lastCursorBlink.first) >= 400)
+                        (!lastCursorBlink.second).also {
+                            lastCursorBlink = System.currentTimeMillis() to it
+                        }
+                    else
+                        lastCursorBlink.second
+
+                    setCharacter(
+                        pos, TextCharacter(
+                            ' ', when (cursorBlinkActive) {
+                                true -> options.foreground
+                                false -> options.background
+                            }, when (cursorBlinkActive) {
+                                true -> options.background
+                                false -> options.foreground
+                            }
+                        )
+                    )
+                }
             }
         }
 
-    override var cursorPosition: TerminalPosition? = TerminalPosition(2, 0)
-    private var cursorBlink = false
-        set(value) {
-            field = value
-            invalidate()
-        }
+    private var lastCursorBlink: Pair<Long, Boolean> = System.currentTimeMillis() to false
+    override var cursorPosition: TerminalPosition? = TerminalPosition(options.commandPrefix().size, 0)
 
     private var command: String = ""
         set(value) {
             field = value
-            cursorPosition = TerminalPosition(cols.coerceAtLeast(options.commandPrefix().size), rows - 1)
             invalidate()
         }
-    override var scope: CoroutineScope? = null
+    private var scope: CoroutineScope? = null
         set(value) {
             field = value
             value?.launch {
-                while (true) {
-                    cursorBlink = if (focused) !cursorBlink else true
-                    delay(450)
+                while (isActive) {
+                    invalidate()
+                    delay(400)
                 }
             }
         }

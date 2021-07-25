@@ -2,44 +2,55 @@
 
 package dev.zieger.utils.console
 
-import com.googlecode.lanterna.TerminalPosition
 import com.googlecode.lanterna.TerminalSize
 import com.googlecode.lanterna.TextColor
-import com.googlecode.lanterna.gui2.AbstractComponent
-import com.googlecode.lanterna.gui2.InputFilter
-import com.googlecode.lanterna.gui2.Interactable
 import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.input.KeyType
+import dev.zieger.utils.console.ConsoleInstances.SIZE_SCOPE
+import dev.zieger.utils.console.ConsoleInstances.UI_SCOPE
 import dev.zieger.utils.misc.nullWhen
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import org.koin.core.component.get
 import java.util.*
 
 class ConsoleComponent : AbstractFocusableComponent<ConsoleComponent>(), FocusableConsoleComponent {
 
-    override var scope: CoroutineScope? = null
+    override var di: DI? = null
+        set(value) {
+            field = value
+            uiScope = value?.get(UI_SCOPE)
+            sizeScope = value?.get(SIZE_SCOPE)
+            options = value?.get() ?: options
+        }
+
+    override var options: ConsoleOptions = ConsoleOptions()
+
+    private var sizeScope: CoroutineScope? = null
+        set(value) {
+            field = value
+            value?.launch {
+                while (isActive) {
+                    checkSize()
+                    delay(100)
+                }
+            }
+        }
+    private var uiScope: CoroutineScope? = null
         set(value) {
             field = value
             value?.also { scope ->
                 scope.launch {
-                    while (isActive) {
-                        checkSize()
-                        delay(100)
-                    }
-                }
-                scope.launch {
                     for ((withNewLine, str) in bufferChannel) {
-                        withContext(onBufferChangedDispatcher) {
-                            when (withNewLine) {
-                                true -> rawBuffer.add(str)
-                                false -> {
-                                    rawBuffer.nullWhen { it.isEmpty() }?.get(rawBuffer.lastIndex)?.let { existing ->
-                                        rawBuffer[rawBuffer.lastIndex] = { existing() + str() }
-                                    } ?: run { rawBuffer.add(str) }
-                                }
+                        when (withNewLine) {
+                            true -> rawBuffer.add(str)
+                            false -> {
+                                rawBuffer.nullWhen { it.isEmpty() }?.get(rawBuffer.lastIndex)?.let { existing ->
+                                    rawBuffer[rawBuffer.lastIndex] = { existing() + str() }
+                                } ?: run { rawBuffer.add(str) }
                             }
-                            onBufferChanged()
                         }
+                        onBufferChanged()
                         scrollToBottom()
                     }
                 }
@@ -49,7 +60,6 @@ class ConsoleComponent : AbstractFocusableComponent<ConsoleComponent>(), Focusab
     internal var buffer = LinkedList<List<TextString>>()
         private set
     private val bufferChannel = Channel<Pair<Boolean, TextString>>(Channel.UNLIMITED)
-    private val onBufferChangedDispatcher = newSingleThreadContext("onBufferChanged")
 
     private var lastSize: TerminalSize? = null
     internal var scrollIdx = 0
@@ -70,6 +80,7 @@ class ConsoleComponent : AbstractFocusableComponent<ConsoleComponent>(), Focusab
                         .addPrefix(idx)
                 }.map { { it.toTypedArray() } })
         }
+        println("termSize: ${textGUI?.screen?.terminalSize}")
         buffer = preBuffer
         invalidate()
     }
@@ -97,8 +108,16 @@ class ConsoleComponent : AbstractFocusableComponent<ConsoleComponent>(), Focusab
                 '\n' -> newLine++
                 else -> newLine
             }
-        }.values.map { it.map { it1 -> { it1().let { it2 -> if (it2.character == '\n' && it.size == 1)
-            TextCharacterWrapper(' ', options.foreground, options.background) else it2 } } } }
+        }.values.map {
+            it.map { it1 ->
+                {
+                    it1().let { it2 ->
+                        if (it2.character == '\n' && it.size == 1)
+                            TextCharacterWrapper(' ', options.foreground, options.background) else it2
+                    }
+                }
+            }
+        }
     }
 
     private fun Collection<List<TextChar>>.addSpaceForEmptyString(): Collection<List<TextChar>> =
@@ -136,18 +155,18 @@ class ConsoleComponent : AbstractFocusableComponent<ConsoleComponent>(), Focusab
         filterNot { it().character.let { it.isWhitespace() && it != ' ' } }
 
     private suspend fun checkSize() {
-        val prevSize = lastSize
-        val termSize = textGUI?.screen?.terminalSize
-        lastSize = termSize ?: lastSize
-        preferredSize = lastSize
-        if (prevSize != lastSize)
-            withContext(onBufferChangedDispatcher) {
-                onBufferChanged()
+        textGUI?.screen?.terminalSize?.nullWhen { it == lastSize }?.also { println("B size changed to $it") }
+            ?.let { termSize ->
+                lastSize = termSize
+                preferredSize = termSize
+                withContext(uiScope!!.coroutineContext) {
+                    onBufferChanged()
+                }
             }
     }
 
     private suspend fun scroll(delta: Int) {
-        withContext(onBufferChangedDispatcher) {
+        withContext(uiScope!!.coroutineContext) {
             val bufferLines = buffer.sumOf { it.size }
             val lowerBound =
                 (-bufferLines.coerceAtLeast(position.row) + size.rows - position.row).coerceAtMost(-position.row)
@@ -164,19 +183,19 @@ class ConsoleComponent : AbstractFocusableComponent<ConsoleComponent>(), Focusab
 
     override suspend fun handleKeyStroke(key: KeyStroke): Boolean {
         println("onKeyPressed($key)")
-        scope?.run {
+        withContext(uiScope!!.coroutineContext) {
             when (key.keyType) {
                 KeyType.ArrowUp -> when {
-                    key.isAltDown && !key.isShiftDown -> launch { scroll(10) }
-                    key.isShiftDown && !key.isAltDown -> launch { scroll(20) }
-                    key.isShiftDown && key.isAltDown -> launch { scrollToTop() }
-                    else -> launch { scroll(1) }
+                    key.isAltDown && !key.isShiftDown -> scroll(10)
+                    key.isShiftDown && !key.isAltDown -> scroll(20)
+                    key.isShiftDown && key.isAltDown -> scrollToTop()
+                    else -> scroll(1)
                 }
                 KeyType.ArrowDown -> when {
-                    key.isAltDown && !key.isShiftDown -> launch { scroll(-10) }
-                    key.isShiftDown && !key.isAltDown -> launch { scroll(-20) }
-                    key.isShiftDown && key.isAltDown -> launch { scrollToBottom() }
-                    else -> launch { scroll(-1) }
+                    key.isAltDown && !key.isShiftDown -> scroll(-10)
+                    key.isShiftDown && !key.isAltDown -> scroll(-20)
+                    key.isShiftDown && key.isAltDown -> scrollToBottom()
+                    else -> scroll(-1)
                 }
                 else -> Unit
             }

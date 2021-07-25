@@ -1,0 +1,49 @@
+@startuml
+
+skinparam roundCorner 10
+skinparam padding 3
+skinparam backgroundcolor lightgray
+skinparam arrowcolor black
+skinparam Class {
+    BorderColor black
+    BorderThickness 1
+    BackgroundColor gray
+    BackgroundColor<<result>> green
+    FontColor white
+    FontStyle bold
+}
+skinparam Shadowing false
+hide members
+hide circle
+hide stereotype
+
+Event <<result>>
+State <<result>>
+
+ConditionElement -d-|> Condition
+ConditionElement --d-|> DefinitionGroup
+ConditionElement ---d--|> Slave
+ConditionElement ---d-|> DefinitionElement
+
+Condition "1" -> "N" DefinitionGroup
+DefinitionGroup "1" -> "N" DefinitionElement
+
+DefinitionElement --|> Master
+DefinitionElement --|> External
+
+Master --|> Single
+Master --|> Group
+
+Single --|> Event
+Single --|> State
+
+Group --|> EventGroup
+Group --|> StateGroup
+
+Slave --|> Data
+Slave --|> Type
+
+Master --|> ComboElement
+ComboElement -u-> Slave
+
+@endumlb

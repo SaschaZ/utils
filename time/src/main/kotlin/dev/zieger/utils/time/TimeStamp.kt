@@ -2,6 +2,7 @@
 
 package dev.zieger.utils.time
 
+import dev.zieger.utils.time.TimeStamp.Companion.DEFAULT_LOCALE
 import dev.zieger.utils.time.TimeStamp.Companion.DEFAULT_TIME_ZONE
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -16,7 +17,7 @@ import java.time.ZoneOffset
 import java.util.*
 import kotlin.math.absoluteValue
 
-interface ITimeStamp : ITimeSpan {
+interface ITimeStamp : ITimeSpanBase<ITimeStamp> {
 
     val timeStamp: Long
     override val timeSpan: Long get() = timeStamp
@@ -63,23 +64,32 @@ interface ITimeStamp : ITimeSpan {
 
 
     operator fun plus(other: ITimeStamp): ITimeSpan = TimeSpan(timeStamp + other.timeStamp)
-    override operator fun plus(other: ITimeSpan): ITimeStamp = TimeStamp(timeStamp + other.timeSpan)
-    override operator fun plus(other: Number): ITimeStamp = TimeStamp(timeStamp + other.toLong())
+    operator fun plus(other: ITimeSpan): ITimeStamp = TimeStamp(timeStamp + other.timeSpan, zone)
+    operator fun plus(other: Number): ITimeStamp = TimeStamp(timeStamp + other.toLong(), zone)
+
     operator fun minus(other: ITimeStamp): ITimeSpan = TimeSpan(timeStamp - other.timeStamp)
-    override operator fun minus(other: ITimeSpan): ITimeStamp = TimeStamp(timeStamp - other.timeSpan, zone)
-    override operator fun minus(other: Number): ITimeStamp = TimeStamp(timeStamp - other.toLong(), zone)
+    operator fun minus(other: ITimeSpan): ITimeStamp = TimeStamp(timeStamp - other.timeSpan, zone)
+    operator fun minus(other: Number): ITimeStamp = TimeStamp(timeStamp - other.toLong(), zone)
+
     operator fun times(other: ITimeStamp): ITimeStamp = TimeStamp(timeStamp + other.timeStamp, zone)
-    override operator fun times(other: Number): ITimeStamp = TimeStamp(timeStamp * other.toLong(), zone)
+    operator fun times(other: ITimeSpan): ITimeStamp = TimeStamp(timeStamp * other.timeSpan, zone)
+    operator fun times(other: Number): ITimeStamp = TimeStamp(timeStamp * other.toLong(), zone)
+
     operator fun div(other: ITimeStamp): Double = timeStamp / other.timeStamp.toDouble()
-    override operator fun div(other: Number): ITimeStamp = TimeStamp(timeStamp / other.toLong(), zone)
+    operator fun div(other: ITimeSpan): Double = timeStamp / other.timeSpan.toDouble()
+    operator fun div(other: Number): ITimeStamp = TimeStamp(timeStamp / other.toLong(), zone)
+
     operator fun rem(other: ITimeStamp): Double = timeStamp % other.timeStamp.toDouble()
-    override operator fun rem(other: Number): ITimeStamp = TimeStamp(timeStamp % other.toLong(), zone)
+    operator fun rem(other: ITimeSpan): Double = timeStamp % other.timeSpan.toDouble()
+    operator fun rem(other: Number): ITimeStamp = TimeStamp(timeStamp % other.toLong(), zone)
+
+    fun normalize(value: ITimeSpan): ITimeStamp = this - this % value
 
     fun formatTime(
         pattern: TimeFormat = TimeFormat.COMPLETE,
         zone: TimeZone? = DEFAULT_TIME_ZONE,
-        locale: Locale = Locale.getDefault()
-    ) = SimpleDateFormat(pattern.pattern, locale).apply { zone?.let { timeZone = it } }.format(timeStamp)
+        locale: Locale = DEFAULT_LOCALE
+    ): String = SimpleDateFormat(pattern.pattern, locale).apply { zone?.let { timeZone = it } }.format(timeStamp)
 }
 
 @Serializable
@@ -90,15 +100,20 @@ open class TimeStamp(override val timeStamp: Long,
     companion object : TimeParseHelper() {
 
         var DEFAULT_TIME_ZONE: TimeZone? = null
+        var DEFAULT_LOCALE: Locale = Locale.getDefault()
 
         operator fun invoke(zone: TimeZone? = DEFAULT_TIME_ZONE) = TimeStamp(System.currentTimeMillis(), zone)
 
         operator fun invoke(timeStamp: Long, zone: TimeZone?) = TimeStamp(timeStamp, zone)
 
-        operator fun invoke(string: String, zone: TimeZone? = DEFAULT_TIME_ZONE) = TimeStamp(string.stringToMillis(zone), zone)
+        operator fun invoke(string: String, zone: TimeZone? = DEFAULT_TIME_ZONE) =
+            TimeStamp(string.stringToMillis(zone), zone)
     }
 
-    override fun formatTime(pattern: TimeFormat, zone: TimeZone?, locale: Locale): String = super.formatTime(pattern, zone ?: this.zone, locale)
+    override fun formatTime(pattern: TimeFormat, zone: TimeZone?, locale: Locale): String =
+        super.formatTime(pattern, zone ?: this.zone, locale)
+
+    override fun compareTo(other: ITimeStamp): Int = compare(this, other)
 
     override fun toString(): String = formatTime()
     override fun hashCode(): Int = timeStamp.hashCode() + (zone?.hashCode() ?: 0)
@@ -109,7 +124,7 @@ open class TimeStamp(override val timeStamp: Long,
 object TimeZoneSerializer : KSerializer<TimeZone> {
 
     override val descriptor: SerialDescriptor
-         get() = PrimitiveSerialDescriptor("timeZone", PrimitiveKind.STRING)
+        get() = PrimitiveSerialDescriptor("timeZone", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: TimeZone) =
         encoder.encodeString(value.id)
@@ -118,10 +133,11 @@ object TimeZoneSerializer : KSerializer<TimeZone> {
         TimeZone.getTimeZone(decoder.decodeString())
 }
 
-fun Number.toTime(zone: TimeZone? = null) = TimeStamp(toLong(), zone)
-fun Number.toTime(unit: TimeUnit, zone: TimeZone) = TimeStamp(toLong().convert(unit to TimeUnit.MS), zone)
-infix fun Number.toTime(unit: TimeUnit) = TimeStamp(toLong().convert(unit to TimeUnit.MS))
-val ITimeSpan.time: ITimeStamp get() = timeSpan.toTime()
+fun Number.toTime(unit: TimeUnit = TimeUnit.MILLI, zone: TimeZone? = DEFAULT_TIME_ZONE): ITimeStamp =
+    TimeStamp(toLong().convert(unit to TimeUnit.MS), zone)
+
+fun ITimeSpan.toTime(unit: TimeUnit = TimeUnit.MILLI, zone: TimeZone? = DEFAULT_TIME_ZONE): ITimeStamp =
+    timeSpan.toTime(unit, zone)
 
 val UTC: TimeZone = TimeZone.getTimeZone(ZoneId.ofOffset("UTC", ZoneOffset.UTC))
 
@@ -132,4 +148,6 @@ internal fun Int.daysInMonth(year: Int): Int = when (this) {
 }
 
 private val Int.isLeap: Boolean get() = this % 4 == 0 && this % 100 != 0
+
+val ClosedRange<out ITimeStamp>.span: ITimeSpan get() = endInclusive - start
 

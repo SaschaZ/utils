@@ -92,4 +92,20 @@ class ObservableTest : AnnotationSpec() {
         first shouldBe 4
         second shouldBe 2
     }
+
+    @Test
+    fun testImmutable() = runBlocking {
+        val _obs = MutableObservable(false)
+        val obs = _obs.toImmutableObservable()
+        var result: Boolean? = null
+        obs.observe(notifyForInitial = true) { result = it }
+        result shouldBe false
+        obs.value shouldBe false
+        _obs.value shouldBe false
+
+        _obs.setValue(true)
+        result shouldBe true
+        obs.value shouldBe true
+        _obs.value shouldBe true
+    }
 }

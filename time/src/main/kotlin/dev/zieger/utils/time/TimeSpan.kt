@@ -5,7 +5,22 @@ package dev.zieger.utils.time
 import dev.zieger.utils.time.TimeUnit.*
 import kotlinx.serialization.Serializable
 
-interface ITimeSpan : Comparable<ITimeSpan>, Comparator<ITimeSpan> {
+interface ITimeSpan : ITimeSpanBase<ITimeSpan> {
+    override fun compareTo(other: ITimeSpan): Int = compare(this, other)
+
+    operator fun plus(other: ITimeSpan): ITimeSpan = TimeSpan(timeSpan + other.timeSpan)
+    operator fun plus(other: Number): ITimeSpan = TimeSpan(timeSpan + other.toLong())
+    operator fun minus(other: ITimeSpan): ITimeSpan = TimeSpan(timeSpan - other.timeSpan)
+    operator fun minus(other: Number): ITimeSpan = TimeSpan(timeSpan - other.toLong())
+    operator fun times(other: ITimeSpan): ITimeSpan = TimeSpan(timeSpan * other.timeSpan)
+    operator fun div(other: ITimeSpan): Double = timeSpan / other.timeSpan.toDouble()
+    operator fun times(other: Number): ITimeSpan = TimeSpan(timeSpan * other.toLong())
+    operator fun div(other: Number): ITimeSpan = TimeSpan(timeSpan / other.toLong())
+    operator fun rem(other: ITimeSpan): Double = timeSpan % other.timeSpan.toDouble()
+    operator fun rem(other: Number): ITimeSpan = TimeSpan(timeSpan % other.toLong())
+}
+
+interface ITimeSpanBase<T : ITimeSpanBase<T>> : Comparable<T>, Comparator<T> {
 
     val timeSpan: Long
 
@@ -35,21 +50,9 @@ interface ITimeSpan : Comparable<ITimeSpan>, Comparator<ITimeSpan> {
     val negative: Boolean
         get() = millis < 0L
 
-    operator fun plus(other: ITimeSpan): ITimeSpan = TimeSpan(timeSpan + other.timeSpan)
-    operator fun plus(other: Number): ITimeSpan = TimeSpan(timeSpan + other.toLong())
-    operator fun minus(other: ITimeSpan): ITimeSpan = TimeSpan(timeSpan - other.timeSpan)
-    operator fun minus(other: Number): ITimeSpan = TimeSpan(timeSpan - other.toLong())
-    operator fun times(other: ITimeSpan): ITimeSpan = TimeSpan(timeSpan * other.timeSpan)
-    operator fun times(other: Number): ITimeSpan = TimeSpan(timeSpan * other.toLong())
-    operator fun div(other: ITimeSpan): Double = timeSpan / other.timeSpan.toDouble()
-    operator fun div(other: Number): ITimeSpan = TimeSpan(timeSpan / other.toLong())
-    operator fun rem(other: ITimeSpan): Double = timeSpan % other.timeSpan.toDouble()
-    operator fun rem(other: Number): ITimeSpan = TimeSpan(timeSpan % other.toLong())
-
     operator fun compareTo(other: Number) = timeSpan.compareTo(other.toLong())
-    override operator fun compareTo(other: ITimeSpan) = compare(this, other)
 
-    override fun compare(p0: ITimeSpan, p1: ITimeSpan) = p0.timeSpan.compareTo(p1.timeSpan)
+    override fun compare(p0: T, p1: T) = p0.timeSpan.compareTo(p1.timeSpan)
 
     fun formatSpan(
         vararg entities: TimeUnit = values(),
@@ -89,8 +92,10 @@ val Number.years: ITimeSpan get() = TimeSpan(toLong().convert(YEAR to MILLI))
 
 operator fun Number.compareTo(other: ITimeSpan) = toLong().compareTo(other.timeSpan)
 
-fun <T : ITimeSpan> min(vararg values: T?): T = values.filterNotNull().minOrNull()!!
-fun <T : ITimeSpan> max(vararg values: T?): T = values.filterNotNull().maxOrNull()!!
+fun <T : Comparable<T>> min(vararg values: T?): T = values.filterNotNull().minByOrNull { it }!!
+fun <T : Comparable<T>> max(vararg values: T?): T = values.filterNotNull().maxByOrNull { it }!!
 
 suspend fun delay(duration: ITimeSpan) = kotlinx.coroutines.delay(duration.millis)
+
+val ITimeSpan.abs: ITimeSpan get() = if (negative) this * -1 else this
 

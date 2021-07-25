@@ -18,9 +18,11 @@ data class ShellScope(
     val workingDir: File = File(".")
 ) {
 
-    suspend operator fun String.unaryPlus(): CommandOutput {
+    suspend operator fun String.unaryPlus(): CommandOutput = exec()
+
+    suspend fun String.exec(): CommandOutput = run {
         if (print) println("$this: ")
-        return runCommand(workingDir).apply {
+        runCommand(workingDir).apply {
             if (print) {
                 if (stdOutput.isNotBlank()) println(stdOutput)
                 if (errOutput.isNotBlank()) System.err.println(errOutput)

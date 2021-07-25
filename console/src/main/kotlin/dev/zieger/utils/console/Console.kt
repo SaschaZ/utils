@@ -2,44 +2,44 @@
 
 package dev.zieger.utils.console
 
-import com.googlecode.lanterna.gui2.Component
 import com.googlecode.lanterna.gui2.MultiWindowTextGUI
 import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.screen.Screen
-import com.googlecode.lanterna.terminal.DefaultTerminalFactory
-import kotlinx.coroutines.*
-import kotlin.coroutines.EmptyCoroutineContext
+import dev.zieger.utils.console.ConsoleInstances.INPUT_SCOPE
+import dev.zieger.utils.console.ConsoleInstances.PROCESS_SCOPE
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import org.koin.core.component.get
 
 class Console(
     vararg components: FocusableComponent = arrayOf(ConsoleComponent()),
-    scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
     options: ConsoleOptions = ConsoleOptions(),
     block: suspend ConsoleOwnerScope.() -> Unit
 ) {
 
-    private val screen: Screen = DefaultTerminalFactory()
-        .setTerminalEmulatorTitle(options.title)
-        .createScreen()
+    private val di = DI(consoleModule(options, components.toList()))
 
-    private val windowManager = MultiWindowTextGUI(screen)
+    private val screen: Screen = di.get()
+
+    private val windowManager: MultiWindowTextGUI = di.get()
 
     init {
-        ConsoleWindow(options, scope).run {
+        di.get<ConsoleWindow>().run {
             screen.startScreen()
             windowManager.addWindow(this)
             components.forEach {
                 addFocusableConsoleComponent(it)
             }
-            scope.launch {
+            di.get<CoroutineScope>(INPUT_SCOPE).launch {
                 while (isActive) {
                     suspendCancellableCoroutine<KeyStroke?> {
-                        it.resume(textGUI?.screen?.readInput()) { t ->
-                            System.err.println(t)
-                        }
+                        it.resume(textGUI?.screen?.readInput()) { t -> System.err.println(t) }
                     }?.let { handleInput(it) }
                 }
             }
-            scope.launch { block(this@run) }
+            di.get<CoroutineScope>(PROCESS_SCOPE).launch { block(this@run) }
             windowManager.waitForWindowToClose(this)
         }
     }

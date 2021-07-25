@@ -11,11 +11,20 @@ interface ILogPipeline {
     var messageBuilder: ILogMessageBuilder
     var output: ILogOutput
 
-    fun addHook(filter: LogFilter)
-    fun removeHook(filter: LogFilter)
+    fun addFilter(filter: LogFilter)
+    fun addPreFilter(
+        tag: Any? = null,
+        block: LogPipelineContext.(next: LogPipelineContext.() -> Unit) -> Unit
+    ) =
+        addFilter(logPreFilter(tag, block))
 
-    operator fun plusAssign(filter: LogFilter) = addHook(filter)
-    operator fun minusAssign(filter: LogFilter) = removeHook(filter)
+    fun addPostFilter(
+        tag: Any? = null,
+        block: LogPipelineContext.(next: LogPipelineContext.() -> Unit) -> Unit
+    ) =
+        addFilter(logPostFilter(tag, block))
+
+    fun removeFilter(filter: LogFilter)
 
     fun ILogMessageContext.process()
 
@@ -27,17 +36,17 @@ interface ILogPipeline {
  */
 open class LogPipeline(
     override var messageBuilder: ILogMessageBuilder,
-    override var output: IFilter<LogPipelineContext>,
+    override var output: ILogOutput,
     private val preHook: MutableList<LogPreFilter?> = ArrayList(),
     private val postHook: MutableList<LogPostFilter?> = ArrayList()
 ) : ILogPipeline {
 
-    override fun addHook(filter: LogFilter) = when (filter) {
+    override fun addFilter(filter: LogFilter) = when (filter) {
         is LogPostFilter -> postHook.add(filter)
         is LogPreFilter -> preHook.add(filter)
     }.asUnit()
 
-    override fun removeHook(filter: LogFilter) = when (filter) {
+    override fun removeFilter(filter: LogFilter) = when (filter) {
         is LogPostFilter -> postHook.remove(filter)
         is LogPreFilter -> preHook.remove(filter)
     }.asUnit()
@@ -61,7 +70,7 @@ open class LogPipeline(
 }
 
 
-fun <C : ICancellable> Collection<IDelayFilter<C>?>.pipeExecute(
+private fun <C : ICancellable> Collection<IDelayFilter<C>?>.pipeExecute(
     context: C,
     endAction: IFilter<C>
 ) {

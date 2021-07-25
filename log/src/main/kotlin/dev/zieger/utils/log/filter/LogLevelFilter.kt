@@ -7,7 +7,7 @@ import dev.zieger.utils.observables.MutableObservable
 
 interface ILogLevelFilter {
 
-    var logLevel: LogLevel
+    val logLevel: MutableObservable<LogLevel>
 
     fun copyLogLevelFilter(pipeline: ILogPipeline): ILogLevelFilter
 }
@@ -15,9 +15,9 @@ interface ILogLevelFilter {
 class LogLevelFilter(private val pipeline: ILogPipeline) : ILogLevelFilter {
 
     private var activeFilter: LogFilter.LogPreFilter? = null
-    override var logLevel: LogLevel by MutableObservable(LogLevel.VERBOSE, notifyForInitial = true) { level ->
-        activeFilter?.also { pipeline -= it }
-        activeFilter = logLevelFilter(level).also { pipeline += it }
+    override val logLevel = MutableObservable(LogLevel.VERBOSE, notifyForInitial = true) { level ->
+        activeFilter?.also { pipeline.removeFilter(it) }
+        activeFilter = logLevelFilter(level).also { pipeline.addFilter(it) }
     }
 
     override fun copyLogLevelFilter(pipeline: ILogPipeline): ILogLevelFilter = LogLevelFilter(pipeline)
@@ -25,7 +25,7 @@ class LogLevelFilter(private val pipeline: ILogPipeline) : ILogLevelFilter {
 
 private fun logLevelFilter(minLevel: LogLevel) = logPreFilter {
     when {
-        level >= minLevel -> it(this)
+        level >= minLevel -> it()
         else -> cancel()
     }
 }

@@ -24,16 +24,10 @@ interface ILogContext : ILogPipeline, ILogTags, ILogLevelFilter,
     fun copy(
         pipeline: ILogPipeline = cast<ILogPipeline>().copyPipeline(),
         tags: ILogTags = cast<ILogTags>().copyTags(),
-        logLevelFilter: ILogLevelFilter = cast<ILogLevelFilter>().copyLogLevelFilter(pipeline)
-    ): ILogContext = LogContext(pipeline, tags, logLevelFilter)
+        logLevelFilter: ILogLevelFilter = cast<ILogLevelFilter>().copyLogLevelFilter(pipeline),
+        block: ILogContext.() -> Unit = {}
+    ): ILogContext = LogContext(pipeline, tags, logLevelFilter).apply(block)
 }
-
-inline fun ILogContext.scope(
-    pipeline: ILogPipeline = cast<ILogPipeline>().copyPipeline(),
-    tags: ILogTags = cast<ILogTags>().copyTags(),
-    logLevelFilter: ILogLevelFilter = cast<ILogLevelFilter>().copyLogLevelFilter(pipeline),
-    block: ILogScope.() -> Unit = {}
-) = LogScopeImpl(copy(pipeline, tags, logLevelFilter)).block()
 
 open class LogContext(
     logPipeline: ILogPipeline = LogPipeline(messageBuilder = LogMessageBuilder(), output = SystemPrintOutput),

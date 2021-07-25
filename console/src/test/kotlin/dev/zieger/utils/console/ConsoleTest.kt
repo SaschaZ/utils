@@ -17,8 +17,8 @@ internal class ConsoleTest : AnnotationSpec() {
             ConsoleWithCommandComponent(),
             ConsoleComponent(),
             options = ConsoleOptions(
-                foreground = TextColor.ANSI.BLACK,
-                background = TextColor.ANSI.BLACK_BRIGHT,
+                foreground = TextColor.ANSI.WHITE,
+                background = TextColor.ANSI.BLACK,
                 commandForeground = TextColor.ANSI.BLACK,
                 commandBackground = TextColor.ANSI.GREEN,
                 outputPrefix = +"$ " * TextColor.ANSI.RED / TextColor.ANSI.YELLOW_BRIGHT,
@@ -33,7 +33,7 @@ internal class ConsoleTest : AnnotationSpec() {
             outNl(+{ "${cnt++}" } * TextColor.ANSI.GREEN / { TextColor.ANSI.YELLOW })
             repeat(100) {
                 out(+"$it" * TextColor.ANSI.GREEN / TextColor.ANSI.YELLOW)
-                delay(50)
+                delay(20)
             }
             outNl(cnt)
             outNl("plain")
@@ -41,7 +41,7 @@ internal class ConsoleTest : AnnotationSpec() {
             focusedComponent++
             repeat(100) {
                 outNl(+"FooBoo $it" * TextColor.ANSI.YELLOW / TextColor.ANSI.BLUE)
-                delay(50)
+                delay(20)
             }
 
             delay(100_000)

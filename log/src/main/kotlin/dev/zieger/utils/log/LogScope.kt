@@ -3,25 +3,32 @@
 package dev.zieger.utils.log
 
 import dev.zieger.utils.log.filter.ILogLevelFilter
+import dev.zieger.utils.misc.cast
 
-interface ILogScope : ILogContext {
+/**
+ * Holds an [ILogContext] instance.
+ * Should be used to define a custom [LogContext] for a class or interface.
+ */
+interface ILogScope {
 
     val Log: ILogContext
 
-    fun configure(
-        tags: ILogTags = Log,
-        pipeline: ILogPipeline = Log
-    ): ILogScope
+    fun copy(
+        pipeline: ILogPipeline = Log.cast<ILogPipeline>().copyPipeline(),
+        tags: ILogTags = Log.cast<ILogTags>().copyTags(),
+        logLevelFilter: ILogLevelFilter = Log.cast<ILogLevelFilter>().copyLogLevelFilter(pipeline),
+        block: ILogContext.() -> Unit = {}
+    ): ILogScope = LogScopeImpl(Log.copy(pipeline, tags, logLevelFilter, block))
 
-    override fun copy(pipeline: ILogPipeline, tags: ILogTags, logLevelFilter: ILogLevelFilter): ILogScope
-
-    fun copy(block: ILogScope.() -> Unit) = copy().apply(block)
-
-    fun reset()
+    fun reset(
+        pipeline: ILogPipeline = Log.cast<ILogPipeline>().copyPipeline(),
+        tags: ILogTags = Log.cast<ILogTags>().copyTags(),
+        logLevelFilter: ILogLevelFilter = Log.cast<ILogLevelFilter>().copyLogLevelFilter(pipeline),
+        block: ILogContext.() -> Unit = {}
+    )
 }
 
-open class LogScopeImpl protected constructor(override val Log: ILogContext = LogContext()) : ILogScope,
-    ILogContext by Log {
+open class LogScopeImpl protected constructor(override var Log: ILogContext = LogContext()) : ILogScope {
 
     companion object {
 
@@ -36,18 +43,12 @@ open class LogScopeImpl protected constructor(override val Log: ILogContext = Lo
         pipeline: ILogPipeline
     ) : this(LogContext(pipeline, tags))
 
-    override fun configure(
+    override fun reset(
+        pipeline: ILogPipeline,
         tags: ILogTags,
-        pipeline: ILogPipeline
-    ): ILogScope = LogScopeImpl(copy(pipeline, tags)).also { LogScope = it }
-
-    override fun copy(pipeline: ILogPipeline, tags: ILogTags, logLevelFilter: ILogLevelFilter): ILogScope =
-        LogScopeImpl(LogContext(pipeline, tags, logLevelFilter))
-
-    override fun reset() {
-        LogScope = LogScopeImpl()
+        logLevelFilter: ILogLevelFilter,
+        block: ILogContext.() -> Unit
+    ) {
+        Log = Log.copy(pipeline, tags, logLevelFilter, block)
     }
 }
-
-var LogScope: ILogScope = LogScopeImpl()
-    internal set

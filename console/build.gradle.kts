@@ -13,6 +13,7 @@ dependencies {
     misc
 
     lanterna
+    koin
 
     koTestRunner
     koTestAssertions
