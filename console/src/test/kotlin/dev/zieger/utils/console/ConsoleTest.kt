@@ -22,8 +22,9 @@ internal class ConsoleTest : AnnotationSpec() {
                 commandForeground = TextColor.ANSI.BLACK,
                 commandBackground = TextColor.ANSI.GREEN,
                 outputPrefix = +"$ " * TextColor.ANSI.RED / TextColor.ANSI.YELLOW_BRIGHT,
-                commandPrefix = +": " * TextColor.ANSI.BLACK / TextColor.ANSI.GREEN
-            )
+                commandPrefix = +":>" * TextColor.ANSI.BLACK / TextColor.ANSI.GREEN
+            ),
+            wait = true
         ) {
             outNl()
             outNl("Foo\n\tBoo" * TextColor.ANSI.GREEN / TextColor.ANSI.YELLOW)
@@ -43,9 +44,8 @@ internal class ConsoleTest : AnnotationSpec() {
                 outNl(+"FooBoo $it" * TextColor.ANSI.YELLOW / TextColor.ANSI.BLUE)
                 delay(20)
             }
-
-            delay(100_000)
-        }
+        }.outNl("LAST")
+//        delay(100_000)
     }
 
     @Test

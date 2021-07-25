@@ -4,6 +4,7 @@ import com.googlecode.lanterna.TerminalPosition
 import com.googlecode.lanterna.gui2.AbstractComponent
 import com.googlecode.lanterna.gui2.Component
 import com.googlecode.lanterna.input.KeyStroke
+import dev.zieger.utils.koin.DI
 
 interface FocusableComponent : Component {
 

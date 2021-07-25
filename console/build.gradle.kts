@@ -13,6 +13,7 @@ dependencies {
     misc
 
     lanterna
+    implementation(project(":koin"))
     koin
 
     koTestRunner

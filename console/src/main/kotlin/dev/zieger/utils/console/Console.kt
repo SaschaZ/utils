@@ -1,46 +1,60 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "FunctionName")
 
 package dev.zieger.utils.console
 
 import com.googlecode.lanterna.gui2.MultiWindowTextGUI
 import com.googlecode.lanterna.input.KeyStroke
+import com.googlecode.lanterna.input.KeyType
 import com.googlecode.lanterna.screen.Screen
 import dev.zieger.utils.console.ConsoleInstances.INPUT_SCOPE
 import dev.zieger.utils.console.ConsoleInstances.PROCESS_SCOPE
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import org.koin.core.component.get
+import dev.zieger.utils.koin.DI
+import dev.zieger.utils.koin.get
+import kotlinx.coroutines.*
 
-class Console(
+suspend fun Console(
     vararg components: FocusableComponent = arrayOf(ConsoleComponent()),
     options: ConsoleOptions = ConsoleOptions(),
-    block: suspend ConsoleOwnerScope.() -> Unit
-) {
+    wait: Boolean = true,
+    block: suspend ConsoleOwnerScope.() -> Unit = {}
+): ConsoleOwnerScope {
+    val di: DI = DI { arrayOf(consoleModule(options, components.toList())) }
+    val screen: Screen = di.get()
+    val windowManager: MultiWindowTextGUI = di.get()
 
-    private val di = DI(consoleModule(options, components.toList()))
-
-    private val screen: Screen = di.get()
-
-    private val windowManager: MultiWindowTextGUI = di.get()
-
-    init {
-        di.get<ConsoleWindow>().run {
-            screen.startScreen()
-            windowManager.addWindow(this)
-            components.forEach {
-                addFocusableConsoleComponent(it)
-            }
-            di.get<CoroutineScope>(INPUT_SCOPE).launch {
-                while (isActive) {
-                    suspendCancellableCoroutine<KeyStroke?> {
-                        it.resume(textGUI?.screen?.readInput()) { t -> System.err.println(t) }
-                    }?.let { handleInput(it) }
+    return di.get<ConsoleWindow>().apply {
+        screen.startScreen()
+        windowManager.addWindow(this)
+        components.forEach {
+            addFocusableConsoleComponent(it)
+        }
+        di.get<CoroutineScope>(INPUT_SCOPE).launch {
+            while (isActive) {
+                suspendCancellableCoroutine<KeyStroke?> {
+                    it.resume(textGUI?.screen?.readInput()) {}
+                }?.let {
+                    if (it.keyType == KeyType.EOF)
+                        di.release()
+                    else handleInput(it)
                 }
             }
-            di.get<CoroutineScope>(PROCESS_SCOPE).launch { block(this@run) }
-            windowManager.waitForWindowToClose(this)
+        }
+
+        suspend fun CoroutineScope.updateUi() {
+            while (isActive) {
+                textGUI.updateScreen()
+                delay(options.updateInterval)
+            }
+        }
+
+        di.get<CoroutineScope>(PROCESS_SCOPE).run {
+            if (wait) {
+                launch { block(this@apply) }
+                updateUi()
+            } else {
+                launch { updateUi() }
+                block(this@apply)
+            }
         }
     }
 }

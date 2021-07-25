@@ -10,6 +10,7 @@ import com.googlecode.lanterna.gui2.TextGUIGraphics
 import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.input.KeyType
 import dev.zieger.utils.console.ConsoleInstances.UI_SCOPE
+import dev.zieger.utils.koin.DI
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -67,12 +68,13 @@ class CommandComponent(
                 cols = col
                 cursorPosition = TerminalPosition(cols.coerceAtLeast(options.commandPrefix().size), rows - 1)
                 cursorPosition?.also { pos ->
-                    val cursorBlinkActive = if ((System.currentTimeMillis() - lastCursorBlink.first) >= 400)
-                        (!lastCursorBlink.second).also {
-                            lastCursorBlink = System.currentTimeMillis() to it
-                        }
-                    else
-                        lastCursorBlink.second
+                    val cursorBlinkActive =
+                        !(focused && if ((System.currentTimeMillis() - lastCursorBlink.first) >= 400)
+                            (!lastCursorBlink.second).also {
+                                lastCursorBlink = System.currentTimeMillis() to it
+                            }
+                        else
+                            lastCursorBlink.second)
 
                     setCharacter(
                         pos, TextCharacter(

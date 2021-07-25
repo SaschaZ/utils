@@ -8,6 +8,7 @@ import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.input.KeyType
 import dev.zieger.utils.console.ConsoleInstances.SIZE_SCOPE
 import dev.zieger.utils.console.ConsoleInstances.UI_SCOPE
+import dev.zieger.utils.koin.DI
 import dev.zieger.utils.misc.nullWhen
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -80,7 +81,6 @@ class ConsoleComponent : AbstractFocusableComponent<ConsoleComponent>(), Focusab
                         .addPrefix(idx)
                 }.map { { it.toTypedArray() } })
         }
-        println("termSize: ${textGUI?.screen?.terminalSize}")
         buffer = preBuffer
         invalidate()
     }
@@ -155,7 +155,7 @@ class ConsoleComponent : AbstractFocusableComponent<ConsoleComponent>(), Focusab
         filterNot { it().character.let { it.isWhitespace() && it != ' ' } }
 
     private suspend fun checkSize() {
-        textGUI?.screen?.terminalSize?.nullWhen { it == lastSize }?.also { println("B size changed to $it") }
+        textGUI?.screen?.terminalSize?.nullWhen { it == lastSize }
             ?.let { termSize ->
                 lastSize = termSize
                 preferredSize = termSize
@@ -182,7 +182,6 @@ class ConsoleComponent : AbstractFocusableComponent<ConsoleComponent>(), Focusab
     private suspend fun scrollToBottom() = scroll(-buffer.sumOf { it.size })
 
     override suspend fun handleKeyStroke(key: KeyStroke): Boolean {
-        println("onKeyPressed($key)")
         withContext(uiScope!!.coroutineContext) {
             when (key.keyType) {
                 KeyType.ArrowUp -> when {
@@ -209,6 +208,10 @@ class ConsoleComponent : AbstractFocusableComponent<ConsoleComponent>(), Focusab
 
     override fun outNl(str: TextString) {
         bufferChannel.offer(true to str)
+    }
+
+    override fun release() {
+        di?.release()
     }
 }
 

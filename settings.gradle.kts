@@ -15,6 +15,7 @@ rootProject.name = "utils3"
 include("console")
 include("coroutines")
 include("globals")
+include("koin")
 include("log")
 include("misc")
 include("statemachine")

@@ -7,6 +7,7 @@ import com.googlecode.lanterna.gui2.LinearLayout
 import com.googlecode.lanterna.gui2.Panel
 import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.input.KeyType
+import dev.zieger.utils.koin.DI
 import org.koin.core.component.get
 
 class ConsoleWithCommandComponent : Panel(LinearLayout(Direction.VERTICAL)), ConsoleScope, FocusableComponent {
@@ -57,4 +58,5 @@ class ConsoleWithCommandComponent : Panel(LinearLayout(Direction.VERTICAL)), Con
 
     override fun out(str: TextString) = consoleComponent.out(str)
     override fun outNl(str: TextString) = consoleComponent.outNl(str)
+    override fun release() = consoleComponent.release()
 }

@@ -14,6 +14,7 @@ import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.input.KeyType
 import dev.zieger.utils.console.ConsoleInstances.SIZE_SCOPE
 import dev.zieger.utils.console.ConsoleInstances.UI_SCOPE
+import dev.zieger.utils.koin.DI
 import dev.zieger.utils.misc.asUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -21,6 +22,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.core.component.get
 import java.util.*
+import kotlin.math.absoluteValue
 
 class ConsoleWindow(
     private val options: ConsoleOptions = ConsoleOptions(),
@@ -32,7 +34,7 @@ class ConsoleWindow(
     private val components = LinkedList<FocusableComponent>()
     override var focusedComponent = 0
         set(value) {
-            value.coerceIn(0..components.lastIndex.coerceAtLeast(0)).let {
+            (value % components.size).absoluteValue.let {
                 when {
                     it > field -> repeat(it - field) { panel.nextFocus(focusedInteractable) }
                     it < field -> repeat(field - it) { panel.previousFocus(focusedInteractable) }
@@ -104,13 +106,11 @@ class ConsoleWindow(
         }
     }
 
-    override fun out(str: TextString) {
-        if (components.isEmpty()) return
-        (components[focusedComponent.coerceIn(0..components.lastIndex)] as? ConsoleScope)?.out(str)
+    override fun out(componentId: Int, str: TextString) {
+        (components.getOrNull(componentId) as? ConsoleScope)?.out(str)
     }
 
-    override fun outNl(str: TextString) {
-        if (components.isEmpty()) return
-        (components[focusedComponent.coerceIn(0..components.lastIndex)] as? ConsoleScope)?.outNl(str)
+    override fun outNl(componentId: Int, str: TextString) {
+        (components.getOrNull(componentId) as? ConsoleScope)?.outNl(str)
     }
 }

@@ -14,7 +14,6 @@ class ConsoleRenderer : ComponentRenderer<ConsoleComponent> {
     override fun drawComponent(graphics: TextGUIGraphics, component: ConsoleComponent) {
         var bufferLine = 0
         graphics.apply {
-            println("${component.position} - ${component.size} - ${component.buffer.size} - ${component.textGUI.screen.terminalSize}")
             LinkedList(component.buffer).forEachIndexed { _, charBlock ->
                 charBlock.forEachIndexed { _, chars ->
                     chars().forEachIndexed { col, char ->

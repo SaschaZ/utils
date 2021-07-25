@@ -9,6 +9,7 @@ data class ConsoleOptions(
     val title: String = "Console",
     val position: TerminalPosition? = null,
     val size: TerminalSize? = null,
+    val updateInterval: Long = 50,
     val decoratedSize: TerminalSize = TerminalSize.ZERO,
     val foreground: TextColor = TextColor.ANSI.WHITE,
     val background: TextColor = TextColor.ANSI.BLACK,

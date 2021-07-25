@@ -5,6 +5,15 @@ import com.googlecode.lanterna.TextColor
 interface ConsoleOwnerScope : ConsoleScope {
 
     var focusedComponent: Int
+
+    fun out(componentId: Int, str: TextString)
+    fun out(componentId: Int, str: Any) = out(componentId, +str)
+
+    fun outNl(componentId: Int, str: TextString)
+    fun outNl(componentId: Int, str: Any = "") = outNl(componentId, +str)
+
+    override fun out(str: TextString) = out(focusedComponent, str)
+    override fun outNl(str: TextString) = outNl(focusedComponent, str)
 }
 
 interface ConsoleScope {
@@ -14,6 +23,8 @@ interface ConsoleScope {
 
     fun outNl(str: TextString)
     fun outNl(str: Any = "") = outNl(+str)
+
+    fun release()
 }
 
 internal fun textCharacter(character: Char): TextCharacterWrapper = TextCharacterWrapper(character)
