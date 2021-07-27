@@ -169,7 +169,7 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 open class MachineEx(
     private val initialState: IState,
-    override val scope: CoroutineScopeEx = DefaultCoroutineScope(),
+    override val scope: CoroutineScope = DefaultCoroutineScope(),
     private val previousChangesCacheSize: Int = DEFAULT_PREVIOUS_CHANGES_SIZE,
     private val mapper: IMachineExMapper = MachineExMapper(),
     debugLevel: DebugLevel = DebugLevel.ERROR,

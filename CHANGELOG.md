@@ -1,8 +1,12 @@
 # Changelog
 
+##### 2.2.52
+
+* use `CoroutineScope` instead of `CoroutineScopeEx` for `MachineEx` as constructor parameter
+
 ##### 2.2.51
 
-* fixed OnChanged.suspendUntil(): Do not throw exception when wanted is current value
+* fixed OnChanged.suspendUntil(): Do not throw exception when wanted is current value_
 
 ##### 2.2.50
 
