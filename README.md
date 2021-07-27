@@ -33,14 +33,14 @@ repositories {
 
 dependencies {
     // utils
-    implementation "dev.zieger.utils:core:2.2.49"// platform independent
-    implementation "dev.zieger.utils:android:2.2.49" // android
-    implementation "dev.zieger.utils:jdk:2.2.49" // jdk
+    implementation "dev.zieger.utils:core:2.2.52"// platform independent
+    implementation "dev.zieger.utils:android:2.2.52" // android
+    implementation "dev.zieger.utils:jdk:2.2.52" // jdk
 
     // testing utils
-    implementation "dev.zieger.utils:core-testing:2.2.49" // platform independent
-    implementation "dev.zieger.utils:android-testing:2.2.49" // android
-    implementation "dev.zieger.utils:jdk-testing:2.2.49" // jdk
+    implementation "dev.zieger.utils:core-testing:2.2.52" // platform independent
+    implementation "dev.zieger.utils:android-testing:2.2.52" // android
+    implementation "dev.zieger.utils:jdk-testing:2.2.52" // jdk
 }
 ```
 
@@ -219,6 +219,18 @@ Also works with attached `Data`.
 #
 
 # Changelog
+
+##### 2.2.52
+
+* use `CoroutineScope` instead of `CoroutineScopeEx` for `MachineEx` as constructor parameter
+
+##### 2.2.51
+
+* fixed OnChanged.suspendUntil(): Do not throw exception when wanted is current value_
+
+##### 2.2.50
+
+* JitPack foo
 
 ##### 2.2.49
 
