@@ -1,10 +1,10 @@
 package dev.zieger.utils.statemachine
 
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.coroutines.scope.ICoroutineScopeEx
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.observable.IObservable
 import dev.zieger.utils.statemachine.conditionelements.*
+import kotlinx.coroutines.CoroutineScope
 
 data class MachineState(val event: IEvent, val eventData: IData?, val state: IState, val stateData: IData?)
 
@@ -13,7 +13,7 @@ data class MachineState(val event: IEvent, val eventData: IData?, val state: ISt
  */
 interface IMachineEx {
 
-    val scope: ICoroutineScopeEx
+    val scope: CoroutineScope
 
     val machineObservable: IObservable<MachineState>
 

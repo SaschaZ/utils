@@ -5,6 +5,7 @@
 @file:DependsOnMaven("io.ktor:ktor-client-gson:1.6.1")
 @file:DependsOnMaven("dev.zieger.utils:core:2.2.51")
 @file:MavenRepository("jitpack", "https://jitpack.io")
+@file:MavenRepository("jcenter", "https://jcenter.bintray.com")
 
 @file:Suppress("UNREACHABLE_CODE", "PropertyName", "MemberVisibilityCanBePrivate")
 

@@ -15,6 +15,7 @@ import dev.zieger.utils.statemachine.MachineEx.Companion.debugLevel
 import dev.zieger.utils.statemachine.Matcher.IMatchScope
 import dev.zieger.utils.statemachine.conditionelements.*
 import dev.zieger.utils.statemachine.conditionelements.UsedAs.RUNTIME
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import java.util.concurrent.atomic.AtomicInteger
