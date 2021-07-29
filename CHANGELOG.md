@@ -1,5 +1,9 @@
 # Changelog
 
+##### 2.2.54
+
+* removed Koin utils
+
 ##### 2.2.52
 
 * use `CoroutineScope` instead of `CoroutineScopeEx` for `MachineEx` as constructor parameter

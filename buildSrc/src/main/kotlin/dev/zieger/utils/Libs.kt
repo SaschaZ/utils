@@ -55,12 +55,6 @@ val DependencyHandlerScope.androidXconstraintLayout
 val DependencyHandlerScope.androidXrecyclerView
     get() = "implementation"("androidx.recyclerview:recyclerview:${Versions.androidXrecyclerView}")
 
-val DependencyHandlerScope.koin
-    get() = "implementation"("org.koin:koin-core:2.0.1")
-val DependencyHandlerScope.koinTest
-    get() = "implementation"("org.koin:koin-test:${Versions.koin}")
-
-
 val DependencyHandlerScope.moshi
     get() = "implementation"("com.squareup.moshi:moshi:${Versions.moshi}")
 val DependencyHandlerScope.moshiKotlin

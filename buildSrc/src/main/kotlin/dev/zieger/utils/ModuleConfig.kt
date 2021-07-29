@@ -34,7 +34,6 @@ private fun Project.configureDependencies(type: ModuleType, block: DependencyHan
         moshi
         moshiKotlin
 
-        koin
         slf4jSimple
 
 
@@ -44,7 +43,6 @@ private fun Project.configureDependencies(type: ModuleType, block: DependencyHan
 
         junitJupiter
         mockk
-        koinTest
         coroutinesTest
 
         block()
