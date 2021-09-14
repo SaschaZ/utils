@@ -156,13 +156,13 @@ inline infix fun <K, V> ConcurrentHashMap<K, V>.removeInMap(condition: (Map.Entr
     return this
 }
 
-fun minInt(vararg values: Number?) = values.minBy { it?.toInt() ?: Int.MAX_VALUE }?.toInt()!!
+fun minInt(vararg values: Number?) = values.minByOrNull { it?.toInt() ?: Int.MAX_VALUE }?.toInt()!!
 
-fun minDouble(vararg values: Number?) = values.minBy { it?.toDouble() ?: Double.MAX_VALUE }?.toDouble()!!
+fun minDouble(vararg values: Number?) = values.minByOrNull { it?.toDouble() ?: Double.MAX_VALUE }?.toDouble()!!
 
-fun maxInt(vararg values: Number?) = values.maxBy { it?.toInt() ?: Int.MIN_VALUE }?.toInt()!!
+fun maxInt(vararg values: Number?) = values.maxByOrNull { it?.toInt() ?: Int.MIN_VALUE }?.toInt()!!
 
-fun maxDouble(vararg values: Number?) = values.maxBy { it?.toDouble() ?: Double.MIN_VALUE }?.toDouble()!!
+fun maxDouble(vararg values: Number?) = values.maxByOrNull { it?.toDouble() ?: Double.MIN_VALUE }?.toDouble()!!
 
 infix fun Number.exp10(power: Number) = this * (10 pow power)
 

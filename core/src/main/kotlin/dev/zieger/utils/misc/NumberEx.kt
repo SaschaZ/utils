@@ -174,4 +174,4 @@ fun <T : Number> Iterable<T>.derivation(grade: Int = 1): List<NumberEx> {
     return result!!
 }
 
-fun <T : NumberEx> Iterable<T>.median() = if (iterator().hasNext()) (max()!! - min()!!) / 2.0 else 0.0.ex
+fun <T : NumberEx> Iterable<T>.median() = if (iterator().hasNext()) (maxOrNull()!! - minOrNull()!!) / 2.0 else 0.0.ex

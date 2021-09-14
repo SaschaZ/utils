@@ -33,7 +33,7 @@ interface IDurationHolder : Comparable<IDurationHolder> {
         get() = millis < 0L
 }
 
-fun <T : IDurationHolder> List<T>.oldest(): T? = minBy { it.millis }
-fun <T : IDurationHolder> List<T>.latest(): T? = maxBy { it.millis }
+fun <T : IDurationHolder> List<T>.oldest(): T? = minByOrNull { it.millis }
+fun <T : IDurationHolder> List<T>.latest(): T? = maxByOrNull { it.millis }
 fun <T : IDurationHolder> List<T>.sort(): List<T> = sortedBy { it.millis }
 fun <T : IDurationHolder> List<T>.sortDesc(): List<T> = sortedByDescending { it.millis }

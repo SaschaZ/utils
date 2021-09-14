@@ -1,9 +1,9 @@
 package dev.zieger.utils
 
 object Versions {
-    const val kotlin = "1.5.10"
+    const val kotlin = "1.5.21"
     const val koTest = "4.2.2"
-    const val coroutines = "1.5.0"
+    const val coroutines = "1.5.1"
 
     const val multidex = "2.0.1"
     const val androidXappCompat = "1.1.0"

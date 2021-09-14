@@ -56,7 +56,7 @@ interface IProcessingWatchDog {
         get() = ticks[this]?.values?.flatten()?.count { it == SEND_OUTPUT } ?: 0
 
     val IProcessingUnit<*, *>.isWaitingSince: IDurationEx?
-        get() = ticks[this]?.entries?.maxBy { it.key }?.run {
+        get() = ticks[this]?.entries?.maxByOrNull { it.key }?.run {
             if (value.lastOrNull() == RECEIVE_INPUT)
                 TimeEx() - key
             else null
@@ -70,7 +70,7 @@ interface IProcessingWatchDog {
         get() = ticks[this]?.any { it.value.anyOf(FINISHED_CLOSING) } ?: false
 
     val IProcessingUnit<*, *>.lastUpdateBefore: IDurationEx
-        get() = TimeEx() - (ticks[this]?.maxBy { it.key }?.key ?: 0.toTime())
+        get() = TimeEx() - (ticks[this]?.maxByOrNull { it.key }?.key ?: 0.toTime())
 
     fun release()
 }
