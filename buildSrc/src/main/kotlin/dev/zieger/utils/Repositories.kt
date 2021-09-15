@@ -7,5 +7,6 @@ fun ProjectContext.configRepositories(): MavenArtifactRepository =
         mavenLocal()
         mavenCentral()
         google()
+        jcenter()
         maven { url = uri("https://jitpack.io") }
     }
