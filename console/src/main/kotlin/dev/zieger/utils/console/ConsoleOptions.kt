@@ -23,25 +23,16 @@ data class ConsoleOptions(
         Window.Hint.FIT_TERMINAL_WINDOW,
         Window.Hint.FULL_SCREEN
     ),
-    val outputPrefix: TextString = {
-        "$ ".map { { TextCharacterWrapper(it, foreground, background) } }.toTypedArray()
+    val outputPrefix: TextBuilder = {
+        +"$ " * foreground / background
     },
-    val outputNewLinePrefix: TextString = {
-        "  ".map { { TextCharacterWrapper(it, foreground, background) } }.toTypedArray()
+    val outputNewLinePrefix: TextBuilder = {
+        +"  " * foreground / background
     },
-    val commandPrefix: TextString = {
-        "$>".map { { TextCharacterWrapper(it, commandForeground, commandBackground) } }.toTypedArray()
+    val commandPrefix: TextBuilder = {
+        +"$>" * commandForeground / commandBackground
     },
-    val commandNewLinePrefix: TextString = {
-        "  ".map { { TextCharacterWrapper(it, commandForeground, commandBackground) } }.toTypedArray()
+    val commandNewLinePrefix: TextBuilder = {
+        +"  " * commandForeground / commandBackground
     }
-) {
-    init {
-        require(outputPrefix().size == outputNewLinePrefix().size) {
-            "'outputPrefix' and 'outputNewLinePrefix' need to have the same length"
-        }
-        require(commandPrefix().size == commandNewLinePrefix().size) {
-            "'commandPrefix' and 'commandNewLinePrefix' need to have the same length"
-        }
-    }
-}
+)

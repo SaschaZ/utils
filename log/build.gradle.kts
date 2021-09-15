@@ -1,7 +1,4 @@
-import dev.zieger.utils.coroutines
-import dev.zieger.utils.misc
-import dev.zieger.utils.observables
-import dev.zieger.utils.time
+import dev.zieger.utils.*
 
 plugins {
     id("java")
@@ -13,8 +10,9 @@ utils {
 }
 
 dependencies {
-    coroutines
-    time
-    misc
-    observables
+    coroutinesModule
+    timeModule
+    miscModule
+
+    coroutinesCore
 }

@@ -10,9 +10,9 @@ utils {
 }
 
 dependencies {
-    log
-    misc
-    coroutines
-    observables
-    time
+    logModule()
+    miscModule()
+    coroutines()
+    observablesModule()
+    timeModule()
 }

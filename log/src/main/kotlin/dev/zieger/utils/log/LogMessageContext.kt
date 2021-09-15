@@ -14,7 +14,7 @@ interface ILogMessageContext : ILogContext {
     var coroutineScope: CoroutineScope?
     var createdAt: ITimeStamp
     var message: Any
-    var messageTags: List<Any>
+    var messageTag: Any?
     var filter: IDelayFilter<LogPipelineContext>
 }
 
@@ -26,8 +26,5 @@ class LogMessageContext(
     override var coroutineScope: CoroutineScope? = null,
     override var createdAt: ITimeStamp = TimeStamp(),
     override var filter: IDelayFilter<LogPipelineContext> = EmptyLogFilter,
-    vararg messageTag: Any
-) : ILogContext by logContext, ILogMessageContext {
-
-    override var messageTags: List<Any> = messageTag.toList()
-}
+    override var messageTag: Any? = null
+) : ILogContext by logContext, ILogMessageContext

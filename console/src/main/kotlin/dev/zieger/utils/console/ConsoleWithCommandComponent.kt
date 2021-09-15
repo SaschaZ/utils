@@ -10,7 +10,8 @@ import com.googlecode.lanterna.input.KeyType
 import dev.zieger.utils.koin.DI
 import org.koin.core.component.get
 
-class ConsoleWithCommandComponent : Panel(LinearLayout(Direction.VERTICAL)), ConsoleScope, FocusableComponent {
+class ConsoleWithCommandComponent(private val onNewCommand: ConsoleComponent.(command: String) -> Unit = { outNl(it) }) :
+    Panel(LinearLayout(Direction.VERTICAL)), ConsoleScope, FocusableComponent {
 
     override var di: DI? = null
         set(value) {
@@ -21,14 +22,20 @@ class ConsoleWithCommandComponent : Panel(LinearLayout(Direction.VERTICAL)), Con
         }
     override var options: ConsoleOptions = ConsoleOptions()
     private val consoleComponent = ConsoleComponent()
-    private val commandComponent = CommandComponent { consoleComponent.outNl(it) }
-    override var cursorPosition: TerminalPosition? = null
+    private val commandComponent = CommandComponent {
+        consoleComponent.onNewCommand(it)
+    }
     override var focused: Boolean = false
         set(value) {
             field = value
             commandComponent.focused = value
         }
     override var enabled: Boolean = true
+    override var cursorPosition: TerminalPosition = TerminalPosition.TOP_LEFT_CORNER
+        set(value) {
+            field = value
+            invalidate()
+        }
 
     override fun setPosition(position: TerminalPosition): Panel {
         consoleComponent.position = position
@@ -56,7 +63,6 @@ class ConsoleWithCommandComponent : Panel(LinearLayout(Direction.VERTICAL)), Con
         addComponent(commandComponent)
     }
 
-    override fun out(str: TextString) = consoleComponent.out(str)
-    override fun outNl(str: TextString) = consoleComponent.outNl(str)
+    override fun out(builder: TextBuilder) = consoleComponent.out(builder)
     override fun release() = consoleComponent.release()
 }

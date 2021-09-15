@@ -30,7 +30,7 @@ class MachineExTest : FunSpec({
     val scope = DefaultCoroutineScope()
 
     beforeTest {
-        Log.logLevel.offerValue(LogLevel.INFO)
+        Log.logLevel = LogLevel.INFO
         scope.reset()
     }
 

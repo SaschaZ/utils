@@ -173,13 +173,11 @@ open class MachineEx(
     previousChangesCacheSize: Int = DEFAULT_PREVIOUS_CHANGES_SIZE,
     debugLevel: DebugLevel = DebugLevel.ERROR,
     logScope: ILogScope = LogScope.copy {
-        logLevel.offerValue(
-            when (debugLevel) {
-                DebugLevel.DEBUG -> LogLevel.VERBOSE
-                DebugLevel.INFO -> LogLevel.INFO
-                DebugLevel.ERROR -> LogLevel.EXCEPTION
-            }
-        )
+        logLevel = when (debugLevel) {
+            DebugLevel.DEBUG -> LogLevel.VERBOSE
+            DebugLevel.INFO -> LogLevel.INFO
+            DebugLevel.ERROR -> LogLevel.EXCEPTION
+        }
     },
     builder: suspend MachineDsl.() -> Unit
 ) : MachineDsl, IMachineEx {

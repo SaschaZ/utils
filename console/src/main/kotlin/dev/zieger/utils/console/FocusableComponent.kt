@@ -9,7 +9,7 @@ import dev.zieger.utils.koin.DI
 interface FocusableComponent : Component {
 
     var di: DI?
-    var cursorPosition: TerminalPosition?
+    var cursorPosition: TerminalPosition
     var options: ConsoleOptions
     var focused: Boolean
     val focusable: Boolean
@@ -26,7 +26,11 @@ abstract class AbstractFocusableComponent<T: AbstractFocusableComponent<T>>(
 ) : AbstractComponent<T>(), FocusableComponent {
 
     override var options: ConsoleOptions = ConsoleOptions()
-    override var cursorPosition: TerminalPosition? = null
+    override var cursorPosition: TerminalPosition = TerminalPosition.TOP_LEFT_CORNER
+        set(value) {
+            field = value
+            invalidate()
+        }
     override var focused: Boolean = false
     override var enabled: Boolean = true
 }
