@@ -10,11 +10,11 @@ utils {
 }
 
 dependencies {
-    misc
+    miscModule()
+    koinModule()
 
-    lanterna
-    implementation(project(":koin"))
     koin
+    lanterna
 
     koTestRunner
     koTestAssertions

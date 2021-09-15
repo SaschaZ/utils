@@ -1,13 +1,14 @@
 package dev.zieger.utils.console
 
-import com.googlecode.lanterna.TerminalPosition
-import com.googlecode.lanterna.TerminalSize
-import com.googlecode.lanterna.TextCharacter
-import com.googlecode.lanterna.TextColor
+import com.googlecode.lanterna.*
+import com.googlecode.lanterna.SGR.*
+import com.googlecode.lanterna.TextColor.ANSI.*
+import com.googlecode.lanterna.input.KeyType
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import io.kotest.core.spec.style.AnnotationSpec
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import java.util.*
 
 internal class ConsoleTest : AnnotationSpec() {
 
@@ -17,31 +18,38 @@ internal class ConsoleTest : AnnotationSpec() {
             ConsoleWithCommandComponent(),
             ConsoleComponent(),
             options = ConsoleOptions(
-                foreground = TextColor.ANSI.WHITE,
-                background = TextColor.ANSI.BLACK,
-                commandForeground = TextColor.ANSI.BLACK,
-                commandBackground = TextColor.ANSI.GREEN,
-                outputPrefix = +"$ " * TextColor.ANSI.RED / TextColor.ANSI.YELLOW_BRIGHT,
-                commandPrefix = +":>" * TextColor.ANSI.BLACK / TextColor.ANSI.GREEN
+                foreground = WHITE,
+                background = BLACK,
+                commandForeground = BLACK,
+                commandBackground = GREEN,
+                outputPrefix = { +"$" * RED / YELLOW_BRIGHT + +" " },
+                outputNewLinePrefix = { +"  " },
+                commandPrefix = { +":>" * BLACK / GREEN + +" " },
+                commandNewLinePrefix = { +"   " }
             ),
             wait = true
         ) {
-            outNl()
-            outNl("Foo\n\tBoo" * TextColor.ANSI.GREEN / TextColor.ANSI.YELLOW)
-            outNl("0" * TextColor.ANSI.GREEN / TextColor.ANSI.YELLOW)
-            outNl("1" * TextColor.ANSI.GREEN / TextColor.ANSI.YELLOW)
+            out("Your Name: ")
+            val name = onInput {
+                it.keyType == KeyType.Enter
+            }
+            outNl(+"Hello " + +"${name?.uppercase(Locale.getDefault())}" * CYAN / BLACK_BRIGHT % BOLD)
+
+            outNl(+"Foo\n\t\tBoo\tDoo\tWoo" * GREEN / YELLOW)
+            outNl(+"0" * GREEN / YELLOW)
+            outNl(+"1" * GREEN / YELLOW)
             var cnt = 0
-            outNl(+{ "${cnt++}" } * TextColor.ANSI.GREEN / { TextColor.ANSI.YELLOW })
+            outNl { +"${cnt++}" * GREEN / YELLOW }
             repeat(100) {
-                out(+"$it" * TextColor.ANSI.GREEN / TextColor.ANSI.YELLOW)
+                out(+"$it" * GREEN / YELLOW % BOLD % UNDERLINE)
                 delay(20)
             }
-            outNl(cnt)
+            outNl("\n$cnt")
             outNl("plain")
 
             focusedComponent++
             repeat(100) {
-                outNl(+"FooBoo $it" * TextColor.ANSI.YELLOW / TextColor.ANSI.BLUE)
+                outNl(+"FooBoo $it" * YELLOW / BLUE)
                 delay(20)
             }
         }.outNl("LAST")
@@ -53,10 +61,10 @@ internal class ConsoleTest : AnnotationSpec() {
         DefaultTerminalFactory().createScreen().run {
             startScreen()
             newTextGraphics().run {
-                setCharacter(4, 4, TextCharacter('B', TextColor.ANSI.WHITE, TextColor.ANSI.BLACK))
+                setCharacter(4, 4, TextCharacter('B', WHITE, BLACK))
                 drawRectangle(TerminalPosition(2, 2), TerminalSize(10, 10), 'G')
             }
-            setCharacter(5, 5, TextCharacter('F', TextColor.ANSI.WHITE, TextColor.ANSI.BLACK))
+            setCharacter(5, 5, TextCharacter('F', WHITE, BLACK))
             while (true) {
                 refresh()
                 doResizeIfNecessary()

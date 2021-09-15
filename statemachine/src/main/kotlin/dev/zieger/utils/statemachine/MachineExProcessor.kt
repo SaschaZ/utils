@@ -3,7 +3,6 @@
 package dev.zieger.utils.statemachine
 
 import dev.zieger.utils.log.ILogScope
-import dev.zieger.utils.log.calls.logD
 import dev.zieger.utils.log.filter.LogCondition
 import dev.zieger.utils.misc.ifNull
 import dev.zieger.utils.statemachine.conditionelements.*

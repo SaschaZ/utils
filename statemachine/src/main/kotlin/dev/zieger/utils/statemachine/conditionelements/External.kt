@@ -1,7 +1,6 @@
 package dev.zieger.utils.statemachine.conditionelements
 
 import dev.zieger.utils.log.ILogScope
-import dev.zieger.utils.log.calls.logV
 import dev.zieger.utils.log.logPreFilter
 import dev.zieger.utils.statemachine.IMatchScope
 

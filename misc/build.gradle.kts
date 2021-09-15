@@ -1,4 +1,4 @@
-import dev.zieger.utils.globals
+import dev.zieger.utils.globalsModule
 
 plugins {
     id("java")
@@ -10,5 +10,5 @@ utils {
 }
 
 dependencies {
-    globals
+    globalsModule()
 }

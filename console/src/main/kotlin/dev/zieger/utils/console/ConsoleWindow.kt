@@ -16,12 +16,15 @@ import dev.zieger.utils.console.ConsoleInstances.SIZE_SCOPE
 import dev.zieger.utils.console.ConsoleInstances.UI_SCOPE
 import dev.zieger.utils.koin.DI
 import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.misc.catch
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.core.component.get
 import java.util.*
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.absoluteValue
 
 class ConsoleWindow(
@@ -47,6 +50,8 @@ class ConsoleWindow(
             }
         }
 
+    private val inlineInputChannel: AtomicReference<Channel<KeyStroke>?> = AtomicReference(null)
+
     init {
         options.run {
             position?.let { window.position = it }
@@ -54,8 +59,13 @@ class ConsoleWindow(
             window.decoratedSize = decoratedSize
             window.theme = SimpleTheme.makeTheme(
                 false,
-                foreground, background, TextColor.ANSI.DEFAULT, TextColor.ANSI.DEFAULT, selectedForeground,
-                selectedBackground, TextColor.ANSI.DEFAULT
+                foreground,
+                background,
+                TextColor.ANSI.DEFAULT,
+                TextColor.ANSI.DEFAULT,
+                selectedForeground,
+                selectedBackground,
+                TextColor.ANSI.DEFAULT
             )
             window.setHints(hints)
         }
@@ -73,7 +83,11 @@ class ConsoleWindow(
         when (key.keyType) {
             KeyType.PageUp -> focusedComponent--
             KeyType.PageDown -> focusedComponent++
-            else -> get<CoroutineScope>(UI_SCOPE).launch { components[focusedComponent].handleKeyStroke(key) }
+            else -> inlineInputChannel.get()?.offer(key) ?: run {
+                get<CoroutineScope>(UI_SCOPE).launch {
+                    components[focusedComponent].handleKeyStroke(key)
+                }
+            }
         }
         return true
     }
@@ -106,11 +120,31 @@ class ConsoleWindow(
         }
     }
 
-    override fun out(componentId: Int, str: TextString) {
-        (components.getOrNull(componentId) as? ConsoleScope)?.out(str)
+    override fun out(componentId: Int, builder: TextBuilder) {
+        (components.getOrNull(componentId) as? ConsoleScope)?.out(builder)
     }
 
-    override fun outNl(componentId: Int, str: TextString) {
-        (components.getOrNull(componentId) as? ConsoleScope)?.outNl(str)
+    override suspend fun onInput(
+        componentId: Int,
+        printInput: Boolean,
+        suffix: TextString,
+        input: ConsoleScope.(KeyStroke) -> Boolean
+    ): String? {
+        var result: String? = null
+        (components.getOrNull(componentId) as? ConsoleScope)?.run {
+
+            result = ""
+            val channel = Channel<KeyStroke>(Channel.UNLIMITED)
+            inlineInputChannel.set(channel)
+            for (char in channel) {
+                result += char.character
+                if (input(char)) break
+                else if (printInput) out(+char.character)
+            }
+            inlineInputChannel.set(null)
+            catch(Unit) { channel.close() }
+            out(suffix)
+        }
+        return result
     }
 }

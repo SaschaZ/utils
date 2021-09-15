@@ -18,8 +18,7 @@ interface ILogMessageBuilder : IFilter<LogPipelineContext> {
 open class LogMessageBuilderContext(pipelineContext: LogPipelineContext) : ILogPipelineContext by pipelineContext {
 
     val tagsFormatted: String?
-        get() = if (tag != null || tags.isNotEmpty() || messageTags.isNotEmpty())
-            "[${(listOf(tag) + tags + messageTags).filterNotNull().joinToString("|")}]" else null
+        get() = tag?.let { "[${tag}]" }
 
     fun callOrigin(
         ignorePackages: List<String> = listOf("dev.zieger.utils.log.", "dev.zieger.utils.coroutines.", "kotlin"),

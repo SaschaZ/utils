@@ -1,6 +1,4 @@
-import dev.zieger.utils.globals
-import dev.zieger.utils.misc
-import dev.zieger.utils.time
+import dev.zieger.utils.*
 
 plugins {
     id("java")
@@ -12,7 +10,7 @@ utils {
 }
 
 dependencies {
-    time
-    misc
-    globals
+    timeModule()
+    miscModule()
+    globalsModule()
 }

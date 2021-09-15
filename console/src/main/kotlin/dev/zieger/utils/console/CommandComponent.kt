@@ -40,11 +40,12 @@ class CommandComponent(
             override fun drawComponent(graphics: TextGUIGraphics, component: CommandComponent): Unit = graphics.run {
                 var row = 0
                 var col = 0
+                val prefix = options.commandPrefix(TextBuilderScope(0, 0))
                 val commandText =
-                    options.commandPrefix + +component.command * options.commandForeground / options.commandBackground
-                commandText().map { it() }.forEach { char ->
+                    prefix + +component.command * options.commandForeground / options.commandBackground
+                commandText.forEach { char ->
                     if (col == 0 && row > 0) {
-                        options.commandNewLinePrefix().map { it() }.forEach { char2 ->
+                        prefix.forEach { char2 ->
                             setCharacter(col, row, char2.textCharacter)
                             col++
                         }
@@ -66,7 +67,7 @@ class CommandComponent(
                 }
                 rows = row + 1
                 cols = col
-                cursorPosition = TerminalPosition(cols.coerceAtLeast(options.commandPrefix().size), rows - 1)
+                cursorPosition = TerminalPosition(cols.coerceAtLeast(prefix.size), rows - 1)
                 cursorPosition?.also { pos ->
                     val cursorBlinkActive =
                         !(focused && if ((System.currentTimeMillis() - lastCursorBlink.first) >= 400)
@@ -92,7 +93,8 @@ class CommandComponent(
         }
 
     private var lastCursorBlink: Pair<Long, Boolean> = System.currentTimeMillis() to false
-    override var cursorPosition: TerminalPosition? = TerminalPosition(options.commandPrefix().size, 0)
+    override var cursorPosition: TerminalPosition =
+        TerminalPosition(options.commandPrefix(TextBuilderScope(0, 0)).size, 0)
 
     private var command: String = ""
         set(value) {
