@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 buildscript {
     repositories { mavenCentral() }
 
@@ -37,4 +35,5 @@ dependencies {
     implementation(gradleApi())
     implementation(localGroovy())
     implementation(kotlin("stdlib"))
+    implementation(kotlin("reflect"))
 }

@@ -1,4 +1,14 @@
 pluginManagement {
+    buildscript {
+        repositories {
+            google() // <-- here
+            jcenter()
+//            maven {
+//                url = "https://maven.google.com/"
+//                name = "Google"
+//            }
+        }
+    }
     val kotlinVersion: String by settings
     plugins {
         id("org.jetbrains.kotlin.jvm") version kotlinVersion
@@ -11,7 +21,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = "utils3"
+rootProject.name = "utils"
 include("console")
 include("coroutines")
 include("globals")
