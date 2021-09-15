@@ -17,8 +17,8 @@ interface ILogMessageBuilder : IFilter<LogPipelineContext> {
 
 open class LogMessageBuilderContext(pipelineContext: LogPipelineContext) : ILogPipelineContext by pipelineContext {
 
-    val tagsFormatted: String?
-        get() = tag?.let { "[${tag}]" }
+    val tagFormatted: String?
+        get() = (messageTag ?: tag)?.let { "[$it]" }
 
     fun callOrigin(
         ignorePackages: List<String> = listOf("dev.zieger.utils.log.", "dev.zieger.utils.coroutines.", "kotlin"),
@@ -43,10 +43,10 @@ class LogMessageBuilder(
     companion object {
 
         val DEFAULT_LOG_MESSAGE: LogMessageBuilderContext.() -> String = {
-            "${level.short}-${time()}: $message${tagsFormatted?.let { " - $it" } ?: ""}"
+            "${level.short}-${time()}: $message${tagFormatted?.let { " - $it" } ?: ""}"
         }
         val LOG_MESSAGE_WITH_CALL_ORIGIN: LogMessageBuilderContext.() -> String = {
-            "${level.short}-${time()}-${callOrigin()}: $message${tagsFormatted?.let { " - $it" } ?: ""}"
+            "${level.short}-${time()}-${callOrigin()}: $message${tagFormatted?.let { " - $it" } ?: ""}"
         }
     }
 
