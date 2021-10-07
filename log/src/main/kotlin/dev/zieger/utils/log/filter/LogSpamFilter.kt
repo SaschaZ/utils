@@ -17,7 +17,7 @@ data class LogSpamFilter(
     val tolerance: Float = 0.01f
 ) : LogFilter.LogPreFilter() {
 
-    private var previousMessageAt: ITimeStamp = TimeStamp(0)
+    private var previousMessageAt: ITimeStamp = TimeStamp(0.0)
     private var lastMessageJob: Job? = null
 
     override fun call(context: LogPipelineContext, next: IFilter<LogPipelineContext>) = context.run {

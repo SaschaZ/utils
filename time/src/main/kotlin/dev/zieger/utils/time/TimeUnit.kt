@@ -40,10 +40,10 @@ enum class TimeUnit(
         "$name(factor=$factor; exponent=$exponent; shortChar=$shortChar; facExpProduct=$factorMillis)"
 }
 
-fun Number.convert(fromTo: Pair<TimeUnit, TimeUnit>): Long =
-    (toDouble() * fromTo.first.factorMillis / fromTo.second.factorMillis.toDouble()).toLong()
+fun Number.convert(fromTo: Pair<TimeUnit, TimeUnit>): Double =
+    (toDouble() * fromTo.first.factorMillis / fromTo.second.factorMillis.toDouble())
 
-fun Long.toMillis(unit: TimeUnit = MS): Long = convert(unit to MS)
+fun Long.toMillis(unit: TimeUnit = MS): Double = convert(unit to MS)
 
 val String.timeUnit: TimeUnit?
     get() = TimeUnit.values().firstOrNull { it.shortChar == this }

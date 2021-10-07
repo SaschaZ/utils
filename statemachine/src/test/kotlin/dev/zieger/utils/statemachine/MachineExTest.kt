@@ -25,7 +25,7 @@ import kotlinx.coroutines.cancel
 
 class MachineExTest : FunSpec({
 
-    timeout = 10.seconds.millis
+    timeout = 10.seconds.millis.toLong()
 
     val scope = DefaultCoroutineScope()
 

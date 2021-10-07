@@ -4,7 +4,6 @@ import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 
 fun ProjectContext.configRepositories(): MavenArtifactRepository =
     repositories.run {
-        mavenLocal()
         mavenCentral()
         google()
         jcenter()

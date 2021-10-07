@@ -42,6 +42,7 @@ fun consoleModule(
             get<CoroutineScope>(UI_SCOPE).cancel()
             get<CoroutineScope>(SIZE_SCOPE).cancel()
             get<CoroutineScope>(INPUT_SCOPE).cancel()
+            get<CoroutineScope>(CLOSE_SCOPE).cancel()
             get<CoroutineScope>(PROCESS_SCOPE).cancel()
         }
     }

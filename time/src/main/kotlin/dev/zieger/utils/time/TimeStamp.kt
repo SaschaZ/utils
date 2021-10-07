@@ -19,15 +19,17 @@ import kotlin.math.absoluteValue
 
 interface ITimeStamp : ITimeSpanBase<ITimeStamp> {
 
-    val timeStamp: Long
-    override val timeSpan: Long get() = timeStamp
+    val timeStamp: Double
+    override val timeSpan: Double get() = timeStamp
 
     val zone: TimeZone?
 
-    val date: Date get() = Date(millis)
+    val date: Date get() = Date(millis.toLong())
 
     val calendar: Calendar
-        get() = (zone?.let { Calendar.getInstance(it) } ?: Calendar.getInstance()).apply { timeInMillis = millis }
+        get() = (zone?.let { Calendar.getInstance(it) } ?: Calendar.getInstance()).apply {
+            timeInMillis = millis.toLong()
+        }
 
     /**
      * @see [Calendar.get]
@@ -54,36 +56,36 @@ interface ITimeStamp : ITimeSpanBase<ITimeStamp> {
     val startOfMinute: ITimeStamp get() = "$dayOfMonth.${month + 1}.$year-$hourOfDay:$minuteOfHour:00".parse(zone)
     val startOfSecond: ITimeStamp get() = "$dayOfMonth.${month + 1}.$year-$hourOfDay:$minuteOfHour:$secondOfMinute".parse(zone)
 
-    fun plusMonths(monthAmount: Int): ITimeStamp = if (monthAmount < 0) minusMonths(monthAmount.absoluteValue) else
+    fun plusMonths(monthAmount: Int): TimeStamp = if (monthAmount < 0) minusMonths(monthAmount.absoluteValue) else
         ("$dayOfMonth.${(month + monthAmount) % 12 + 1}.${year + ((month + monthAmount) / 12)}-" +
                 "$hourOfDay:$minuteOfHour:$secondOfMinute.$milliOfSecond").parse(zone)
 
-    fun minusMonths(monthAmount: Int): ITimeStamp = if (monthAmount < 0) plusMonths(monthAmount.absoluteValue) else
+    fun minusMonths(monthAmount: Int): TimeStamp = if (monthAmount < 0) plusMonths(monthAmount.absoluteValue) else
         ("$dayOfMonth.${(month - monthAmount) % 12 + 1}.${year + ((month - monthAmount) / 12)}-" +
                 "$hourOfDay:$minuteOfHour:$secondOfMinute.$milliOfSecond").parse(zone)
 
 
-    operator fun plus(other: ITimeStamp): ITimeSpan = TimeSpan(timeStamp + other.timeStamp)
-    operator fun plus(other: ITimeSpan): ITimeStamp = TimeStamp(timeStamp + other.timeSpan, zone)
-    operator fun plus(other: Number): ITimeStamp = TimeStamp(timeStamp + other.toLong(), zone)
+    operator fun plus(other: ITimeStamp): TimeSpan = TimeSpan(timeStamp + other.timeStamp)
+    operator fun plus(other: ITimeSpan): TimeStamp = TimeStamp(timeStamp + other.timeSpan, zone)
+    operator fun plus(other: Number): TimeStamp = TimeStamp(timeStamp + other.toDouble(), zone)
 
-    operator fun minus(other: ITimeStamp): ITimeSpan = TimeSpan(timeStamp - other.timeStamp)
-    operator fun minus(other: ITimeSpan): ITimeStamp = TimeStamp(timeStamp - other.timeSpan, zone)
-    operator fun minus(other: Number): ITimeStamp = TimeStamp(timeStamp - other.toLong(), zone)
+    operator fun minus(other: ITimeStamp): TimeSpan = TimeSpan(timeStamp - other.timeStamp)
+    operator fun minus(other: ITimeSpan): TimeStamp = TimeStamp(timeStamp - other.timeSpan, zone)
+    operator fun minus(other: Number): TimeStamp = TimeStamp(timeStamp - other.toDouble(), zone)
 
-    operator fun times(other: ITimeStamp): ITimeStamp = TimeStamp(timeStamp + other.timeStamp, zone)
-    operator fun times(other: ITimeSpan): ITimeStamp = TimeStamp(timeStamp * other.timeSpan, zone)
-    operator fun times(other: Number): ITimeStamp = TimeStamp(timeStamp * other.toLong(), zone)
+    operator fun times(other: ITimeStamp): TimeStamp = TimeStamp(timeStamp + other.timeStamp, zone)
+    operator fun times(other: ITimeSpan): TimeStamp = TimeStamp(timeStamp * other.timeSpan, zone)
+    operator fun times(other: Number): TimeStamp = TimeStamp(timeStamp * other.toDouble(), zone)
 
     operator fun div(other: ITimeStamp): Double = timeStamp / other.timeStamp.toDouble()
     operator fun div(other: ITimeSpan): Double = timeStamp / other.timeSpan.toDouble()
-    operator fun div(other: Number): ITimeStamp = TimeStamp(timeStamp / other.toLong(), zone)
+    operator fun div(other: Number): TimeStamp = TimeStamp(timeStamp / other.toDouble(), zone)
 
     operator fun rem(other: ITimeStamp): Double = timeStamp % other.timeStamp.toDouble()
     operator fun rem(other: ITimeSpan): Double = timeStamp % other.timeSpan.toDouble()
-    operator fun rem(other: Number): ITimeStamp = TimeStamp(timeStamp % other.toLong(), zone)
+    operator fun rem(other: Number): TimeStamp = TimeStamp(timeStamp % other.toDouble(), zone)
 
-    fun normalize(value: ITimeSpan): ITimeStamp = this - this % value
+    fun normalize(value: ITimeSpan): TimeStamp = this - this % value
 
     fun formatTime(
         pattern: TimeFormat = TimeFormat.COMPLETE,
@@ -93,21 +95,24 @@ interface ITimeStamp : ITimeSpanBase<ITimeStamp> {
 }
 
 @Serializable
-open class TimeStamp(override val timeStamp: Long,
-                     @Serializable(with = TimeZoneSerializer::class)
-                     override val zone: TimeZone? = DEFAULT_TIME_ZONE) : ITimeStamp {
+open class TimeStamp(
+    override val timeStamp: Double,
+    @Serializable(with = TimeZoneSerializer::class)
+    override val zone: TimeZone? = DEFAULT_TIME_ZONE
+) : ITimeStamp {
 
     companion object : TimeParseHelper() {
 
         var DEFAULT_TIME_ZONE: TimeZone? = null
         var DEFAULT_LOCALE: Locale = Locale.getDefault()
 
-        operator fun invoke(zone: TimeZone? = DEFAULT_TIME_ZONE) = TimeStamp(System.currentTimeMillis(), zone)
+        operator fun invoke(zone: TimeZone? = DEFAULT_TIME_ZONE) =
+            TimeStamp(System.currentTimeMillis().toDouble(), zone)
 
-        operator fun invoke(timeStamp: Long, zone: TimeZone?) = TimeStamp(timeStamp, zone)
+        operator fun invoke(timeStamp: Double, zone: TimeZone?) = TimeStamp(timeStamp, zone)
 
         operator fun invoke(string: String, zone: TimeZone? = DEFAULT_TIME_ZONE) =
-            TimeStamp(string.stringToMillis(zone), zone)
+            TimeStamp(string.stringToMillis(zone).toDouble(), zone)
     }
 
     override fun formatTime(pattern: TimeFormat, zone: TimeZone?, locale: Locale): String =

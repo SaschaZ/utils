@@ -11,6 +11,9 @@ WORKDIR /project
 
 # Remove possible temporary build files
 RUN rm -f ./local.properties && \
-    find . -name build -print0 | xargs -0 rm -rf
+    find . -name build -print0 | xargs -0 rm -rf && \
+    rm -rf .gradle && \
+    rm -rf ~/.m2 && \
+    rm -rf ~/.gradle
 
 CMD ["./gradlew", "clean", "publishToMavenLocal"]

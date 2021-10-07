@@ -25,7 +25,7 @@ suspend inline fun <T> withTimeout(
                 throw TimeoutCancellationException("${message(throwable)}")
             throw throwable
         }) {
-        kotlinx.coroutines.withTimeout(timeout.millis) { block() }
+        kotlinx.coroutines.withTimeout(timeout.millis.toLong()) { block() }
     }!! // only is null, when exception was thrown -> can never be null here
 } else block()
 

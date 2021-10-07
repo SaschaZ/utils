@@ -15,7 +15,7 @@ import io.kotest.matchers.shouldBe
 
 class MachineExFunctionDslTest : FunSpec({
 
-    timeout = 10.seconds.millis
+    timeout = 10.seconds.millis.toLong()
 
     test("test function dsl") {
         MachineEx(INITIAL, DefaultCoroutineScope(), debugLevel = DEBUG) {

@@ -234,7 +234,7 @@ abstract class MutableObservableBase<O, T, S : IMutableObservableChangedScope<T>
         return if (channelSet) {
             timeout?.millis?.let {
                 try {
-                    withTimeout(it) { result.receive() }
+                    withTimeout(it.toLong()) { result.receive() }
                 } catch (te: TimeoutCancellationException) {
                     return null
                 }
