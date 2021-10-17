@@ -1,6 +1,9 @@
-name: Android CI
+name: Utils CI
 
-on: [ label, release, push, pull_request ]
+on:
+  push:
+    tags:
+      - 'v*.*.*'
 
 jobs:
   build:
