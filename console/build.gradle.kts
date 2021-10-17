@@ -1,8 +1,9 @@
 import dev.zieger.utils.*
+import dev.zieger.utils.Config.*
 
 plugins {
+    `java-library`
     id("dev.zieger.utils")
-    id("java")
 }
 
 utils {
@@ -10,11 +11,11 @@ utils {
 }
 
 dependencies {
-    miscModule()
-    koinModule()
+    miscModule
+    koinModule
 
-    koin
-    lanterna
+    koin(API)
+    lanterna(API)
 
     koTestRunner
     koTestAssertions

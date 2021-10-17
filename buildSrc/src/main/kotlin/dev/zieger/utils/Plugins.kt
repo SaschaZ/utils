@@ -4,7 +4,7 @@ import org.gradle.api.Plugin
 
 fun ProjectContext.configPlugins(): Plugin<Any> =
     plugins.run {
-        apply("java")
+        apply("org.gradle.java-library")
         when (isAndroid) {
             true -> {
                 apply("com.android.application")

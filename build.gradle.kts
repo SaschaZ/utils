@@ -7,6 +7,8 @@ buildscript {
         val kotlinVersion: String by project
         classpath(kotlin("gradle-plugin", version = kotlinVersion))
         classpath(kotlin("serialization", version = kotlinVersion))
+
+//        classpath("org.gradle.java-library")
     }
 }
 

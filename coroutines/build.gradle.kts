@@ -1,7 +1,7 @@
 import dev.zieger.utils.*
 
 plugins {
-    id("java")
+    `java-library`
     id("dev.zieger.utils")
 }
 
@@ -10,7 +10,7 @@ utils {
 }
 
 dependencies {
-    timeModule()
-    miscModule()
-    globalsModule()
+    timeModule
+    miscModule
+    globalsModule
 }

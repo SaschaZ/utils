@@ -1,7 +1,8 @@
+import dev.zieger.utils.Config.API
 import dev.zieger.utils.koin
 
 plugins {
-    id("java")
+    `java-library`
     id("dev.zieger.utils")
 }
 
@@ -10,5 +11,5 @@ utils {
 }
 
 dependencies {
-    koin
+    koin(API)
 }

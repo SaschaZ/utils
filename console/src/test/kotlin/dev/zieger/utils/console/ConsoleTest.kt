@@ -1,7 +1,10 @@
 package dev.zieger.utils.console
 
-import com.googlecode.lanterna.*
-import com.googlecode.lanterna.SGR.*
+import com.googlecode.lanterna.SGR.BOLD
+import com.googlecode.lanterna.SGR.UNDERLINE
+import com.googlecode.lanterna.TerminalPosition
+import com.googlecode.lanterna.TerminalSize
+import com.googlecode.lanterna.TextCharacter
 import com.googlecode.lanterna.TextColor.ANSI.*
 import com.googlecode.lanterna.input.KeyType
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
@@ -71,5 +74,15 @@ internal class ConsoleTest : AnnotationSpec() {
                 readInput()
             }
         }
+    }
+
+    @Test
+    fun testNoWait() = runBlocking {
+        val console = Console(wait = false)
+        delay(1_000L)
+        console.outNl(+"Hallo Ballo")
+        delay(2_000L)
+        console.outNl("FooBoo")
+        delay(2_000L)
     }
 }

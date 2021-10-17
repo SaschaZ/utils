@@ -13,6 +13,7 @@ buildscript {
 
 plugins {
     `kotlin-dsl`
+    `java-library`
 }
 
 repositories {
