@@ -1,4 +1,4 @@
-package dev.zieger.utils.console
+package dev.zieger.utils.console.components
 
 import com.googlecode.lanterna.TerminalPosition
 import com.googlecode.lanterna.TerminalSize
@@ -7,6 +7,9 @@ import com.googlecode.lanterna.gui2.LinearLayout
 import com.googlecode.lanterna.gui2.Panel
 import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.input.KeyType
+import dev.zieger.utils.console.ConsoleScope
+import dev.zieger.utils.console.TextBuilder
+import dev.zieger.utils.console.dto.ConsoleOptions
 import dev.zieger.utils.koin.DI
 import org.koin.core.component.get
 

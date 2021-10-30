@@ -3,8 +3,10 @@ package dev.zieger.utils.misc.parameterMix
 import kotlin.reflect.KProperty
 
 sealed class Parameter {
+
     abstract val property: KProperty<*>
     abstract val values: List<Number>
+
     private var nextIdx = 0
     val nextValue: Number
         get() = values[nextIdx++ % values.size]

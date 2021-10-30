@@ -20,7 +20,7 @@ class MixTest : AnnotationSpec() {
         mix(builder = {
             Parameters::first with ((10 until 30 step 2) + (30 until 60 step 5) + (60 until 100 step 10))
             Parameters::second with listOf(5, 10)
-            Parameters::third with 5L//Parameter.Random(Parameters::third, 2, TYPE.LONG, 5L, 10L)
+            Parameters::third with 5L//Parameter.Random(Parameters::third, 2, Parameter.Random.Companion.TYPE.LONG, 5L, 10L)
         }, instanceFactory = {
             Parameters(it)
         }) {
@@ -28,6 +28,6 @@ class MixTest : AnnotationSpec() {
             println(this)
         }.collect()
 
-        maps.size shouldBe 40
+        maps.size shouldBe 42
     }.asUnit()
 }

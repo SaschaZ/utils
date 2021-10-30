@@ -8,6 +8,10 @@ import com.googlecode.lanterna.input.KeyType
 import com.googlecode.lanterna.screen.Screen
 import dev.zieger.utils.console.ConsoleInstances.INPUT_SCOPE
 import dev.zieger.utils.console.ConsoleInstances.PROCESS_SCOPE
+import dev.zieger.utils.console.components.ConsoleComponent
+import dev.zieger.utils.console.components.FocusableComponent
+import dev.zieger.utils.console.dto.ConsoleOptions
+import dev.zieger.utils.coroutines.executeNativeBlocking
 import dev.zieger.utils.koin.DI
 import dev.zieger.utils.koin.get
 import kotlinx.coroutines.*
@@ -23,7 +27,7 @@ suspend fun Console(
     val windowManager: MultiWindowTextGUI = di.get()
 
     return di.get<ConsoleWindow>().apply {
-        screen.startScreen()
+        executeNativeBlocking { screen.startScreen() }
         windowManager.addWindow(this)
         components.forEach {
             addFocusableConsoleComponent(it)
@@ -42,7 +46,7 @@ suspend fun Console(
 
         suspend fun CoroutineScope.updateUi() {
             while (isActive) {
-                textGUI.updateScreen()
+                executeNativeBlocking { textGUI.updateScreen() }
                 delay(options.updateInterval)
             }
         }

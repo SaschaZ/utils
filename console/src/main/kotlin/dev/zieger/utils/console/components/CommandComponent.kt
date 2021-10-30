@@ -1,6 +1,6 @@
 @file:Suppress("MemberVisibilityCanBePrivate")
 
-package dev.zieger.utils.console
+package dev.zieger.utils.console.components
 
 import com.googlecode.lanterna.TerminalPosition
 import com.googlecode.lanterna.TerminalSize
@@ -10,6 +10,11 @@ import com.googlecode.lanterna.gui2.TextGUIGraphics
 import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.input.KeyType
 import dev.zieger.utils.console.ConsoleInstances.UI_SCOPE
+import dev.zieger.utils.console.TextBuilderScope
+import dev.zieger.utils.console.div
+import dev.zieger.utils.console.dto.ConsoleOptions
+import dev.zieger.utils.console.times
+import dev.zieger.utils.console.unaryPlus
 import dev.zieger.utils.koin.DI
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay

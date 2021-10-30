@@ -5,26 +5,20 @@ package dev.zieger.utils.misc.parameterMix
 import dev.zieger.utils.misc.DEFAULT_NUM_PARALLEL
 import dev.zieger.utils.misc.mapParallel
 import kotlinx.coroutines.flow.*
-import java.util.*
 
 fun <T, R> mix(
     numParallel: Int = DEFAULT_NUM_PARALLEL,
     builder: ParameterBuilder.() -> Unit,
     instanceFactory: (Map<String, Number>) -> T,
-    parameter: suspend T.() -> R
+    parameter: suspend T.(idx: Long) -> R
 ): Flow<Pair<Long, R>> {
     val params = ParameterBuilder().apply(builder).build().asFlow()
     return flow {
-        val done = LinkedList<T>()
         var idx = 0L
         val combinations = params.combinations().map { map -> idx++ to map }
-        emitAll(combinations.mapParallel(numParallel) { (idx, values) ->
+        emitAll(combinations.mapParallel(numParallel) { (i, values) ->
             val parameters = instanceFactory(values)
-            if (parameters in done) null
-            else {
-                done += parameters
-                idx to parameters.parameter()
-            }
+            i to parameters.parameter(i)
         }.filterNotNull())
     }
 }

@@ -1,12 +1,15 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE")
 
-package dev.zieger.utils.console
+package dev.zieger.utils.console.components
 
 import com.googlecode.lanterna.TerminalSize
 import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.input.KeyType
 import dev.zieger.utils.console.ConsoleInstances.SIZE_SCOPE
 import dev.zieger.utils.console.ConsoleInstances.UI_SCOPE
+import dev.zieger.utils.console.ConsoleRenderer
+import dev.zieger.utils.console.TextBuilder
+import dev.zieger.utils.console.dto.ConsoleOptions
 import dev.zieger.utils.koin.DI
 import dev.zieger.utils.misc.asUnit
 import dev.zieger.utils.misc.nullWhen

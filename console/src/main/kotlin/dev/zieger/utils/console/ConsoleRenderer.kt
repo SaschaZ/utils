@@ -5,6 +5,7 @@ import com.googlecode.lanterna.TerminalPosition
 import com.googlecode.lanterna.TerminalSize
 import com.googlecode.lanterna.gui2.ComponentRenderer
 import com.googlecode.lanterna.gui2.TextGUIGraphics
+import dev.zieger.utils.console.components.ConsoleComponent
 import dev.zieger.utils.misc.nullWhen
 
 class ConsoleRenderer : ComponentRenderer<ConsoleComponent> {

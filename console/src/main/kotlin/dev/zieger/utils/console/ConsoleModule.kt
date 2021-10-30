@@ -4,6 +4,8 @@ import com.googlecode.lanterna.gui2.MultiWindowTextGUI
 import com.googlecode.lanterna.screen.Screen
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import dev.zieger.utils.console.ConsoleInstances.*
+import dev.zieger.utils.console.components.FocusableComponent
+import dev.zieger.utils.console.dto.ConsoleOptions
 import dev.zieger.utils.koin.DiRelease
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher

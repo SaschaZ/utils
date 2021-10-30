@@ -1,5 +1,5 @@
 import dev.zieger.utils.*
-import dev.zieger.utils.Config.*
+import dev.zieger.utils.Config.API
 
 plugins {
     `java-library`
@@ -13,6 +13,7 @@ utils {
 dependencies {
     miscModule
     koinModule
+    coroutinesModule
 
     koin(API)
     lanterna(API)

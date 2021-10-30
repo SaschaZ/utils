@@ -1,9 +1,13 @@
-package dev.zieger.utils.console
+package dev.zieger.utils.console.dto
 
 import com.googlecode.lanterna.TerminalPosition
 import com.googlecode.lanterna.TerminalSize
 import com.googlecode.lanterna.TextColor
 import com.googlecode.lanterna.gui2.Window
+import dev.zieger.utils.console.TextBuilder
+import dev.zieger.utils.console.div
+import dev.zieger.utils.console.times
+import dev.zieger.utils.console.unaryPlus
 
 data class ConsoleOptions(
     val title: String = "Console",

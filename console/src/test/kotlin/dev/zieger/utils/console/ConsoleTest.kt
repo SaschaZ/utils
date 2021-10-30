@@ -8,6 +8,9 @@ import com.googlecode.lanterna.TextCharacter
 import com.googlecode.lanterna.TextColor.ANSI.*
 import com.googlecode.lanterna.input.KeyType
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
+import dev.zieger.utils.console.components.ConsoleComponent
+import dev.zieger.utils.console.components.ConsoleWithCommandComponent
+import dev.zieger.utils.console.dto.ConsoleOptions
 import io.kotest.core.spec.style.AnnotationSpec
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
