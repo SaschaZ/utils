@@ -3,7 +3,6 @@ package dev.zieger.utils
 import java.io.FileInputStream
 import java.util.*
 import kotlin.properties.ReadOnlyProperty
-import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 class GradleProperty<P> : ReadOnlyProperty<P, String> {
@@ -28,4 +27,5 @@ object Versions {
     val dokkaVersion by GradleProperty()
     val jacocoVersion by GradleProperty()
     val lanternaVersion by GradleProperty()
+    val oshiVersion by GradleProperty()
 }

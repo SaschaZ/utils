@@ -18,7 +18,7 @@ import kotlinx.coroutines.channels.Channel
 import org.koin.core.component.get
 import java.util.*
 
-class ConsoleComponent : AbstractFocusableComponent<ConsoleComponent>(), FocusableConsoleComponent {
+open class ConsoleComponent : AbstractFocusableComponent<ConsoleComponent>(), FocusableConsoleComponent {
 
     override var di: DI? = null
         set(value) {

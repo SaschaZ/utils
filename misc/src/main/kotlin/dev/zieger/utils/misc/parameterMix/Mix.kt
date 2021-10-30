@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.*
 fun <T, R> mix(
     numParallel: Int = DEFAULT_NUM_PARALLEL,
     builder: ParameterBuilder.() -> Unit,
-    instanceFactory: (Map<String, Number>) -> T,
+    instanceFactory: (Map<String, Any?>) -> T,
     parameter: suspend T.(idx: Long) -> R
 ): Flow<Pair<Long, R>> {
     val params = ParameterBuilder().apply(builder).build().asFlow()
@@ -23,14 +23,19 @@ fun <T, R> mix(
     }
 }
 
-private suspend fun Flow<Parameter>.combinations(): Flow<Map<String, Number>> =
-    fold(first().pairs) { pairs, param ->
-        pairs.combine(param)
+private suspend fun <T> Flow<Parameter<out T>>.combinations(): Flow<Map<String, T>> {
+    var firstDone = false
+    return fold(first().pairs) { pairs, param ->
+        if (!firstDone) {
+            firstDone = true
+            pairs
+        } else pairs.combine(param)
     }
+}
 
-private fun Parameter.combine(other: Parameter): Flow<Map<String, Number>> = pairs.combine(other)
+private fun <T> Parameter<out T>.combine(other: Parameter<out T>): Flow<Map<String, T>> = pairs.combine(other)
 
-private fun Flow<Map<String, Number>>.combine(other: Parameter): Flow<Map<String, Number>> = flow {
+private fun <T> Flow<Map<String, T>>.combine(other: Parameter<out T>): Flow<Map<String, T>> = flow {
     onEmpty { this@flow.emitAll(other.pairs) }
     collect { params ->
         other.pairs.onEach { f ->
@@ -44,5 +49,5 @@ private fun Flow<Map<String, Number>>.combine(other: Parameter): Flow<Map<String
 private operator fun <K, V> Map<K, V>.plus(pair: Map.Entry<K, V>): Map<K, V> =
     (entries.map { (k, v) -> k to v } + (pair.key to pair.value)).toMap()
 
-private val Parameter.pairs: Flow<Map<String, Number>>
+private val <T> Parameter<out T>.pairs: Flow<Map<String, T>>
     get() = values.asFlow().map { mapOf(property.name to it) }

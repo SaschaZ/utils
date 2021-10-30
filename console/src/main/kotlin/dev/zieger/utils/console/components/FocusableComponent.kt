@@ -27,6 +27,7 @@ abstract class AbstractFocusableComponent<T: AbstractFocusableComponent<T>>(
     override val focusable: Boolean = true
 ) : AbstractComponent<T>(), FocusableComponent {
 
+    override var di: DI? = null
     override var options: ConsoleOptions = ConsoleOptions()
     override var cursorPosition: TerminalPosition = TerminalPosition.TOP_LEFT_CORNER
         set(value) {

@@ -102,7 +102,7 @@ class ConsoleWindow(
         panel.addComponent(consoleComponent)
     }.asUnit()
 
-    private fun setPositionAndSizes(vertical: Boolean = false) {
+    private fun setPositionAndSizes(vertical: Boolean = true) {
         val height = textGUI.screen.terminalSize.rows / components.size
         val width = textGUI.screen.terminalSize.columns / components.size
         var top = 0

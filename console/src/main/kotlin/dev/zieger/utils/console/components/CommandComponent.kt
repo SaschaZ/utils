@@ -22,7 +22,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.core.component.get
 
-class CommandComponent(
+open class CommandComponent(
     private val onNewCommand: (command: String) -> Unit
 ) : AbstractFocusableComponent<CommandComponent>() {
 

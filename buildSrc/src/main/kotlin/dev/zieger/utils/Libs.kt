@@ -118,6 +118,10 @@ val DHS.lanterna: EMD get() = lanterna()
 fun DHS.lanterna(config: Config = IMPL, action: Action<EMD> = TrasitiveAcztion()): EMD =
     add("com.googlecode.lanterna:lanterna:${Versions.lanternaVersion}", config, action)
 
+val DHS.oshi: EMD get() = oshi()
+fun DHS.oshi(config: Config = IMPL, action: Action<EMD> = TrasitiveAcztion()): EMD =
+    add("com.github.oshi:oshi-core:${Versions.oshiVersion}", config, action)
+
 val DHS.koTestRunner: EMD get() = koTestRunner()
 fun DHS.koTestRunner(config: Config = IMPL, action: Action<EMD> = TrasitiveAcztion()): EMD =
     add("io.kotest:kotest-runner-junit5-jvm:${Versions.kotestVersion}", config, action)

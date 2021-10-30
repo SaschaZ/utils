@@ -7,26 +7,26 @@ import kotlin.reflect.KProperty
 
 class ParameterBuilder {
 
-    private val parameter = LinkedList<Parameter>()
+    private val parameter = LinkedList<Parameter<*>>()
 
-    fun build(): List<Parameter> = parameter
+    fun build(): List<Parameter<*>> = parameter
 
-    infix fun KProperty<*>.with(constant: Number) =
+    infix fun <T> KProperty<T>.with(constant: T) =
         parameter.add(Parameter.Direct(this, listOf(constant)))
 
-    infix fun KProperty<*>.with(constants: List<Number>) =
+    infix fun <T> KProperty<T>.with(constants: List<T>) =
         parameter.add(Parameter.Direct(this, constants))
 
-    infix fun KProperty<*>.with(longProgression: LongProgression) =
+    infix fun KProperty<Long>.with(longProgression: LongProgression) =
         parameter.add(Parameter.Direct(this, longProgression.toList()))
 
-    infix fun KProperty<*>.with(intProgression: IntProgression) =
+    infix fun KProperty<Int>.with(intProgression: IntProgression) =
         parameter.add(Parameter.Direct(this, intProgression.toList()))
 
-    infix fun KProperty<*>.with(doubleProgression: DoubleProgression) =
+    infix fun KProperty<Double>.with(doubleProgression: DoubleProgression) =
         parameter.add(Parameter.Direct(this, doubleProgression.toList()))
 
-    infix fun KProperty<*>.with(floatProgression: FloatProgression) =
+    infix fun KProperty<Float>.with(floatProgression: FloatProgression) =
         parameter.add(Parameter.Direct(this, floatProgression.toList()))
 
     infix fun KProperty<*>.with(random: Parameter.Random) =

@@ -17,6 +17,7 @@ dependencies {
 
     koin(API)
     lanterna(API)
+    oshi(API)
 
     koTestRunner
     koTestAssertions

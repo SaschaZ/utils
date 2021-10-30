@@ -13,7 +13,7 @@ import dev.zieger.utils.console.dto.ConsoleOptions
 import dev.zieger.utils.koin.DI
 import org.koin.core.component.get
 
-class ConsoleWithCommandComponent(private val onNewCommand: ConsoleComponent.(command: String) -> Unit = { outNl(it) }) :
+open class ConsoleWithCommandComponent(private val onNewCommand: ConsoleComponent.(command: String) -> Unit = { outNl(it) }) :
     Panel(LinearLayout(Direction.VERTICAL)), ConsoleScope, FocusableComponent {
 
     override var di: DI? = null
