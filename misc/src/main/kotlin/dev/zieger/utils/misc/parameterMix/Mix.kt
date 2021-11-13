@@ -11,14 +11,14 @@ fun <T, R> mix(
     builder: ParameterBuilder.() -> Unit,
     instanceFactory: (Map<String, Any?>) -> T,
     parameter: suspend T.(idx: Long) -> R
-): Flow<Pair<Long, R>> {
+): Flow<Triple<Long, Long, R>> {
     val params = ParameterBuilder().apply(builder).build().asFlow()
     return flow {
         var idx = 0L
-        val combinations = params.combinations().map { map -> idx++ to map }
+        val combinations = params.combinations().map { map -> idx++ to map }.toList().asFlow()
         emitAll(combinations.mapParallel(numParallel) { (i, values) ->
             val parameters = instanceFactory(values)
-            i to parameters.parameter(i)
+            Triple(i, idx, parameters.parameter(i))
         }.filterNotNull())
     }
 }
