@@ -43,7 +43,8 @@ class LogMessageBuilder(
     companion object {
 
         val DEFAULT_LOG_MESSAGE: LogMessageBuilderContext.() -> String = {
-            "${level.short}-${time()}: $message${tagFormatted?.let { " - $it" } ?: ""}"
+            "${level.short}-${time()}: ${throwable?.let { "$it\n${it.stackTraceToString()}\n" } ?: ""}" +
+                    "$message${tagFormatted?.let { " - $it" } ?: ""}"
         }
         val LOG_MESSAGE_WITH_CALL_ORIGIN: LogMessageBuilderContext.() -> String = {
             "${level.short}-${time()}-${callOrigin()}: $message${tagFormatted?.let { " - $it" } ?: ""}"

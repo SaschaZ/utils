@@ -11,4 +11,12 @@ class TestLog : AnnotationSpec() {
     fun testLog() = runBlocking {
         4 logV { "" }
     }
+
+    @Test
+    fun testError() = runBlocking {
+        Log.e(IllegalStateException("Test Exception"))
+        Log.copy {
+
+        }
+    }
 }

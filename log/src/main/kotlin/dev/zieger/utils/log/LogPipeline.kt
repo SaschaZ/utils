@@ -15,14 +15,12 @@ interface ILogPipeline {
     fun addPreFilter(
         tag: Any? = null,
         block: LogPipelineContext.(next: LogPipelineContext.() -> Unit) -> Unit
-    ) =
-        addFilter(logPreFilter(tag, block))
+    ) = addFilter(logPreFilter(tag, block))
 
     fun addPostFilter(
         tag: Any? = null,
         block: LogPipelineContext.(next: LogPipelineContext.() -> Unit) -> Unit
-    ) =
-        addFilter(logPostFilter(tag, block))
+    ) = addFilter(logPostFilter(tag, block))
 
     fun removeFilter(filter: LogFilter)
 

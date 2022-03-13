@@ -11,6 +11,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.modules.SerializersModule
 import java.text.SimpleDateFormat
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -136,6 +137,11 @@ object TimeZoneSerializer : KSerializer<TimeZone> {
 
     override fun deserialize(decoder: Decoder): TimeZone =
         TimeZone.getTimeZone(decoder.decodeString())
+}
+
+val timeSerializerModule = SerializersModule {
+    polymorphic(ITimeSpan::class, TimeSpan::class, TimeSpan.serializer())
+    polymorphic(ITimeStamp::class, TimeStamp::class, TimeStamp.serializer())
 }
 
 fun Number.toTime(unit: TimeUnit = TimeUnit.MILLI, zone: TimeZone? = DEFAULT_TIME_ZONE): ITimeStamp =
