@@ -2,7 +2,7 @@ package dev.zieger.utils.time
 
 import java.util.*
 
-open class TimeSpanFiFo<T : ITimeStamp> private constructor(
+open class TimeStampFiFo<T : ITimeStamp> private constructor(
     val maxSpan: ITimeSpan,
     private val baseList: MutableList<T>
 ) : List<T> by baseList {

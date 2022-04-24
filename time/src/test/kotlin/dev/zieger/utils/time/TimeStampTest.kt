@@ -2,7 +2,6 @@
 
 package dev.zieger.utils.time
 
-import dev.zieger.utils.time.TimeFormat.DATE_ONLY
 import dev.zieger.utils.time.progression.step
 import io.kotest.assertions.eq.eq
 import io.kotest.core.spec.style.AnnotationSpec
@@ -20,7 +19,7 @@ internal class TimeStampTest : AnnotationSpec() {
     @Test
     fun testStringInit() {
         val timeStr = "1.1.2021-00:00:00"
-        eq(timeStr, timeStr.parse())
+        timeStr shouldBe timeStr.parse()
     }
 
     @Test

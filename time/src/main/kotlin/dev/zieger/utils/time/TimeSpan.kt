@@ -8,17 +8,37 @@ import kotlinx.serialization.Serializable
 interface ITimeSpan : ITimeSpanBase<ITimeSpan> {
     override fun compareTo(other: ITimeSpan): Int = compare(this, other)
 
-    operator fun plus(other: ITimeSpan): TimeSpan = TimeSpan(timeSpan + other.timeSpan)
-    operator fun plus(other: Number): TimeSpan = TimeSpan(timeSpan + other.toDouble())
-    operator fun minus(other: ITimeSpan): TimeSpan = TimeSpan(timeSpan - other.timeSpan)
-    operator fun minus(other: Number): TimeSpan = TimeSpan(timeSpan - other.toLong())
-    operator fun times(other: ITimeSpan): TimeSpan = TimeSpan(timeSpan * other.timeSpan)
-    operator fun div(other: ITimeSpan): Double = timeSpan / other.timeSpan.toDouble()
-    operator fun times(other: Number): TimeSpan = TimeSpan(timeSpan * other.toLong())
-    operator fun div(other: Number): TimeSpan = TimeSpan(timeSpan / other.toLong())
-    operator fun rem(other: ITimeSpan): Double = timeSpan % other.timeSpan.toDouble()
-    operator fun rem(other: Number): TimeSpan = TimeSpan(timeSpan % other.toLong())
+    fun plusDouble(other: Number): Double = timeSpan + other.toDouble()
+    operator fun plus(other: Number): TimeSpan = TimeSpan(plusDouble(other))
+    fun plusDouble(other: ITimeSpan): Double = timeSpan + other.timeSpan
+    operator fun plus(other: ITimeSpan): TimeSpan = TimeSpan(plusDouble(other))
+
+    fun minusDouble(other: Number): Double = timeSpan - other.toDouble()
+    operator fun minus(other: Number): TimeSpan = TimeSpan(minusDouble((other)))
+    fun minusDouble(other: ITimeSpan): Double = timeSpan - other.timeSpan
+    operator fun minus(other: ITimeSpan): TimeSpan = TimeSpan(minusDouble(other))
+
+    fun timesDouble(other: Number): Double = timeSpan * other.toDouble()
+    operator fun times(other: Number): TimeSpan = TimeSpan(timesDouble(other))
+    fun timesDouble(other: ITimeSpan): Double = timeSpan * other.timeSpan
+    operator fun times(other: ITimeSpan): TimeSpan = TimeSpan(timesDouble(other))
+
+    fun divDouble(other: Number): Double = timeSpan / other.toDouble()
+    operator fun div(other: Number): TimeSpan = TimeSpan(divDouble(other))
+    fun divDouble(other: ITimeSpan): Double = timeSpan / other.timeSpan
+    operator fun div(other: ITimeSpan): TimeSpan = TimeSpan(divDouble(other))
+
+    fun remDouble(other: Number): Double = timeSpan % other.toDouble()
+    operator fun rem(other: Number): TimeSpan = TimeSpan(remDouble(other))
+    fun remDouble(other: ITimeSpan): Double = timeSpan % other.timeSpan
+    operator fun rem(other: ITimeSpan): TimeSpan = TimeSpan(remDouble(other))
 }
+
+operator fun Number.plus(other: ITimeSpan): TimeSpan = TimeSpan(other.plusDouble(this))
+operator fun Number.minus(other: ITimeSpan): TimeSpan = TimeSpan(toDouble() - other.timeSpan)
+operator fun Number.times(other: ITimeSpan): TimeSpan = TimeSpan(other.timesDouble(this))
+operator fun Number.div(other: ITimeSpan): TimeSpan = TimeSpan(other.divDouble(this))
+operator fun Number.rem(other: ITimeSpan): TimeSpan = TimeSpan(other.remDouble(this))
 
 interface ITimeSpanBase<T : ITimeSpanBase<T>> : Comparable<T>, Comparator<T> {
 
@@ -89,7 +109,9 @@ interface ITimeSpanBase<T : ITimeSpanBase<T>> : Comparable<T>, Comparator<T> {
                 entityCnt++
                 "${"%${if (sameLength) "3" else ""}d".format(div)}${unit.shortChar}"
             } else null
-        }.joinToString(" ")
+        }.joinToString(" ").takeIf { it.isNotBlank() }
+            ?: entities.minByOrNull{ it.factorMillis }?.shortChar?.run { "0$this" }
+            ?: ""
     }
 }
 
@@ -118,7 +140,7 @@ suspend fun delay(duration: ITimeSpan) = kotlinx.coroutines.delay(duration.milli
 
 val ITimeSpan.abs: ITimeSpan get() = if (negative) this * -1 else this
 
-public inline fun <T> Iterable<T>.sumOf(selector: (T) -> ITimeSpan?): ITimeSpan {
+inline fun <T> Iterable<T>.sumOf(selector: (T) -> ITimeSpan?): ITimeSpan {
     var sum: ITimeSpan = 0.millis
     for (element in this) {
         sum += selector(element) ?: 0.millis

@@ -30,12 +30,11 @@ open class TimeParseHelper {
 
     protected fun String.stringToMillis(timeZone: TimeZone? = DEFAULT_TIME_ZONE): Long {
         COMMON_DATA_FORMATS.forEach { format ->
-            try {
+            runCatching {
                 val dateFormat = SimpleDateFormat(format, Locale.getDefault())
                 timeZone?.let { dateFormat.timeZone = it }
                 val result = dateFormat.parse(this)
                 return result.time
-            } catch (t: Throwable) {
             }
         }
         throw IllegalArgumentException("Can not parse Date from $this")

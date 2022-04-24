@@ -69,24 +69,39 @@ interface ITimeStamp : ITimeSpanBase<ITimeStamp> {
     operator fun plus(other: ITimeStamp): TimeSpan = TimeSpan(timeStamp + other.timeStamp)
     operator fun plus(other: ITimeSpan): TimeStamp = TimeStamp(timeStamp + other.timeSpan, zone)
     operator fun plus(other: Number): TimeStamp = TimeStamp(timeStamp + other.toDouble(), zone)
+    fun plusDouble(other: ITimeStamp): Double = (this + other).timeSpan
+    fun plusDouble(other: ITimeSpan): Double = (this + other).timeSpan
+    fun plusDouble(other: Number): Double = (this + other).timeSpan
 
     operator fun minus(other: ITimeStamp): TimeSpan = TimeSpan(timeStamp - other.timeStamp)
     operator fun minus(other: ITimeSpan): TimeStamp = TimeStamp(timeStamp - other.timeSpan, zone)
     operator fun minus(other: Number): TimeStamp = TimeStamp(timeStamp - other.toDouble(), zone)
+    fun minusDouble(other: ITimeStamp): Double = (this - other).timeSpan
+    fun minusDouble(other: ITimeSpan): Double = (this - other).timeSpan
+    fun minusDouble(other: Number): Double = (this - other).timeSpan
 
-    operator fun times(other: ITimeStamp): TimeStamp = TimeStamp(timeStamp + other.timeStamp, zone)
+    operator fun times(other: ITimeStamp): ITimeStamp = TimeStamp(timeStamp + other.timeStamp, zone)
     operator fun times(other: ITimeSpan): TimeStamp = TimeStamp(timeStamp * other.timeSpan, zone)
     operator fun times(other: Number): TimeStamp = TimeStamp(timeStamp * other.toDouble(), zone)
+    fun timesDouble(other: ITimeStamp): Double = (this * other).timeSpan
+    fun timesDouble(other: ITimeSpan): Double = (this * other).timeSpan
+    fun timesDouble(other: Number): Double = (this * other).timeSpan
 
-    operator fun div(other: ITimeStamp): Double = timeStamp / other.timeStamp.toDouble()
-    operator fun div(other: ITimeSpan): Double = timeStamp / other.timeSpan.toDouble()
-    operator fun div(other: Number): TimeStamp = TimeStamp(timeStamp / other.toDouble(), zone)
+    operator fun div(other: ITimeStamp): TimeSpan = TimeSpan(timeStamp / other.timeStamp)
+    operator fun div(other: ITimeSpan): TimeSpan = TimeSpan(timeStamp / other.millis)
+    operator fun div(other: Number): TimeSpan = TimeSpan(timeStamp / other.toDouble())
+    fun divDouble(other: ITimeStamp): Double = (this / other).timeSpan
+    fun divDouble(other: ITimeSpan): Double = (this / other).timeSpan
+    fun divDouble(other: Number): Double = (this / other).timeSpan
 
-    operator fun rem(other: ITimeStamp): Double = timeStamp % other.timeStamp.toDouble()
-    operator fun rem(other: ITimeSpan): Double = timeStamp % other.timeSpan.toDouble()
-    operator fun rem(other: Number): TimeStamp = TimeStamp(timeStamp % other.toDouble(), zone)
+    operator fun rem(other: ITimeStamp): TimeSpan = TimeSpan(timeStamp % other.timeStamp)
+    operator fun rem(other: ITimeSpan): TimeSpan = TimeSpan(timeStamp % other.millis)
+    operator fun rem(other: Number): TimeSpan = TimeSpan(timeStamp % other.toDouble())
+    fun remDouble(other: ITimeStamp): Double = (this % other).timeSpan
+    fun remDouble(other: ITimeSpan): Double = (this % other).timeSpan
+    fun remDouble(other: Number): Double = (this % other).timeSpan
 
-    fun normalize(value: ITimeSpan): TimeStamp = this - this % value
+    fun normalize(value: ITimeSpan): TimeStamp = this - this.remDouble(this)
 
     fun formatTime(
         pattern: TimeFormat = TimeFormat.COMPLETE,
@@ -94,6 +109,12 @@ interface ITimeStamp : ITimeSpanBase<ITimeStamp> {
         locale: Locale = DEFAULT_LOCALE
     ): String = SimpleDateFormat(pattern.pattern, locale).apply { zone?.let { timeZone = it } }.format(timeStamp)
 }
+
+operator fun Number.plus(other: ITimeStamp): TimeStamp = TimeStamp(other.plusDouble(this))
+operator fun Number.minus(other: ITimeStamp): TimeStamp = TimeStamp(toDouble() - other.timeSpan)
+operator fun Number.times(other: ITimeStamp): TimeStamp = TimeStamp(other.timesDouble(this))
+operator fun Number.div(other: ITimeStamp): TimeStamp = TimeStamp(other.divDouble(this))
+operator fun Number.rem(other: ITimeStamp): TimeStamp = TimeStamp(other.remDouble(this))
 
 @Serializable
 open class TimeStamp(
