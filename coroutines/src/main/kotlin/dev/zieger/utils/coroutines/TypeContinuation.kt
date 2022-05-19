@@ -76,7 +76,7 @@ open class TypeContinuation<T : Any?> {
         resumedInternal.incrementAndGet()
         ((channelMap.remove(null) ?: emptyList<Channel<ContinuationHolder<T>>>()) +
                 (channelMap.remove(value) ?: emptyList())).runEach {
-            offer(Value(value))
+            trySend(Value(value))
             close()
         }
     }
@@ -95,7 +95,7 @@ open class TypeContinuation<T : Any?> {
 
         tmp.forEach { (_, value) ->
             value.forEach {
-                it.offer(Exception(exception))
+                it.trySend(Exception(exception))
                 it.close()
             }
         }

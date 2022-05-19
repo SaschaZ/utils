@@ -12,7 +12,7 @@ pluginManagement {
 }
 
 rootProject.name = "utils"
-include("console")
+//include("console")
 include("coroutines")
 include("globals")
 include("koin")

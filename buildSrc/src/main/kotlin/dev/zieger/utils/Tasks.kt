@@ -1,5 +1,6 @@
 package dev.zieger.utils
 
+import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.getValue
 import org.gradle.kotlin.dsl.provideDelegate
@@ -16,6 +17,10 @@ fun ProjectContext.configTasks() {
 //    }
 
     val jvmTargetVersion by GradleProperty()
+    tasks.withType(JavaCompile::class.java) {
+        sourceCompatibility = jvmTargetVersion
+        targetCompatibility = jvmTargetVersion
+    }
     tasks.withType(KotlinCompile::class.java) {
         kotlinOptions {
             freeCompilerArgs = listOf("-Xinline-classes")

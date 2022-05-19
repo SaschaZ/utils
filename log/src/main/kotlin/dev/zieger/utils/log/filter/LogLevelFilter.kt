@@ -37,7 +37,8 @@ enum class LogLevel {
     DEBUG,
     INFO,
     WARNING,
-    EXCEPTION;
+    EXCEPTION,
+    NONE;
 
     val short: String
         get() = name[0].toString()
