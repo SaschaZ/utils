@@ -1,7 +1,13 @@
 package dev.zieger.utils.misc
 
-fun <T> ClosedRange<T>.range(): Double where T : Number, T : Comparable<T> =
-    endInclusive.toDouble() - start.toDouble()
+inline fun <reified T> ClosedRange<T>.range(): T where T : Number, T : Comparable<T> = when (T::class) {
+    Double::class -> endInclusive.toDouble() - start.toDouble()
+    Float::class -> endInclusive.toFloat() - start.toFloat()
+    Long::class -> endInclusive.toLong() - start.toLong()
+    Int::class -> endInclusive.toInt() - start.toInt()
+    Byte::class -> endInclusive.toByte() - start.toByte()
+    else -> throw IllegalArgumentException("Unknown Number typ: ${T::class}")
+} as T
 
 fun <T> ClosedRange<T>.toInt(): ClosedRange<Int> where T : Number, T : Comparable<T> =
     start.toInt()..endInclusive.toInt()

@@ -16,3 +16,9 @@ open class LogTag(
 
     override fun copyTags(): ILogTag = LogTag(tag)
 }
+
+fun ILogContext.filterTags(vararg tags: Any) = addPostFilter { next ->
+    val t = messageTag ?: tag
+    if (t == null || t in tags) next()
+    else cancel()
+}
