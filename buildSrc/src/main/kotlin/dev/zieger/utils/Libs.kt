@@ -58,6 +58,10 @@ val DHS.observablesModule: MD get() = observablesModule()
 fun DHS.observablesModule(action: Action<MD> = TrasitiveAcztion()): MD =
     addModule("observables", action = action)
 
+val DHS.stateMachineModule: MD get() = stateMachineModuile()
+fun DHS.stateMachineModuile(action: Action<MD> = TrasitiveAcztion()): MD =
+    addModule("statemachine", action = action)
+
 val DHS.timeModule: MD get() = timeModule()
 fun DHS.timeModule(action: Action<MD> = TrasitiveAcztion()): MD =
     addModule("time", action = action)
