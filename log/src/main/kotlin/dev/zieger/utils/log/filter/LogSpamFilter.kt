@@ -32,7 +32,7 @@ fun ILogContext.addSpamFilter(block: ILogMessageContext.(LogMessage) -> ITimeSpa
     val filterCount = HashMap<LogMessage, Int>()
 
     addPreFilter { next ->
-        val msg = LogMessage(level, messageTag ?: tag, message)
+        val msg = LogMessage(level, messageTag ?: tag, message, createdAt)
         when (val toDelay = block(msg)) {
             null -> {
                 filterCount[msg] = 0
@@ -66,7 +66,8 @@ fun ILogContext.addSpamFilter(block: ILogMessageContext.(LogMessage) -> ITimeSpa
 class LogMessage internal constructor(
     val level: LogLevel,
     val tag: Any?,
-    val message: Any
+    val message: Any,
+    val createdAt: ITimeStamp
 ) {
     override fun equals(other: Any?): Boolean = (other as? LogMessage)?.let { o ->
         level == o.level

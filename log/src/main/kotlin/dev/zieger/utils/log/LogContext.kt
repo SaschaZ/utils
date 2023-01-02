@@ -3,9 +3,9 @@
 package dev.zieger.utils.log
 
 
-import dev.zieger.utils.log.calls.IInlineLogBuilder
-import dev.zieger.utils.log.calls.IInlineLogCalls
 import dev.zieger.utils.log.calls.ILogCalls
+import dev.zieger.utils.log.calls.IReceiverLogBuilder
+import dev.zieger.utils.log.calls.IReceiverLogCalls
 import dev.zieger.utils.log.filter.ILogLevelFilter
 import dev.zieger.utils.log.filter.LogLevel
 import dev.zieger.utils.log.filter.LogLevel.*
@@ -18,7 +18,7 @@ import kotlinx.coroutines.CoroutineScope
  * Log-Context
  */
 interface ILogContext : ILogPipeline, ILogTag, ILogLevelFilter,
-    ILogCalls, IInlineLogBuilder, IInlineLogCalls {
+    ILogCalls, IReceiverLogBuilder, IReceiverLogCalls {
 
     fun copy(
         pipeline: ILogPipeline = cast<ILogPipeline>().copyPipeline(),

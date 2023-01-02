@@ -6,7 +6,7 @@ import dev.zieger.utils.log.LogFilter
 import dev.zieger.utils.log.filter.LogLevel
 
 
-interface IInlineLogCalls : ILogOut {
+interface IReceiverLogCalls : ILogOut {
 
     fun <T> T.logV(
         msg: Any = "",
