@@ -1,15 +1,81 @@
 package dev.zieger.utils.log.filter
 
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.log.IFilter
-import dev.zieger.utils.log.ILogContext
-import dev.zieger.utils.log.LogFilter
-import dev.zieger.utils.log.LogPipelineContext
-import dev.zieger.utils.time.ITimeSpan
-import dev.zieger.utils.time.ITimeStamp
-import dev.zieger.utils.time.TimeStamp
-import dev.zieger.utils.time.millis
+import dev.zieger.utils.log.*
+import dev.zieger.utils.time.*
 import kotlinx.coroutines.*
+import java.util.*
+
+
+fun ILogContext.addMessageSpamFilter(
+    spamDuration: ITimeSpan = 1.seconds
+) {
+    val scope = CoroutineScope(Dispatchers.IO)
+    val filterItems = HashMap<LogMessage, LinkedList<ITimeStamp>>()
+    val nextJobs = HashMap<LogMessage, Pair<Job, () -> Unit>>()
+
+    addSpamFilter { msg ->
+        val times = filterItems.getOrPut(msg) { LinkedList() }
+        val now = TimeStamp()
+        times.add(now)
+        val messagesPerSecond = times.count { now - it < spamDuration }
+
+        if (messagesPerSecond <= 1)
+            0.seconds
+        else spamDuration * 1.5
+    }
+}
+
+fun ILogContext.addSpamFilter(block: ILogMessageContext.(LogMessage) -> ITimeSpan?) {
+    val scope = CoroutineScope(Dispatchers.IO)
+    val delayed = HashMap<LogMessage, () -> Unit>()
+    val filterCount = HashMap<LogMessage, Int>()
+
+    addPreFilter { next ->
+        val msg = LogMessage(level, messageTag ?: tag, message)
+        when (val toDelay = block(msg)) {
+            null -> {
+                filterCount[msg] = 0
+                cancel()
+            }
+
+            0.millis -> {
+                filterCount[msg] = 0
+                next()
+            }
+
+            else -> {
+                delayed[msg]?.invoke()
+                filterCount[msg] = (filterCount[msg] ?: 0) + 1
+                val job = scope.launch {
+                    delay(toDelay)
+                    delayed.remove(msg)
+                    message = "$message (was filtered ${filterCount[msg]} times)"
+                    filterCount[msg] = 0
+                    next()
+                }
+                delayed[msg] = {
+                    job.cancel()
+                    cancel()
+                }
+            }
+        }
+    }
+}
+
+class LogMessage internal constructor(
+    val level: LogLevel,
+    val tag: Any?,
+    val message: Any
+) {
+    override fun equals(other: Any?): Boolean = (other as? LogMessage)?.let { o ->
+        level == o.level
+                && tag == o.tag
+                && message == o.message
+    } == true
+
+    override fun hashCode(): Int = level.hashCode() + tag.hashCode() + message.hashCode()
+}
 
 data class LogSpamFilter(
     val minInterval: ITimeSpan,
