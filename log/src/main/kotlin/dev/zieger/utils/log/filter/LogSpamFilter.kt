@@ -3,7 +3,7 @@ package dev.zieger.utils.log.filter
 import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.log.IFilter
 import dev.zieger.utils.log.ILogContext
-import dev.zieger.utils.log.ILogQueueContext
+import dev.zieger.utils.log.ILogMessageContext
 import dev.zieger.utils.log.LogFilter
 import dev.zieger.utils.time.*
 import kotlinx.coroutines.*
@@ -14,71 +14,58 @@ fun ILogContext.addMessageSpamFilter(
     spamDuration: ITimeSpan = 1.seconds
 ) {
     val scope = CoroutineScope(Dispatchers.IO)
-    val filterItems = HashMap<LogMessage, LinkedList<ITimeStamp>>()
-    val nextJobs = HashMap<LogMessage, Pair<Job, () -> Unit>>()
+    val filterItems = HashMap<Any, LinkedList<ITimeStamp>>()
+    val nextJobs = HashMap<Any, Pair<Job, () -> Unit>>()
 
-    addSpamFilter { msg ->
-        val times = filterItems.getOrPut(msg) { LinkedList() }
+    addSpamFilter {
+        val times = filterItems.getOrPut(message) { LinkedList() }
         val now = TimeStamp()
         times.add(now)
         val messagesPerSecond = times.count { now - it < spamDuration }
 
-        if (messagesPerSecond <= 1)
+        "$message" to if (messagesPerSecond <= 1)
             0.seconds
-        else spamDuration * 1.5
+        else spamDuration
     }
 }
 
-fun ILogContext.addSpamFilter(block: ILogQueueContext.(LogMessage) -> ITimeSpan?) {
-    val scope = CoroutineScope(Dispatchers.IO)
-    val delayed = HashMap<LogMessage, () -> Unit>()
-    val filterCount = HashMap<LogMessage, Int>()
+fun ILogContext.addSpamFilter(
+    scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    block: ILogMessageContext.(String) -> Pair<Any, ITimeSpan?>
+) {
+    val delayed = HashMap<Any, () -> Unit>()
+    val filterCount = HashMap<Any, Int>()
 
-    addPreFilter { next ->
-        val msg = LogMessage(level, messageTag ?: tag, message, createdAt)
-        when (val toDelay = block(msg)) {
+    addPostFilter { next ->
+        val (key, toDelay) = block("$message")
+        when (toDelay) {
             null -> {
-                filterCount[msg] = 0
+                filterCount[key] = 0
                 cancel()
             }
 
             0.millis -> {
-                filterCount[msg] = 0
+                filterCount[key] = 0
                 next()
             }
 
             else -> {
-                delayed[msg]?.invoke()
-                filterCount[msg] = (filterCount[msg] ?: 0) + 1
+                delayed[key]?.invoke()
+                filterCount[key] = (filterCount[key] ?: 0) + 1
                 val job = scope.launch {
                     delay(toDelay)
-                    delayed.remove(msg)
-                    message = "$message (was filtered ${filterCount[msg]} times)"
-                    filterCount[msg] = 0
+                    delayed.remove(key)
+                    builtMessage = "$builtMessage (was filtered ${filterCount[key]} times)"
+                    filterCount[key] = 0
                     next()
                 }
-                delayed[msg] = {
+                delayed[key] = {
                     job.cancel()
                     cancel()
                 }
             }
         }
     }
-}
-
-class LogMessage internal constructor(
-    val level: LogLevel,
-    val tag: Any?,
-    val message: Any,
-    val createdAt: ITimeStamp
-) {
-    override fun equals(other: Any?): Boolean = (other as? LogMessage)?.let { o ->
-        level == o.level
-                && tag == o.tag
-                && message == o.message
-    } == true
-
-    override fun hashCode(): Int = level.hashCode() + tag.hashCode() + message.hashCode()
 }
 
 data class LogSpamFilter(
@@ -90,7 +77,7 @@ data class LogSpamFilter(
     private var previousMessageAt: ITimeStamp = TimeStamp(0.0)
     private var lastMessageJob: Job? = null
 
-    override fun call(context: ILogQueueContext, next: IFilter<ILogQueueContext>) = context.run {
+    override fun call(context: ILogMessageContext, next: IFilter<ILogMessageContext>) = context.run {
         val diff = TimeStamp() - previousMessageAt
         lastMessageJob?.cancel()
         when {
@@ -148,8 +135,8 @@ fun ILogContext.spamFilter(
 private data class SpammyLogMessage(
     val job: Job,
     val message: Any,
-    val ctx: ILogQueueContext,
-    val next: ILogQueueContext.() -> Unit
+    val ctx: ILogMessageContext,
+    val next: ILogMessageContext.() -> Unit
 )
 
 interface ILogId {
@@ -164,9 +151,3 @@ class LogTagId(
 }
 
 infix fun Any.withId(id: Any): Any = LogTagId(this, id)
-
-val Any.id: Any?
-    get() = (this as? ILogId)?.id
-
-val Any.tag: Any
-    get() = (this as? ILogId)?.tag ?: this

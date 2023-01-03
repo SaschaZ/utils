@@ -2,7 +2,8 @@ package dev.zieger.utils.time
 
 sealed class TimeFormat(val pattern: String) {
 
-    object COMPLETE : TimeFormat("dd.MM.yyyy-HH:mm:ss")
+    object COMPLETE : TimeFormat("d.M.yyyy-HH:mm:ss")
+    object COMPLETE_ZERO : TimeFormat("dd.MM.yyyy-HH:mm:ss")
     object DATE_ONLY : TimeFormat("dd.MM.yyyy")
     object TIME_ONLY : TimeFormat("HH:mm:ss-SSS")
     object HaM : TimeFormat("HH:mm")

@@ -3,7 +3,7 @@ package dev.zieger.utils.time.progression
 import dev.zieger.utils.time.ITimeSpan
 import dev.zieger.utils.time.millis
 
-open class DurationExProgression(
+open class TimeSpanProgression(
     val start: ITimeSpan,
     val end: ITimeSpan,
     val step: ITimeSpan
@@ -18,11 +18,8 @@ open class DurationExProgression(
     }
 }
 
-infix fun ITimeSpan.until(other: ITimeSpan) =
-    (this..(other.millis - 1).millis)
+infix fun <T : ITimeSpan, C : ClosedRange<T>> C.step(step: Number) =
+    TimeSpanProgression(start, endInclusive, step.millis)
 
-infix fun ClosedRange<ITimeSpan>.step(step: Number) =
-    DurationExProgression(start, endInclusive, step.millis)
-
-infix fun ClosedRange<ITimeSpan>.step(step: ITimeSpan) =
-    DurationExProgression(start, endInclusive, step)
+infix fun <T : ITimeSpan, C : ClosedRange<T>> C.step(step: ITimeSpan) =
+    TimeSpanProgression(start, endInclusive, step)

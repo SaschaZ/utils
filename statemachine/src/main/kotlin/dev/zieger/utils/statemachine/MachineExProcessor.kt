@@ -3,7 +3,6 @@
 package dev.zieger.utils.statemachine
 
 import dev.zieger.utils.log.ILogScope
-import dev.zieger.utils.log.filter.LogCondition
 import dev.zieger.utils.misc.ifNull
 import dev.zieger.utils.statemachine.conditionelements.*
 import dev.zieger.utils.statemachine.conditionelements.Condition.DefinitionType.EVENT
@@ -91,18 +90,17 @@ interface IMachineExProcessor : ILogScope {
         type: Condition.DefinitionType
     ) = Matcher(this, this@IMachineExProcessor).run {
         (condition.type == type && condition.match()) logD {
-            filter = LogCondition { !event.noLogging }
             "#R $it => ${type.name[0]} $condition <||> (E: $event | S: $state)"
         }
     }
 
     private val MatchScope.log: MatchScope
         get() = apply {
-            Log.i("NEW INCOMING EVENT $eventCombo with state $stateCombo.", filter = LogCondition { !noLogging })
+            Log.i("NEW INCOMING EVENT $eventCombo with state $stateCombo.")
         }
 
     private fun StateCombo.logNewState(event: AbsEvent): StateCombo =
-        apply { Log.i("SETTING NEW STATE $this for event $event.", filter = LogCondition { !noLogging }) }
+        apply { Log.i("SETTING NEW STATE $this for event $event.") }
 }
 
 internal class MachineExProcessor(logScope: ILogScope) : IMachineExProcessor, ILogScope by logScope {

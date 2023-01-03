@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.coroutineContext
 
 /**
- * Iterates over a [List] of [I] and calls the [block] with each element to map them to the [List] of output types [O].
+ * Iterates over a [Collection] of [I] and calls the [block] with each element to map them to the [Collection] of output types [O].
  * Every call to block is shared over a fixed set of [Channel]s to reduce execution time by using all available physical
  * CPU cores.
  *
@@ -30,10 +30,10 @@ import kotlin.coroutines.coroutineContext
  *
  * @return Sorted [List] of [block] results of type [O].
  */
-suspend inline fun <I, O> Collection<I>.mapParallel(
+suspend inline fun <I, O, CI : Collection<I>> Collection<I>.mapParallel(
     numParallel: Int = Runtime.getRuntime().availableProcessors(),
     crossinline block: suspend (I) -> O
-): Collection<O> {
+): List<O> {
     return parallelScope(numParallel) {
         map { item -> execute { block(item) } }
         suspendAndReceive()
@@ -43,7 +43,7 @@ suspend inline fun <I, O> Collection<I>.mapParallel(
 suspend inline fun <I, O> Collection<I>.runParallel(
     numParallel: Int = Runtime.getRuntime().availableProcessors(),
     crossinline block: suspend I.() -> O
-): Collection<O> = mapParallel(numParallel) { it.run { block() } }
+): List<O> = mapParallel(numParallel) { it.run { block() } }
 
 suspend inline fun <I> Collection<I>.forEachParallel(
     numParallel: Int = Runtime.getRuntime().availableProcessors(),

@@ -7,16 +7,18 @@ import kotlinx.coroutines.runBlocking
 
 class TestLog : AnnotationSpec() {
 
+
+    val Any.logV get() = Log.v(this)
+
     @Test
     fun testLog() = runBlocking {
-        4 logV { "" }
+        4 logV { "$it" }
+        4.logV
+
     }
 
     @Test
     fun testError() = runBlocking {
         Log.e(IllegalStateException("Test Exception"))
-        Log.copy {
-
-        }
     }
 }

@@ -1,0 +1,18 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+Log -> LogScope: Log
+LogScope -> LogContext: v
+LogContext -> LogContext: out
+LogContext -> LogContext: build LogMessageContext
+LogContext -> LogQueue : process
+LogQueue -> LogQueue : build LogQueueContext
+LogQueue -> LogQueue : execute pre-hooks
+LogQueue -> LogMessageBuilder : buildMessage
+return log message
+LogQueue -> LogQueue : execute post-hooks
+LogQueue -> LogOutput : print log message to std out
+
+@enduml

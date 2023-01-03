@@ -6,6 +6,7 @@ import dev.zieger.utils.log.LogFilter.LogPostFilter
 import dev.zieger.utils.log.LogFilter.LogPreFilter
 import dev.zieger.utils.misc.asUnit
 import java.util.*
+import dev.zieger.utils.log.filter as logFIlter
 
 interface ILogQueue {
     var messageBuilder: ILogMessageBuilder
@@ -13,18 +14,16 @@ interface ILogQueue {
 
     fun addFilter(filter: LogFilter)
     fun addPreFilter(
-        tag: Any? = null,
-        block: ILogQueueContext.(next: ILogQueueContext.() -> Unit) -> Unit
-    ) = addFilter(logPreFilter(tag, block))
+        block: ILogMessageContext.(next: ILogMessageContext.() -> Unit) -> Unit
+    ) = addFilter(logPreFilter(block = block))
 
     fun addPostFilter(
-        tag: Any? = null,
-        block: ILogQueueContext.(next: ILogQueueContext.() -> Unit) -> Unit
-    ) = addFilter(logPostFilter(tag, block))
+        block: ILogMessageContext.(next: ILogMessageContext.() -> Unit) -> Unit
+    ) = addFilter(logPostFilter(block = block))
 
     fun removeFilter(filter: LogFilter)
 
-    fun ILogMessageContext.process()
+    fun ILogMessageContext.execute()
 
     fun copyQueue(): ILogQueue
 }
@@ -35,6 +34,7 @@ interface ILogQueue {
 open class LogQueue(
     override var messageBuilder: ILogMessageBuilder,
     override var output: ILogOutput,
+    val logTag: ILogTag,
     private val preHook: MutableList<LogPreFilter?> = ArrayList(),
     private val postHook: MutableList<LogPostFilter?> = ArrayList()
 ) : ILogQueue {
@@ -49,20 +49,15 @@ open class LogQueue(
         is LogPreFilter -> preHook.remove(filter)
     }.asUnit()
 
-    override fun ILogMessageContext.process() {
-        LogQueueContext(this).apply {
-            filter.run {
-                call(this@apply, filter {
-                    preHook.executeQueue(this, filter {
-                        messageBuilder(this)
-                        postHook.executeQueue(this, output)
-                    })
-                })
-            }
-        }
+    override fun ILogMessageContext.execute() {
+        preHook.executeQueue(this, logFIlter {
+            if (isCancelled) return@logFIlter
+            messageBuilder.call(this@execute)
+            postHook.executeQueue(this, output)
+        })
     }
 
-    override fun copyQueue() = LogQueue(messageBuilder, output,
+    override fun copyQueue() = LogQueue(messageBuilder, output, logTag,
         preHook.map { it?.copy() }.toMutableList(), postHook.map { it?.copy() }.toMutableList()
     )
 }
@@ -78,9 +73,9 @@ private fun <C : ICancellable> Collection<IDelayFilter<C>?>.executeQueue(
             0 -> endAction
             else -> lambdas[idx - 1]
         }
-        lambdas.add(dev.zieger.utils.log.filter {
-            if (isCancelled) return@filter
-            f(this, dev.zieger.utils.log.filter innerFilter@{
+        lambdas.add(logFIlter {
+            if (isCancelled) return@logFIlter
+            f(this, logFIlter innerFilter@{
                 if (isCancelled) return@innerFilter
                 lambda(this)
             })
@@ -97,26 +92,13 @@ interface ICancellable {
 }
 
 interface IDelayFilter<C : ICancellable> {
-    fun call(context: C, next: IFilter<C> = filter {})
-    operator fun invoke(context: C, next: IFilter<C> = filter {}) = call(context, next)
+    fun call(context: C, next: IFilter<C> = logFIlter {})
+    operator fun invoke(context: C, next: IFilter<C> = logFIlter {}) = call(context, next)
 }
 
 interface IFilter<in C : ICancellable> {
     fun call(context: C)
     operator fun invoke(context: C) = call(context)
-}
-
-interface ILogQueueContext : ILogMessageContext, ICancellable
-
-open class LogQueueContext(
-    messageContext: ILogMessageContext
-) : ILogQueueContext, ILogMessageContext by messageContext {
-
-    override var isCancelled: Boolean = false
-
-    override fun cancel() {
-        isCancelled = true
-    }
 }
 
 private inline fun <C : ICancellable> delayFilter(crossinline block: C.(next: C.() -> Unit) -> Unit): IDelayFilter<C> =
@@ -128,39 +110,31 @@ private inline fun <C : ICancellable> filter(crossinline block: C.() -> Unit): I
     override fun call(context: C) = block(context)
 }
 
-sealed class LogFilter : IDelayFilter<ILogQueueContext> {
+sealed class LogFilter : IDelayFilter<ILogMessageContext> {
 
-    abstract val tag: Any?
     abstract fun copy(): LogFilter
 
-    abstract class LogPreFilter(override val tag: Any? = null) : LogFilter() {
+    abstract class LogPreFilter() : LogFilter() {
         abstract override fun copy(): LogPreFilter
     }
 
-    abstract class LogPostFilter(override val tag: Any? = null) : LogFilter() {
+    abstract class LogPostFilter() : LogFilter() {
         abstract override fun copy(): LogPostFilter
     }
 }
 
 inline fun logPreFilter(
-    tag: Any? = null,
-    crossinline block: ILogQueueContext.(next: ILogQueueContext.() -> Unit) -> Unit
+    crossinline block: ILogMessageContext.(next: ILogMessageContext.() -> Unit) -> Unit
 ): LogPreFilter =
-    object : LogPreFilter(tag) {
-        override fun call(context: ILogQueueContext, next: IFilter<ILogQueueContext>) = context.block { next(this) }
+    object : LogPreFilter() {
+        override fun call(context: ILogMessageContext, next: IFilter<ILogMessageContext>) = context.block { next(this) }
         override fun copy(): LogPreFilter = this
     }
 
 inline fun logPostFilter(
-    tag: Any? = null,
-    crossinline block: ILogQueueContext.(next: ILogQueueContext.() -> Unit) -> Unit
+    crossinline block: ILogMessageContext.(next: ILogMessageContext.() -> Unit) -> Unit
 ): LogPostFilter =
-    object : LogPostFilter(tag) {
-        override fun call(context: ILogQueueContext, next: IFilter<ILogQueueContext>) = context.block { next(this) }
+    object : LogPostFilter() {
+        override fun call(context: ILogMessageContext, next: IFilter<ILogMessageContext>) = context.block { next(this) }
         override fun copy(): LogPostFilter = this
     }
-
-object EmptyLogFilter : LogPreFilter(), IDelayFilter<ILogQueueContext> {
-    override fun call(context: ILogQueueContext, next: IFilter<ILogQueueContext>) = next(context)
-    override fun copy(): EmptyLogFilter = this
-}

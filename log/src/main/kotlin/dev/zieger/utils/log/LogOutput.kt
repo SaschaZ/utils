@@ -2,17 +2,21 @@ package dev.zieger.utils.log
 
 import dev.zieger.utils.log.filter.LogLevel.EXCEPTION
 
-typealias ILogOutput = IFilter<ILogQueueContext>
+interface ILogOutput : IFilter<ILogMessageContext> {
+    fun copyLogOutput(): ILogOutput
+}
 
 object SystemPrintOutput : ILogOutput {
 
-    override fun call(context: ILogQueueContext) = when (context.level) {
-        EXCEPTION -> System.err.println(context.message)
-        else -> println(context.message)
+    override fun call(context: ILogMessageContext) = when (context.level) {
+        EXCEPTION -> System.err.println(context.builtMessage)
+        else -> println(context.builtMessage)
     }
+
+    override fun copyLogOutput(): ILogOutput = SystemPrintOutput
 }
 
-@Suppress("FunctionName")
-fun LogOutput(block: ILogQueueContext.() -> Unit) = object : ILogOutput {
-    override fun call(context: ILogQueueContext) = block(context)
+class LogOutput(private val block: ILogMessageContext.() -> Unit) : ILogOutput {
+    override fun call(context: ILogMessageContext) = block(context)
+    override fun copyLogOutput(): ILogOutput = LogOutput(block)
 }

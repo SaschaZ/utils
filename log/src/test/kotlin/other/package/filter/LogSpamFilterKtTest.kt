@@ -1,9 +1,10 @@
-package dev.zieger.utils.log.filter
+package other.`package`.filter
 
 import dev.zieger.utils.log.Log
-import dev.zieger.utils.log.LogOutput
+import dev.zieger.utils.log.LogMessageBuilder
+import dev.zieger.utils.log.LogMessageBuilder.Companion.LOG_MESSAGE_WITH_CALL_ORIGIN
 import dev.zieger.utils.log.LogScope
-import dev.zieger.utils.time.TimeFormat
+import dev.zieger.utils.log.filter.addMessageSpamFilter
 import dev.zieger.utils.time.delay
 import dev.zieger.utils.time.millis
 import dev.zieger.utils.time.seconds
@@ -16,26 +17,26 @@ class LogSpamFilterKtTest : AnnotationSpec() {
 
     @Test
     fun testMessageSpamFilter() = runBlocking {
-        val messages = LinkedList<LogMessage>()
+        val messages = LinkedList<Any>()
         LogScope.reset {
-            output = (LogOutput {
-                val msg = "${createdAt.formatTime(TimeFormat.TIME_ONLY)} [${messageTag ?: tag}/${level.short}] $message"
-                messages += LogMessage(level, tag, message, createdAt)
-                println(msg)
-            })
-
+            tag = "FooWoo"
+            messageBuilder = LogMessageBuilder(LOG_MESSAGE_WITH_CALL_ORIGIN)
             addMessageSpamFilter()
+            addPostFilter { next ->
+                messages += message
+                next()
+            }
         }
 
-        suspend fun countMessages(block: suspend () -> Unit): List<LogMessage> {
+        suspend fun countMessages(block: suspend () -> Unit): List<Any> {
             val a = LinkedList(messages)
             block()
-            return messages.filterNot { it in a }
+            return LinkedList(messages).filterNot { it in a }
         }
 
         countMessages {
             repeat(10) {
-                Log.v("foo", "1337")
+                Log.v("foo", "WOO")
                 delay(500.millis)
             }
             delay(2.seconds)

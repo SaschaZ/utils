@@ -8,10 +8,7 @@ import dev.zieger.utils.log.calls.ILogReceiverBuilder
 import dev.zieger.utils.log.calls.IReceiverLogCalls
 import dev.zieger.utils.log.calls.LogReceiverBuilder
 import dev.zieger.utils.log.filter.ILogLevelFilter
-import dev.zieger.utils.log.filter.LogLevel
 import dev.zieger.utils.log.filter.LogLevelFilter
-import dev.zieger.utils.time.TimeStamp
-import kotlinx.coroutines.CoroutineScope
 
 /**
  * Log-Context
@@ -20,34 +17,29 @@ interface ILogContext : ILogQueue, ILogTag, ILogLevelFilter,
     ILogCalls, ILogReceiverBuilder, IReceiverLogCalls {
 
     fun copy(
+        messageBuilder: ILogMessageBuilder = Log.messageBuilder.copyLogMessageBuilder(),
+        logTag: ILogTag = Log.copyTags(),
+        output: ILogOutput = Log.output.copyLogOutput(),
         logQueue: ILogQueue = copyQueue(),
-        tags: ILogTag = copyTags(),
         logLevelFilter: ILogLevelFilter = copyLogLevelFilter(logQueue),
         block: ILogContext.() -> Unit = {}
-    ): ILogContext = LogContext(logQueue, tags, logLevelFilter).apply(block)
+    ): ILogContext = LogContext(messageBuilder, logTag, output, logQueue, logLevelFilter).apply(block)
 }
 
 open class LogContext(
+    messageBuilder: ILogMessageBuilder = LogMessageBuilder(),
+    logTag: ILogTag = LogTag(),
+    output: ILogOutput = SystemPrintOutput,
     logQueue: ILogQueue = LogQueue(
-        messageBuilder = LogMessageBuilder(),
-        output = SystemPrintOutput
+        messageBuilder = messageBuilder,
+        output = output,
+        logTag = logTag
     ),
-    logTags: ILogTag = LogTag(),
     logLevelFilter: ILogLevelFilter = LogLevelFilter(logQueue)
-) : ILogOut,
+) : ILogOut by LogOut(logQueue, logTag),
     ILogContext,
     ILogQueue by logQueue,
-    ILogTag by logTags,
+    ILogTag by logTag,
     ILogLevelFilter by logLevelFilter,
-    ILogReceiverBuilder by LogReceiverBuilder(logQueue, logTags) {
-
-    override fun out(
-        lvl: LogLevel,
-        msg: Any,
-        filter: LogFilter,
-        throwable: Throwable?,
-        scope: CoroutineScope?,
-        tag: Any?
-    ) = LogMessageContext(this, this, lvl, throwable, msg, scope, TimeStamp(), filter, tag ?: this.tag)
-        .process()
+    ILogReceiverBuilder by LogReceiverBuilder(logQueue, logTag) {
 }

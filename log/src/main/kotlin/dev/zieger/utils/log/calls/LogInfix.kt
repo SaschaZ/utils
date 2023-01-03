@@ -2,10 +2,8 @@
 
 package dev.zieger.utils.log.calls
 
-import dev.zieger.utils.log.EmptyLogFilter
 import dev.zieger.utils.log.ILogMessageContext
 import dev.zieger.utils.log.Log
-import dev.zieger.utils.log.LogFilter
 
 
 inline infix fun <T : Any?> T.logV(crossinline block: ILogMessageContext.(T) -> String) = apply {
@@ -33,22 +31,3 @@ infix fun <T : Any?> T.logD(msg: String) = apply { Log.d(msg) }
 infix fun <T : Any?> T.logI(msg: String) = apply { Log.i(msg) }
 infix fun <T : Any?> T.logW(msg: String) = apply { Log.w(msg) }
 infix fun <T : Any?> T.logE(msg: String) = apply { Log.e(msg) }
-
-fun <T : Any?> T.logV(msg: String, filter: LogFilter = EmptyLogFilter) = apply {
-    Log.v(
-        msg,
-        filter = filter
-    )
-}
-
-fun <T : Any?> T.logD(msg: String, filter: LogFilter = EmptyLogFilter) =
-    apply { Log.d(msg, filter = filter) }
-
-fun <T : Any?> T.logI(msg: String, filter: LogFilter = EmptyLogFilter) =
-    apply { Log.i(msg, filter = filter) }
-
-fun <T : Any?> T.logW(msg: String, filter: LogFilter = EmptyLogFilter) =
-    apply { Log.w(msg, filter = filter) }
-
-fun <T : Any?> T.logE(msg: String, filter: LogFilter = EmptyLogFilter) =
-    apply { Log.e(msg, filter = filter) }

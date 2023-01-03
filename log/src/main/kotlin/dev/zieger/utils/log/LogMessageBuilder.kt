@@ -2,7 +2,8 @@
 
 package dev.zieger.utils.log
 
-import dev.zieger.utils.log.filter.tag
+import dev.zieger.utils.log.filter.ILogId
+import dev.zieger.utils.log.filter.LogTagId
 import dev.zieger.utils.misc.anyOf
 import dev.zieger.utils.misc.nullWhen
 import dev.zieger.utils.misc.startsWithAny
@@ -14,19 +15,31 @@ import dev.zieger.utils.time.TimeFormat
 interface ILogMessageBuilder : IFilter<ILogMessageContext> {
 
     val build: LogMessageBuilderContext.() -> String
+    fun copyLogMessageBuilder(): ILogMessageBuilder
 }
 
 open class LogMessageBuilderContext(context: ILogMessageContext) : ILogMessageContext by context {
 
-    val tagFormatted: String?
-        get() = (messageTag ?: tag?.tag)?.let { "[$it]" }
+
+    val Any?.id: Any?
+        get() = (this as? ILogId)?.id
+
+    val Any?.tag: Any?
+        get() = (this as? LogTagId)?.tag ?: this
 
     fun callOrigin(
-        ignorePackages: List<String> = listOf("dev.zieger.utils.log.", "dev.zieger.utils.coroutines.", "kotlin"),
-        ignoreFiles: List<String> = listOf("Controllable.kt", "Observable.kt", "ExecuteExInternal.kt")
+        ignorePackages: List<String> = listOf(
+            "dev.zieger.utils",
+            "kotlin", "java", "jdk", "io.kotest"
+        ),
+        ignoreFiles: List<String> = listOf(
+            "Controllable.kt", "Observable.kt", "ExecuteExInternal.kt",
+            "NativeMethodAccessorImpl.java"
+        )
     ): String = Exception().stackTrace.firstOrNull { trace ->
         !trace.className.startsWithAny(*ignorePackages.toTypedArray())
                 && trace.fileName?.anyOf(ignoreFiles) == false
+                && trace.lineNumber >= 0
     }?.run {
         "[(${fileName}:${lineNumber})#${
             (className.split(".").last().split("$").getOrNull(1)
@@ -44,15 +57,27 @@ class LogMessageBuilder(
     companion object {
 
         val DEFAULT_LOG_MESSAGE: LogMessageBuilderContext.() -> String = {
-            "${level.short}-${time()}: ${throwable?.let { "$it\n${it.stackTraceToString()}\n" } ?: ""}" +
-                    "$message${tagFormatted?.let { " - $it" } ?: ""}"
+            val logTagId = messageTag ?: tag
+            val tagToLog = logTagId?.tag
+            val id = logTagId?.id
+            val tagFormatted = tagToLog?.let { "$it${id?.let { id -> ":$id" } ?: ""}]" }
+            "[${level.short}${tagFormatted?.let { "/$it" } ?: ""} ${time()}: $message" +
+                    (throwable?.let { "\n${it.stackTraceToString()}\n" } ?: "")
         }
         val LOG_MESSAGE_WITH_CALL_ORIGIN: LogMessageBuilderContext.() -> String = {
-            "${level.short}-${time()}-${callOrigin()}: $message${tagFormatted?.let { " - $it" } ?: ""}"
+            val logTagId = messageTag ?: tag
+            val tagToLog = logTagId?.tag
+            val id = logTagId?.id
+            val tagFormatted = tagToLog?.let { "$it${id?.let { id -> ":$id" } ?: ""}]" }
+            "[${level.short}${tagFormatted?.let { "/$it" } ?: ""} ${time()}|${callOrigin()}: $message" +
+                    (throwable?.let { "\n${it.stackTraceToString()}\n" } ?: "")
         }
     }
 
     override fun call(context: ILogMessageContext) {
-        context.message = LogMessageBuilderContext(context).build()
+        context.builtMessage = LogMessageBuilderContext(context).build()
     }
+
+    override fun copyLogMessageBuilder(): ILogMessageBuilder =
+        LogMessageBuilder(build)
 }

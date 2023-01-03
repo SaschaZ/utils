@@ -118,10 +118,6 @@ val DHS.ktorServerGson: EMD get() = ktorServerGson()
 fun DHS.ktorServerGson(config: Config = IMPL, action: Action<EMD> = TrasitiveAcztion()): EMD =
     add("io.ktor:ktor-jackson:${Versions.ktorVersion}", config, action)
 
-val DHS.lanterna: EMD get() = lanterna()
-fun DHS.lanterna(config: Config = IMPL, action: Action<EMD> = TrasitiveAcztion()): EMD =
-    add("com.googlecode.lanterna:lanterna:${Versions.lanternaVersion}", config, action)
-
 val DHS.oshi: EMD get() = oshi()
 fun DHS.oshi(config: Config = IMPL, action: Action<EMD> = TrasitiveAcztion()): EMD =
     add("com.github.oshi:oshi-core:${Versions.oshiVersion}", config, action)

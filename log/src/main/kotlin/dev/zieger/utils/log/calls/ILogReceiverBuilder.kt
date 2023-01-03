@@ -20,32 +20,37 @@ class LogReceiverBuilder(
 ) : ILogReceiverBuilder {
 
     override infix fun <T> T.logV(builder: ILogMessageContext.(T) -> Any): T = apply {
-        LogMessageContext(queue, tags, LogLevel.VERBOSE).run {
-            message = builder(this@apply); process()
+        LogMessageContext(queue, LogLevel.VERBOSE, tag = tags.tag).run {
+            message = builder(this@apply)
+            execute()
         }
     }
 
     override infix fun <T> T.logD(builder: ILogMessageContext.(T) -> Any): T = apply {
-        LogMessageContext(queue, tags, LogLevel.DEBUG).run {
-            message = builder(this@apply); process()
+        LogMessageContext(queue, LogLevel.DEBUG, tag = tags.tag).run {
+            message = builder(this@apply)
+            execute()
         }
     }
 
     override infix fun <T> T.logI(builder: ILogMessageContext.(T) -> Any): T = apply {
-        LogMessageContext(queue, tags, LogLevel.INFO).run {
-            message = builder(this@apply); process()
+        LogMessageContext(queue, LogLevel.INFO, tag = tags.tag).run {
+            message = builder(this@apply)
+            execute()
         }
     }
 
     override infix fun <T> T.logW(builder: ILogMessageContext.(T) -> Any): T = apply {
-        LogMessageContext(queue, tags, LogLevel.WARNING).run {
-            message = builder(this@apply); process()
+        LogMessageContext(queue, LogLevel.WARNING, tag = tags.tag).run {
+            message = builder(this@apply)
+            execute()
         }
     }
 
     override infix fun <T> T.logE(builder: ILogMessageContext.(T) -> Any): T = apply {
-        LogMessageContext(queue, tags, LogLevel.EXCEPTION).run {
-            message = builder(this@apply); process()
+        LogMessageContext(queue, LogLevel.EXCEPTION, tag = tags.tag).run {
+            message = builder(this@apply)
+            execute()
         }
     }
 }

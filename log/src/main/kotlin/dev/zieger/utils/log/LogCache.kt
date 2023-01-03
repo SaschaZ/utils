@@ -10,11 +10,11 @@ import dev.zieger.utils.misc.FiFo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
 
-interface ILogCache : IDelayFilter<ILogQueueContext> {
+interface ILogCache : IDelayFilter<ILogMessageContext> {
 
     data class LogMessage(
         val msg: String,
-        val context: ILogQueueContext
+        val context: ILogMessageContext
     )
 
     var cacheLogLevel: LogLevel
@@ -47,7 +47,7 @@ class LogCache(
         reset()
     }
 
-    override fun call(context: ILogQueueContext, next: IFilter<ILogQueueContext>) = context.run {
+    override fun call(context: ILogMessageContext, next: IFilter<ILogMessageContext>) = context.run {
         scope.launchEx(mutex = mutex) {
             cache[level.ordinal].second.put(LogMessage(message.toString(), context))
             listener(messages)

@@ -26,6 +26,5 @@ object Versions {
     val exposedVersion by GradleProperty()
     val dokkaVersion by GradleProperty()
     val jacocoVersion by GradleProperty()
-    val lanternaVersion by GradleProperty()
     val oshiVersion by GradleProperty()
 }

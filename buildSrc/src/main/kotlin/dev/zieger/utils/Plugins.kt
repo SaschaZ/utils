@@ -4,7 +4,6 @@ import org.gradle.api.Plugin
 
 fun ProjectContext.configPlugins(): Plugin<Any> =
     plugins.run {
-        apply("org.gradle.java-library")
         when (isAndroid) {
             true -> {
                 apply("com.android.application")
@@ -12,6 +11,7 @@ fun ProjectContext.configPlugins(): Plugin<Any> =
                 apply("kotlin-android-extensions")
             }
             false -> {
+                apply("org.gradle.java-library")
                 apply("kotlin")
             }
         }

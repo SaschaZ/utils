@@ -7,28 +7,43 @@ import dev.zieger.utils.log.filter.LogLevelFilter
 
 /**
  * Holds an [ILogContext] instance.
- * Should be used to define a custom [LogContext] for a class or interface.
  */
 interface ILogScope {
 
     val Log: ILogContext
 
     fun copy(
-        queue: ILogQueue = Log.copy(),
-        tags: ILogTag = Log.copyTags(),
-        logLevelFilter: ILogLevelFilter = Log.copyLogLevelFilter(queue),
+        messageBuilder: LogMessageBuilder = LogMessageBuilder(),
+        logTag: ILogTag = LogTag(),
+        output: ILogOutput = SystemPrintOutput,
+        logQueue: ILogQueue = LogQueue(
+            messageBuilder = messageBuilder,
+            output = output,
+            logTag = logTag
+        ),
+        logLevelFilter: ILogLevelFilter = LogLevelFilter(logQueue),
         block: ILogContext.() -> Unit = {}
-    ): ILogScope = LogScopeImpl(Log.copy(queue, tags, logLevelFilter, block))
+    ): ILogScope = LogScopeImpl(
+        Log.copy(messageBuilder, logTag, output, logQueue, logLevelFilter, block)
+    )
 
     fun reset(
-        queue: ILogQueue = LogQueue(
-            messageBuilder = LogMessageBuilder(),
-            output = SystemPrintOutput
+        messageBuilder: LogMessageBuilder = LogMessageBuilder(),
+        logTag: ILogTag = LogTag(),
+        output: ILogOutput = SystemPrintOutput,
+        logQueue: ILogQueue = LogQueue(
+            messageBuilder = messageBuilder,
+            output = output,
+            logTag = logTag
         ),
-        tags: ILogTag = LogTag(),
-        logLevelFilter: ILogLevelFilter = LogLevelFilter(queue),
+        logLevelFilter: ILogLevelFilter = LogLevelFilter(logQueue),
         block: ILogContext.() -> Unit = {}
-    )
+    ): ILogScope {
+        val log = LogContext(messageBuilder, logTag, output, logQueue, logLevelFilter)
+            .apply(block)
+        LogScope = LogScopeImpl(log)
+        return LogScope
+    }
 
     infix fun <T : Any?> T.logV(block: ILogMessageContext.(T) -> String) = apply {
         Log.run { logV { block(this@apply) } }
@@ -55,21 +70,6 @@ interface ILogScope {
     infix fun <T : Any?> T.logI(msg: String) = apply { Log.i(msg) }
     infix fun <T : Any?> T.logW(msg: String) = apply { Log.w(msg) }
     infix fun <T : Any?> T.logE(msg: String) = apply { Log.e(msg) }
-
-    fun <T : Any?> T.logV(msg: String, filter: LogFilter = EmptyLogFilter) =
-        apply { Log.v(msg, filter = filter) }
-
-    fun <T : Any?> T.logD(msg: String, filter: LogFilter = EmptyLogFilter) =
-        apply { Log.d(msg, filter = filter) }
-
-    fun <T : Any?> T.logI(msg: String, filter: LogFilter = EmptyLogFilter) =
-        apply { Log.i(msg, filter = filter) }
-
-    fun <T : Any?> T.logW(msg: String, filter: LogFilter = EmptyLogFilter) =
-        apply { Log.w(msg, filter = filter) }
-
-    fun <T : Any?> T.logE(msg: String, filter: LogFilter = EmptyLogFilter) =
-        apply { Log.e(msg, filter = filter) }
 }
 
 open class LogScopeImpl protected constructor(override var Log: ILogContext = LogContext()) : ILogScope {
@@ -83,16 +83,7 @@ open class LogScopeImpl protected constructor(override var Log: ILogContext = Lo
     }
 
     constructor(
-        tags: ILogTag,
+        tag: ILogTag,
         queue: ILogQueue
-    ) : this(LogContext(queue, logTags = tags))
-
-    override fun reset(
-        queue: ILogQueue,
-        tags: ILogTag,
-        logLevelFilter: ILogLevelFilter,
-        block: ILogContext.() -> Unit
-    ) {
-        Log = LogContext(queue, tags, logLevelFilter).apply(block)
-    }
+    ) : this(LogContext(logQueue = queue, logTag = tag))
 }

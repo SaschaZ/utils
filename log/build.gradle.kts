@@ -1,5 +1,6 @@
-import dev.zieger.utils.*
-import dev.zieger.utils.Config.API
+import dev.zieger.utils.coroutinesModule
+import dev.zieger.utils.miscModule
+import dev.zieger.utils.timeModule
 
 plugins {
     `java-library`
@@ -14,6 +15,4 @@ dependencies {
     coroutinesModule
     timeModule
     miscModule
-
-    coroutinesCore(API)
 }

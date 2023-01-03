@@ -26,9 +26,9 @@ fun ProjectContext.configAndroid() = extensions.getByType(AndroidBaseExtension::
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
 
-        getByName("debug") {
-            isTestCoverageEnabled = true
-        }
+//        getByName("debug") {
+//            isTestCoverageEnabled = true
+//        }
     }
 
     compileOptions {
