@@ -2,6 +2,7 @@
 
 package dev.zieger.utils.log
 
+import dev.zieger.utils.log.filter.tag
 import dev.zieger.utils.misc.anyOf
 import dev.zieger.utils.misc.nullWhen
 import dev.zieger.utils.misc.startsWithAny
@@ -10,15 +11,15 @@ import dev.zieger.utils.time.TimeFormat
 /**
  * Log-Message-Builder
  */
-interface ILogMessageBuilder : IFilter<LogPipelineContext> {
+interface ILogMessageBuilder : IFilter<ILogMessageContext> {
 
     val build: LogMessageBuilderContext.() -> String
 }
 
-open class LogMessageBuilderContext(pipelineContext: LogPipelineContext) : ILogPipelineContext by pipelineContext {
+open class LogMessageBuilderContext(context: ILogMessageContext) : ILogMessageContext by context {
 
     val tagFormatted: String?
-        get() = (messageTag ?: tag)?.let { "[$it]" }
+        get() = (messageTag ?: tag?.tag)?.let { "[$it]" }
 
     fun callOrigin(
         ignorePackages: List<String> = listOf("dev.zieger.utils.log.", "dev.zieger.utils.coroutines.", "kotlin"),
@@ -51,7 +52,7 @@ class LogMessageBuilder(
         }
     }
 
-    override fun call(context: LogPipelineContext) {
+    override fun call(context: ILogMessageContext) {
         context.message = LogMessageBuilderContext(context).build()
     }
 }

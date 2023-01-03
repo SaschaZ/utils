@@ -1,6 +1,6 @@
 package dev.zieger.utils.log
 
-import dev.zieger.utils.log.filter.LogId
+import dev.zieger.utils.log.filter.ILogId
 import dev.zieger.utils.log.filter.spamFilter
 import dev.zieger.utils.log.filter.withId
 import io.kotest.core.spec.style.AnnotationSpec
@@ -11,7 +11,7 @@ import kotlinx.coroutines.runBlocking
 
 class SpamFilterTest : AnnotationSpec() {
 
-    object TestTag : LogId {
+    object TestTag : ILogId {
         override var id: Any? = null
 
         override fun toString(): String = this::class.simpleName!!

@@ -1,7 +1,10 @@
 package dev.zieger.utils.log.filter
 
 import dev.zieger.utils.coroutines.builder.launchEx
-import dev.zieger.utils.log.*
+import dev.zieger.utils.log.IFilter
+import dev.zieger.utils.log.ILogContext
+import dev.zieger.utils.log.ILogQueueContext
+import dev.zieger.utils.log.LogFilter
 import dev.zieger.utils.time.*
 import kotlinx.coroutines.*
 import java.util.*
@@ -26,7 +29,7 @@ fun ILogContext.addMessageSpamFilter(
     }
 }
 
-fun ILogContext.addSpamFilter(block: ILogMessageContext.(LogMessage) -> ITimeSpan?) {
+fun ILogContext.addSpamFilter(block: ILogQueueContext.(LogMessage) -> ITimeSpan?) {
     val scope = CoroutineScope(Dispatchers.IO)
     val delayed = HashMap<LogMessage, () -> Unit>()
     val filterCount = HashMap<LogMessage, Int>()
@@ -87,7 +90,7 @@ data class LogSpamFilter(
     private var previousMessageAt: ITimeStamp = TimeStamp(0.0)
     private var lastMessageJob: Job? = null
 
-    override fun call(context: LogPipelineContext, next: IFilter<LogPipelineContext>) = context.run {
+    override fun call(context: ILogQueueContext, next: IFilter<ILogQueueContext>) = context.run {
         val diff = TimeStamp() - previousMessageAt
         lastMessageJob?.cancel()
         when {
@@ -95,6 +98,7 @@ data class LogSpamFilter(
                 next(context)
                 previousMessageAt = TimeStamp()
             }
+
             else -> {
                 lastMessageJob = scope.launchEx(
                     delayed = minInterval - diff,
@@ -121,7 +125,7 @@ fun ILogContext.spamFilter(
     val spamMessages = HashMap<Any, SpammyLogMessage>()
 
     addPreFilter { next ->
-        ((messageTag ?: tag) as? LogId)?.id?.let { id ->
+        ((messageTag ?: tag) as? ILogId)?.id?.let { id ->
             spamMessages[id]?.let {
                 if (it.job.isActive) {
                     it.job.cancel()
@@ -144,15 +148,25 @@ fun ILogContext.spamFilter(
 private data class SpammyLogMessage(
     val job: Job,
     val message: Any,
-    val ctx: LogPipelineContext,
-    val next: LogPipelineContext.() -> Unit
+    val ctx: ILogQueueContext,
+    val next: ILogQueueContext.() -> Unit
 )
 
-interface LogId {
-    var id: Any?
+interface ILogId {
+    val id: Any?
 }
 
-infix fun <T : LogId> T.withId(id: Any): T {
-    this.id = id
-    return this
+class LogTagId(
+    val tag: Any?,
+    override val id: Any?
+) : ILogId {
+    override fun toString(): String = "$tag"
 }
+
+infix fun Any.withId(id: Any): Any = LogTagId(this, id)
+
+val Any.id: Any?
+    get() = (this as? ILogId)?.id
+
+val Any.tag: Any
+    get() = (this as? ILogId)?.tag ?: this

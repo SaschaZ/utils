@@ -7,37 +7,37 @@ import dev.zieger.utils.log.LogFilter.LogPreFilter
 import dev.zieger.utils.misc.asUnit
 import java.util.*
 
-interface ILogPipeline {
+interface ILogQueue {
     var messageBuilder: ILogMessageBuilder
     var output: ILogOutput
 
     fun addFilter(filter: LogFilter)
     fun addPreFilter(
         tag: Any? = null,
-        block: LogPipelineContext.(next: LogPipelineContext.() -> Unit) -> Unit
+        block: ILogQueueContext.(next: ILogQueueContext.() -> Unit) -> Unit
     ) = addFilter(logPreFilter(tag, block))
 
     fun addPostFilter(
         tag: Any? = null,
-        block: LogPipelineContext.(next: LogPipelineContext.() -> Unit) -> Unit
+        block: ILogQueueContext.(next: ILogQueueContext.() -> Unit) -> Unit
     ) = addFilter(logPostFilter(tag, block))
 
     fun removeFilter(filter: LogFilter)
 
     fun ILogMessageContext.process()
 
-    fun copyPipeline(): ILogPipeline
+    fun copyQueue(): ILogQueue
 }
 
 /**
  *
  */
-open class LogPipeline(
+open class LogQueue(
     override var messageBuilder: ILogMessageBuilder,
     override var output: ILogOutput,
     private val preHook: MutableList<LogPreFilter?> = ArrayList(),
     private val postHook: MutableList<LogPostFilter?> = ArrayList()
-) : ILogPipeline {
+) : ILogQueue {
 
     override fun addFilter(filter: LogFilter) = when (filter) {
         is LogPostFilter -> postHook.add(filter)
@@ -50,25 +50,25 @@ open class LogPipeline(
     }.asUnit()
 
     override fun ILogMessageContext.process() {
-        LogPipelineContext(this).apply {
+        LogQueueContext(this).apply {
             filter.run {
                 call(this@apply, filter {
-                    preHook.pipeExecute(this, filter {
+                    preHook.executeQueue(this, filter {
                         messageBuilder(this)
-                        postHook.pipeExecute(this, output)
+                        postHook.executeQueue(this, output)
                     })
                 })
             }
         }
     }
 
-    override fun copyPipeline() = LogPipeline(messageBuilder, output,
+    override fun copyQueue() = LogQueue(messageBuilder, output,
         preHook.map { it?.copy() }.toMutableList(), postHook.map { it?.copy() }.toMutableList()
     )
 }
 
 
-private fun <C : ICancellable> Collection<IDelayFilter<C>?>.pipeExecute(
+private fun <C : ICancellable> Collection<IDelayFilter<C>?>.executeQueue(
     context: C,
     endAction: IFilter<C>
 ) {
@@ -106,11 +106,11 @@ interface IFilter<in C : ICancellable> {
     operator fun invoke(context: C) = call(context)
 }
 
-interface ILogPipelineContext : ILogMessageContext, ICancellable
+interface ILogQueueContext : ILogMessageContext, ICancellable
 
-open class LogPipelineContext(
+open class LogQueueContext(
     messageContext: ILogMessageContext
-) : ILogPipelineContext, ILogMessageContext by messageContext {
+) : ILogQueueContext, ILogMessageContext by messageContext {
 
     override var isCancelled: Boolean = false
 
@@ -128,7 +128,7 @@ private inline fun <C : ICancellable> filter(crossinline block: C.() -> Unit): I
     override fun call(context: C) = block(context)
 }
 
-sealed class LogFilter : IDelayFilter<LogPipelineContext> {
+sealed class LogFilter : IDelayFilter<ILogQueueContext> {
 
     abstract val tag: Any?
     abstract fun copy(): LogFilter
@@ -144,23 +144,23 @@ sealed class LogFilter : IDelayFilter<LogPipelineContext> {
 
 inline fun logPreFilter(
     tag: Any? = null,
-    crossinline block: LogPipelineContext.(next: LogPipelineContext.() -> Unit) -> Unit
+    crossinline block: ILogQueueContext.(next: ILogQueueContext.() -> Unit) -> Unit
 ): LogPreFilter =
     object : LogPreFilter(tag) {
-        override fun call(context: LogPipelineContext, next: IFilter<LogPipelineContext>) = context.block { next(this) }
+        override fun call(context: ILogQueueContext, next: IFilter<ILogQueueContext>) = context.block { next(this) }
         override fun copy(): LogPreFilter = this
     }
 
 inline fun logPostFilter(
     tag: Any? = null,
-    crossinline block: LogPipelineContext.(next: LogPipelineContext.() -> Unit) -> Unit
+    crossinline block: ILogQueueContext.(next: ILogQueueContext.() -> Unit) -> Unit
 ): LogPostFilter =
     object : LogPostFilter(tag) {
-        override fun call(context: LogPipelineContext, next: IFilter<LogPipelineContext>) = context.block { next(this) }
+        override fun call(context: ILogQueueContext, next: IFilter<ILogQueueContext>) = context.block { next(this) }
         override fun copy(): LogPostFilter = this
     }
 
-object EmptyLogFilter : LogPreFilter(), IDelayFilter<LogPipelineContext> {
-    override fun call(context: LogPipelineContext, next: IFilter<LogPipelineContext>) = next(context)
+object EmptyLogFilter : LogPreFilter(), IDelayFilter<ILogQueueContext> {
+    override fun call(context: ILogQueueContext, next: IFilter<ILogQueueContext>) = next(context)
     override fun copy(): EmptyLogFilter = this
 }

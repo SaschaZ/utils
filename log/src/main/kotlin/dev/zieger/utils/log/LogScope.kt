@@ -3,7 +3,7 @@
 package dev.zieger.utils.log
 
 import dev.zieger.utils.log.filter.ILogLevelFilter
-import dev.zieger.utils.misc.cast
+import dev.zieger.utils.log.filter.LogLevelFilter
 
 /**
  * Holds an [ILogContext] instance.
@@ -14,16 +14,19 @@ interface ILogScope {
     val Log: ILogContext
 
     fun copy(
-        pipeline: ILogPipeline = Log.cast<ILogPipeline>().copyPipeline(),
-        tags: ILogTag = Log.cast<ILogTag>().copyTags(),
-        logLevelFilter: ILogLevelFilter = Log.cast<ILogLevelFilter>().copyLogLevelFilter(pipeline),
+        queue: ILogQueue = Log.copy(),
+        tags: ILogTag = Log.copyTags(),
+        logLevelFilter: ILogLevelFilter = Log.copyLogLevelFilter(queue),
         block: ILogContext.() -> Unit = {}
-    ): ILogScope = LogScopeImpl(Log.copy(pipeline, tags, logLevelFilter, block))
+    ): ILogScope = LogScopeImpl(Log.copy(queue, tags, logLevelFilter, block))
 
     fun reset(
-        pipeline: ILogPipeline = Log.cast<ILogPipeline>().copyPipeline(),
-        tags: ILogTag = Log.cast<ILogTag>().copyTags(),
-        logLevelFilter: ILogLevelFilter = Log.cast<ILogLevelFilter>().copyLogLevelFilter(pipeline),
+        queue: ILogQueue = LogQueue(
+            messageBuilder = LogMessageBuilder(),
+            output = SystemPrintOutput
+        ),
+        tags: ILogTag = LogTag(),
+        logLevelFilter: ILogLevelFilter = LogLevelFilter(queue),
         block: ILogContext.() -> Unit = {}
     )
 
@@ -81,15 +84,15 @@ open class LogScopeImpl protected constructor(override var Log: ILogContext = Lo
 
     constructor(
         tags: ILogTag,
-        pipeline: ILogPipeline
-    ) : this(LogContext(pipeline, tags))
+        queue: ILogQueue
+    ) : this(LogContext(queue, logTags = tags))
 
     override fun reset(
-        pipeline: ILogPipeline,
+        queue: ILogQueue,
         tags: ILogTag,
         logLevelFilter: ILogLevelFilter,
         block: ILogContext.() -> Unit
     ) {
-        Log = Log.copy(pipeline, tags, logLevelFilter, block)
+        Log = LogContext(queue, tags, logLevelFilter).apply(block)
     }
 }

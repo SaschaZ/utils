@@ -8,23 +8,35 @@ import kotlinx.coroutines.CoroutineScope
 /**
  * Log-Message-Context
  */
-interface ILogMessageContext : ILogContext {
+interface ILogMessageContext : ILogQueue, ILogTag, ICancellable {
     var level: LogLevel
     var throwable: Throwable?
     var coroutineScope: CoroutineScope?
     var createdAt: ITimeStamp
     var message: Any
     var messageTag: Any?
-    var filter: IDelayFilter<LogPipelineContext>
+    var filter: IDelayFilter<ILogQueueContext>
 }
 
 class LogMessageContext(
-    val logContext: ILogContext,
+    private val queue: ILogQueue,
+    private val tags: ILogTag,
     override var level: LogLevel,
     override var throwable: Throwable? = null,
     override var message: Any = "",
     override var coroutineScope: CoroutineScope? = null,
     override var createdAt: ITimeStamp = TimeStamp(),
-    override var filter: IDelayFilter<LogPipelineContext> = EmptyLogFilter,
+    override var filter: IDelayFilter<ILogQueueContext> = EmptyLogFilter,
     override var messageTag: Any? = null
-) : ILogContext by logContext, ILogMessageContext
+) : ILogQueue by queue,
+    ILogTag by tags,
+    ICancellable,
+    ILogMessageContext {
+
+    override var isCancelled: Boolean = false
+
+    override fun cancel() {
+        isCancelled = true
+    }
+
+}
