@@ -1,20 +1,18 @@
-import dev.zieger.utils.*
-
 plugins {
-    `java-library`
-    id("dev.zieger.utils")
-}
-
-utils {
-    moduleName = "utils"
+    id("java")
+    id("org.gradle.java-library")
+    id("kotlin")
+    kotlin("plugin.serialization")
+    id("maven-publish")
+    id("org.jetbrains.dokka")
+    id("org.gradle.jacoco")
 }
 
 dependencies {
-    coroutinesModule
-    koinModule
-    miscModule
-    logModule
-    observablesModule
-    stateMachineModule
-    timeModule
+    api(project(":coroutines"))
+    api(project(":time"))
+    api(project(":misc"))
+    api(project(":globals"))
+    api(project(":observables"))
+    api(project(":statemachine"))
 }

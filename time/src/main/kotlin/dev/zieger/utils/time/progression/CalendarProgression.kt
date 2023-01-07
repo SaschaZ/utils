@@ -3,7 +3,6 @@ package dev.zieger.utils.time.progression
 import dev.zieger.utils.time.ITimeStamp
 import dev.zieger.utils.time.TimeStamp
 
-@Deprecated("Will be deleted soon")
 open class CalendarProgression(
     val start: ITimeStamp,
     val end: () -> ITimeStamp,

@@ -1,6 +1,5 @@
 package dev.zieger.utils.log.filter
 
-import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.log.IFilter
 import dev.zieger.utils.log.ILogContext
 import dev.zieger.utils.log.ILogMessageContext
@@ -87,15 +86,10 @@ data class LogSpamFilter(
             }
 
             else -> {
-                lastMessageJob = scope.launchEx(
-                    delayed = minInterval - diff,
-                    printStackTrace = false,
-                    exclude = emptyList(),
-                    onFinally = { lastMessageJob = null },
-                    onCatch = { if (it is CancellationException) cancel() }
-                ) {
+                lastMessageJob = scope.launch {
                     next(context)
                     previousMessageAt = TimeStamp()
+                    lastMessageJob = null
                 }
             }
         }
