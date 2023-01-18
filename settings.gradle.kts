@@ -5,15 +5,10 @@ pluginManagement {
         id("org.jetbrains.kotlin.kapt") version kotlinVersion
         id("org.jetbrains.kotlin.plugin.serialization") version kotlinVersion
         id("org.gradle.java-library")
-
-        val dokkaVersion: String by settings
-        id("org.jetbrains.dokka") version dokkaVersion
-
-        id("org.gradle.jacoco")
+        id("org.jetbrains.dokka") version kotlinVersion
     }
     repositories {
         gradlePluginPortal()
-        maven(url = "https://dl.bintray.com/kotlin/dokka")
     }
 }
 

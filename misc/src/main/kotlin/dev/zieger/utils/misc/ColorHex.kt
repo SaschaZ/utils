@@ -74,12 +74,3 @@ private val Int.hexChar: String
         this == 14 -> "E"
         else -> "F"
     }
-
-val Color.inverted: Color
-    get() = Color(value and (0xFFFFFFFF).toInt())
-
-val Color.value: Int
-    get() = alpha / 0xFF * 2.0.pow(32.0).toInt() +
-            red / 0xFF * 2.0.pow(24.0).toInt() +
-            green / 0xFF * 2.0.pow(16.0).toInt() +
-            blue / 0xFF * 2.0.pow(8.0).toInt()

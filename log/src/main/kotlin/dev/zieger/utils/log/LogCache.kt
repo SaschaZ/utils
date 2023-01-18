@@ -2,14 +2,13 @@
 
 package dev.zieger.utils.log
 
+import dev.zieger.utils.coroutines.builder.launchEx
 import dev.zieger.utils.log.ILogCache.LogMessage
 import dev.zieger.utils.log.LogFilter.LogPostFilter
 import dev.zieger.utils.log.filter.LogLevel
 import dev.zieger.utils.misc.FiFo
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 interface ILogCache : IDelayFilter<ILogMessageContext> {
 
@@ -49,11 +48,9 @@ class LogCache(
     }
 
     override fun call(context: ILogMessageContext, next: IFilter<ILogMessageContext>) = context.run {
-        scope.launch {
-            mutex.withLock {
-                cache[level.ordinal].second.put(LogMessage(message.toString(), context))
-                listener(messages)
-            }
+        scope.launchEx(mutex = mutex) {
+            cache[level.ordinal].second.put(LogMessage(message.toString(), context))
+            listener(messages)
         }
         next(this)
     }
