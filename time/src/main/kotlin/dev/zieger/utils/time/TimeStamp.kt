@@ -27,42 +27,12 @@ interface ITimeStamp : ITimeSpanBase<ITimeStamp> {
 
     val date: Date get() = Date(millis.toLong())
 
-    val calendar: Calendar
-        get() = (zone?.let { Calendar.getInstance(it) } ?: Calendar.getInstance()).apply {
-            timeInMillis = millis.toLong()
-        }
-
-    /**
-     * @see [Calendar.get]
-     */
-    fun getCalendarField(field: Int) = calendar.get(field)
-
-    val year: Int get() = getCalendarField(Calendar.YEAR)
-    val month: Int get() = getCalendarField(Calendar.MONTH)
-    val weekOfYear: Int get() = getCalendarField(Calendar.WEEK_OF_YEAR)
-    val dayOfYear: Int get() = getCalendarField(Calendar.DAY_OF_YEAR)
-    val dayOfMonth: Int get() = getCalendarField(Calendar.DAY_OF_MONTH)
-    val dayOfWeek: Int get() = getCalendarField(Calendar.DAY_OF_WEEK)
-    val hourOfDay: Int get() = getCalendarField(Calendar.HOUR_OF_DAY)
-    val minuteOfHour: Int get() = getCalendarField(Calendar.MINUTE)
-    val secondOfMinute: Int get() = getCalendarField(Calendar.SECOND)
-    val milliOfSecond: Int get() = getCalendarField(Calendar.MILLISECOND)
-
-    val daysInMonth: Int get() = (month + 1).daysInMonth(year)
-
-    val startOfYear: ITimeStamp get() = "1.1.$year".parse(zone)
-    val startOfMonth: ITimeStamp get() = "1.${month + 1}.$year".parse(zone)
-    val startOfDay: ITimeStamp get() = "$dayOfMonth.${month + 1}.$year".parse(zone)
-    val startOfHour: ITimeStamp get() = "$dayOfMonth.${month + 1}.$year-$hourOfDay:00:00".parse(zone)
-    val startOfMinute: ITimeStamp get() = "$dayOfMonth.${month + 1}.$year-$hourOfDay:$minuteOfHour:00".parse(zone)
-    val startOfSecond: ITimeStamp get() = "$dayOfMonth.${month + 1}.$year-$hourOfDay:$minuteOfHour:$secondOfMinute".parse(zone)
-
     fun plusMonths(monthAmount: Int): TimeStamp = if (monthAmount < 0) minusMonths(monthAmount.absoluteValue) else
-        ("$dayOfMonth.${(month + monthAmount) % 12 + 1}.${year + ((month + monthAmount) / 12)}-" +
+        ("$dayOfMonth.${(monthOfYear + monthAmount) % 12 + 1}.${year + ((monthOfYear + monthAmount) / 12)}-" +
                 "$hourOfDay:$minuteOfHour:$secondOfMinute.$milliOfSecond").parse(zone)
 
     fun minusMonths(monthAmount: Int): TimeStamp = if (monthAmount < 0) plusMonths(monthAmount.absoluteValue) else
-        ("$dayOfMonth.${(month - monthAmount) % 12 + 1}.${year + ((month - monthAmount) / 12)}-" +
+        ("$dayOfMonth.${(monthOfYear - monthAmount) % 12 + 1}.${year + ((monthOfYear - monthAmount) / 12)}-" +
                 "$hourOfDay:$minuteOfHour:$secondOfMinute.$milliOfSecond").parse(zone)
 
 

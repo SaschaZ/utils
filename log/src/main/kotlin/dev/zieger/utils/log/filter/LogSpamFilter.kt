@@ -7,25 +7,27 @@ import dev.zieger.utils.log.ILogMessageContext
 import dev.zieger.utils.log.LogFilter
 import dev.zieger.utils.time.*
 import kotlinx.coroutines.*
-import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 
 
 fun ILogContext.addMessageSpamFilter(
     spamDuration: ITimeSpan = 1.seconds
 ) {
     val scope = CoroutineScope(Dispatchers.IO)
-    val filterItems = HashMap<Any, LinkedList<ITimeStamp>>()
-    val nextJobs = HashMap<Any, Pair<Job, () -> Unit>>()
+    val filterItems = ConcurrentHashMap<Any, ConcurrentLinkedQueue<ITimeStamp>>()
+    val nextJobs = ConcurrentHashMap<Any, Pair<Job, () -> Unit>>()
 
     addSpamFilter {
-        val times = filterItems.getOrPut(message) { LinkedList() }
+        val times = filterItems.getOrPut(message) { ConcurrentLinkedQueue() }
         val now = TimeStamp()
         times.add(now)
-        val messagesPerSecond = times.count { now - it < spamDuration }
+        val messagesPerSecond = times.any { now - it < spamDuration }
 
-        "$message" to if (messagesPerSecond <= 1)
+        "$message" to if (!messagesPerSecond) {
+            times.clear()
             0.seconds
-        else spamDuration
+        } else spamDuration
     }
 }
 
@@ -33,8 +35,8 @@ fun ILogContext.addSpamFilter(
     scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
     block: ILogMessageContext.(String) -> Pair<Any, ITimeSpan?>
 ) {
-    val delayed = HashMap<Any, () -> Unit>()
-    val filterCount = HashMap<Any, Int>()
+    val delayed = ConcurrentHashMap<Any, () -> Unit>()
+    val filterCount = ConcurrentHashMap<Any, Int>()
 
     addPostFilter { next ->
         val (key, toDelay) = block("$message")
@@ -55,7 +57,7 @@ fun ILogContext.addSpamFilter(
                 val job = scope.launch {
                     delay(toDelay)
                     delayed.remove(key)
-                    builtMessage = "$builtMessage (was filtered ${filterCount[key]} times)"
+                    buildedMessage = "$buildedMessage (was filtered ${filterCount[key]} times)"
                     filterCount[key] = 0
                     next()
                 }
@@ -109,7 +111,7 @@ fun ILogContext.spamFilter(
     scope: CoroutineScope,
     interval: ITimeSpan = 500.millis
 ) {
-    val spamMessages = HashMap<Any, SpammyLogMessage>()
+    val spamMessages = ConcurrentHashMap<Any, SpammyLogMessage>()
 
     addPreFilter { next ->
         ((messageTag ?: tag) as? ILogId)?.id?.let { id ->

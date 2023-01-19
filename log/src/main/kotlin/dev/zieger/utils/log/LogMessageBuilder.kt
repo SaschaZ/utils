@@ -5,7 +5,6 @@ package dev.zieger.utils.log
 import dev.zieger.utils.log.filter.ILogId
 import dev.zieger.utils.log.filter.LogTagId
 import dev.zieger.utils.misc.anyOf
-import dev.zieger.utils.misc.nullWhen
 import dev.zieger.utils.misc.startsWithAny
 import dev.zieger.utils.time.TimeFormat
 
@@ -41,10 +40,7 @@ open class LogMessageBuilderContext(context: ILogMessageContext) : ILogMessageCo
                 && trace.fileName?.anyOf(ignoreFiles) == false
                 && trace.lineNumber >= 0
     }?.run {
-        "[(${fileName}:${lineNumber})#${
-            (className.split(".").last().split("$").getOrNull(1)
-                ?: methodName).nullWhen { it == "DefaultImpls" } ?: ""
-        }]"
+        "(${fileName}:${lineNumber})"
     } ?: ""
 
     fun time(format: TimeFormat = TimeFormat.TIME_ONLY) = createdAt.formatTime(format)
@@ -75,7 +71,7 @@ class LogMessageBuilder(
     }
 
     override fun call(context: ILogMessageContext) {
-        context.builtMessage = LogMessageBuilderContext(context).build()
+        context.buildedMessage = LogMessageBuilderContext(context).build()
     }
 
     override fun copyLogMessageBuilder(): ILogMessageBuilder =

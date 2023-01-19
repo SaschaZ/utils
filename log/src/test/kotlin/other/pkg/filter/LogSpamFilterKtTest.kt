@@ -1,4 +1,4 @@
-package other.`package`.filter
+package other.pkg.filter
 
 import dev.zieger.utils.log.Log
 import dev.zieger.utils.log.LogMessageBuilder

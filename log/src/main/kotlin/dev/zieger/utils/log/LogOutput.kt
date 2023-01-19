@@ -9,8 +9,8 @@ interface ILogOutput : IFilter<ILogMessageContext> {
 object SystemPrintOutput : ILogOutput {
 
     override fun call(context: ILogMessageContext) = when (context.level) {
-        EXCEPTION -> System.err.println(context.builtMessage)
-        else -> println(context.builtMessage)
+        EXCEPTION -> System.err.println(context.buildedMessage)
+        else -> println(context.buildedMessage)
     }
 
     override fun copyLogOutput(): ILogOutput = SystemPrintOutput

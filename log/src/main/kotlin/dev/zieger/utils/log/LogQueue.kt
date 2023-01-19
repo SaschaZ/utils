@@ -6,6 +6,7 @@ import dev.zieger.utils.log.LogFilter.LogPostFilter
 import dev.zieger.utils.log.LogFilter.LogPreFilter
 import dev.zieger.utils.misc.asUnit
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 import dev.zieger.utils.log.filter as logFIlter
 
 interface ILogQueue {
@@ -51,8 +52,8 @@ open class LogQueue(
 
     override fun ILogMessageContext.execute() {
         preHook.executeQueue(this, logFIlter {
-            if (isCancelled) return@logFIlter
-            messageBuilder.call(this@execute)
+            if (isCancelled.get()) return@logFIlter
+            messageBuilder.call(this@logFIlter)
             postHook.executeQueue(this, output)
         })
     }
@@ -74,20 +75,20 @@ private fun <C : ICancellable> Collection<IDelayFilter<C>?>.executeQueue(
             else -> lambdas[idx - 1]
         }
         lambdas.add(logFIlter {
-            if (isCancelled) return@logFIlter
+            if (isCancelled.get()) return@logFIlter
             f(this, logFIlter innerFilter@{
-                if (isCancelled) return@innerFilter
+                if (isCancelled.get()) return@innerFilter
                 lambda(this)
             })
         })
     }
 
-    if (!context.isCancelled) (lambdas.lastOrNull() ?: endAction)(context)
+    if (!context.isCancelled.get()) (lambdas.lastOrNull() ?: endAction)(context)
 }
 
 interface ICancellable {
 
-    val isCancelled: Boolean
+    val isCancelled: AtomicBoolean
     fun cancel()
 }
 

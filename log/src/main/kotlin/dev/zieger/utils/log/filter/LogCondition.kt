@@ -4,7 +4,7 @@ import dev.zieger.utils.log.IFilter
 import dev.zieger.utils.log.ILogMessageContext
 import dev.zieger.utils.log.LogFilter
 
-class LogCondition(val condition: ILogMessageContext.() -> Boolean) : LogFilter.LogPreFilter() {
+open class LogCondition(val condition: ILogMessageContext.() -> Boolean) : LogFilter.LogPreFilter() {
 
     override fun copy(): LogPreFilter = LogCondition(condition)
 

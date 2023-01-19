@@ -5,7 +5,7 @@ sealed class TimeFormat(val pattern: String) {
     object COMPLETE : TimeFormat("d.M.yyyy-HH:mm:ss")
     object COMPLETE_ZERO : TimeFormat("dd.MM.yyyy-HH:mm:ss")
     object DATE_ONLY : TimeFormat("dd.MM.yyyy")
-    object TIME_ONLY : TimeFormat("HH:mm:ss-SSS")
+    object TIME_ONLY : TimeFormat("HH:mm:ss.SSS")
     object HaM : TimeFormat("HH:mm")
     object PLOT : TimeFormat("yyyy-MM-dd HH:mm:ss")
     object FILENAME : TimeFormat("yyyy-MM-dd-HH-mm-ss")
