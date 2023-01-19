@@ -13,12 +13,17 @@ import dev.zieger.utils.time.TimeFormat
  */
 interface ILogMessageBuilder : IFilter<ILogMessageContext> {
 
-    val build: LogMessageBuilderContext.() -> String
+    val build: LogMessageBuilderContext.(withwithOriginClassNameName: Boolean, withOriginMethodName: Boolean) -> String
+
+    var logWithOriginClassNameName: Boolean
+    var logWithOriginMethodNameName: Boolean
+
     fun copyLogMessageBuilder(): ILogMessageBuilder
 }
 
-open class LogMessageBuilderContext(context: ILogMessageContext) : ILogMessageContext by context {
-
+open class LogMessageBuilderContext(
+    context: ILogMessageContext
+) : ILogMessageContext by context {
 
     val Any?.id: Any?
         get() = (this as? ILogId)?.id
@@ -27,6 +32,7 @@ open class LogMessageBuilderContext(context: ILogMessageContext) : ILogMessageCo
         get() = (this as? LogTagId)?.tag ?: this
 
     fun callOrigin(
+        withCallOriginMethod: Boolean,
         ignorePackages: List<String> = listOf(
             "dev.zieger.utils",
             "kotlin", "java", "jdk", "io.kotest"
@@ -40,14 +46,17 @@ open class LogMessageBuilderContext(context: ILogMessageContext) : ILogMessageCo
                 && trace.fileName?.anyOf(ignoreFiles) == false
                 && trace.lineNumber >= 0
     }?.run {
-        "(${fileName}:${lineNumber})"
+        "(${fileName}:${lineNumber})${if (withCallOriginMethod) "#$methodName" else ""}"
     } ?: ""
 
     fun time(format: TimeFormat = TimeFormat.TIME_ONLY) = createdAt.formatTime(format)
 }
 
 class LogMessageBuilder(
-    override val build: LogMessageBuilderContext.() -> String = DEFAULT_LOG_MESSAGE
+    override val build: LogMessageBuilderContext.(withOriginClassName: Boolean, withOriginMethodName: Boolean) -> String = { callwithOriginClassNameName, callwithOriginMethodNameName ->
+        if (callwithOriginClassNameName) LOG_MESSAGE_WITH_CALL_ORIGIN(callwithOriginMethodNameName)
+        else DEFAULT_LOG_MESSAGE()
+    }
 ) : ILogMessageBuilder {
 
     companion object {
@@ -60,18 +69,29 @@ class LogMessageBuilder(
             "[${level.short}${tagFormatted?.let { "/$it" } ?: ""} ${time()}: $message" +
                     (throwable?.let { "\n${it.stackTraceToString()}\n" } ?: "")
         }
-        val LOG_MESSAGE_WITH_CALL_ORIGIN: LogMessageBuilderContext.() -> String = {
-            val logTagId = messageTag ?: tag
-            val tagToLog = logTagId?.tag
-            val id = logTagId?.id
-            val tagFormatted = tagToLog?.let { "$it${id?.let { id -> ":$id" } ?: ""}]" }
-            "[${level.short}${tagFormatted?.let { "/$it" } ?: ""} ${time()}|${callOrigin()}: $message" +
-                    (throwable?.let { "\n${it.stackTraceToString()}\n" } ?: "")
-        }
+        val LOG_MESSAGE_WITH_CALL_ORIGIN: LogMessageBuilderContext.(withOriginMethod: Boolean) -> String =
+            { withOriginMethod ->
+                val logTagId = messageTag ?: tag
+                val tagToLog = logTagId?.tag
+                val id = logTagId?.id
+                val tagFormatted = tagToLog?.let { "$it${id?.let { id -> ":$id" } ?: ""}]" }
+                "[${level.short}${tagFormatted?.let { "/$it" } ?: ""} ${time()}|" +
+                        "${callOrigin(withOriginMethod)}: $message" +
+                        (throwable?.let { "\n${it.stackTraceToString()}\n" } ?: "")
+            }
     }
 
+    override var logWithOriginClassNameName: Boolean = false
+    override var logWithOriginMethodNameName: Boolean = logWithOriginClassNameName
+        set(value) {
+            field = value
+            if (value)
+                logWithOriginClassNameName = true
+        }
+
     override fun call(context: ILogMessageContext) {
-        context.buildedMessage = LogMessageBuilderContext(context).build()
+        context.buildedMessage = LogMessageBuilderContext(context)
+            .build(logWithOriginClassNameName, logWithOriginMethodNameName)
     }
 
     override fun copyLogMessageBuilder(): ILogMessageBuilder =
