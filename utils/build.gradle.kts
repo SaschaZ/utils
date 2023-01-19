@@ -11,7 +11,6 @@ utils {
 
 dependencies {
     coroutinesModule
-    koinModule
     miscModule
     logModule
     observablesModule

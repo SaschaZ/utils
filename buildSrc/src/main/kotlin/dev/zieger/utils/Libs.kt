@@ -42,10 +42,6 @@ val DHS.coroutinesModule: MD get() = coroutines()
 fun DHS.coroutines(action: Action<MD> = TrasitiveAcztion()): MD =
     addModule("coroutines", action = action)
 
-val DHS.koinModule: MD get() = koinModule()
-fun DHS.koinModule(action: Action<MD> = TrasitiveAcztion()): MD =
-    addModule("koin", action = action)
-
 val DHS.logModule: MD get() = logModule()
 fun DHS.logModule(action: Action<MD> = TrasitiveAcztion()): MD =
     addModule("log", action = action)

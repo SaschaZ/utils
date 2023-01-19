@@ -15,7 +15,6 @@ pluginManagement {
 rootProject.name = "utils"
 include("coroutines")
 include("globals")
-include("koin")
 include("log")
 include("misc")
 include("statemachine")
