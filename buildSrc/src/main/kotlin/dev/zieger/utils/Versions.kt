@@ -19,7 +19,6 @@ object Versions {
     val kotlinCoroutinesVersion by GradleProperty()
     val kotlinSerializationVersion by GradleProperty()
     val ktorVersion by GradleProperty()
-    val koinVersion by GradleProperty()
     val mockkVersion by GradleProperty()
     val kotestVersion by GradleProperty()
     val composeVersion by GradleProperty()

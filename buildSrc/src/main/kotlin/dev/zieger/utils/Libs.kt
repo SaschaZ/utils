@@ -98,10 +98,6 @@ val DHS.kotlinSerialization: EMD get() = kotlinSerialization()
 fun DHS.kotlinSerialization(config: Config = IMPL, action: Action<EMD> = TrasitiveAcztion()): EMD =
     add("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinSerializationVersion}", config, action)
 
-val DHS.koin: EMD get() = koin()
-fun DHS.koin(config: Config = IMPL, action: Action<EMD> = TrasitiveAcztion()): EMD =
-    add("org.koin:koin-core:${Versions.koinVersion}", config, action)
-
 val DHS.mockk: EMD get() = mockk()
 fun DHS.mockk(config: Config = IMPL, action: Action<EMD> = TrasitiveAcztion()): EMD =
     add("io.mockk:mockk:${Versions.mockkVersion}", config, action)
