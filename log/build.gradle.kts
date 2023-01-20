@@ -1,4 +1,3 @@
-import dev.zieger.utils.coroutinesModule
 import dev.zieger.utils.miscModule
 import dev.zieger.utils.timeModule
 
@@ -12,7 +11,6 @@ utils {
 }
 
 dependencies {
-    coroutinesModule
     timeModule
     miscModule
 }

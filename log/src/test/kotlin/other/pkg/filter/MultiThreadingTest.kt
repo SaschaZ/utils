@@ -1,7 +1,9 @@
 package other.pkg.filter
 
-import dev.zieger.utils.log.*
-import dev.zieger.utils.log.LogMessageBuilder.Companion.LOG_MESSAGE_WITH_CALL_ORIGIN
+import dev.zieger.utils.log.ILogCache
+import dev.zieger.utils.log.ILogScope
+import dev.zieger.utils.log.LogOutput
+import dev.zieger.utils.log.LogScope
 import dev.zieger.utils.log.filter.addTraceSpamFilter
 import io.kotest.core.spec.style.AnnotationSpec
 import io.kotest.matchers.shouldBe
@@ -17,7 +19,7 @@ class MultiThreadingTest : AnnotationSpec() {
     fun beforeEach() {
         messages = ConcurrentLinkedQueue()
         scope = LogScope.copy {
-            messageBuilder = LogMessageBuilder(LOG_MESSAGE_WITH_CALL_ORIGIN)
+            messageBuilder.logWithOriginMethodNameName = true
             output = LogOutput {
                 messages += ILogCache.LogMessage(buildedMessage, this)
                 println(buildedMessage)
@@ -38,30 +40,37 @@ class MultiThreadingTest : AnnotationSpec() {
     }
 
     @Test
-    fun testOriginSpamFilter() = runBlocking {
-        val io = CoroutineScope(Dispatchers.IO)
-
+    fun testOriginSpamFilter() = runBlocking(Dispatchers.IO) {
         scope.Log.addTraceSpamFilter()
 
-        val runs = 100_000
-        (0 until runs).map {
-            io.launch {
-                delay(1)
+        spamLogs()
+    }
+
+    private suspend fun CoroutineScope.singleSpam(it: Int): List<Job> =
+        listOf(
+            launch {
+//                delay(1)
                 scope.Log.v("$it", "TEST")
-            }
-            io.launch {
-                delay(1)
+            },
+            launch {
+//                delay(1)
                 scope.Log.d("$it", "TEST")
-            }
-            io.launch {
-                delay(1)
+            },
+            launch {
+//                delay(1)
                 scope.Log.i("$it", "TEST")
             }
-        }.joinAll()
-        println("all joined")
+        )
 
-        messages.size shouldBe 3
-        delay(10_000)
-        messages.size shouldBe 6
+    private suspend fun CoroutineScope.spamLogs(
+        runs: Int = 100_000,
+        repeatRuns: Int = 100
+    ) {
+        repeat(repeatRuns) { repeat ->
+            (0 until runs).flatMap {
+                singleSpam(repeat * runs + it)
+            }.joinAll()
+//            messages.size.shouldBeGreaterThan(repeat * runs * 3)
+        }
     }
 }

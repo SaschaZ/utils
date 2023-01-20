@@ -46,7 +46,7 @@ open class LogMessageBuilderContext(
                 && trace.fileName?.anyOf(ignoreFiles) == false
                 && trace.lineNumber >= 0
     }?.run {
-        "(${fileName}:${lineNumber})${if (withCallOriginMethod) "#$methodName" else ""}"
+        "(${fileName}:${lineNumber})${if (withCallOriginMethod) "#$methodName()" else ""}"
     } ?: ""
 
     fun time(format: TimeFormat = TimeFormat.TIME_ONLY) = createdAt.formatTime(format)

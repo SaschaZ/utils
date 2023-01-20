@@ -1,8 +1,6 @@
 package other.pkg.filter
 
 import dev.zieger.utils.log.Log
-import dev.zieger.utils.log.LogMessageBuilder
-import dev.zieger.utils.log.LogMessageBuilder.Companion.LOG_MESSAGE_WITH_CALL_ORIGIN
 import dev.zieger.utils.log.LogScope
 import dev.zieger.utils.log.filter.addMessageSpamFilter
 import dev.zieger.utils.time.delay
@@ -20,7 +18,7 @@ class LogSpamFilterKtTest : AnnotationSpec() {
         val messages = LinkedList<Any>()
         LogScope.reset {
             tag = "FooWoo"
-            messageBuilder = LogMessageBuilder(LOG_MESSAGE_WITH_CALL_ORIGIN)
+            messageBuilder.logWithOriginMethodNameName = true
             addMessageSpamFilter()
             addPostFilter { next ->
                 messages += message
