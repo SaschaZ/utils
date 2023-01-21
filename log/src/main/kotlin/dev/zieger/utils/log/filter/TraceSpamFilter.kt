@@ -14,13 +14,15 @@ import kotlin.math.roundToInt
 
 fun ILogContext.addTraceSpamFilter(
     spamDuration: ITimeSpan = 1.seconds,
-    maximumSilence: ITimeSpan = spamDuration * 10,
+    maximumSilence: ITimeSpan? = spamDuration * 10,
+    includeTags: List<Any> = emptyList(),
+    excludeTags: List<Any> = emptyList(),
     buildDelayedMessage: ILogMessageContext.(key: String) -> String = {
         "delayed by ${(TimeStamp() - createdAt).seconds.roundToInt()}s:\n\t${buildedMessage}"
     },
     buildKey: ILogMessageContext.(List<StackTraceElement>) -> String = { it.callOrigin() }
 ) {
-    require(spamDuration < maximumSilence)
+    require(maximumSilence?.let { spamDuration < it } != false)
 
     val single = CoroutineScope(Executors.newSingleThreadExecutor().asCoroutineDispatcher())
     val jobs = ConcurrentHashMap<String, Job>()
@@ -46,7 +48,7 @@ fun ILogContext.addTraceSpamFilter(
         delayedCancelable[origin] = this
         firstDelayedMessage[origin] = firstDelayedMessage[origin] ?: TimeStamp()
         val tooLongSilence = firstDelayedMessage[origin]
-            ?.let { TimeStamp() - it >= maximumSilence } == true
+            ?.let { maximumSilence?.let { ms -> TimeStamp() - it >= ms } } == true
 
         if (tooLongSilence) {
             firstDelayedMessage.remove(origin)
@@ -66,6 +68,13 @@ fun ILogContext.addTraceSpamFilter(
     }
 
     addPostFilter { next ->
+        val exclude = excludeTags.isNotEmpty() && (messageTag ?: tag) in excludeTags
+        val include = includeTags.isEmpty() || (messageTag ?: tag) in includeTags
+        if (exclude || !include) {
+            next()
+            return@addPostFilter
+        }
+
         val origin = buildKey(Exception().stackTrace.toList())
         single.launch {
             lastMessage[origin].let { prev ->
