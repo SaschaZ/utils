@@ -36,11 +36,15 @@ open class LogMessageBuilderContext(
             "Controllable.kt", "Observable.kt",
             "ExecuteExInternal.kt",
             "NativeMethodAccessorImpl.java"
+        ),
+        ignoreMethods: List<String> = listOf(
+            "invoke"
         )
     ): String = if (withFilename || withMethod)
         (callOriginException ?: Exception().also { callOriginException = it })
             .stackTrace.firstOrNull { trace ->
                 !trace.className.startsWithAny(*ignorePackages.toTypedArray())
+                        && trace.methodName !in ignoreMethods
                         && trace.fileName?.anyOf(ignoreFiles) == false
                         && trace.lineNumber >= 0
             }?.run {
