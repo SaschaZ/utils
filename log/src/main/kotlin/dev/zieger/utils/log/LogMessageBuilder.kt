@@ -2,7 +2,6 @@
 
 package dev.zieger.utils.log
 
-import dev.zieger.utils.misc.anyOf
 import dev.zieger.utils.misc.startsWithAny
 import dev.zieger.utils.time.TimeFormat
 import dev.zieger.utils.time.TimeStamp
@@ -25,6 +24,10 @@ open class LogMessageBuilderContext(
     context: ILogMessageContext
 ) : ILogMessageContext by context {
 
+    companion object {
+
+    }
+
     fun ILogMessageContext.callOrigin(
         withFilename: Boolean = true,
         withMethod: Boolean = false,
@@ -42,15 +45,8 @@ open class LogMessageBuilderContext(
         )
     ): String = if (withFilename || withMethod)
         (callOriginException ?: Exception().also { callOriginException = it })
-            .stackTrace.firstOrNull { trace ->
-                !trace.className.startsWithAny(*ignorePackages.toTypedArray())
-                        && trace.methodName !in ignoreMethods
-                        && trace.fileName?.anyOf(ignoreFiles) == false
-                        && trace.lineNumber >= 0
-            }?.run {
-                (if (withFilename) "(${fileName}:${lineNumber})" else "") +
-                        (if (withMethod) "#$methodName()" else "")
-            } ?: "" else ""
+            .callOrigin(withFilename, withMethod, ignorePackages, ignoreFiles, ignoreMethods)
+    else ""
 
     fun time(): String {
         val format = "HH:mm:ss.SSS"
@@ -97,3 +93,28 @@ class LogMessageBuilder(
     override fun copyLogMessageBuilder(): ILogMessageBuilder =
         LogMessageBuilder(build)
 }
+
+fun Exception.callOrigin(
+    withFilename: Boolean = true,
+    withMethod: Boolean = false,
+    ignorePackages: List<String> = listOf(
+        "dev.zieger.utils",
+        "kotlin", "java", "jdk", "io.kotest"
+    ),
+    ignoreFiles: List<String> = listOf(
+        "Controllable.kt", "Observable.kt",
+        "ExecuteExInternal.kt",
+        "NativeMethodAccessorImpl.java"
+    ),
+    ignoreMethods: List<String> = listOf(
+        "invoke"
+    )
+) = stackTrace.firstOrNull { trace ->
+    !trace.className.startsWithAny(*ignorePackages.toTypedArray())
+            && trace.methodName !in ignoreMethods
+            && trace.fileName?.let { it !in ignoreFiles } == true
+            && trace.lineNumber >= 0
+}?.run {
+    (if (withFilename) "(${fileName}:${lineNumber})" else "") +
+            (if (withMethod) "#$methodName()" else "")
+} ?: ""

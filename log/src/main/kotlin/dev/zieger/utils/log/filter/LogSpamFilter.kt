@@ -90,8 +90,8 @@ import java.util.concurrent.Executors
 
 fun ILogContext.addLogSpamFilter(
     spamDuration: ITimeSpan = 5.seconds,
-    includeTags: List<Any> = emptyList(),
-    excludeTags: List<Any> = emptyList(),
+    includeTags: List<Any> = listOf(INCLUDE_TO_SPAM_FILTER),
+    excludeTags: List<Any> = listOf(EXCLUDE_FROM_SPAM_FILTER),
     scope: CoroutineScope = CoroutineScope(
         Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     ),
@@ -178,3 +178,6 @@ fun ILogMessageContext.callOrigin(
             st.className.startsWith(it)
         }
     }.first().toString()
+
+const val INCLUDE_TO_SPAM_FILTER = "INCLUDE_TO_SPAM_FILTER"
+const val EXCLUDE_FROM_SPAM_FILTER = "EXCLUDE_FROM_SPAM_FILTER"
