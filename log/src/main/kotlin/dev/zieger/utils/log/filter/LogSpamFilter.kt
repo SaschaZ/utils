@@ -2,7 +2,10 @@ package dev.zieger.utils.log.filter
 
 import dev.zieger.utils.log.ILogContext
 import dev.zieger.utils.log.ILogMessageContext
-import dev.zieger.utils.time.*
+import dev.zieger.utils.time.ITimeSpan
+import dev.zieger.utils.time.ITimeStamp
+import dev.zieger.utils.time.delay
+import dev.zieger.utils.time.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
@@ -154,10 +157,7 @@ private class LogSpamFiler(
     ) {
         delayedMessages[key]?.invoke()
         delayedMessages[key] = scope.launch {
-            delay(lastSendCreatedAt[key]
-                ?.let { spamDuration - (TimeStamp() - it) }
-                ?.takeIf { it.notZero }
-                ?: spamDuration)
+            delay(spamDuration)
 
             delayed = true
             next()
