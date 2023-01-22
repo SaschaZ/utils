@@ -4,7 +4,11 @@ import dev.zieger.utils.log.ILogCache
 import dev.zieger.utils.log.ILogScope
 import dev.zieger.utils.log.LogOutput
 import dev.zieger.utils.log.LogScope
-import dev.zieger.utils.log.filter.addTraceSpamFilter
+import dev.zieger.utils.log.filter.addLogSpamFilter
+import dev.zieger.utils.misc.asUnit
+import dev.zieger.utils.time.delay
+import dev.zieger.utils.time.millis
+import dev.zieger.utils.time.seconds
 import io.kotest.core.spec.style.AnnotationSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
@@ -21,8 +25,8 @@ class MultiThreadingTest : AnnotationSpec() {
         scope = LogScope.copy {
             messageBuilder.logWithOriginMethodNameName = true
             output = LogOutput {
-                messages += ILogCache.LogMessage(buildedMessage, this)
-                println(buildedMessage)
+                messages += ILogCache.LogMessage(builtMessage, this)
+                println(builtMessage)
             }
         }
     }
@@ -41,28 +45,30 @@ class MultiThreadingTest : AnnotationSpec() {
 
     @Test
     fun testOriginSpamFilter() = runBlocking(Dispatchers.IO) {
-        scope.Log.addTraceSpamFilter()
+        scope.Log.addLogSpamFilter()
 
         spamLogs()
     }
 
-    private suspend fun CoroutineScope.singleSpam(it: Int): List<Job> =
-        listOf(
-            launch {
+    private suspend fun singleSpam(it: Int): List<Job> =
+        coroutineScope {
+            listOf(
+                launch {
 //                delay(1)
-                scope.Log.v("$it", "TEST")
-            },
-            launch {
+                    scope.Log.v("$it", "TEST")
+                },
+                launch {
 //                delay(1)
-                scope.Log.d("$it", "TEST")
-            },
-            launch {
+                    scope.Log.d("$it", "TEST")
+                },
+                launch {
 //                delay(1)
-                scope.Log.i("$it", "TEST")
-            }
-        )
+                    scope.Log.i("$it", "TEST")
+                }
+            )//.also { delay(1) }
+        }
 
-    private suspend fun CoroutineScope.spamLogs(
+    private suspend fun spamLogs(
         runs: Int = 100_000,
         repeatRuns: Int = 100
     ) {
@@ -72,5 +78,20 @@ class MultiThreadingTest : AnnotationSpec() {
             }.joinAll()
 //            messages.size.shouldBeGreaterThan(repeat * runs * 3)
         }
+    }
+
+    @Test
+    fun testSpamFilterDefault() = runBlocking {
+        scope.apply {
+            Log.addLogSpamFilter()
+
+            repeat(40) {
+                Log.v("$it", "FOOBOO")
+                delay(200.millis)
+            }
+            delay(5.seconds)
+
+            messages.size shouldBe 3
+        }.asUnit()
     }
 }

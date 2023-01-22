@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Log-Message-Context
  */
 interface ILogMessageContext : ILogQueue, ICancellable {
+
     var level: LogLevel
     var throwable: Throwable?
     var coroutineScope: CoroutineScope?
@@ -17,7 +18,9 @@ interface ILogMessageContext : ILogQueue, ICancellable {
     var message: Any
     var messageTag: Any?
     val tag: Any?
-    var buildedMessage: String
+    var delayed: Boolean
+    var builtMessage: String
+    var callOriginException: Exception?
 }
 
 class LogMessageContext(
@@ -28,8 +31,10 @@ class LogMessageContext(
     override var coroutineScope: CoroutineScope? = null,
     override var createdAt: ITimeStamp = TimeStamp(),
     override var messageTag: Any? = null,
-    override var buildedMessage: String = "",
-    override val tag: Any?
+    override var builtMessage: String = "",
+    override val tag: Any?,
+    override var delayed: Boolean = false,
+    override var callOriginException: Exception? = null
 ) : ILogQueue by queue,
     ILogMessageContext {
 

@@ -7,7 +7,7 @@ import dev.zieger.utils.log.LogFilter.LogPreFilter
 import dev.zieger.utils.misc.asUnit
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
-import dev.zieger.utils.log.filter as logFIlter
+import dev.zieger.utils.log.filter as logFilter
 
 interface ILogQueue {
     var messageBuilder: ILogMessageBuilder
@@ -51,9 +51,9 @@ open class LogQueue(
     }.asUnit()
 
     override fun ILogMessageContext.execute() {
-        preHook.executeQueue(this, logFIlter {
-            if (isCancelled.get()) return@logFIlter
-            messageBuilder.call(this@logFIlter)
+        preHook.executeQueue(this, logFilter {
+            if (isCancelled.get()) return@logFilter
+            messageBuilder.call(this)
             postHook.executeQueue(this, output)
         })
     }
@@ -74,9 +74,9 @@ private fun <C : ICancellable> Collection<IDelayFilter<C>?>.executeQueue(
             0 -> endAction
             else -> lambdas[idx - 1]
         }
-        lambdas.add(logFIlter {
-            if (isCancelled.get()) return@logFIlter
-            f(this, logFIlter innerFilter@{
+        lambdas.add(logFilter {
+            if (isCancelled.get()) return@logFilter
+            f(this, logFilter innerFilter@{
                 if (isCancelled.get()) return@innerFilter
                 lambda(this)
             })
@@ -93,8 +93,8 @@ interface ICancellable {
 }
 
 interface IDelayFilter<C : ICancellable> {
-    fun call(context: C, next: IFilter<C> = logFIlter {})
-    operator fun invoke(context: C, next: IFilter<C> = logFIlter {}) = call(context, next)
+    fun call(context: C, next: IFilter<C> = logFilter {})
+    operator fun invoke(context: C, next: IFilter<C> = logFilter {}) = call(context, next)
 }
 
 interface IFilter<in C : ICancellable> {
