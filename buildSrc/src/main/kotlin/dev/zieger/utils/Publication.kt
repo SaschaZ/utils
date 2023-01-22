@@ -29,11 +29,6 @@ internal fun ProjectContext.configureJarPublishing() {
 internal fun ProjectContext.configureLibraryJarPublication() {
     extensions.getByType<PublishingExtension>().publications {
         register<MavenPublication>("mavenJava") {
-//            pom.apply {
-//                repositories.forEach { repo ->
-//                    repo.
-//                }
-//            }
             configureNames(moduleName)
 
             from(components["java"])
