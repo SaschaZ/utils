@@ -1,9 +1,8 @@
 @file:Suppress("unused")
 
-package dev.zieger.utils.misc.parameterMix
+package dev.zieger.utils.coroutines.parameterMix
 
-import dev.zieger.utils.misc.DEFAULT_NUM_PARALLEL
-import dev.zieger.utils.misc.mapParallel
+import dev.zieger.utils.coroutines.mapParallel
 import kotlinx.coroutines.flow.*
 
 fun <T, R> mix(
@@ -48,6 +47,9 @@ private fun <T> Flow<Map<String, T>>.combine(other: Parameter<out T>): Flow<Map<
 
 private operator fun <K, V> Map<K, V>.plus(pair: Map.Entry<K, V>): Map<K, V> =
     (entries.map { (k, v) -> k to v } + (pair.key to pair.value)).toMap()
+
+val DEFAULT_NUM_PARALLEL: Int
+    get() = Runtime.getRuntime().availableProcessors()
 
 private val <T> Parameter<out T>.pairs: Flow<Map<String, T>>
     get() = values.asFlow().map { mapOf(property.name to it) }

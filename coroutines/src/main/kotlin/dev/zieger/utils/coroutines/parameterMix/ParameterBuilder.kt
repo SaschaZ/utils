@@ -1,4 +1,4 @@
-package dev.zieger.utils.misc.parameterMix
+package dev.zieger.utils.coroutines.parameterMix
 
 import dev.zieger.utils.misc.DoubleProgression
 import dev.zieger.utils.misc.FloatProgression

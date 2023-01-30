@@ -1,4 +1,3 @@
-import dev.zieger.utils.timeModule
 
 plugins {
     `java-library`
@@ -10,5 +9,5 @@ utils {
 }
 
 dependencies {
-    timeModule
+    implementation(project(":time"))
 }

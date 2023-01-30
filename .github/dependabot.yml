@@ -1,0 +1,37 @@
+version: 2
+updates:
+
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-type: "all"
+
+  - package-ecosystem: "gradle"
+    directory: "/db"
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-type: "all"
+
+  - package-ecosystem: "gradle"
+    directory: "/gui"
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-type: "all"
+
+  - package-ecosystem: "gradle"
+    directory: "/domain"
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-type: "all"
+
+  - package-ecosystem: "gradle"
+    directory: "/di"
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-type: "all"

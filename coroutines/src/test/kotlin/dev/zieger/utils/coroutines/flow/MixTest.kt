@@ -1,6 +1,7 @@
-package dev.zieger.utils.misc
+package dev.zieger.utils.coroutines.flow
 
-import dev.zieger.utils.misc.parameterMix.mix
+import dev.zieger.utils.coroutines.parameterMix.mix
+import dev.zieger.utils.misc.asUnit
 import io.kotest.core.spec.style.AnnotationSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.collect

@@ -1,5 +1,3 @@
-import dev.zieger.utils.*
-
 plugins {
     `java-library`
     id("dev.zieger.utils")
@@ -10,7 +8,8 @@ utils {
 }
 
 dependencies {
-    timeModule
-    miscModule
-    globalsModule
+    implementation(project(":coroutines"))
+    implementation(project(":time"))
+    implementation(project(":misc"))
+    implementation(project(":globals"))
 }

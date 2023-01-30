@@ -1,4 +1,4 @@
-package dev.zieger.utils.misc.parameterMix
+package dev.zieger.utils.coroutines.parameterMix
 
 import kotlin.reflect.KProperty
 

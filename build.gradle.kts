@@ -1,12 +1,14 @@
 buildscript {
+    apply(from = "dependencies.gradle")
+    operator fun String.unaryPlus() = rootProject.extra[this] as String
+
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        val kotlinVersion: String by project
-        classpath(kotlin("gradle-plugin", version = kotlinVersion))
-        classpath(kotlin("serialization", version = kotlinVersion))
+        classpath(kotlin("gradle-plugin", version = +"kotlinVersion"))
+        classpath(kotlin("serialization", version = +"kotlinVersion"))
     }
 }
 

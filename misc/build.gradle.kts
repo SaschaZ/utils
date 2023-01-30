@@ -1,4 +1,3 @@
-import dev.zieger.utils.globalsModule
 
 plugins {
     `java-library`
@@ -10,5 +9,6 @@ utils {
 }
 
 dependencies {
-    globalsModule
+    implementation(project(":globals"))
+    implementation(project(":globals"))
 }
