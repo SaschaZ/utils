@@ -8,7 +8,6 @@ utils {
 }
 
 dependencies {
-    implementation(project(":coroutines"))
     implementation(project(":time"))
     implementation(project(":misc"))
     implementation(project(":globals"))
