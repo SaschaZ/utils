@@ -19,8 +19,15 @@ jobs:
         with:
           java-version: 11
 
+      - name: Set output
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF_NAME##*/}
+
+      - name: Apply Tag
+        run: ./applyTag.sh ${{ steps.vars.outputs.tag }} ${{secrets.DEPLOY_USER}} ${{secrets.DEPLOY_PASS}}
+
       - name: Build with Gradle
-        run: ./gradlew publishToMavenLocal
+        run: ./gradlew publish publishToMavenLocal
 
       - name: Upload artifact
         uses: actions/upload-artifact@v1.0.0

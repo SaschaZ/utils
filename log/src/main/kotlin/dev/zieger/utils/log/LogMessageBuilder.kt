@@ -41,11 +41,12 @@ open class LogMessageBuilderContext(
             "NativeMethodAccessorImpl.java"
         ),
         ignoreMethods: List<String> = listOf(
-            "invoke"
-        )
+            "invoke", "invokeSuspend"
+        ),
+        methodRegex: Regex = """^[a-zA-Z]\w+\$""".toRegex()
     ): String = if (withFilename || withMethod)
         (callOriginException ?: Exception().also { callOriginException = it })
-            .callOrigin(withFilename, withMethod, ignorePackages, ignoreFiles, ignoreMethods)
+            .callOrigin(withFilename, withMethod, ignorePackages, ignoreFiles, ignoreMethods, methodRegex)
     else ""
 
     fun time(): String {
@@ -107,14 +108,45 @@ fun Exception.callOrigin(
         "NativeMethodAccessorImpl.java"
     ),
     ignoreMethods: List<String> = listOf(
-        "invoke"
-    )
-) = stackTrace.firstOrNull { trace ->
+        "invoke", "invokeSuspend"
+    ),
+    methodRegex: Regex = """^([a-zA-Z][a-zA-Z0-9]+)$""".toRegex()
+) = stackTrace.also { println(it.joinToString("\n\t")) }.firstOrNull { trace ->
     !trace.className.startsWithAny(*ignorePackages.toTypedArray())
-            && trace.methodName !in ignoreMethods
             && trace.fileName?.let { it !in ignoreFiles } == true
             && trace.lineNumber >= 0
 }?.run {
-    (if (withFilename) "(${fileName}:${lineNumber})" else "") +
-            (if (withMethod) "#$methodName()" else "")
+    (if (withFilename) {
+        "($fileName:${lineNumber})"
+    } else "") +
+            (if (withMethod) "#${
+                stackTrace.callingMethod(
+                    ignorePackages, ignoreFiles, ignoreMethods, methodRegex
+                )
+            }()" else "")
 } ?: ""
+
+private fun Array<StackTraceElement>.callingMethod(
+    ignorePackages: List<String>,
+    ignoreFiles: List<String>,
+    ignoreMethods: List<String>,
+    methodRegex: Regex = """^[a-zA-Z]\w+\$""".toRegex()
+): String? = firstNotNullOfOrNull {
+    it.callingMethod(ignorePackages, ignoreFiles, ignoreMethods, methodRegex)
+}
+
+private fun StackTraceElement.callingMethod(
+    ignorePackages: List<String>,
+    ignoreFiles: List<String>,
+    ignoreMethods: List<String>,
+    methodNameRegex: Regex = """^[a-zA-Z]\w+\$""".toRegex(),
+): String? = "$this"
+    .takeIf { str -> ignorePackages.none { it !in str } }
+    ?.split("(")?.first()
+    ?.split("$")
+    ?.map { it.removeSurrounding("$") }
+    ?.firstOrNull {
+        methodNameRegex.matches(it) &&
+                it !in ignoreMethods &&
+                it !in ignoreFiles
+    }

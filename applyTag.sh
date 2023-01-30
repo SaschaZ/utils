@@ -10,3 +10,6 @@ sed -i -E 's/const val version = \"[0-9]+\.[0-9]+\.[0-9]+\"/const val version = 
 
 sed -i -E 's/mavenUser=/mavenUser='$2'/g' ./gradle.properties
 sed -i -E 's/mavenPass=/mavenPass='$3'/g' ./gradle.properties
+
+rm ./buildSrc/gradle.properties
+ln ./"gradle.properties" ./buildSrc/"gradle.properties"
