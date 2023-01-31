@@ -4,34 +4,62 @@ updates:
   - package-ecosystem: "gradle"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     allow:
       - dependency-type: "all"
 
   - package-ecosystem: "gradle"
-    directory: "/db"
+    directory: "/coroutines"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     allow:
       - dependency-type: "all"
 
   - package-ecosystem: "gradle"
-    directory: "/gui"
+    directory: "/log"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     allow:
       - dependency-type: "all"
 
   - package-ecosystem: "gradle"
-    directory: "/domain"
+    directory: "/globals"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     allow:
       - dependency-type: "all"
 
   - package-ecosystem: "gradle"
-    directory: "/di"
+    directory: "/misc"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+    allow:
+      - dependency-type: "all"
+
+  - package-ecosystem: "gradle"
+    directory: "/observables"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-type: "all"
+
+  - package-ecosystem: "gradle"
+    directory: "/statemachine"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-type: "all"
+
+  - package-ecosystem: "gradle"
+    directory: "/time"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-type: "all"
+
+  - package-ecosystem: "gradle"
+    directory: "/utils"
+    schedule:
+      interval: "weekly"
     allow:
       - dependency-type: "all"
