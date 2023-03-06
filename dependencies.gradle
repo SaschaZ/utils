@@ -1,6 +1,6 @@
 ext {
 
-    kotlinVersion = "1.7.20"
+    kotlinVersion = "1.8.10"
     kotlinCoroutinesVersion = "1.6.4"
     kotlinSerializationVersion = "1.4.1"
     androidGradlePluginVersion = "3.4.3"
